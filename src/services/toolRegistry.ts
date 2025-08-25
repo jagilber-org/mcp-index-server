@@ -21,6 +21,7 @@ const stringReq = (name: string) => ({ type: 'object', additionalProperties: fal
 const INPUT_SCHEMAS: Record<string, object> = {
   'health/check': { type: 'object', additionalProperties: true }, // no params
   'instructions/list': { type: 'object', additionalProperties: false, properties: { category: { type: 'string' } } },
+  'instructions/listScoped': { type: 'object', additionalProperties: false, properties: { userId: { type: 'string' }, workspaceId: { type: 'string' }, teamIds: { type: 'array', items: { type: 'string' } } } },
   'instructions/get': stringReq('id'),
   'instructions/search': stringReq('q'),
   'instructions/export': { type: 'object', additionalProperties: false, properties: { ids: { type: 'array', items: { type: 'string' } }, metaOnly: { type: 'boolean' } } },
@@ -44,6 +45,7 @@ const INPUT_SCHEMAS: Record<string, object> = {
   'instructions/repair': { type: 'object', additionalProperties: true },
   'instructions/reload': { type: 'object', additionalProperties: true },
   'instructions/remove': { type: 'object', additionalProperties: false, required: ['ids'], properties: { ids: { type: 'array', minItems: 1, items: { type: 'string' } }, missingOk: { type: 'boolean' } } },
+  'instructions/groom': { type: 'object', additionalProperties: false, properties: { mode: { type: 'object', additionalProperties: false, properties: { dryRun: { type: 'boolean' }, removeDeprecated: { type: 'boolean' }, mergeDuplicates: { type: 'boolean' }, purgeLegacyScopes: { type: 'boolean' } } } } },
   'prompt/review': stringReq('prompt'),
   'integrity/verify': { type: 'object', additionalProperties: true },
   'usage/track': stringReq('id'),
@@ -54,9 +56,9 @@ const INPUT_SCHEMAS: Record<string, object> = {
   'meta/tools': { type: 'object', additionalProperties: true }
 };
 
-// Stable & mutation classification lists (mirrors sets in toolHandlers to avoid import cycle).
-const STABLE = new Set(['health/check','instructions/list','instructions/get','instructions/search','instructions/diff','instructions/export','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools']);
-const MUTATION = new Set(['instructions/add','instructions/import','instructions/repair','instructions/reload','instructions/remove','usage/flush']);
+// Stable & mutation classification lists (mirrors usage in toolHandlers; exported to remove duplication there).
+export const STABLE = new Set(['health/check','instructions/list','instructions/listScoped','instructions/get','instructions/search','instructions/diff','instructions/export','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools']);
+const MUTATION = new Set(['instructions/add','instructions/import','instructions/repair','instructions/reload','instructions/remove','instructions/groom','usage/flush']);
 
 export function getToolRegistry(): ToolRegistryEntry[] {
   const entries: ToolRegistryEntry[] = [];
@@ -81,6 +83,7 @@ function describeTool(name: string): string {
   switch(name){
     case 'health/check': return 'Returns server health status & version.';
     case 'instructions/list': return 'List all instruction entries (optionally filtered by category).';
+  case 'instructions/listScoped': return 'List instructions matching structured scope (user > workspace > team > all).';
     case 'instructions/get': return 'Fetch a single instruction entry by id.';
     case 'instructions/search': return 'Search instructions by text query across title & body.';
     case 'instructions/export': return 'Export full instruction catalog, optionally subset by ids.';
@@ -90,6 +93,7 @@ function describeTool(name: string): string {
     case 'instructions/repair': return 'Repair out-of-sync sourceHash fields (noop if none drifted).';
   case 'instructions/reload': return 'Force reload of instruction catalog from disk.';
   case 'instructions/remove': return 'Delete one or more instruction entries by id.';
+  case 'instructions/groom': return 'Groom catalog: normalize, repair hashes, merge duplicates, remove deprecated.';
     case 'prompt/review': return 'Static analysis of a prompt returning issues & summary.';
     case 'integrity/verify': return 'Verify each instruction body hash against stored sourceHash.';
     case 'usage/track': return 'Increment usage counters & timestamps for an instruction id.';
@@ -102,4 +106,4 @@ function describeTool(name: string): string {
   }
 }
 
-export const REGISTRY_VERSION = '2025-08-01';
+export const REGISTRY_VERSION = '2025-08-25';

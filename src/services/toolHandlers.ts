@@ -9,7 +9,8 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { registerHandler, listRegisteredMethods, getMetricsRaw } from '../server/registry';
-import { getToolRegistry, REGISTRY_VERSION } from './toolRegistry';
+import { getToolRegistry, REGISTRY_VERSION, STABLE as REGISTRY_STABLE } from './toolRegistry';
+import { ClassificationService } from './classificationService';
 import { CatalogLoader } from './catalogLoader';
 import { InstructionEntry } from '../models/instruction';
 import { PromptReviewService, summarizeIssues } from './promptReviewService';
@@ -157,6 +158,9 @@ registerHandler('instructions/export', (p:{ids?:string[]; metaOnly?:boolean}) =>
   const st = ensureLoaded();
   let items = st.list;
   if(p?.ids?.length){ const want = new Set(p.ids); items = items.filter(i => want.has(i.id)); }
+  if(p?.metaOnly){
+    items = items.map(i => ({ ...i, body: '' }));
+  }
   return { hash: st.hash, count: items.length, items };
 });
 
@@ -187,6 +191,7 @@ registerHandler('instructions/import', guardMutation('instructions/import', (p:{
   const dir = path.join(process.cwd(),'instructions');
   if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true});
   let imported=0, skipped=0, overwritten=0; const errors:{ id:string; error:string }[]=[];
+  const classifier = new ClassificationService();
   for(const e of entries){
   if(!e || !e.id || !e.title || !e.body){ const id = (e as Partial<ImportEntry>)?.id || 'unknown'; errors.push({ id, error:'missing required fields'}); continue; }
     const file = path.join(dir, `${e.id}.json`);
@@ -195,9 +200,8 @@ registerHandler('instructions/import', guardMutation('instructions/import', (p:{
     const now = new Date().toISOString();
   const categories = Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c): c is string => typeof c === 'string').map((c:string) => c.toLowerCase()))).sort();
     const sourceHash = crypto.createHash('sha256').update(e.body,'utf8').digest('hex');
-    const record: InstructionEntry = { id:e.id, title:e.title, body:e.body, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash, schemaVersion:'1', deprecatedBy:e.deprecatedBy, createdAt:now, updatedAt:now, riskScore:e.riskScore,
-      version: '1.0.0', status: e.requirement === 'deprecated' ? 'deprecated' : 'approved', owner: 'unowned', priorityTier: e.priority <=20 || ['mandatory','critical'].includes(e.requirement)? 'P1': e.priority<=40? 'P2': e.priority<=70? 'P3':'P4', classification: 'internal', lastReviewedAt: now, nextReviewDue: now, changeLog: [{ version: '1.0.0', changedAt: now, summary: 'initial add' }]
-    };
+    const base: InstructionEntry = { id:e.id, title:e.title, body:e.body, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash, schemaVersion:'1', deprecatedBy:e.deprecatedBy, createdAt:now, updatedAt:now, riskScore:e.riskScore } as InstructionEntry;
+    const record = classifier.normalize(base);
     try { fs.writeFileSync(file, JSON.stringify(record,null,2)); } catch { errors.push({ id:e.id, error:'write-failed'}); }
   }
   state = null; const st = ensureLoaded();
@@ -308,7 +312,7 @@ registerHandler('metrics/snapshot', () => {
 });
 
 // ---------------- Tool Discovery ----------------
-const stableTools = new Set<string>(['health/check','instructions/list','instructions/get','instructions/search']);
+const stableTools = new Set<string>(Array.from(REGISTRY_STABLE));
 const mutationTools = new Set<string>([
   'instructions/add',
   'instructions/import',
@@ -350,9 +354,9 @@ registerHandler('instructions/add', guardMutation('instructions/add', (p:{ entry
   const now = new Date().toISOString();
   const categories = Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c): c is string => typeof c === 'string').map((c:string) => c.toLowerCase()))).sort();
   const sourceHash = crypto.createHash('sha256').update(e.body,'utf8').digest('hex');
-  const record: InstructionEntry = { id:e.id, title:e.title, body:e.body, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash, schemaVersion:'1', deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore: e.riskScore,
-    version: '1.0.0', status: e.requirement === 'deprecated' ? 'deprecated' : 'approved', owner: 'unowned', priorityTier: e.priority <=20 || ['mandatory','critical'].includes(e.requirement)? 'P1': e.priority<=40? 'P2': e.priority<=70? 'P3':'P4', classification: 'internal', lastReviewedAt: now, nextReviewDue: now, changeLog: [{ version: '1.0.0', changedAt: now, summary: 'initial add' }]
-  };
+  const classifier = new ClassificationService();
+  const base: InstructionEntry = { id:e.id, title:e.title, body:e.body, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash, schemaVersion:'1', deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore: e.riskScore } as InstructionEntry;
+  const record = classifier.normalize(base);
   try { fs.writeFileSync(file, JSON.stringify(record,null,2)); } catch(err){ return { id: e.id, error: (err as Error).message || 'write-failed' }; }
   // Invalidate & reload
   state = null; const st = ensureLoaded();

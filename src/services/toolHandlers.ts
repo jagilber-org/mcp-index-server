@@ -3,6 +3,8 @@ import crypto from 'crypto';
 import { CatalogLoader } from './catalogLoader';
 import { InstructionEntry } from '../models/instruction';
 import { PromptReviewService, summarizeIssues } from './promptReviewService';
+import fs from 'fs';
+import path from 'path';
 
 export interface CatalogState {
   loadedAt: string;
@@ -142,6 +144,46 @@ registerHandler('metrics/snapshot', () => {
     maxMs: rec.maxMs
   }));
   return { generatedAt: new Date().toISOString(), methods };
+});
+
+// Gates evaluation
+interface GateWhere { requirement?: string; priorityGt?: number }
+interface GateRule { id: string; description?: string; type: 'count'; where: GateWhere; op: '>='|'>'|'<='|'<'|'=='|'!='; value: number; severity: 'error'|'warn'; }
+registerHandler('gates/evaluate', () => {
+  const st = ensureLoaded();
+  const p = path.join(process.cwd(), 'instructions', 'gates.json');
+  if(!fs.existsSync(p)) return { notConfigured: true };
+  let data: { gates: GateRule[] };
+  try { data = JSON.parse(fs.readFileSync(p,'utf8')); } catch(e){ return { error: 'invalid gates file' }; }
+  const results: Array<{ id: string; passed: boolean; count: number; op: string; value: number; severity: string; description?: string }> = [];
+  for(const g of data.gates || []){
+    if(g.type !== 'count'){ continue; }
+    const matches = st.list.filter(e => {
+      const w = g.where || {};
+      let ok = true;
+      if(w.requirement !== undefined) ok = ok && e.requirement === w.requirement;
+      if(w.priorityGt !== undefined) ok = ok && e.priority > w.priorityGt;
+      return ok;
+    });
+    const count = matches.length;
+    const v = g.value;
+    let passed = true;
+    switch(g.op){
+      case '>=': passed = count >= v; break;
+      case '>': passed = count > v; break;
+      case '<=': passed = count <= v; break;
+      case '<': passed = count < v; break;
+      case '==': passed = count === v; break;
+      case '!=': passed = count !== v; break;
+    }
+    results.push({ id: g.id, passed, count, op: g.op, value: v, severity: g.severity, description: g.description });
+  }
+  const summary = {
+    errors: results.filter(r => !r.passed && r.severity === 'error').length,
+    warnings: results.filter(r => !r.passed && r.severity === 'warn').length,
+    total: results.length
+  };
+  return { generatedAt: new Date().toISOString(), results, summary };
 });
 
 export {}; // ensure module scope

@@ -225,6 +225,22 @@ Result:
 }
 ```
 
+### `gates/evaluate`
+
+Evaluates policy gates defined in `instructions/gates.json` with count-based conditions.
+
+Result:
+
+```json
+{
+  "generatedAt": "2025-08-24T00:00:00.000Z",
+  "results": [
+    { "id": "min-alpha", "passed": true, "count": 1, "op": ">=", "value": 1, "severity": "error" }
+  ],
+  "summary": { "errors": 0, "warnings": 0, "total": 2 }
+}
+```
+
 ## Planned Tools (Roadmap)
 
 - integrity/reportDrifts -> incremental diff object (now partially covered by `instructions/diff` with `known` list)

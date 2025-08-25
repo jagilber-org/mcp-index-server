@@ -104,4 +104,32 @@ registerHandler('integrity/verify', () => {
   return { hash: st.hash, count: st.list.length, issues, issueCount: issues.length };
 });
 
+// Usage tracking (in-memory only)
+registerHandler<{ id: string }>('usage/track', (params) => {
+  const st = ensureLoaded();
+  const id = params?.id;
+  if(!id) return { error: 'missing id' };
+  const entry = st.byId.get(id);
+  if(!entry) return { notFound: true };
+  entry.usageCount = (entry.usageCount ?? 0) + 1;
+  entry.lastUsedAt = new Date().toISOString();
+  return { id: entry.id, usageCount: entry.usageCount, lastUsedAt: entry.lastUsedAt };
+});
+
+registerHandler<{ limit?: number }>('usage/hotset', (params) => {
+  const st = ensureLoaded();
+  const limit = Math.max(1, Math.min( params?.limit ?? 10, 100));
+  const items = [...st.list]
+    .filter(e => (e.usageCount ?? 0) > 0)
+    .sort((a,b) => {
+      const ua = a.usageCount ?? 0; const ub = b.usageCount ?? 0;
+      if(ub !== ua) return ub - ua;
+      const ta = a.lastUsedAt || ''; const tb = b.lastUsedAt || '';
+      return tb.localeCompare(ta); // most recent first
+    })
+    .slice(0, limit)
+    .map(e => ({ id: e.id, usageCount: e.usageCount, lastUsedAt: e.lastUsedAt }));
+  return { hash: st.hash, count: items.length, items, limit };
+});
+
 export {}; // ensure module scope

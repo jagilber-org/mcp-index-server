@@ -188,6 +188,26 @@ Result:
 
 Non-zero `issueCount` indicates catalog drift / tampering.
 
+### `usage/track`
+
+Increments in-memory usage counters for an instruction.
+
+Params: `{ id: string }`
+
+Result: `{ id, usageCount, lastUsedAt }` or `{ notFound: true }`.
+
+### `usage/hotset`
+
+Returns high-usage items ranked by `usageCount` then `lastUsedAt`.
+
+Params: `{ limit?: number }` (default 10, max 100)
+
+Result:
+
+```json
+{ "hash": "...", "count": 3, "limit": 10, "items": [ { "id": "...", "usageCount": 5, "lastUsedAt": "..." } ] }
+```
+
 ## Planned Tools (Roadmap)
 
 - integrity/reportDrifts -> incremental diff object (now partially covered by `instructions/diff` with `known` list)

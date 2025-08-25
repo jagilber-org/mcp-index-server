@@ -198,6 +198,18 @@ If VS Code shows "Configured but Not Connected":
 
 ### Available Tools
 
+## Instruction Governance (v0.7.0+)
+
+Each instruction JSON now includes lifecycle metadata: version, status, owner, priorityTier, classification, review timestamps, and changelog.
+
+Supporting automation:
+
+- Lint: `npm run lint:instructions`
+- Governance CI workflow: `.github/workflows/instruction-governance.yml`
+- Daily snapshot archival: `.github/workflows/instruction-snapshot.yml` (outputs `snapshots/catalog-*.json` + checksum)
+
+Primary tool groups:
+
 - **Instructions**: `list`, `get`, `search`, `export`, `diff`, `import`, `add`, `repair`, `reload`, `remove`
 - **Usage Tracking**: `track`, `hotset`, `flush`
 - **Governance**: `integrity/verify`, `gates/evaluate`, `prompt/review`

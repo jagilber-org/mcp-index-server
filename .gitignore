@@ -46,4 +46,6 @@ lcov-report/
 
 # Prevent accidental commit of potential secrets snapshots
 secrets/ 
+snapshots/*.sha256
+!snapshots/
 

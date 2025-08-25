@@ -3,8 +3,9 @@
 		"mcp-index-server": {
 			"type": "stdio",
 			"command": "node",
+			"cwd": "C:/github/jagilber/mcp-index-server",
 			"args": [
-				"C:\\github\\jagilber\\mcp-index-server\\dist\\server\\index.js",
+				"scripts/mcp-dev-launch.cjs",
 				"--dashboard",
 				"--dashboard-port=3210"
 			],

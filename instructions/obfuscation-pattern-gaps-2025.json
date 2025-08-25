@@ -9,23 +9,23 @@
     "security",
     "detection"
   ],
-  "sourceHash": "5bf6e5279d6e9bf813bc4b4c4e39a641196acc3c43d9b38fc54d04df53aac0bd",
-  "schemaVersion": "1",
-  "createdAt": "2025-08-25T18:45:18.060Z",
-  "updatedAt": "2025-08-25T18:45:18.060Z",
   "version": "1.0.0",
   "status": "approved",
   "owner": "unowned",
   "priorityTier": "P3",
   "classification": "internal",
-  "lastReviewedAt": "2025-08-25T18:54:38.906Z",
-  "nextReviewDue": "2025-08-25T18:54:38.906Z",
+  "schemaVersion": "1",
+  "lastReviewedAt": "2025-08-25T00:00:00.000Z",
+  "nextReviewDue": "2025-11-23T00:00:00.000Z",
+  "createdAt": "2025-08-25T00:00:00.000Z",
+  "updatedAt": "2025-08-25T00:00:00.000Z",
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-08-25T18:54:38.906Z",
+      "changedAt": "2025-08-25T00:00:00.000Z",
       "summary": "initial"
     }
   ],
-  "semanticSummary": "Catalogue and remediate obfuscation patterns"
+  "semanticSummary": "Catalogue and remediate obfuscation patterns",
+  "sourceHash": "5bf6e5279d6e9bf813bc4b4c4e39a641196acc3c43d9b38fc54d04df53aac0bd"
 }

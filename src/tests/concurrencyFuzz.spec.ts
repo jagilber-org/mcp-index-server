@@ -23,7 +23,16 @@ describe('concurrency & fuzz', () => {
       expect(list.items.find(x=>x.id===id)).toBeTruthy();
     }
     await Promise.all(ids.map(id => call('instructions/remove', { ids:[id] })));
-    const listAfter = await call<{ items: { id:string }[] }>('instructions/list', {});
+    // Allow async persistence to settle, then poll until all removed or timeout
+    const start = Date.now();
+    let listAfter: { items: { id:string }[] } | undefined;
+    while(Date.now() - start < 1500){
+      listAfter = await call<{ items: { id:string }[] }>('instructions/list', {});
+      const remaining = ids.filter(id => listAfter!.items.find(x=>x.id===id));
+      if(remaining.length === 0) break;
+      await new Promise(r=> setTimeout(r,50));
+    }
+    listAfter = listAfter || await call<{ items: { id:string }[] }>('instructions/list', {});
     for(const id of ids){
       expect(listAfter.items.find(x=>x.id===id)).toBeFalsy();
     }

@@ -28,6 +28,22 @@ Thumbs.db
 # Ignore local MCP workspace config (contains machine-specific paths)
 .vscode/mcp.json
 
+# Jest / test artifacts
+jest-junit.xml
+test-results/
+
+# Coverage alt names
+lcov-report/
+
+# VS Code workspace state
+.history/
+
+# Local env overrides
+*.local.json
+
+# Mac rel symlink metadata (already covered by DS_Store but just in case)
+.AppleDouble
+
 # Prevent accidental commit of potential secrets snapshots
 secrets/ 
 

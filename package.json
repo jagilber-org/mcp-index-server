@@ -1,6 +1,6 @@
 {
   "name": "mcp-index-server",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "private": true,
   "type": "commonjs",
   "scripts": {
@@ -37,5 +37,14 @@
     "@modelcontextprotocol/sdk": "^0.6.0"
   },
   "optionalScripts": {},
-  "promptReviewCriteriaVersion": "1.0.0"
+  "promptReviewCriteriaVersion": "1.0.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jagilber/mcp-index-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jagilber/mcp-index-server/issues"
+  },
+  "homepage": "https://github.com/jagilber/mcp-index-server#readme"
 }

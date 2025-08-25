@@ -1,0 +1,16 @@
+{
+  "id": "groom_repair_sample",
+  "title": "groom_repair_sample",
+  "body": "repair body",
+  "priority": 40,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "A",
+    "a"
+  ],
+  "sourceHash": "",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T15:06:51.434Z",
+  "updatedAt": "2025-08-25T15:06:51.434Z"
+}

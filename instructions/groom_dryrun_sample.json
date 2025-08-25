@@ -1,0 +1,16 @@
+{
+  "id": "groom_dryrun_sample",
+  "title": "groom_dryrun_sample",
+  "body": "body",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "Tag",
+    "tag"
+  ],
+  "sourceHash": "WRONG",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T15:06:51.053Z",
+  "updatedAt": "2025-08-25T15:06:51.053Z"
+}

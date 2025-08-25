@@ -1,0 +1,17 @@
+{
+  "id": "groom_dup_a",
+  "title": "A",
+  "body": "dup body unify",
+  "priority": 60,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "x",
+    "y"
+  ],
+  "sourceHash": "74ce3a3a33c2a562689eaafa5b50447704c34efdc0d79116b91f8d3befb42cc4",
+  "schemaVersion": "1",
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-01T00:00:00.000Z",
+  "riskScore": 45
+}

@@ -1,4 +1,4 @@
-import { registerHandler } from '../server/transport';
+import { registerHandler, getMetrics } from '../server/transport';
 import crypto from 'crypto';
 import { CatalogLoader } from './catalogLoader';
 import { InstructionEntry } from '../models/instruction';
@@ -130,6 +130,18 @@ registerHandler<{ limit?: number }>('usage/hotset', (params) => {
     .slice(0, limit)
     .map(e => ({ id: e.id, usageCount: e.usageCount, lastUsedAt: e.lastUsedAt }));
   return { hash: st.hash, count: items.length, items, limit };
+});
+
+// Metrics snapshot
+registerHandler('metrics/snapshot', () => {
+  const raw = getMetrics();
+  const methods = Object.entries(raw).map(([method, rec]) => ({
+    method,
+    count: rec.count,
+    avgMs: rec.count ? +(rec.totalMs / rec.count).toFixed(2) : 0,
+    maxMs: rec.maxMs
+  }));
+  return { generatedAt: new Date().toISOString(), methods };
 });
 
 export {}; // ensure module scope

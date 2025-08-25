@@ -25,6 +25,11 @@ const handlers: Record<string, Handler> = {
   'health/check': () => ({ status: 'ok', timestamp: new Date().toISOString(), version: '0.1.0' })
 };
 
+// Simple in-memory metrics
+interface MetricRecord { count: number; totalMs: number; maxMs: number; }
+const metrics: Record<string, MetricRecord> = {};
+export function getMetrics(){ return metrics; }
+
 export function registerHandler<TParams=unknown>(method: string, handler: Handler<TParams>){
   handlers[method] = handler as Handler;
 }
@@ -61,17 +66,24 @@ export function startTransport(){
       respond(makeError(req.id ?? null, -32601, 'Method not found'));
       return;
     }
-    try {
-      const result = handler(req.params);
-      Promise.resolve(result).then(r => {
+    const start = Date.now();
+    Promise.resolve()
+      .then(() => handler(req.params))
+      .then(result => {
+        const dur = Date.now() - start;
+        const rec = metrics[req.method] || (metrics[req.method] = { count:0,totalMs:0,maxMs:0 });
+        rec.count++; rec.totalMs += dur; if(dur > rec.maxMs) rec.maxMs = dur;
         if(req.id !== undefined && req.id !== null){
-          respond({ jsonrpc: '2.0', id: req.id, result: r });
+          respond({ jsonrpc: '2.0', id: req.id, result });
         }
+      })
+      .catch(e => {
+        const dur = Date.now() - start;
+        const rec = metrics[req.method] || (metrics[req.method] = { count:0,totalMs:0,maxMs:0 });
+        rec.count++; rec.totalMs += dur; if(dur > rec.maxMs) rec.maxMs = dur;
+        const errMsg = e instanceof Error ? e.message : 'Unknown error';
+        respond(makeError(req.id ?? null, -32603, 'Internal error', { message: errMsg }));
       });
-    } catch(e: unknown){
-      const errMsg = e instanceof Error ? e.message : 'Unknown error';
-      respond(makeError(req.id ?? null, -32603, 'Internal error', { message: errMsg }));
-    }
   });
 }
 

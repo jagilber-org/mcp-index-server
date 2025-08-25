@@ -208,6 +208,23 @@ Result:
 { "hash": "...", "count": 3, "limit": 10, "items": [ { "id": "...", "usageCount": 5, "lastUsedAt": "..." } ] }
 ```
 
+### `metrics/snapshot`
+
+Returns per-method invocation metrics accumulated since process start.
+
+Params: none
+
+Result:
+
+```json
+{
+  "generatedAt": "2025-08-24T00:00:00.000Z",
+  "methods": [
+    { "method": "instructions/list", "count": 12, "avgMs": 1.3, "maxMs": 5 }
+  ]
+}
+```
+
 ## Planned Tools (Roadmap)
 
 - integrity/reportDrifts -> incremental diff object (now partially covered by `instructions/diff` with `known` list)

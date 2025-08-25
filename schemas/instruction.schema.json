@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.local/schemas/instruction.schema.json",
+  "title": "InstructionEntry",
+  "type": "object",
+  "required": ["id","title","body","priority","audience","requirement","categories","schemaVersion"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9-_]+$" },
+    "title": { "type": "string", "minLength": 1 },
+    "body": { "type": "string", "minLength": 1 },
+    "rationale": { "type": "string" },
+    "priority": { "type": "integer", "minimum": 1, "maximum": 100 },
+    "audience": { "enum": ["individual","group","all"] },
+    "requirement": { "enum": ["mandatory","critical","recommended","optional","deprecated"] },
+    "categories": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "sourceHash": { "type": "string" },
+    "schemaVersion": { "type": "string" },
+    "deprecatedBy": { "type": "string" },
+    "createdAt": { "type": "string" },
+    "updatedAt": { "type": "string" },
+    "usageCount": { "type": "integer", "minimum": 0 },
+    "lastUsedAt": { "type": "string" },
+    "riskScore": { "type": "number" }
+  },
+  "additionalProperties": false
+}

@@ -3,6 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { ClassificationService } from './classificationService';
+import Ajv from 'ajv';
+import schema from '../../schemas/instruction.schema.json';
 
 export interface CatalogLoadResult {
   entries: InstructionEntry[];
@@ -16,6 +18,8 @@ export class CatalogLoader {
   load(): CatalogLoadResult {
     const dir = path.resolve(this.baseDir);
     if(!fs.existsSync(dir)) return { entries: [], errors: [{ file: dir, error: 'missing directory'}], hash: '' };
+  const ajv = new Ajv({ allErrors: true });
+  const validate = ajv.compile(schema as unknown as object) as (data: unknown) => boolean;
     const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
     const entries: InstructionEntry[] = [];
     const errors: { file: string; error: string }[] = [];
@@ -23,6 +27,10 @@ export class CatalogLoader {
       const full = path.join(dir, f);
       try {
         const raw = JSON.parse(fs.readFileSync(full,'utf8')) as InstructionEntry;
+        if(!validate(raw)){
+          errors.push({ file: f, error: 'schema: ' + ajv.errorsText() });
+          continue;
+        }
         const issues = this.classifier.validate(raw);
         if(issues.length){
           errors.push({ file: f, error: issues.join(', ') });

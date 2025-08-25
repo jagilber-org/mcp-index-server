@@ -1,10 +1,10 @@
 # IMPLEMENTATION PLAN (Multi-Phase)
 
 ## Phases
-1. Repo + Models + Classification (current) - success criteria: model types, classification service, unit tests pass, plan & architecture docs.
-2. MCP Transport + Protocol Contracts - success: JSON-RPC request parsing, basic 'health' tool.
-3. Catalog Loader + Integrity - success: load instruction files, hash verification.
-4. Tools: list/get/search/diff - success: tool handlers responding with schema-valid payloads.
+1. Repo + Models + Classification ✅ (commit 9e2c113) - model types, classification, unit tests.
+2. MCP Transport + Protocol Contracts ✅ (commit 93a3329) - JSON-RPC base + health.
+3. Catalog Loader + Integrity (IN PROGRESS) - loader + schema validation implemented; integrity diff pending.
+4. Tools: list/get/search/diff ✅ (commit 19dd93a + subsequent) - basic handlers; diff currently returns full set (optimize later).
 5. Usage Tracking & Optimization - success: usage counter API + hotset derivation.
 6. Dashboard (read-only) - success: local web UI lists instructions & metrics.
 7. Dashboard Mutations + Auth - success: controlled updates with auth token.
@@ -29,6 +29,7 @@
 - Security: malformed payload handling
 
 ## Next Immediate TODO
-- Add JSON-RPC parsing (Phase 2)
-- Define instruction file schema (Phase 3)
-- Introduce tool response schemas (Phase 4)
+- Integrity drift detection (compute vs stored hashes) & diff minimization.
+- Tool response JSON Schemas + contract tests.
+- Usage tracking service & hotset tool.
+- Update TIMELINE.md automatically via script.

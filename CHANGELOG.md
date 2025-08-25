@@ -21,3 +21,9 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 ### Added
 
 - Add response schemas, contract tests, docs update
+
+## [0.4.0] - 2025-08-25
+
+### Added
+
+- dashboard + CLI flags; import/export/repair/reload; meta/tools; usage persistence; schema extensions

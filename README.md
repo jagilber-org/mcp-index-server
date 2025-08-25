@@ -45,7 +45,7 @@ Add (or merge) this entry:
       "command": "node",
       "cwd": "C:/github/jagilber/mcp-index-server", // adjust to your clone path
       "args": [
-        "C:/github/jagilber/mcp-index-server/dist/server/index.js",
+        "dist/server/index.js",            // relative because cwd is set
         "--dashboard",
         "--dashboard-port=3210"
       ],
@@ -62,6 +62,8 @@ Notes:
 - Ensure the `dist/server/index.js` file exists (run `npm run build` first).
 - Use forward slashes or double-escaped backslashes in JSON.
 - Remove any old workspace-level `.vscode/mcp.json` to prevent duplication.
+- The first argument after `command` is executed by Node; with `cwd` set you can use a relative path (`dist/server/index.js`). Using an absolute path AND a `cwd` is redundant, not harmful.
+- If you prefer absolute paths you may omit `cwd`.
 
 ### (Alternative) Workspace Configuration (Deprecated)
 
@@ -77,8 +79,8 @@ If you do not need the admin dashboard:
     "mcp-index-server": {
       "type": "stdio",
       "command": "node",
-      "cwd": "C:/github/jagilber/mcp-index-server",
-      "args": ["C:/github/jagilber/mcp-index-server/dist/server/index.js"],
+  "cwd": "C:/github/jagilber/mcp-index-server",
+  "args": ["dist/server/index.js"],
       "env": { "MCP_LOG_VERBOSE": "1" }
     }
   }
@@ -114,6 +116,40 @@ Add to a workspace `.vscode/mcp.json` (file intentionally removed from repo to a
 **Note**: Dashboard arguments are optional. The MCP protocol operates independently via stdio.
 
 **Important**: After updating your global `mcp.json`, fully restart VS Code (not just reload) to establish the MCP server connection. If you change the path or rebuild, restart again.
+
+### Why Were Paths Duplicated (Absolute + cwd)?
+
+Earlier examples showed an absolute path inside `args` while also specifying a `cwd`. This works, but it is unnecessary duplication:
+
+- `cwd` sets the working directory for the launched process.
+- Node receives the script path from `args[0]`.
+- If `cwd` is set, you can safely use a relative path (`dist/server/index.js`).
+- Keeping both absolute path and `cwd` can obscure portability (moving the clone requires editing two places).
+
+Recommended patterns:
+
+1. Portable (preferred):
+
+   ```jsonc
+   {
+     "type": "stdio",
+     "command": "node",
+     "cwd": "C:/path/to/mcp-index-server",
+     "args": ["dist/server/index.js"]
+   }
+   ```
+
+2. Absolute only (omit cwd):
+
+   ```jsonc
+   {
+     "type": "stdio",
+     "command": "node",
+     "args": ["C:/path/to/mcp-index-server/dist/server/index.js"]
+   }
+   ```
+
+Both are valid; choose one for consistency.
 
 ### Critical MCP Functions
 

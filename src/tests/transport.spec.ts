@@ -13,6 +13,9 @@ describe('transport health handler', () => {
     const outputs: string[] = [];
     server.stdout.on('data', d => outputs.push(...d.toString().trim().split(/\n+/)));
     await new Promise(r => setTimeout(r, 150));
+  // initialize first
+  server.stdin.write(JSON.stringify({ jsonrpc:'2.0', id:99, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } }) + '\n');
+  await new Promise(r => setTimeout(r, 120));
     server.stdin.write(JSON.stringify({ jsonrpc:'2.0', id:1, method:'health/check' }) + '\n');
     await new Promise(r => setTimeout(r, 150));
     server.kill();

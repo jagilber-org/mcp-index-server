@@ -32,7 +32,8 @@ describe('MCP Protocol Compliance', () => {
       method: 'initialize',
       params: {
         protocolVersion: '2025-06-18',
-        capabilities: {}
+        clientInfo: { name: 'test-harness', version: '0.0.0' },
+        capabilities: { tools: {} }
       }
     });
     
@@ -53,6 +54,7 @@ describe('MCP Protocol Compliance', () => {
     expect(initObj.result.protocolVersion).toBe('2025-06-18');
     expect(initObj.result.serverInfo.name).toBe('mcp-index-server');
     expect(initObj.result.capabilities).toBeTruthy();
+  expect(initObj.result.instructions).toContain('tools/call');
     
     server.kill();
   }, 6000);
@@ -63,6 +65,9 @@ describe('MCP Protocol Compliance', () => {
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
     
     await new Promise(r => setTimeout(r, 150));
+  // initialize handshake
+  send(server, { jsonrpc: '2.0', id: 1001, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
+  await new Promise(r => setTimeout(r, 120));
     
     // Send tools/list request
     send(server, {
@@ -111,6 +116,8 @@ describe('MCP Protocol Compliance', () => {
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
     
     await new Promise(r => setTimeout(r, 150));
+  send(server, { jsonrpc: '2.0', id: 1002, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
+  await new Promise(r => setTimeout(r, 120));
     
     // Test tools/call with health/check
     send(server, {
@@ -150,6 +157,8 @@ describe('MCP Protocol Compliance', () => {
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
     
     await new Promise(r => setTimeout(r, 150));
+  send(server, { jsonrpc: '2.0', id: 1003, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
+  await new Promise(r => setTimeout(r, 120));
     
     // Test tools/call with non-existent tool
     send(server, {
@@ -169,11 +178,30 @@ describe('MCP Protocol Compliance', () => {
     
     const response = JSON.parse(responseLine!);
     expect(response.error).toBeTruthy();
-    expect(response.error.message).toContain('Internal error');
+  // Under SDK the generic JSON-RPC message may be generic; we assert data payload
+  expect(response.error.message).toBeTruthy();
     // The actual error details should be in the data field
     expect(response.error.data).toBeTruthy();
     expect(response.error.data.message).toContain('Unknown tool');
     
+    server.kill();
+  }, 6000);
+
+  it('responds to ping', async () => {
+    const server = startServer();
+    const lines: string[] = [];
+    server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
+
+    await new Promise(r => setTimeout(r, 150));
+  send(server, { jsonrpc: '2.0', id: 2001, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
+    await new Promise(r => setTimeout(r, 120));
+    send(server, { jsonrpc: '2.0', id: 2002, method: 'ping', params: {} });
+    await new Promise(r => setTimeout(r, 160));
+    const pingLine = lines.find(l => l.includes('"id":2002'));
+    expect(pingLine, 'missing ping response').toBeTruthy();
+    const pingObj = JSON.parse(pingLine!);
+    expect(pingObj.result.timestamp).toBeTruthy();
+    expect(typeof pingObj.result.uptimeMs).toBe('number');
     server.kill();
   }, 6000);
 
@@ -183,6 +211,8 @@ describe('MCP Protocol Compliance', () => {
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
     
     await new Promise(r => setTimeout(r, 150));
+  send(server, { jsonrpc: '2.0', id: 1004, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
+  await new Promise(r => setTimeout(r, 120));
     
     // Test tools/call with instructions/list
     send(server, {

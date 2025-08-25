@@ -1,6 +1,6 @@
 # MCP Tools API Reference
 
-Version: 0.4.0 (synchronized with package.json)
+Version: 0.5.1 (synchronized with package.json)
 
 Fully consolidated in 0.4.0 (removed duplicated legacy sections). This document is the single source for tool contracts, env flags, and stability notes.
 
@@ -10,7 +10,7 @@ The server exposes a set of JSON-RPC 2.0 methods ("tools") over stdio. By defaul
 
 Categories:
 
-- Instruction Catalog: list, get, search, diff, export, repair, import, reload
+- Instruction Catalog: list, get, search, diff, export, add, repair, import, reload, remove
 - Governance & Integrity: prompt/review, integrity/verify, gates/evaluate
 - Usage & Metrics: usage/track, usage/hotset, usage/flush, metrics/snapshot
 - Introspection: meta/tools
@@ -42,9 +42,11 @@ Optional (future use / reserved): none presently.
 
 Disabled by default unless MCP_ENABLE_MUTATION=1.
 
+- instructions/add (single entry convenience; lax mode fills defaults)
 - instructions/import
 - instructions/repair (writes only when fixing hashes)
 - instructions/reload (reindexes; side-effect is catalog reset)
+- instructions/remove (permanently deletes entries by id)
 - usage/flush (forces persistence write)
 
 Rationale: Safer default for embedding in untrusted environments; explicit opt‑in for CI maintenance or local admin.
@@ -97,6 +99,16 @@ Result: { hash, count, items: [...] }
 
 ### instructions/import (mutation)
 
+### instructions/add (mutation)
+
+Params: { entry: { id, body, title?, rationale?, priority?, audience?, requirement?, categories?, deprecatedBy?, riskScore? }, overwrite?: boolean, lax?: boolean }
+Result (created): { id, hash, skipped:false, created:true, overwritten:false }
+Result (overwritten): { id, hash, skipped:false, created:false, overwritten:true }
+Result (skipped existing without overwrite): { id, hash, skipped:true, created:false, overwritten:false }
+Result (error): { error, id }
+Notes: In lax mode missing optional fields are defaulted (title=id, priority=50, audience=all, requirement=optional, categories=[]). Without lax all core fields must be present.
+
+
 Params: { entries: InstructionEntryInput[], mode: "skip" | "overwrite" }
 Result: { hash, imported, skipped, overwritten, total, errors: [] }
 Notes: Automatically computes sourceHash; timestamps set to now.
@@ -111,6 +123,12 @@ Result: Either incremental sync object (same as diff) OR { repaired, updated: [i
 Params: none
 Result: { reloaded: true, hash, count }
 Effect: Clears in-memory cache and reloads from disk.
+
+### instructions/remove (mutation)
+
+Params: { ids: string[] }
+Result: { removed, removedIds: string[], missing: string[], errorCount, errors: [{ id, error }] }
+Notes: Permanently deletes matching instruction JSON files from disk. Missing ids are reported; operation still succeeds unless all fail. Requires MCP_ENABLE_MUTATION=1.
 
 ### prompt/review
 
@@ -273,9 +291,9 @@ Promotion roadmap (tentative):
 
 ## Change Log
 
+- 0.5.1: Added instructions/remove mutation tool; updated schemas, registry, docs.
+- 0.5.0: Migrated to official @modelcontextprotocol/sdk; added ping, server/ready notification, initialize guidance, standardized error codes/data.
 - 0.4.0: Added lifecycle (initialize/shutdown/exit) handling + richer method-not-found diagnostics, consolidated docs, clarified mutation tool list, improved usage persistence & flush gating.
-- 0.4.1 (unreleased): Introduced MCP-style tool registry (meta/tools.mcp) with per-tool input/output schemas and descriptions; added tool registry contract tests.
-  - Added pre-dispatch input validation (-32602 on failure) & generated registry doc script.
 - 0.3.0: Introduced environment gating (MCP_ENABLE_MUTATION), logging flags (MCP_LOG_VERBOSE, MCP_LOG_MUTATION), meta/tools mutation & disabled flags.
 - 0.2.0: Added integrity/verify, usage/*, metrics/snapshot, gates/evaluate, incremental diff, schemas & performance benchmark.
 - 0.1.0: Initial instruction tools + prompt/review + health.

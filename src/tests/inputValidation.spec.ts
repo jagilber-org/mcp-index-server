@@ -16,6 +16,8 @@ describe('input validation', () => {
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
     await new Promise(r => setTimeout(r,120));
+  send(server, { jsonrpc:'2.0', id: 3000, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
+  await new Promise(r => setTimeout(r,100));
     const id = 101;
     // instructions/get requires id
     send(server, { jsonrpc:'2.0', id, method: 'instructions/get', params: {} });
@@ -33,6 +35,8 @@ describe('input validation', () => {
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
     await new Promise(r => setTimeout(r,120));
+  send(server, { jsonrpc:'2.0', id: 3001, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
+  await new Promise(r => setTimeout(r,100));
     const id = 102;
     send(server, { jsonrpc:'2.0', id, method: 'instructions/list', params: { category: 'general', extra: 'x' } });
     await new Promise(r => setTimeout(r,180));
@@ -49,6 +53,8 @@ describe('input validation', () => {
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
     await new Promise(r => setTimeout(r,120));
+  send(server, { jsonrpc:'2.0', id: 3002, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
+  await new Promise(r => setTimeout(r,100));
     const id = 103;
     send(server, { jsonrpc:'2.0', id, method: 'instructions/list', params: { category: 'general' } });
     await new Promise(r => setTimeout(r,180));

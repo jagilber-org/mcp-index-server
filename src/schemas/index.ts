@@ -198,7 +198,22 @@ export const schemas: Record<string, unknown> = {
     }
   },
   'usage/flush': { type: 'object', required: ['flushed'], additionalProperties: false, properties: { flushed: { const: true } } },
-  'instructions/reload': { type: 'object', required: ['reloaded','hash','count'], additionalProperties: false, properties: { reloaded: { const: true }, hash: { type: 'string' }, count: { type: 'number' } } }
+  'instructions/reload': { type: 'object', required: ['reloaded','hash','count'], additionalProperties: false, properties: { reloaded: { const: true }, hash: { type: 'string' }, count: { type: 'number' } } },
+  'instructions/remove': { type: 'object', required: ['removed','removedIds','missing','errorCount','errors'], additionalProperties: false, properties: {
+    removed: { type: 'number' },
+    removedIds: { type: 'array', items: { type: 'string' } },
+    missing: { type: 'array', items: { type: 'string' } },
+    errorCount: { type: 'number' },
+    errors: { type: 'array', items: { type: 'object', required: ['id','error'], additionalProperties: false, properties: { id: { type: 'string' }, error: { type: 'string' } } } }
+  } },
+  'instructions/add': {
+    anyOf: [
+      { type: 'object', required: ['error'], properties: { error: { type: 'string' }, id: { type: 'string' } }, additionalProperties: true },
+      { type: 'object', required: ['id','hash','skipped','created','overwritten'], additionalProperties: false, properties: {
+        id: { type: 'string' }, hash: { type: 'string' }, skipped: { type: 'boolean' }, created: { type: 'boolean' }, overwritten: { type: 'boolean' }
+      } }
+    ]
+  }
 };
 
 export type SchemaMap = typeof schemas;

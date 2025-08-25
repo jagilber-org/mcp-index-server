@@ -25,6 +25,9 @@ Thumbs.db
 *.db
 !instructions/*.json
 
+# Ignore local MCP workspace config (contains machine-specific paths)
+.vscode/mcp.json
+
 # Prevent accidental commit of potential secrets snapshots
 secrets/ 
 

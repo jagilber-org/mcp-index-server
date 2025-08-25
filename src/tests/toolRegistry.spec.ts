@@ -17,6 +17,8 @@ describe('MCP tool registry', () => {
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
     await new Promise(r => setTimeout(r,150));
+  send(server, { jsonrpc:'2.0', id: 2000, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
+  await new Promise(r => setTimeout(r,120));
     const id = 42;
     send(server, { jsonrpc:'2.0', id, method: 'meta/tools' });
     await new Promise(r => setTimeout(r,200));
@@ -43,6 +45,8 @@ describe('MCP tool registry', () => {
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
     await new Promise(r => setTimeout(r,150));
+  send(server, { jsonrpc:'2.0', id: 2001, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
+  await new Promise(r => setTimeout(r,120));
     const id = 43;
     send(server, { jsonrpc:'2.0', id, method: 'meta/tools' });
     await new Promise(r => setTimeout(r,200));

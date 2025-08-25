@@ -35,12 +35,15 @@ type JsonRpcResponse = JsonRpcSuccess | JsonRpcError;
 
 export type Handler<TParams = unknown> = (params: TParams) => Promise<unknown> | unknown;
 
-const pkgPath = path.join(process.cwd(), 'package.json');
+// Robust version resolution: attempt cwd + relative to compiled dist location
+const versionCandidates = [
+  path.join(process.cwd(), 'package.json'),
+  path.join(__dirname, '..', '..', 'package.json')
+];
 let VERSION = '0.0.0';
-try {
-  const raw = JSON.parse(fs.readFileSync(pkgPath,'utf8'));
-  VERSION = raw.version || VERSION;
-} catch { /* ignore version load failure */ }
+for(const p of versionCandidates){
+  try { if(fs.existsSync(p)){ const raw = JSON.parse(fs.readFileSync(p,'utf8')); if(raw?.version){ VERSION = raw.version; break; } } } catch { /* ignore */ }
+}
 
 const handlers: Record<string, Handler> = {
   'health/check': () => ({ status: 'ok', timestamp: new Date().toISOString(), version: VERSION })
@@ -117,9 +120,13 @@ export function startTransport(){
     return {
       protocolVersion: p?.protocolVersion || '2025-06-18',
       serverInfo: { name: 'mcp-index-server', version: VERSION },
-      capabilities: { roots: { listChanged: true } }
+      capabilities: { roots: { listChanged: true }, tools: { listChanged: true } }
     };
   });
+  // Accept notification some clients send post-initialize; respond benignly
+  registerHandler('notifications/initialized', () => ({ acknowledged: true }));
+  // Some clients send a follow-up notification after successful initialize; treat as no-op ack
+  registerHandler('notifications/initialized', () => ({ acknowledged: true }));
   registerHandler('shutdown', () => ({ shuttingDown: true }));
   registerHandler('exit', () => { setTimeout(() => process.exit(0), 0); return { exiting: true }; });
 
@@ -134,6 +141,8 @@ export function startTransport(){
   };
   // Emit ready notification (MCP-style event semantics placeholder)
   process.stdout.write(JSON.stringify({ jsonrpc: '2.0', method: 'server/ready', params: { version: VERSION } }) + '\n');
+  // Proactively emit tools list changed so clients query tools immediately
+  process.stdout.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/tools/list_changed', params: {} }) + '\n');
   rl.on('line', (line: string) => {
     const trimmed = line.trim();
     if(!trimmed) return;

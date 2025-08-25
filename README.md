@@ -6,8 +6,8 @@ Enterprise-grade local Model Context Protocol server providing a governed, class
 
 ### MCP Protocol (Client Communication)
 
-- **Transport**: JSON-RPC 2.0 over **stdio only**
-- **Purpose**: VS Code, Claude, and other MCP clients communicate via stdin/stdout
+Windows: `%APPDATA%/Code/User/mcp.json`  
+Example full path: `C:\\Users\\<you>\\AppData\\Roaming\\Code\\User\\mcp.json`
 - **Security**: No network exposure, process-isolated communication
 - **Tools**: All 17+ instruction management tools available via MCP protocol
 
@@ -15,10 +15,20 @@ Enterprise-grade local Model Context Protocol server providing a governed, class
 
 - **Transport**: HTTP server on localhost (admin access only)
 - **Purpose**: Human-readable interface for administrators to monitor server status
-- **Security**: Read-only by default, localhost binding, no remote access
+  "cwd": "C:/path/to/mcp-index-server", // adjust to your local clone path
 - **Access**: Local administrators only (not for end users or MCP clients)
 
 **Important**: MCP clients (like VS Code) connect via stdio transport only, not HTTP dashboard.
+
+### SDK Implementation
+
+This server now runs exclusively on the official `@modelcontextprotocol/sdk` (no legacy transport). Benefits:
+
+- Automatic capabilities advertisement (`capabilities.tools` with `listChanged`)
+- Consistent framing & future-proofing (resources, prompts, etc.)
+- Reduced maintenance surface (custom JSON-RPC loop removed)
+
+All previous tool handlers are preserved through an internal registry consumed by the SDK server.
 
 ## VS Code Integration
 
@@ -30,7 +40,7 @@ You can configure the server either per-workspace or (recommended) globally. To 
 
 ### Global Configuration (Recommended)
 
-Edit (or create) your global VS Code MCP config file:
+  "cwd": "C:/path/to/mcp-index-server",
 
 Windows: `%APPDATA%/Code/User/mcp.json`  
 Example full path: `C:\\Users\\<you>\\AppData\\Roaming\\Code\\User\\mcp.json`
@@ -40,7 +50,7 @@ Add (or merge) this entry:
 ```jsonc
 {
   "servers": {
-    "mcp-index-server": {
+     "cwd": "C:/path/to/mcp-index-server",
       "type": "stdio",
       "command": "node",
       "cwd": "C:/github/jagilber/mcp-index-server", // adjust to your clone path
@@ -59,6 +69,7 @@ Add (or merge) this entry:
 ```
 
 Notes:
+
 - Ensure the `dist/server/index.js` file exists (run `npm run build` first).
 - Use forward slashes or double-escaped backslashes in JSON.
 - Remove any old workspace-level `.vscode/mcp.json` to prevent duplication.
@@ -71,16 +82,14 @@ Previously you could add a `.vscode/mcp.json` inside the repo. This is no longer
 
 ### Minimal Snippet (No Dashboard)
 
-If you do not need the admin dashboard:
-
 ```jsonc
 {
   "servers": {
     "mcp-index-server": {
       "type": "stdio",
       "command": "node",
-  "cwd": "C:/github/jagilber/mcp-index-server",
-  "args": ["dist/server/index.js"],
+      "cwd": "C:/path/to/mcp-index-server",
+      "args": ["dist/server/index.js"],
       "env": { "MCP_LOG_VERBOSE": "1" }
     }
   }
@@ -153,9 +162,11 @@ Both are valid; choose one for consistency.
 
 ### Critical MCP Functions
 
-- **`tools/list`**: Returns all 17+ available tools with JSON schemas for validation
-- **`tools/call`**: Executes tools by name with parameter validation
-- **Protocol compliance**: Proper `initialize` handshake and `server/ready` notifications
+- **`tools/list`**: Enumerates all tools (SDK handler)
+- **`tools/call`**: Executes tools with schema validation (SDK handler)
+- **`ping`**: Lightweight latency / reachability probe (after successful initialize)
+- **Initialize `instructions`**: Human-readable quick start guidance included in initialize result
+- **Protocol compliance**: Provide `protocolVersion`, `clientInfo`, and `capabilities` in `initialize`; expect `server/ready` notification
 
 ## Troubleshooting VS Code Connection
 
@@ -164,13 +175,16 @@ If VS Code shows "Configured but Not Connected":
 1. **Build the server**: Ensure `dist/server/index.js` exists by running `npm run build`
 2. **Check the path**: Use absolute path to the server executable in your `mcp.json`
 3. **Restart VS Code**: MCP connections require a full VS Code restart after configuration changes
-4. **Test manually**: Verify the server works by running:
+4. **Test manually**: Quick smoke (initialize then list tools):
 
-   ```bash
-   echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | node dist/server/index.js
-   ```
+  ```bash
+  (echo {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","clientInfo":{"name":"manual-test","version":"0.0.0"},"capabilities":{"tools":{}}}}; ^
+   timeout /t 1 >NUL & echo {"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}) | node dist/server/index.js
+  ```
 
-5. **Check logs**: Enable `MCP_LOG_VERBOSE=1` to see connection details in VS Code developer console
+  (On PowerShell you can instead run two separate writes while the process is running.)
+
+1. **Check logs**: Enable `MCP_LOG_VERBOSE=1` to see connection details in VS Code developer console
 
 ## Key Features
 
@@ -184,7 +198,7 @@ If VS Code shows "Configured but Not Connected":
 
 ### Available Tools
 
-- **Instructions**: `list`, `get`, `search`, `export`, `diff`, `import`, `repair`, `reload`
+- **Instructions**: `list`, `get`, `search`, `export`, `diff`, `import`, `add`, `repair`, `reload`, `remove`
 - **Usage Tracking**: `track`, `hotset`, `flush`
 - **Governance**: `integrity/verify`, `gates/evaluate`, `prompt/review`
 - **System**: `health/check`, `metrics/snapshot`, `meta/tools`
@@ -213,6 +227,19 @@ node dist/server/index.js --dashboard --dashboard-port=3210
 2. Build: `npm run build`
 3. Test: `npm test`
 4. Run: `node dist/server/index.js`
+
+#### Add / Remove Instructions (Mutation Examples)
+
+```bash
+env MCP_ENABLE_MUTATION=1 node dist/server/index.js # ensure mutation enabled
+# Remove via MCP tools/call:
+# method: instructions/remove
+# params: { "ids": ["obsolete-id-1", "deprecated-foo"] }
+
+# Add (single entry) via MCP tools/call:
+# method: instructions/add
+# params: { "entry": { "id": "new-id", "body": "Instruction text" }, "lax": true }
+```
 
 ## Security & Mutation Control
 

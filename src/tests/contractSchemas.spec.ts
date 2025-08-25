@@ -39,6 +39,9 @@ describe('contract schemas', () => {
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
     await new Promise(r => setTimeout(r,150));
+  // initialize handshake per MCP spec
+  send(server, { jsonrpc:'2.0', id: 4000, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
+  await new Promise(r => setTimeout(r,120));
 
     let id = 1;
   const call = (method: string, params?: Record<string, unknown>) => {
@@ -110,6 +113,8 @@ describe('contract schemas', () => {
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
     await new Promise(r => setTimeout(r,150));
+  send(server, { jsonrpc:'2.0', id: 4999, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
+  await new Promise(r => setTimeout(r,120));
     const id = 9999;
     send(server, { jsonrpc:'2.0', id, method: 'usage/flush' });
     await new Promise(r => setTimeout(r,200));

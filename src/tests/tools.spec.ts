@@ -32,7 +32,10 @@ describe('instruction tool handlers', () => {
     const out: string[] = [];
     server.stdout.on('data', d => out.push(...d.toString().trim().split(/\n+/)));
     await new Promise(r => setTimeout(r, 150));
-    send(server,{ jsonrpc:'2.0', id:1, method:'instructions/list', params:{} });
+  // Perform initialize first per MCP spec
+  send(server,{ jsonrpc:'2.0', id:99, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
+  await new Promise(r => setTimeout(r, 120));
+  send(server,{ jsonrpc:'2.0', id:1, method:'instructions/list', params:{} });
     await new Promise(r => setTimeout(r, 150));
     const line = out.find(l => /"id":1/.test(l));
     expect(line).toBeTruthy();

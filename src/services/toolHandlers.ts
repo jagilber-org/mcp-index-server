@@ -8,7 +8,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { registerHandler, getMetrics, listRegisteredMethods, getHandler } from '../server/transport';
+import { registerHandler, listRegisteredMethods, getMetricsRaw } from '../server/registry';
 import { getToolRegistry, REGISTRY_VERSION } from './toolRegistry';
 import { CatalogLoader } from './catalogLoader';
 import { InstructionEntry } from '../models/instruction';
@@ -75,11 +75,13 @@ function logMutation(event: string, detail?: unknown){ if(VERBOSE || LOG_MUTATIO
 
 // ---------------- Mutation Gating ----------------
 const MUTATION_ENABLED = process.env.MCP_ENABLE_MUTATION === '1';
+interface RpcLikeError extends Error { code?: number; data?: Record<string, unknown>; }
 function guardMutation<TParams, TResult>(name: string, impl:(p:TParams)=>TResult){
   return (p: TParams) => {
     if(!MUTATION_ENABLED){
       logMutation('blocked', { tool: name });
-      throw new Error('Mutation disabled. Set MCP_ENABLE_MUTATION=1 to enable.');
+      // Throw plain object so JSON-RPC data survives SDK wrapping
+      throw { code: -32603, message: 'Mutation disabled', data: { method: name, message: 'Mutation disabled' } };
     }
     const start = Date.now();
     try {
@@ -88,12 +90,30 @@ function guardMutation<TParams, TResult>(name: string, impl:(p:TParams)=>TResult
       return r;
     } catch(e: unknown){
       logMutation('error', { tool: name, error: e instanceof Error ? e.message : String(e) });
-      throw e;
+      if(e && typeof e === 'object'){
+        const err = e as RpcLikeError;
+        const existingDataRaw = err.data && typeof err.data === 'object' ? err.data : {};
+        const existingData: Record<string, unknown> = { ...existingDataRaw };
+        const existingMsg = typeof existingData['message'] === 'string' ? String(existingData['message']) : undefined;
+        const msg = err.message || existingMsg || 'mutation tool error';
+        const codeCandidate = (err as { code?: unknown }).code;
+        const code = typeof codeCandidate === 'number' && Number.isSafeInteger(codeCandidate) ? codeCandidate : -32603;
+        throw { code, message: msg, data: { ...existingData, method: name, message: msg } };
+      }
+      const msg = String(e);
+      throw { code: -32603, message: msg, data: { method: name, message: msg } };
     }
   };
 }
 
 // ---------------- Read-only Instruction Tools ----------------
+// health/check (moved from legacy transport implementation)
+let PKG_VERSION = '0.0.0';
+try {
+  const pkgPath = path.join(process.cwd(), 'package.json');
+  if(fs.existsSync(pkgPath)) { const raw = JSON.parse(fs.readFileSync(pkgPath,'utf8')); if(raw.version) PKG_VERSION = raw.version; }
+} catch { /* ignore */ }
+registerHandler('health/check', () => ({ status: 'ok', timestamp: new Date().toISOString(), version: PKG_VERSION }));
 registerHandler('instructions/list', (p:{category?:string}) => {
   const st = ensureLoaded();
   let items = st.list;
@@ -189,6 +209,24 @@ registerHandler('instructions/repair', (_p?:unknown) => {
 registerHandler('usage/flush', guardMutation('usage/flush', () => { flushUsageSnapshot(); return { flushed:true }; }));
 
 registerHandler('instructions/reload', guardMutation('instructions/reload', () => { state=null; const st=ensureLoaded(); return { reloaded:true, hash: st.hash, count: st.list.length }; }));
+// Remove one or more instructions by id
+registerHandler('instructions/remove', guardMutation('instructions/remove', (p:{ ids:string[]; missingOk?: boolean }) => {
+  const ids = Array.isArray(p?.ids) ? Array.from(new Set(p.ids.filter(x => typeof x === 'string' && x.trim()))) : [];
+  if(!ids.length) return { removed:0, missing:[], errors:['no ids supplied'] };
+  const base = path.join(process.cwd(),'instructions');
+  const missing: string[] = []; const removed: string[] = []; const errors: { id:string; error:string }[] = [];
+  for(const id of ids){
+    const file = path.join(base, `${id}.json`);
+    try {
+      if(!fs.existsSync(file)){ missing.push(id); continue; }
+      fs.unlinkSync(file);
+      removed.push(id);
+    } catch(e){ errors.push({ id, error: e instanceof Error ? e.message : 'delete-failed' }); }
+  }
+  // Invalidate cache if anything removed
+  if(removed.length){ state = null; ensureLoaded(); }
+  return { removed: removed.length, removedIds: removed, missing, errorCount: errors.length, errors };
+}));
 
 // ---------------- Prompt Review ----------------
 const promptService = new PromptReviewService();
@@ -236,15 +274,66 @@ registerHandler('usage/hotset', (p:{limit?:number}) => {
 });
 
 // ---------------- Metrics ----------------
+// metrics/snapshot now returns aggregated timing from registry instrumentation
 registerHandler('metrics/snapshot', () => {
-  const raw = getMetrics();
-  const methods = Object.entries(raw).map(([method, rec]) => ({ method, count: rec.count, avgMs: rec.count ? +(rec.totalMs/rec.count).toFixed(2) : 0, maxMs: rec.maxMs }));
+  const raw = getMetricsRaw();
+  const methods = Object.entries(raw).map(([method, rec]) => ({
+    method,
+    count: rec.count,
+    avgMs: rec.count ? +(rec.totalMs / rec.count).toFixed(2) : 0,
+    maxMs: +rec.maxMs.toFixed(2)
+  })).sort((a,b)=> a.method.localeCompare(b.method));
   return { generatedAt: new Date().toISOString(), methods };
 });
 
 // ---------------- Tool Discovery ----------------
 const stableTools = new Set<string>(['health/check','instructions/list','instructions/get','instructions/search']);
-const mutationTools = new Set<string>(['instructions/import','instructions/repair','instructions/reload','usage/flush']);
+const mutationTools = new Set<string>([
+  'instructions/add',
+  'instructions/import',
+  'instructions/repair',
+  'instructions/reload',
+  'instructions/remove',
+  'usage/flush'
+]);
+// Add (single entry) - lightweight variant of import for convenience / interactive creation
+registerHandler('instructions/add', guardMutation('instructions/add', (p:{ entry: Partial<ImportEntry>; overwrite?: boolean; lax?: boolean }) => {
+  const e = p?.entry || {};
+  const lax = !!p?.lax;
+  // Minimal required fields (unless lax, then attempt to fill defaults)
+  if(!e.id || !e.body){
+    if(!lax) return { error: 'missing required id/body' };
+  }
+  if(lax){
+    // Apply defaults if absent
+    if(!e.title) e.title = e.id || 'untitled';
+    if(typeof e.priority !== 'number') e.priority = 50;
+    if(!e.audience) e.audience = 'all' as InstructionEntry['audience'];
+    if(!e.requirement) e.requirement = 'optional' as InstructionEntry['requirement'];
+    if(!Array.isArray(e.categories)) e.categories = [];
+  }
+  if(!e.id || !e.title || !e.body || typeof e.priority !== 'number' || !e.audience || !e.requirement){
+    return { error: 'missing required fields', id: e.id };
+  }
+  const dir = path.join(process.cwd(),'instructions');
+  if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true});
+  const file = path.join(dir, `${e.id}.json`);
+  const exists = fs.existsSync(file);
+  const overwrite = !!p?.overwrite;
+  if(exists && !overwrite){
+    // Return catalog hash for caller to decide follow-up (like reload)
+    const st0 = ensureLoaded();
+    return { id: e.id, skipped: true, created: false, overwritten: false, hash: st0.hash };
+  }
+  const now = new Date().toISOString();
+  const categories = Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c): c is string => typeof c === 'string').map((c:string) => c.toLowerCase()))).sort();
+  const sourceHash = crypto.createHash('sha256').update(e.body,'utf8').digest('hex');
+  const record: InstructionEntry = { id:e.id, title:e.title, body:e.body, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash, schemaVersion:'1', deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore: e.riskScore };
+  try { fs.writeFileSync(file, JSON.stringify(record,null,2)); } catch(err){ return { id: e.id, error: (err as Error).message || 'write-failed' }; }
+  // Invalidate & reload
+  state = null; const st = ensureLoaded();
+  return { id: e.id, created: !exists, overwritten: exists && overwrite, skipped:false, hash: st.hash };
+}));
 /**
  * meta/tools now returns a split object separating deterministic (stable) data
  * from dynamic environment/time dependent data. This helps contract tests stay
@@ -317,37 +406,6 @@ registerHandler('gates/evaluate', () => {
 
 // ---------------- Standard MCP Protocol Handlers ----------------
 // These are the core MCP methods that clients like VS Code expect
-registerHandler('tools/list', () => {
-  const registry = getToolRegistry();
-  return {
-    tools: registry.map(tool => ({
-      name: tool.name,
-      description: tool.description,
-      inputSchema: tool.inputSchema
-    }))
-  };
-});
-
-registerHandler('tools/call', async (params: { name: string; arguments?: Record<string, unknown> }) => {
-  const { name, arguments: args = {} } = params;
-  
-  // For MCP tools/call, the name should match our internal method names directly
-  // Since we kept the slash-based names, tools can be called directly
-  const handler = getHandler(name);
-  if (!handler) {
-    throw new Error(`Unknown tool: ${name}`);
-  }
-  
-  try {
-    const result = await Promise.resolve(handler(args));
-    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    return { 
-      content: [{ type: 'text', text: `Error executing ${name}: ${errorMsg}` }],
-      isError: true 
-    };
-  }
-});
+// tools/list & tools/call now provided by SDK server; removed here.
 
 export {}; // module scope

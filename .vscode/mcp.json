@@ -3,7 +3,7 @@
 		"mcp-index-server": {
 			"type": "stdio",
 			"command": "node",
-			"cwd": "C:/github/jagilber/mcp-index-server",
+			"cwd": "C:/path/to/mcp-index-server", // replace with your local clone path
 			"args": [
 				"scripts/mcp-dev-launch.cjs",
 				"--dashboard",

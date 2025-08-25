@@ -1,20 +1,41 @@
 import { describe, it, expect } from 'vitest';
-import '../services/toolHandlers';
-import { getCatalogState } from '../services/toolHandlers';
-import { getMetrics } from '../server/transport';
+import { spawn } from 'child_process';
+import path from 'path';
 
-// Simulate a few handler calls by touching catalog and usage
+function startServer(){
+  return spawn('node', [path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'] });
+}
+
+function send(proc: ReturnType<typeof startServer>, msg: Record<string, unknown>){
+  proc.stdin.write(JSON.stringify(msg) + '\n');
+}
 
 describe('metrics/snapshot', () => {
-  it('exposes method counts and timing fields', () => {
-    // simulate accesses
-    getCatalogState(); // triggers load via list or others normally
-    // Pretend some metrics were recorded manually for test stability
-    const m = getMetrics();
-  interface MR { count: number; totalMs: number; maxMs: number }
-  (m as Record<string, MR>)['instructions/list'] = { count: 3, totalMs: 9, maxMs: 5 };
-  (m as Record<string, MR>)['usage/track'] = { count: 2, totalMs: 4, maxMs: 3 };
-  const snapshot = Object.entries(m as Record<string, MR>).map(([k,v]) => ({ method:k, count:v.count, avg: v.totalMs / v.count }));
-    expect(snapshot.find(s => s.method === 'instructions/list')?.count).toBe(3);
-  });
+  it('captures timing for invoked tools', async () => {
+    const server = startServer();
+    const lines: string[] = [];
+    server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
+    await new Promise(r => setTimeout(r,150));
+  send(server,{ jsonrpc:'2.0', id:90, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
+  await new Promise(r => setTimeout(r,120));
+    // Invoke a couple of tools via tools/call (SDK will route)
+    send(server,{ jsonrpc:'2.0', id:1, method:'tools/call', params:{ name:'instructions/list', arguments:{} } });
+    send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'health/check', arguments:{} } });
+    await new Promise(r => setTimeout(r,250));
+    // Call metrics snapshot directly (registered as tool)
+    send(server,{ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'metrics/snapshot', arguments:{} } });
+    await new Promise(r => setTimeout(r,250));
+    server.kill();
+    const metricsLine = lines.find(l => l.includes('"id":3'));
+    expect(metricsLine).toBeTruthy();
+    if(!metricsLine) return;
+    const obj = JSON.parse(metricsLine);
+    expect(obj.result?.content?.[0]?.type).toBe('text');
+  const snapshot = JSON.parse(obj.result.content[0].text) as { methods: { method: string }[] };
+  expect(Array.isArray(snapshot.methods)).toBe(true);
+  // Ensure we have at least the tools we invoked
+  const names = snapshot.methods.map(m => m.method);
+    expect(names).toContain('instructions/list');
+    expect(names).toContain('health/check');
+  }, 8000);
 });

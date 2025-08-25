@@ -24,6 +24,18 @@ export const instructionEntry = {
     usageCount: { type: 'number' },
     lastUsedAt: { type: 'string' },
     riskScore: { type: 'number' }
+  ,workspaceId: { type: 'string' }
+  ,userId: { type: 'string' }
+  ,teamIds: { type: 'array', items: { type: 'string' } }
+  ,version: { type: 'string' }
+  ,status: { enum: ['draft','review','approved','deprecated'] }
+  ,owner: { type: 'string' }
+  ,priorityTier: { enum: ['P1','P2','P3','P4'] }
+  ,classification: { enum: ['public','internal','restricted'] }
+  ,lastReviewedAt: { type: 'string' }
+  ,nextReviewDue: { type: 'string' }
+  ,changeLog: { type: 'array', items: { type: 'object', required: ['version','changedAt','summary'], additionalProperties: false, properties: { version: { type: 'string' }, changedAt: { type: 'string' }, summary: { type: 'string' } } } }
+  ,supersedes: { type: 'string' }
   }
 } as const;
 
@@ -50,6 +62,16 @@ export const schemas: Record<string, unknown> = {
     }
   },
   'instructions/list': listLike,
+  'instructions/listScoped': {
+    type: 'object', additionalProperties: false,
+    required: ['hash','count','items','scope'],
+    properties: {
+      hash: { type: 'string' },
+      count: { type: 'number', minimum: 0 },
+      scope: { enum: ['user','workspace','team','all'] },
+      items: { type: 'array', items: instructionEntry }
+    }
+  },
   'instructions/search': listLike,
   'instructions/get': {
     anyOf: [
@@ -213,6 +235,24 @@ export const schemas: Record<string, unknown> = {
         id: { type: 'string' }, hash: { type: 'string' }, skipped: { type: 'boolean' }, created: { type: 'boolean' }, overwritten: { type: 'boolean' }
       } }
     ]
+  },
+  'instructions/groom': {
+    type: 'object', additionalProperties: false,
+    required: ['previousHash','hash','scanned','repairedHashes','normalizedCategories','deprecatedRemoved','duplicatesMerged','usagePruned','filesRewritten','purgedScopes','dryRun','notes'],
+    properties: {
+      previousHash: { type: 'string' },
+      hash: { type: 'string' },
+      scanned: { type: 'number' },
+      repairedHashes: { type: 'number' },
+      normalizedCategories: { type: 'number' },
+      deprecatedRemoved: { type: 'number' },
+      duplicatesMerged: { type: 'number' },
+      usagePruned: { type: 'number' },
+      filesRewritten: { type: 'number' },
+      purgedScopes: { type: 'number' },
+      dryRun: { type: 'boolean' },
+      notes: { type: 'array', items: { type: 'string' } }
+    }
   }
 };
 

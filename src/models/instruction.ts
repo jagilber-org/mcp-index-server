@@ -17,4 +17,18 @@ export interface InstructionEntry {
   usageCount?: number;
   lastUsedAt?: string;
   riskScore?: number; // derived metric
+  // Structured scoping fields (optional)
+  workspaceId?: string; // originating workspace / project identifier
+  userId?: string;      // originating user (creator / owner) identifier
+  teamIds?: string[];   // one or more team identifiers
+  // Governance & lifecycle (added in 0.7.0 schema)
+  version?: string;           // semantic content version of this instruction
+  status?: 'draft' | 'review' | 'approved' | 'deprecated';
+  owner?: string;             // responsible owner (user or team slug)
+  priorityTier?: 'P1' | 'P2' | 'P3' | 'P4'; // derived from priority & requirement
+  classification?: 'public' | 'internal' | 'restricted';
+  lastReviewedAt?: string;    // timestamp of last manual review
+  nextReviewDue?: string;     // scheduled review date
+  changeLog?: { version: string; changedAt: string; summary: string }[]; // chronological changes
+  supersedes?: string;        // id of instruction this one supersedes
 }

@@ -1,6 +1,6 @@
 # MCP Tools API Reference
 
-Version: 0.5.1 (synchronized with package.json)
+Version: 0.7.0 (synchronized with package.json)
 
 Fully consolidated in 0.4.0 (removed duplicated legacy sections). This document is the single source for tool contracts, env flags, and stability notes.
 
@@ -10,7 +10,7 @@ The server exposes a set of JSON-RPC 2.0 methods ("tools") over stdio. By defaul
 
 Categories:
 
-- Instruction Catalog: list, get, search, diff, export, add, repair, import, reload, remove
+- Instruction Catalog: list, listScoped, get, search, diff, export, add, repair, import, reload, remove, groom
 - Governance & Integrity: prompt/review, integrity/verify, gates/evaluate
 - Usage & Metrics: usage/track, usage/hotset, usage/flush, metrics/snapshot
 - Introspection: meta/tools
@@ -47,6 +47,7 @@ Disabled by default unless MCP_ENABLE_MUTATION=1.
 - instructions/repair (writes only when fixing hashes)
 - instructions/reload (reindexes; side-effect is catalog reset)
 - instructions/remove (permanently deletes entries by id)
+- instructions/groom (catalog normalization, duplicate merge, deprecated cleanup, optional legacy scope purge)
 - usage/flush (forces persistence write)
 
 Rationale: Safer default for embedding in untrusted environments; explicit opt‑in for CI maintenance or local admin.
@@ -72,6 +73,13 @@ Each method name below is a JSON-RPC method string.
 Params: { category?: string }
 Result: { hash, count, items: [{ id, title? ... }] }
 Filters by lowercase category token when provided.
+
+### instructions/listScoped
+
+Params: { userId?: string, workspaceId?: string, teamIds?: string[] }
+Result: { hash, count, scope: "user"|"workspace"|"team"|"all", items: [...] }
+Resolution order: user > workspace > team > all (audience=all entries). Returns the first non-empty match set.
+Notes: Structured scope fields (workspaceId, userId, teamIds) are derived automatically from legacy category prefixes (scope:workspace:*, scope:user:*, scope:team:*). Those prefixed categories are stripped from categories to keep topical tags clean.
 
 ### instructions/get
 
@@ -130,6 +138,48 @@ Params: { ids: string[] }
 Result: { removed, removedIds: string[], missing: string[], errorCount, errors: [{ id, error }] }
 Notes: Permanently deletes matching instruction JSON files from disk. Missing ids are reported; operation still succeeds unless all fail. Requires MCP_ENABLE_MUTATION=1.
 
+### instructions/groom (mutation)
+
+Params: { mode?: { dryRun?: boolean, mergeDuplicates?: boolean, removeDeprecated?: boolean, purgeLegacyScopes?: boolean } }
+Result: { previousHash, hash, scanned, repairedHashes, normalizedCategories, deprecatedRemoved, duplicatesMerged, usagePruned, filesRewritten, purgedScopes, dryRun, notes: string[] }
+Notes:
+
+- dryRun reports planned changes without modifying files (hash remains the same).
+- repairedHashes: number of entries whose stored sourceHash was corrected.
+- normalizedCategories: entries whose categories were lowercased/deduped/sorted.
+- duplicatesMerged: number of duplicate entry merges (non-primary members processed).
+- deprecatedRemoved: number of deprecated entries physically removed (when removeDeprecated true and their deprecatedBy target exists).
+- purgedScopes: legacy scope:* category tokens removed from disk when purgeLegacyScopes enabled.
+- mergeDuplicates selects a primary per identical body hash (prefers earliest createdAt then lexicographically smallest id) and merges categories, priority (min), riskScore (max).
+- filesRewritten counts actual JSON files updated on disk (0 in dryRun).
+- usagePruned counts usage snapshot entries removed due to removed instructions.
+- notes array contains lightweight action hints (e.g., would-rewrite:N in dryRun).
+ 
+### Structured Scoping Fields
+
+Each InstructionEntry may now include:
+
+- workspaceId?: string
+- userId?: string
+- teamIds?: string[]
+
+Derivation: If raw categories contain legacy tokens prefixed with scope:workspace:, scope:user:, or scope:team:, the classifier migrates them into structured fields and removes those tokens from categories. This keeps categories focused on topical / functional tagging while enabling precise scoping logic.
+
+### Governance & Lifecycle Fields (0.7.0)
+
+Each instruction now supports governance metadata:
+
+- version (semantic) – initial default 1.0.0
+- status: draft | review | approved | deprecated
+- owner: responsible party (user/team slug)
+- priorityTier: P1..P4 (derived from priority + requirement)
+- classification: public | internal | restricted (default internal)
+- lastReviewedAt / nextReviewDue – review cadence auto-derived by tier
+- changeLog[] – array of { version, changedAt, summary }
+- supersedes – id of instruction it replaces
+
+Grooming / normalization auto-populates defaults on load; future versions will enforce presence at creation.
+
 ### prompt/review
 
 Params: { prompt: string }
@@ -178,7 +228,7 @@ Result: Legacy + structured response:
   stable: { tools: [ { method, stable, mutation } ] },
   dynamic: { generatedAt, mutationEnabled, disabled: [ { method } ] },
   mcp: {
-    registryVersion: "2025-08-01",
+  registryVersion: "2025-08-25",
     tools: [ {
       name,                // method name
       description,         // human readable summary
@@ -228,6 +278,9 @@ interface InstructionEntry {
   usageCount?: number;
   lastUsedAt?: string;
   riskScore?: number;
+  workspaceId?: string; // structured scope (derived if legacy category prefix scope:workspace:VALUE present)
+  userId?: string;      // structured scope (derived if legacy category prefix scope:user:VALUE present)
+  teamIds?: string[];   // structured scope (derived if legacy category prefixes scope:team:VALUE present)
 }
 
 ## Persistence
@@ -292,6 +345,7 @@ Promotion roadmap (tentative):
 ## Change Log
 
 - 0.5.1: Added instructions/remove mutation tool; updated schemas, registry, docs.
+- 0.6.0: Added structured scoping fields (workspaceId, userId, teamIds), new instructions/listScoped tool, groom purgeLegacyScopes + purgedScopes metric.
 - 0.5.0: Migrated to official @modelcontextprotocol/sdk; added ping, server/ready notification, initialize guidance, standardized error codes/data.
 - 0.4.0: Added lifecycle (initialize/shutdown/exit) handling + richer method-not-found diagnostics, consolidated docs, clarified mutation tool list, improved usage persistence & flush gating.
 - 0.3.0: Introduced environment gating (MCP_ENABLE_MUTATION), logging flags (MCP_LOG_VERBOSE, MCP_LOG_MUTATION), meta/tools mutation & disabled flags.

@@ -1,6 +1,6 @@
 {
   "name": "mcp-index-server",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "type": "commonjs",
   "scripts": {
@@ -12,6 +12,7 @@
     "test:contracts": "vitest run src/tests/contractSchemas.spec.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --ext .ts",
+    "lint:instructions": "node scripts/lint-instructions.mjs",
     "format": "prettier --write .",
     "prepare": "node scripts/setup-hooks.cjs",
     "scan:security": "pwsh scripts/security-scan.ps1",

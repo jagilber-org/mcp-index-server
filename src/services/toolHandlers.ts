@@ -121,6 +121,25 @@ registerHandler('instructions/list', (p:{category?:string}) => {
   return { hash: st.hash, count: items.length, items };
 });
 
+// Scoped listing: choose best matching scope (user > workspace > team > all) with fallbacks
+registerHandler('instructions/listScoped', (p:{ userId?:string; workspaceId?:string; teamIds?: string[] }) => {
+  const st = ensureLoaded();
+  const userId = p?.userId?.toLowerCase();
+  const workspaceId = p?.workspaceId?.toLowerCase();
+  const teamIds = (p?.teamIds || []).map(t => t.toLowerCase());
+  const all = st.list;
+  const matchUser = userId ? all.filter(e => (e.userId||'').toLowerCase() === userId) : [];
+  if(matchUser.length) return { hash: st.hash, count: matchUser.length, scope: 'user', items: matchUser };
+  const matchWorkspace = workspaceId ? all.filter(e => (e.workspaceId||'').toLowerCase() === workspaceId) : [];
+  if(matchWorkspace.length) return { hash: st.hash, count: matchWorkspace.length, scope: 'workspace', items: matchWorkspace };
+  const teamSet = new Set(teamIds);
+  const matchTeams = teamIds.length ? all.filter(e => Array.isArray(e.teamIds) && e.teamIds.some(t => teamSet.has(t.toLowerCase()))) : [];
+  if(matchTeams.length) return { hash: st.hash, count: matchTeams.length, scope: 'team', items: matchTeams };
+  // Fallback to audience or all entries
+  const audienceAll = all.filter(e => e.audience === 'all');
+  return { hash: st.hash, count: audienceAll.length, scope: 'all', items: audienceAll };
+});
+
 registerHandler('instructions/get', (p:{id:string}) => {
   const st = ensureLoaded();
   const item = st.byId.get(p.id);
@@ -176,7 +195,9 @@ registerHandler('instructions/import', guardMutation('instructions/import', (p:{
     const now = new Date().toISOString();
   const categories = Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c): c is string => typeof c === 'string').map((c:string) => c.toLowerCase()))).sort();
     const sourceHash = crypto.createHash('sha256').update(e.body,'utf8').digest('hex');
-    const record: InstructionEntry = { id:e.id, title:e.title, body:e.body, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash, schemaVersion:'1', deprecatedBy:e.deprecatedBy, createdAt:now, updatedAt:now, riskScore:e.riskScore };
+    const record: InstructionEntry = { id:e.id, title:e.title, body:e.body, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash, schemaVersion:'1', deprecatedBy:e.deprecatedBy, createdAt:now, updatedAt:now, riskScore:e.riskScore,
+      version: '1.0.0', status: e.requirement === 'deprecated' ? 'deprecated' : 'approved', owner: 'unowned', priorityTier: e.priority <=20 || ['mandatory','critical'].includes(e.requirement)? 'P1': e.priority<=40? 'P2': e.priority<=70? 'P3':'P4', classification: 'internal', lastReviewedAt: now, nextReviewDue: now, changeLog: [{ version: '1.0.0', changedAt: now, summary: 'initial add' }]
+    };
     try { fs.writeFileSync(file, JSON.stringify(record,null,2)); } catch { errors.push({ id:e.id, error:'write-failed'}); }
   }
   state = null; const st = ensureLoaded();
@@ -294,6 +315,7 @@ const mutationTools = new Set<string>([
   'instructions/repair',
   'instructions/reload',
   'instructions/remove',
+  'instructions/groom',
   'usage/flush'
 ]);
 // Add (single entry) - lightweight variant of import for convenience / interactive creation
@@ -328,11 +350,160 @@ registerHandler('instructions/add', guardMutation('instructions/add', (p:{ entry
   const now = new Date().toISOString();
   const categories = Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c): c is string => typeof c === 'string').map((c:string) => c.toLowerCase()))).sort();
   const sourceHash = crypto.createHash('sha256').update(e.body,'utf8').digest('hex');
-  const record: InstructionEntry = { id:e.id, title:e.title, body:e.body, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash, schemaVersion:'1', deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore: e.riskScore };
+  const record: InstructionEntry = { id:e.id, title:e.title, body:e.body, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash, schemaVersion:'1', deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore: e.riskScore,
+    version: '1.0.0', status: e.requirement === 'deprecated' ? 'deprecated' : 'approved', owner: 'unowned', priorityTier: e.priority <=20 || ['mandatory','critical'].includes(e.requirement)? 'P1': e.priority<=40? 'P2': e.priority<=70? 'P3':'P4', classification: 'internal', lastReviewedAt: now, nextReviewDue: now, changeLog: [{ version: '1.0.0', changedAt: now, summary: 'initial add' }]
+  };
   try { fs.writeFileSync(file, JSON.stringify(record,null,2)); } catch(err){ return { id: e.id, error: (err as Error).message || 'write-failed' }; }
   // Invalidate & reload
   state = null; const st = ensureLoaded();
   return { id: e.id, created: !exists, overwritten: exists && overwrite, skipped:false, hash: st.hash };
+}));
+
+// Catalog grooming (normalization, duplicate merge, deprecated cleanup)
+registerHandler('instructions/groom', guardMutation('instructions/groom', (p:{ mode?: { dryRun?: boolean; removeDeprecated?: boolean; mergeDuplicates?: boolean; purgeLegacyScopes?: boolean } }) => {
+  const mode = p?.mode || {};
+  const dryRun = !!mode.dryRun;
+  const removeDeprecated = !!mode.removeDeprecated;
+  const mergeDuplicates = !!mode.mergeDuplicates;
+  const purgeLegacyScopes = !!mode.purgeLegacyScopes;
+  const stBefore = ensureLoaded();
+  const previousHash = stBefore.hash;
+  const scanned = stBefore.list.length;
+  let repairedHashes = 0;
+  let normalizedCategories = 0;
+  let deprecatedRemoved = 0;
+  let duplicatesMerged = 0;
+  let usagePruned = 0;
+  let filesRewritten = 0;
+  let purgedScopes = 0; // number of legacy scope:* category tokens removed
+  const notes: string[] = [];
+  // Work on mutable clones of entries
+  const byId = new Map<string, InstructionEntry>();
+  stBefore.list.forEach(e => byId.set(e.id, { ...e }));
+  // Track updated entries
+  const updated = new Set<string>();
+  // 1. Normalize categories (hash repair deferred until after merges to avoid double hashing)
+  for(const e of byId.values()){
+    const normCats = Array.from(new Set((e.categories||[]).filter(c => typeof c === 'string').map(c => c.toLowerCase()))).sort();
+    if(JSON.stringify(normCats) !== JSON.stringify(e.categories)){ e.categories = normCats; normalizedCategories++; e.updatedAt = new Date().toISOString(); updated.add(e.id); }
+  }
+  // 2. Duplicate detection & merge
+  const duplicateBodies = new Set<string>();
+  if(mergeDuplicates){
+    const groups = new Map<string, InstructionEntry[]>();
+    for(const e of byId.values()){
+      const key = e.sourceHash || crypto.createHash('sha256').update(e.body,'utf8').digest('hex');
+      const arr = groups.get(key) || []; arr.push(e); groups.set(key, arr);
+    }
+    for(const group of groups.values()){
+      if(group.length <= 1) continue;
+      // Pick primary: earliest createdAt else lexicographically smallest id
+      let primary = group[0];
+      for(const candidate of group){
+        if(candidate.createdAt && primary.createdAt){
+          if(candidate.createdAt < primary.createdAt) primary = candidate;
+        } else if(!primary.createdAt && candidate.createdAt){
+          primary = candidate;
+        } else if(candidate.id < primary.id){
+          primary = candidate;
+        }
+      }
+  for(const dup of group){
+        if(dup.id === primary.id) continue;
+        // Merge metadata
+        // Priority: keep lower numeric (higher importance)
+        if(dup.priority < primary.priority) { primary.priority = dup.priority; updated.add(primary.id); }
+        // RiskScore: keep max
+        if(typeof dup.riskScore === 'number'){ if(typeof primary.riskScore !== 'number' || dup.riskScore > primary.riskScore){ primary.riskScore = dup.riskScore; updated.add(primary.id); } }
+        // Categories union
+        const mergedCats = Array.from(new Set([...(primary.categories||[]), ...(dup.categories||[])] )).sort();
+        if(JSON.stringify(mergedCats) !== JSON.stringify(primary.categories)){ primary.categories = mergedCats; updated.add(primary.id); }
+        // Mark duplicate deprecated or schedule for removal
+        if(removeDeprecated){
+          duplicateBodies.add(dup.id); // mark for removal in removal phase
+        } else {
+          if(dup.deprecatedBy !== primary.id){ dup.deprecatedBy = primary.id; dup.requirement = 'deprecated'; dup.updatedAt = new Date().toISOString(); updated.add(dup.id); }
+        }
+        duplicatesMerged++;
+      }
+    }
+  }
+  // 3. Deprecated removal pass
+  const toRemove: string[] = [];
+  if(removeDeprecated){
+    for(const e of byId.values()){
+      if(e.deprecatedBy && byId.has(e.deprecatedBy)) toRemove.push(e.id);
+    }
+    // Also remove explicitly marked duplicate bodies
+    for(const id of duplicateBodies){ if(!toRemove.includes(id)) toRemove.push(id); }
+  }
+  // 4a. Optional purge of legacy scope:* category tokens from on-disk JSON (classification already stripped them in-memory)
+  if(purgeLegacyScopes){
+    const baseDir = resolveInstructionsDir();
+    for(const e of byId.values()){
+      const filePath = path.join(baseDir, `${e.id}.json`);
+      try {
+        if(fs.existsSync(filePath)){
+          const raw = JSON.parse(fs.readFileSync(filePath,'utf8')) as { categories?: unknown[] };
+          if(Array.isArray(raw.categories)){
+            const legacyTokens = raw.categories.filter(c => typeof c === 'string' && /^scope:(workspace|user|team):/.test(c));
+            if(legacyTokens.length){
+              purgedScopes += legacyTokens.length;
+              updated.add(e.id); // ensure rewrite without those tokens
+            }
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    if(dryRun && purgedScopes) notes.push(`would-purge:${purgedScopes}`);
+  }
+  // 4b. Final hash repair (post merge) comparing on-disk stored hash, since loader normalization may already have set e.sourceHash
+  {
+    const baseDir = resolveInstructionsDir();
+    for(const e of byId.values()){
+      const filePath = path.join(baseDir, `${e.id}.json`);
+      let storedHash = e.sourceHash || '';
+      try {
+        if(fs.existsSync(filePath)){
+          const raw = JSON.parse(fs.readFileSync(filePath,'utf8')) as { sourceHash?: string };
+          if(typeof raw.sourceHash === 'string') storedHash = raw.sourceHash;
+        }
+      } catch { /* ignore read errors; fallback to in-memory */ }
+      const actualHash = crypto.createHash('sha256').update(e.body,'utf8').digest('hex');
+      if(storedHash !== actualHash){
+        e.sourceHash = actualHash;
+        repairedHashes++;
+        e.updatedAt = new Date().toISOString();
+        updated.add(e.id);
+      }
+    }
+  }
+  deprecatedRemoved = toRemove.length;
+  // 4. Apply changes (write / delete files) unless dryRun
+  if(!dryRun){
+    const baseDir = resolveInstructionsDir();
+    for(const id of toRemove){ byId.delete(id); }
+    for(const id of updated){ if(!byId.has(id)) continue; const e = byId.get(id)!; try { fs.writeFileSync(path.join(baseDir, `${id}.json`), JSON.stringify(e,null,2)); filesRewritten++; } catch(err){ notes.push(`write-failed:${id}:${(err as Error).message}`); } }
+    for(const id of toRemove){ try { fs.unlinkSync(path.join(baseDir, `${id}.json`)); } catch(err){ notes.push(`delete-failed:${id}:${(err as Error).message}`); } }
+    if(updated.size || toRemove.length){ state = null; ensureLoaded(); }
+    // Prune usage snapshot if entries removed
+    if(toRemove.length){
+      try {
+        if(fs.existsSync(usageSnapshotPath)){
+          const usage = JSON.parse(fs.readFileSync(usageSnapshotPath,'utf8')) as Record<string, unknown>;
+          let mutated = false;
+            for(const id of toRemove){ if(id in usage){ delete usage[id]; mutated = true; usagePruned++; } }
+          if(mutated){ fs.writeFileSync(usageSnapshotPath, JSON.stringify(usage,null,2)); }
+        }
+      } catch { /* ignore */ }
+    }
+  } else {
+    // Dry run notes
+    if(updated.size) notes.push(`would-rewrite:${updated.size}`);
+    if(toRemove.length) notes.push(`would-remove:${toRemove.length}`);
+  }
+  const stAfter = state ? state : ensureLoaded();
+  return { previousHash, hash: stAfter.hash, scanned, repairedHashes, normalizedCategories, deprecatedRemoved, duplicatesMerged, usagePruned, filesRewritten, purgedScopes, dryRun, notes };
 }));
 /**
  * meta/tools now returns a split object separating deterministic (stable) data

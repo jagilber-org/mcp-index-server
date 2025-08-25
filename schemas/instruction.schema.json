@@ -20,7 +20,19 @@
     "updatedAt": { "type": "string" },
     "usageCount": { "type": "integer", "minimum": 0 },
     "lastUsedAt": { "type": "string" },
-    "riskScore": { "type": "number" }
+  "riskScore": { "type": "number" },
+  "workspaceId": { "type": "string" },
+  "userId": { "type": "string" },
+  "teamIds": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+  "version": { "type": "string" },
+  "status": { "enum": ["draft","review","approved","deprecated"] },
+  "owner": { "type": "string" },
+  "priorityTier": { "enum": ["P1","P2","P3","P4"] },
+  "classification": { "enum": ["public","internal","restricted"] },
+  "lastReviewedAt": { "type": "string" },
+  "nextReviewDue": { "type": "string" },
+  "changeLog": { "type": "array", "items": { "type": "object", "required": ["version","changedAt","summary"], "properties": { "version": { "type": "string" }, "changedAt": { "type": "string" }, "summary": { "type": "string" } }, "additionalProperties": false } },
+  "supersedes": { "type": "string" }
   },
   "additionalProperties": false
 }

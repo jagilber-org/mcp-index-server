@@ -5,7 +5,7 @@ $errors = 0
 function Fail($msg){ Write-Host "[FAIL] $msg" -ForegroundColor Red; $GLOBALS:errors++ }
 function Info($msg){ Write-Host "[INFO] $msg" -ForegroundColor Gray }
 
-// Ensure build artifacts are fresh (tests spawn dist/server/index.js)
+# Ensure build artifacts are fresh (tests spawn dist/server/index.js)
 Info 'Build'
 try { npm run build --silent | Out-Null } catch { Fail 'Build failed' }
 

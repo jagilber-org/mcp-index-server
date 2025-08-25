@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { waitFor } from './testUtils';
 import { spawn } from 'child_process';
 import path from 'path';
 
@@ -15,14 +16,14 @@ describe('input validation', () => {
     const server = startServer();
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
-    await new Promise(r => setTimeout(r,120));
-  send(server, { jsonrpc:'2.0', id: 3000, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
   await new Promise(r => setTimeout(r,100));
+  send(server, { jsonrpc:'2.0', id: 3000, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
+  await waitFor(() => lines.some(l => l.includes('"id":3000')));
     const id = 101;
     // instructions/get requires id
     send(server, { jsonrpc:'2.0', id, method: 'instructions/get', params: {} });
-    await new Promise(r => setTimeout(r,180));
-    const line = lines.find(l => l.includes('"id":101'));
+  await waitFor(() => lines.some(l => l.includes('"id":101')));
+  const line = lines.find(l => l.includes('"id":101'));
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
     expect(obj.error).toBeTruthy();
@@ -34,13 +35,13 @@ describe('input validation', () => {
     const server = startServer();
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
-    await new Promise(r => setTimeout(r,120));
-  send(server, { jsonrpc:'2.0', id: 3001, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
   await new Promise(r => setTimeout(r,100));
+  send(server, { jsonrpc:'2.0', id: 3001, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
+  await waitFor(() => lines.some(l => l.includes('"id":3001')));
     const id = 102;
     send(server, { jsonrpc:'2.0', id, method: 'instructions/list', params: { category: 'general', extra: 'x' } });
-    await new Promise(r => setTimeout(r,180));
-    const line = lines.find(l => l.includes('"id":102'));
+  await waitFor(() => lines.some(l => l.includes('"id":102')));
+  const line = lines.find(l => l.includes('"id":102'));
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
     expect(obj.error).toBeTruthy();
@@ -52,13 +53,13 @@ describe('input validation', () => {
     const server = startServer();
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
-    await new Promise(r => setTimeout(r,120));
-  send(server, { jsonrpc:'2.0', id: 3002, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
   await new Promise(r => setTimeout(r,100));
+  send(server, { jsonrpc:'2.0', id: 3002, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
+  await waitFor(() => lines.some(l => l.includes('"id":3002')));
     const id = 103;
     send(server, { jsonrpc:'2.0', id, method: 'instructions/list', params: { category: 'general' } });
-    await new Promise(r => setTimeout(r,180));
-    const line = lines.find(l => l.includes('"id":103'));
+  await waitFor(() => lines.some(l => l.includes('"id":103')));
+  const line = lines.find(l => l.includes('"id":103'));
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
     expect(obj.error).toBeFalsy();

@@ -36,7 +36,9 @@ export class ClassificationService {
       categories: Array.from(new Set(otherCats.map(c => c.toLowerCase()))).sort(),
       updatedAt: entry.updatedAt || now,
       createdAt: entry.createdAt || now,
-      sourceHash: this.computeHash(entry.body),
+  // Guarantee schemaVersion presence (tests assert instructions/list items include this field)
+  schemaVersion: entry.schemaVersion || '1',
+      sourceHash: entry.sourceHash && entry.sourceHash.length === 64 ? entry.sourceHash : this.computeHash(entry.body),
       riskScore: this.computeRisk(entry),
       workspaceId,
       userId,
@@ -49,8 +51,8 @@ export class ClassificationService {
       lastReviewedAt,
       nextReviewDue,
       changeLog: changeLog,
-  supersedes: entry.supersedes,
-  semanticSummary
+      supersedes: entry.supersedes,
+      semanticSummary
     };
     return norm;
   }

@@ -1,0 +1,35 @@
+name: Instruction Bootstrap Guard
+
+on:
+  pull_request:
+    branches: [ master ]
+  push:
+    branches: [ master ]
+
+jobs:
+  bootstrap-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build --if-present
+      - name: Run Bootstrap Enrichment
+        run: node scripts/bootstrap-catalog.mjs
+      - name: Governance Validation
+        run: node scripts/validate-governance.mjs
+      - name: Fail on Uncommitted Enrichment Drift
+        run: |
+          if [ -n "$(git status --porcelain instructions snapshots/canonical-instructions.json)" ]; then
+            echo "Catalog enrichment drift detected. Run: node scripts/bootstrap-catalog.mjs and commit changes." >&2
+            git diff --name-only instructions snapshots/canonical-instructions.json >&2 || true
+            exit 1
+          else
+            echo "No enrichment drift";
+          fi

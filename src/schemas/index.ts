@@ -5,7 +5,8 @@ export const instructionEntry = {
   type: 'object',
   additionalProperties: false,
   required: [
-    'id','title','body','priority','audience','requirement','categories','sourceHash','schemaVersion','createdAt','updatedAt'
+    'id','title','body','priority','audience','requirement','categories','sourceHash','schemaVersion','createdAt','updatedAt',
+    'version','status','owner','priorityTier','classification','lastReviewedAt','nextReviewDue','changeLog','semanticSummary'
   ],
   properties: {
     id: { type: 'string', minLength: 1 },
@@ -160,6 +161,17 @@ export const schemas: Record<string, unknown> = {
       } } }
     }
   },
+  'instructions/governanceHash': {
+    type: 'object', additionalProperties: false,
+    required: ['count','governanceHash','items'],
+    properties: {
+      count: { type: 'number' },
+      governanceHash: { type: 'string' },
+      items: { type: 'array', items: { type: 'object', required: ['id','title','version','owner','priorityTier','nextReviewDue','semanticSummarySha256','changeLogLength'], additionalProperties: false, properties: {
+        id: { type: 'string' }, title: { type: 'string' }, version: { type: 'string' }, owner: { type: 'string' }, priorityTier: { type: 'string' }, nextReviewDue: { type: 'string' }, semanticSummarySha256: { type: 'string' }, changeLogLength: { type: 'number' }
+      } } }
+    }
+  },
   'instructions/health': {
     anyOf: [
       { type: 'object', required: ['snapshot','hash','count'], additionalProperties: true, properties: { snapshot: { const: 'missing' }, hash: { type: 'string' }, count: { type: 'number' } } },
@@ -241,6 +253,11 @@ export const schemas: Record<string, unknown> = {
     missing: { type: 'array', items: { type: 'string' } },
     errorCount: { type: 'number' },
     errors: { type: 'array', items: { type: 'object', required: ['id','error'], additionalProperties: false, properties: { id: { type: 'string' }, error: { type: 'string' } } } }
+  } },
+  'instructions/enrich': { type: 'object', required: ['rewritten','updated','skipped'], additionalProperties: false, properties: {
+    rewritten: { type: 'number' },
+    updated: { type: 'array', items: { type: 'string' } },
+    skipped: { type: 'array', items: { type: 'string' } }
   } },
   'instructions/add': {
     anyOf: [

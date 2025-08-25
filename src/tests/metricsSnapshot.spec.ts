@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
+import { waitFor } from './testUtils';
 
 function startServer(){
   return spawn('node', [path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'] });
@@ -15,16 +16,16 @@ describe('metrics/snapshot', () => {
     const server = startServer();
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
-    await new Promise(r => setTimeout(r,150));
+  // Wait a moment for process spin-up and perform initialize; then wait for its response deterministically
   send(server,{ jsonrpc:'2.0', id:90, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
-  await new Promise(r => setTimeout(r,120));
+  await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===90; } catch { return false; } }), 3000);
     // Invoke a couple of tools via tools/call (SDK will route)
     send(server,{ jsonrpc:'2.0', id:1, method:'tools/call', params:{ name:'instructions/list', arguments:{} } });
     send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'health/check', arguments:{} } });
-    await new Promise(r => setTimeout(r,250));
+  await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===1; } catch { return false; } }) && lines.some(l=> { try { return JSON.parse(l).id===2; } catch { return false; } }), 3000);
     // Call metrics snapshot directly (registered as tool)
     send(server,{ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'metrics/snapshot', arguments:{} } });
-    await new Promise(r => setTimeout(r,250));
+  await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===3; } catch { return false; } }), 3000);
     server.kill();
     const metricsLine = lines.find(l => l.includes('"id":3'));
     expect(metricsLine).toBeTruthy();

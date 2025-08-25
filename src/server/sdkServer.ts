@@ -9,6 +9,8 @@ import { getToolRegistry } from '../services/toolRegistry';
 import '../services/toolHandlers';
 import { getHandler } from './registry';
 import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
+import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import { z } from 'zod';
 
 // ESM dynamic import used below for SDK modules.
@@ -78,6 +80,10 @@ export function createSdkServer(ServerClass: any) {
   // Implements lightweight input validation using Ajv schemas from registry.
   // ---------------------------------------------------------------------------
   const ajv = new Ajv({ allErrors: true, strict: false });
+  try { addFormats(ajv); } catch (e) { /* ignore format registration errors */ }
+  try {
+    if(!ajv.getSchema('https://json-schema.org/draft-07/schema')) ajv.addMetaSchema(draft7MetaSchema, 'https://json-schema.org/draft-07/schema');
+  } catch (e) { /* ignore meta-schema registration errors */ }
   const validators: Record<string, any> = {};
   const registry = getToolRegistry();
   for(const entry of registry){

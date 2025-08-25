@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { waitFor } from './testUtils';
 import { spawn } from 'child_process';
 import path from 'path';
 
@@ -12,14 +13,14 @@ describe('transport health handler', () => {
     const server = startServer();
     const outputs: string[] = [];
     server.stdout.on('data', d => outputs.push(...d.toString().trim().split(/\n+/)));
-    await new Promise(r => setTimeout(r, 150));
+  await new Promise(r => setTimeout(r, 120));
   // initialize first
   server.stdin.write(JSON.stringify({ jsonrpc:'2.0', id:99, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } }) + '\n');
-  await new Promise(r => setTimeout(r, 120));
+  await waitFor(() => outputs.some(l => l.includes('"id":99')));
     server.stdin.write(JSON.stringify({ jsonrpc:'2.0', id:1, method:'health/check' }) + '\n');
-    await new Promise(r => setTimeout(r, 150));
+  await waitFor(() => outputs.some(l => /"id":1/.test(l)));
     server.kill();
-    const responseLine = outputs.find(l => /"id":1/.test(l));
+  const responseLine = outputs.find(l => /"id":1/.test(l));
     expect(responseLine).toBeTruthy();
     if(responseLine){
       const obj = JSON.parse(responseLine);

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import { waitFor } from './testUtils';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
@@ -18,12 +19,10 @@ describe('instruction tool handlers', () => {
   beforeAll(() => {
     if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir);
     fs.writeFileSync(path.join(instructionsDir,'alpha.json'), JSON.stringify({
-      id:'alpha', title:'Alpha Instruction', body:'Do Alpha things', priority:10,
-      audience:'all', requirement:'mandatory', categories:['general'], sourceHash:'', schemaVersion:'1', createdAt:'', updatedAt:''
+      id:'alpha', title:'Alpha', body:'Alpha body', priority:10, audience:'all', requirement:'mandatory', categories:['a']
     }, null, 2));
     fs.writeFileSync(path.join(instructionsDir,'beta.json'), JSON.stringify({
-      id:'beta', title:'Beta Guide', body:'Beta body text', priority:30,
-      audience:'group', requirement:'recommended', categories:['general','beta'], sourceHash:'', schemaVersion:'1', createdAt:'', updatedAt:''
+      id:'beta', title:'Beta', body:'Beta body', priority:40, audience:'all', requirement:'optional', categories:['b']
     }, null, 2));
   });
 
@@ -31,13 +30,13 @@ describe('instruction tool handlers', () => {
     const server = startServer();
     const out: string[] = [];
     server.stdout.on('data', d => out.push(...d.toString().trim().split(/\n+/)));
-    await new Promise(r => setTimeout(r, 150));
+  await new Promise(r => setTimeout(r, 120));
   // Perform initialize first per MCP spec
   send(server,{ jsonrpc:'2.0', id:99, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
-  await new Promise(r => setTimeout(r, 120));
+  await waitFor(() => out.some(l => l.includes('"id":99')));
   send(server,{ jsonrpc:'2.0', id:1, method:'instructions/list', params:{} });
-    await new Promise(r => setTimeout(r, 150));
-    const line = out.find(l => /"id":1/.test(l));
+  await waitFor(() => out.some(l => /"id":1/.test(l)));
+  const line = out.find(l => /"id":1/.test(l));
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
     expect(obj.result.items.length).toBeGreaterThanOrEqual(2);

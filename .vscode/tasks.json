@@ -161,6 +161,36 @@
 				"run",
 				"build"
 			]
+		},
+		{
+			"label": "git-commit-all",
+			"type": "shell",
+			"command": "git add .; git commit -m \"feat: add integrity, metrics, usage, prompt review handlers, governance update & enrichment tools, and expanded test suite (drift, restart, concurrency, governance hash, persistence)\"",
+			"group": "build"
+		},
+		{
+			"label": "git-commit-all",
+			"type": "shell",
+			"command": "git add .; git commit -m 'feat: add integrity, metrics, usage, prompt review handlers, governance update & enrichment tools, and expanded test suite (drift, restart, concurrency, governance hash, persistence)'",
+			"group": "build"
+		},
+		{
+			"label": "git-commit-all",
+			"type": "shell",
+			"command": "git add .; git commit -m 'feat: add integrity metrics usage prompt review handlers governance update enrichment tools expanded test suite'",
+			"group": "build"
+		},
+		{
+			"label": "git-commit-all-simple",
+			"type": "shell",
+			"command": "git add .; git commit -m \"feat: add new handlers and tests\"",
+			"group": "build"
+		},
+		{
+			"label": "git-commit-all-noquote",
+			"type": "shell",
+			"command": "git add .; git commit -m feat-add-handlers-tests",
+			"group": "build"
 		}
 	]
 }

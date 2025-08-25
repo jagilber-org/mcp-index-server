@@ -2,38 +2,53 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://example.local/schemas/instruction.schema.json",
   "title": "InstructionEntry",
+  "description": "Canonical on-disk instruction record (author + system managed governance metadata).",
   "type": "object",
-  "required": ["id","title","body","priority","audience","requirement","categories","schemaVersion"],
-  "properties": {
-    "id": { "type": "string", "pattern": "^[a-z0-9-_]+$" },
-    "title": { "type": "string", "minLength": 1 },
-    "body": { "type": "string", "minLength": 1 },
-    "rationale": { "type": "string" },
-    "priority": { "type": "integer", "minimum": 1, "maximum": 100 },
-    "audience": { "enum": ["individual","group","all"] },
-    "requirement": { "enum": ["mandatory","critical","recommended","optional","deprecated"] },
-    "categories": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
-    "sourceHash": { "type": "string" },
-    "schemaVersion": { "type": "string" },
-    "deprecatedBy": { "type": "string" },
-    "createdAt": { "type": "string" },
-    "updatedAt": { "type": "string" },
-    "usageCount": { "type": "integer", "minimum": 0 },
-    "lastUsedAt": { "type": "string" },
-  "riskScore": { "type": "number" },
-  "workspaceId": { "type": "string" },
-  "userId": { "type": "string" },
-  "teamIds": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
-  "version": { "type": "string" },
-  "status": { "enum": ["draft","review","approved","deprecated"] },
-  "owner": { "type": "string" },
-  "priorityTier": { "enum": ["P1","P2","P3","P4"] },
-  "classification": { "enum": ["public","internal","restricted"] },
-  "lastReviewedAt": { "type": "string" },
-  "nextReviewDue": { "type": "string" },
-  "changeLog": { "type": "array", "items": { "type": "object", "required": ["version","changedAt","summary"], "properties": { "version": { "type": "string" }, "changedAt": { "type": "string" }, "summary": { "type": "string" } }, "additionalProperties": false } },
-  "supersedes": { "type": "string" }
-  , "semanticSummary": { "type": "string" }
+  "definitions": {
+    "changeLogEntry": {
+      "type": "object",
+      "required": ["version","changedAt","summary"],
+      "additionalProperties": false,
+      "properties": {
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "description": "Semantic version after this change" },
+        "changedAt": { "type": "string", "format": "date-time", "description": "Timestamp the change was recorded (ISO 8601)" },
+        "summary": { "type": "string", "minLength": 1, "description": "Human readable summary of change" }
+      }
+    }
   },
-  "additionalProperties": false
+  "required": [
+    "id","title","body","priority","audience","requirement","categories"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-_]*$", "description": "Stable identifier (file name without .json)" },
+    "title": { "type": "string", "minLength": 1, "description": "Short display title" },
+    "body": { "type": "string", "minLength": 1, "description": "Primary instruction content (markdown / plain text)" },
+    "rationale": { "type": "string", "description": "Optional rationale / context for the instruction" },
+    "priority": { "type": "integer", "minimum": 1, "maximum": 100, "description": "Relative ordering: lower = higher importance" },
+    "audience": { "enum": ["individual","group","all"], "description": "Intended audience scope" },
+    "requirement": { "enum": ["mandatory","critical","recommended","optional","deprecated"], "description": "Lifecycle requirement status" },
+    "categories": { "type": "array", "items": { "type": "string" }, "uniqueItems": true, "minItems": 0, "description": "Normalized lower-case tags" },
+    "schemaVersion": { "type": "string", "description": "Internal schema version for migration" },
+    "sourceHash": { "type": "string", "minLength": 1, "description": "SHA256 hash of body for drift detection" },
+    "deprecatedBy": { "type": "string", "description": "ID of instruction that supersedes this one" },
+    "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp (ISO 8601)" },
+    "updatedAt": { "type": "string", "format": "date-time", "description": "Last mutation timestamp (ISO 8601)" },
+    "usageCount": { "type": "integer", "minimum": 0, "description": "Number of tracked usage events" },
+    "lastUsedAt": { "type": "string", "format": "date-time", "description": "Last usage timestamp (ISO 8601)" },
+    "riskScore": { "type": "number", "description": "Optional numeric risk indicator (higher = riskier)" },
+    "workspaceId": { "type": "string", "description": "Scoped workspace identifier (if specific)" },
+    "userId": { "type": "string", "description": "Scoped user identifier (if specific)" },
+    "teamIds": { "type": "array", "items": { "type": "string" }, "uniqueItems": true, "description": "Scoped team identifiers (if any)" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "description": "Semantic version of the instruction" },
+    "status": { "enum": ["draft","review","approved","deprecated"], "description": "Governance workflow status" },
+    "owner": { "type": "string", "minLength": 1, "description": "Assigned owning entity (team / user / group)" },
+    "priorityTier": { "enum": ["P1","P2","P3","P4"], "description": "Tier bucket derived from priority or governance policy" },
+    "classification": { "enum": ["public","internal","restricted"], "description": "Information classification level" },
+    "lastReviewedAt": { "type": "string", "format": "date-time", "description": "Timestamp of last governance review" },
+    "nextReviewDue": { "type": "string", "format": "date-time", "description": "Scheduled next review timestamp" },
+    "changeLog": { "type": "array", "items": { "$ref": "#/definitions/changeLogEntry" }, "minItems": 1, "description": "Chronological list of notable changes" },
+    "supersedes": { "type": "string", "description": "ID of instruction this one replaces" },
+    "semanticSummary": { "type": "string", "description": "Cached short natural-language summary of body" }
+  },
+  "additionalProperties": true
 }

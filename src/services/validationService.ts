@@ -1,8 +1,16 @@
 import Ajv, { ErrorObject } from 'ajv';
+import addFormats from 'ajv-formats';
+import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import { getToolRegistry } from './toolRegistry';
 
 interface ValidatorEntry { validate: (data: unknown)=>boolean; errors: ErrorObject[] | null | undefined }
 const ajv = new Ajv({ allErrors: true, strict: false });
+addFormats(ajv);
+try {
+  if(!ajv.getSchema('https://json-schema.org/draft-07/schema')) ajv.addMetaSchema(draft7MetaSchema, 'https://json-schema.org/draft-07/schema');
+} catch (e) {
+  // ignore meta-schema registration errors (non-fatal)
+}
 const cache = new Map<string, ValidatorEntry | null>();
 
 function buildValidator(method: string): ValidatorEntry | null {

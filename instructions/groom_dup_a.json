@@ -12,6 +12,26 @@
   "sourceHash": "74ce3a3a33c2a562689eaafa5b50447704c34efdc0d79116b91f8d3befb42cc4",
   "schemaVersion": "1",
   "createdAt": "2025-01-01T00:00:00.000Z",
-  "updatedAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-08-25T19:27:49.480Z",
+  "version": "1.0.1",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-01-01T00:00:00.000Z",
+  "nextReviewDue": "2025-01-01T00:00:00.000Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-01-01T00:00:00.000Z",
+      "summary": "initial"
+    },
+    {
+      "version": "1.0.1",
+      "changedAt": "2025-08-25T19:27:49.480Z",
+      "summary": "hash repaired (auto bump)"
+    }
+  ],
+  "semanticSummary": "dup body unify",
   "riskScore": 45
 }

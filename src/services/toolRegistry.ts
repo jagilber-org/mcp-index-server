@@ -22,6 +22,15 @@ const INPUT_SCHEMAS: Record<string, object> = {
   'health/check': { type: 'object', additionalProperties: true }, // no params
   'instructions/list': { type: 'object', additionalProperties: false, properties: { category: { type: 'string' } } },
   'instructions/listScoped': { type: 'object', additionalProperties: false, properties: { userId: { type: 'string' }, workspaceId: { type: 'string' }, teamIds: { type: 'array', items: { type: 'string' } } } },
+  'instructions/governanceHash': { type: 'object', additionalProperties: true },
+  'instructions/governanceUpdate': { type: 'object', additionalProperties: false, required: ['id'], properties: {
+    id: { type: 'string' },
+    owner: { type: 'string' },
+    status: { type: 'string', enum: ['approved','draft','deprecated','superseded'] },
+    lastReviewedAt: { type: 'string' },
+    nextReviewDue: { type: 'string' },
+    bump: { type: 'string', enum: ['patch','minor','major','none'] }
+  } },
   'instructions/get': stringReq('id'),
   'instructions/search': stringReq('q'),
   'instructions/export': { type: 'object', additionalProperties: false, properties: { ids: { type: 'array', items: { type: 'string' } }, metaOnly: { type: 'boolean' } } },
@@ -46,6 +55,8 @@ const INPUT_SCHEMAS: Record<string, object> = {
   'instructions/reload': { type: 'object', additionalProperties: true },
   'instructions/remove': { type: 'object', additionalProperties: false, required: ['ids'], properties: { ids: { type: 'array', minItems: 1, items: { type: 'string' } }, missingOk: { type: 'boolean' } } },
   'instructions/groom': { type: 'object', additionalProperties: false, properties: { mode: { type: 'object', additionalProperties: false, properties: { dryRun: { type: 'boolean' }, removeDeprecated: { type: 'boolean' }, mergeDuplicates: { type: 'boolean' }, purgeLegacyScopes: { type: 'boolean' } } } } },
+  // enrichment tool (no params required)
+  'instructions/enrich': { type: 'object', additionalProperties: true },
   'prompt/review': stringReq('prompt'),
   'integrity/verify': { type: 'object', additionalProperties: true },
   'instructions/health': { type: 'object', additionalProperties: true },
@@ -58,8 +69,8 @@ const INPUT_SCHEMAS: Record<string, object> = {
 };
 
 // Stable & mutation classification lists (mirrors usage in toolHandlers; exported to remove duplication there).
-export const STABLE = new Set(['health/check','instructions/list','instructions/listScoped','instructions/get','instructions/search','instructions/diff','instructions/export','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools']);
-const MUTATION = new Set(['instructions/add','instructions/import','instructions/repair','instructions/reload','instructions/remove','instructions/groom','usage/flush']);
+export const STABLE = new Set(['health/check','instructions/list','instructions/listScoped','instructions/governanceHash','instructions/get','instructions/search','instructions/diff','instructions/export','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools']);
+const MUTATION = new Set(['instructions/add','instructions/import','instructions/repair','instructions/reload','instructions/remove','instructions/groom','instructions/enrich','instructions/governanceUpdate','usage/flush']);
 
 export function getToolRegistry(): ToolRegistryEntry[] {
   const entries: ToolRegistryEntry[] = [];
@@ -85,6 +96,7 @@ function describeTool(name: string): string {
     case 'health/check': return 'Returns server health status & version.';
     case 'instructions/list': return 'List all instruction entries (optionally filtered by category).';
   case 'instructions/listScoped': return 'List instructions matching structured scope (user > workspace > team > all).';
+  case 'instructions/governanceHash': return 'Return governance projection & deterministic governance hash.';
     case 'instructions/get': return 'Fetch a single instruction entry by id.';
     case 'instructions/search': return 'Search instructions by text query across title & body.';
     case 'instructions/export': return 'Export full instruction catalog, optionally subset by ids.';
@@ -95,6 +107,8 @@ function describeTool(name: string): string {
   case 'instructions/reload': return 'Force reload of instruction catalog from disk.';
   case 'instructions/remove': return 'Delete one or more instruction entries by id.';
   case 'instructions/groom': return 'Groom catalog: normalize, repair hashes, merge duplicates, remove deprecated.';
+  case 'instructions/enrich': return 'Persist normalization of placeholder governance fields to disk.';
+  case 'instructions/governanceUpdate': return 'Patch limited governance fields (owner/status/review dates + optional version bump).';
     case 'prompt/review': return 'Static analysis of a prompt returning issues & summary.';
     case 'integrity/verify': return 'Verify each instruction body hash against stored sourceHash.';
     case 'usage/track': return 'Increment usage counters & timestamps for an instruction id.';

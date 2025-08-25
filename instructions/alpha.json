@@ -1,15 +1,15 @@
 {
   "id": "alpha",
-  "title": "Alpha Instruction",
-  "body": "Do Alpha things",
+  "title": "Alpha",
+  "body": "Alpha body",
   "priority": 10,
   "audience": "all",
   "requirement": "mandatory",
   "categories": [
-    "general"
+    "a"
   ],
-  "sourceHash": "",
+  "sourceHash": "cd7caab615b4653f551b36f9e13c5fe5e0d5caa0b2622ff34c4549982f47b077",
+  "semanticSummary": "Alpha body",
   "schemaVersion": "1",
-  "createdAt": "",
-  "updatedAt": ""
+  "priorityTier": "P1"
 }

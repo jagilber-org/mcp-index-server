@@ -6,11 +6,31 @@
   "audience": "all",
   "requirement": "optional",
   "categories": [
-    "Tag",
     "tag"
   ],
-  "sourceHash": "WRONG",
+  "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
   "schemaVersion": "1",
-  "createdAt": "2025-08-25T15:06:51.053Z",
-  "updatedAt": "2025-08-25T15:06:51.053Z"
+  "createdAt": "2025-08-25T19:27:47.320Z",
+  "updatedAt": "2025-08-25T19:27:48.904Z",
+  "version": "1.0.1",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-25T19:27:47.324Z",
+  "nextReviewDue": "2025-08-25T19:27:47.324Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T19:27:47.324Z",
+      "summary": "initial"
+    },
+    {
+      "version": "1.0.1",
+      "changedAt": "2025-08-25T19:27:48.904Z",
+      "summary": "hash repaired (auto bump)"
+    }
+  ],
+  "semanticSummary": "body",
+  "riskScore": 55
 }

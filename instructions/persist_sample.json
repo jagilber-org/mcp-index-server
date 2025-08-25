@@ -1,0 +1,31 @@
+{
+  "id": "persist_sample",
+  "title": "Sample Instruction For Persistence",
+  "body": "First line summary.\nMore details follow here.",
+  "priority": 10,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "testing"
+  ],
+  "sourceHash": "24bddc50d715f0ab5bd187177217e495d7ba43a49bdbc5d7f957209cf0067892",
+  "createdAt": "2025-08-25T19:27:47.814Z",
+  "updatedAt": "2025-08-25T19:27:47.814Z",
+  "schemaVersion": "1",
+  "riskScore": 140,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-25T19:27:47.814Z",
+  "nextReviewDue": "2025-09-24T19:27:47.814Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T19:27:47.814Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "First line summary."
+}

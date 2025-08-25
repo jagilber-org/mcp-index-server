@@ -1,0 +1,29 @@
+{
+  "id": "add_test_create",
+  "title": "add_test_create",
+  "body": "Body only",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "44efef234d30e190cd21e145d59f3497f0f8c952ddf85d16212321786227deb1",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T19:27:47.841Z",
+  "updatedAt": "2025-08-25T19:27:47.841Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-25T19:27:47.846Z",
+  "nextReviewDue": "2025-11-23T19:27:47.846Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T19:27:47.841Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Body only"
+}

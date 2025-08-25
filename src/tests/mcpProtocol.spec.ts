@@ -3,6 +3,7 @@
  * Tests for VS Code MCP client compatibility - tools/list and tools/call handlers
  */
 import { describe, it, expect } from 'vitest';
+import { waitFor } from './testUtils';
 import { spawn } from 'child_process';
 
 function startServer() {
@@ -23,7 +24,7 @@ describe('MCP Protocol Compliance', () => {
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
     
-    await new Promise(r => setTimeout(r, 150));
+  await new Promise(r => setTimeout(r, 120));
     
     // Send initialize request
     send(server, {
@@ -37,18 +38,18 @@ describe('MCP Protocol Compliance', () => {
       }
     });
     
-    await new Promise(r => setTimeout(r, 200));
-    
-    // Should have server/ready notification and initialize response
-    const readyLine = lines.find(l => l.includes('server/ready'));
-    expect(readyLine, 'missing server/ready notification').toBeTruthy();
+  // Poll until we see server/ready (emitted either pre or post initialize)
+  await waitFor(() => lines.some(l => l.includes('server/ready')));
+  const readyLine = lines.find(l => l.includes('server/ready'));
+  expect(readyLine, 'missing server/ready notification').toBeTruthy();
     
     const readyObj = JSON.parse(readyLine!);
     expect(readyObj.method).toBe('server/ready');
     expect(readyObj.params.version).toBeTruthy();
     
-    const initLine = lines.find(l => l.includes('"id":1'));
-    expect(initLine, 'missing initialize response').toBeTruthy();
+  await waitFor(() => lines.some(l => l.includes('"id":1')));
+  const initLine = lines.find(l => l.includes('"id":1'));
+  expect(initLine, 'missing initialize response').toBeTruthy();
     
     const initObj = JSON.parse(initLine!);
     expect(initObj.result.protocolVersion).toBe('2025-06-18');
@@ -64,10 +65,10 @@ describe('MCP Protocol Compliance', () => {
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
     
-    await new Promise(r => setTimeout(r, 150));
+  await new Promise(r => setTimeout(r, 120));
   // initialize handshake
   send(server, { jsonrpc: '2.0', id: 1001, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
-  await new Promise(r => setTimeout(r, 120));
+  await waitFor(() => lines.some(l => l.includes('"id":1001')));
     
     // Send tools/list request
     send(server, {
@@ -77,9 +78,9 @@ describe('MCP Protocol Compliance', () => {
       params: {}
     });
     
-    await new Promise(r => setTimeout(r, 200));
+  await waitFor(() => lines.some(l => l.includes('"id":2')));
     
-    const responseLine = lines.find(l => l.includes('"id":2'));
+  const responseLine = lines.find(l => l.includes('"id":2'));
     expect(responseLine, 'missing tools/list response').toBeTruthy();
     
     const response = JSON.parse(responseLine!);
@@ -115,9 +116,9 @@ describe('MCP Protocol Compliance', () => {
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
     
-    await new Promise(r => setTimeout(r, 150));
-  send(server, { jsonrpc: '2.0', id: 1002, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
   await new Promise(r => setTimeout(r, 120));
+  send(server, { jsonrpc: '2.0', id: 1002, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
+  await waitFor(() => lines.some(l => l.includes('"id":1002')));
     
     // Test tools/call with health/check
     send(server, {

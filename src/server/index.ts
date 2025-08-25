@@ -13,8 +13,13 @@
  */
 import { listRegisteredMethods } from './registry';
 import { startSdkServer } from './sdkServer';
-import '../services/toolHandlers';
-import { getCatalogState } from '../services/toolHandlers';
+import '../services/handlers.instructions';
+import '../services/handlers.integrity';
+import '../services/handlers.usage';
+import '../services/handlers.prompt';
+import '../services/handlers.metrics';
+import '../services/handlers.gates';
+import { getCatalogState } from '../services/catalogContext';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';

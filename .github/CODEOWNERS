@@ -1,0 +1,4 @@
+# Code owners for governance-critical paths
+/instructions/ @jagilber
+/schemas/ @jagilber
+/src/services/ @jagilber

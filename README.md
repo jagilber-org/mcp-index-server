@@ -210,10 +210,43 @@ Supporting automation:
 
 Primary tool groups:
 
-- **Instructions**: `list`, `get`, `search`, `export`, `diff`, `import`, `add`, `repair`, `reload`, `remove`
+- **Instructions**: `list`, `get`, `search`, `export`, `diff`, `import`, `add`, `repair`, `reload`, `remove`, `enrich`
+- **Governance Patch**: `governanceUpdate` (controlled mutation of owner, status, review timestamps + optional version bump)
 - **Usage Tracking**: `track`, `hotset`, `flush`
-- **Governance**: `integrity/verify`, `gates/evaluate`, `prompt/review`
+- **Governance Analysis**: `integrity/verify`, `gates/evaluate`, `prompt/review`, `governanceHash`
 - **System**: `health/check`, `metrics/snapshot`, `meta/tools`
+
+### Simplified Authoring Schema (Tier 1)
+
+Author-facing JSON now only requires:
+
+```jsonc
+{ "id": "...", "title": "...", "body": "...", "priority": 50, "audience": "all", "requirement": "optional", "categories": ["example"] }
+```
+
+All governance & lifecycle fields (version, status, owner, priorityTier, classification, review dates, changeLog, semanticSummary, sourceHash) are automatically derived at load time by the classification service. The `instructions/enrich` tool can persist any missing placeholders back to disk; this is optional for day-to-day authoring.
+
+### governanceUpdate Tool
+
+Use `instructions/governanceUpdate` to patch a limited set of governance fields without re-importing the full instruction body.
+
+Input params:
+
+```jsonc
+{ "id": "rule-123", "owner": "team:platform", "status": "approved", "bump": "patch" }
+```
+
+Supported bumps: `patch|minor|major|none` (default `none`). Only writes when a change occurs; returns `{ changed:false }` if idempotent.
+
+Typical workflow:
+
+1. Author minimal file (omit governance fields) in `instructions/`.
+2. Server loads & derives governance automatically.
+3. (Optional) Run `instructions/enrich` to persist derived fields for audit stability.
+4. Later adjust owner/status or force version bump with `instructions/governanceUpdate`.
+
+
+Rationale: Keeps authoring friction low while preserving a deterministic governance projection for hashing and CI gating.
 
 ## Usage
 
@@ -236,9 +269,31 @@ node dist/server/index.js --dashboard --dashboard-port=3210
 ### Development
 
 1. Install dependencies: `npm ci`
-2. Build: `npm run build`
+2. Build: `npm run build` (TypeScript -> `dist/`)
 3. Test: `npm test`
-4. Run: `node dist/server/index.js`
+4. Run: `npm start` (auto-builds first via `prestart`)
+
+### Build & Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `npm run build` | One-shot TypeScript compile to `dist/` |
+| `npm start` | Runs server after implicit build (`prestart`) |
+| `npm run build:watch` | Continuous incremental compilation during development |
+| `npm run dev` | Runs built server with Node's `--watch` (restarts on JS changes) |
+| `npm run check:dist` | CI-friendly guard: fails if `dist/` changes after a fresh build (stale committed output) |
+
+Recommended dev workflow (two terminals):
+
+```pwsh
+# Terminal 1 - compiler
+npm run build:watch
+
+# Terminal 2 - run server (restarts on new compiled output if using an external watcher like nodemon)
+npm start
+```
+
+To enforce generated artifacts consistency in CI, add `npm run check:dist` before packaging or releasing.
 
 #### Add / Remove Instructions (Mutation Examples)
 
@@ -258,6 +313,35 @@ env MCP_ENABLE_MUTATION=1 node dist/server/index.js # ensure mutation enabled
 - **MCP_ENABLE_MUTATION=1**: Enables write operations (import, repair, reload, flush)
 - **MCP_LOG_VERBOSE=1**: Detailed logging for debugging
 - **Input validation**: AJV-based schema validation with fail-open fallback
+
+### Ownership Auto-Assignment
+
+Provide an `owners.json` at repo root to auto-assign owners during add/import/bootstrap. Example:
+
+```json
+{
+  "ownership": [
+    { "pattern": "^auth_", "owner": "security-team" },
+    { "pattern": "^db_", "owner": "data-team" },
+    { "pattern": ".*", "owner": "unowned" }
+  ]
+}
+```
+
+First matching regex wins; fallback keeps `unowned`.
+
+### Bootstrap Guard CI
+
+Workflow `.github/workflows/instruction-bootstrap-guard.yml` runs catalog enrichment (`node scripts/bootstrap-catalog.mjs`) and fails if any normalized governance fields or canonical snapshot changes were not committed, preventing drift between PR content and canonical state.
+
+### Tool Name Compatibility
+
+Some clients warn on `/` in JSON-RPC method names. Underscore aliases are now registered (e.g. `instructions_add`) alongside canonical names. Prefer canonical names where supported.
+
+### Governance Validation Script
+
+`node scripts/validate-governance.mjs` ensures all instruction JSON files include required governance + semantic fields. Added to bootstrap guard workflow.
+
 - **Gated mutations**: Write operations require explicit environment flag
 - **Process isolation**: MCP clients communicate via stdio only (no network access)
 

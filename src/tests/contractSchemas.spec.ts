@@ -3,6 +3,8 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import Ajv, { ErrorObject } from 'ajv';
+import addFormats from 'ajv-formats';
+import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import { schemas } from '../schemas';
 
 function startServer(){
@@ -16,10 +18,27 @@ function startServer(){
 type Child = ReturnType<typeof spawn>;
 function send(proc: Child, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg) + '\n'); }
 
-const ajv = new Ajv({ allErrors: true });
+const ajv = new Ajv({ allErrors: true, strict: false });
+addFormats(ajv);
+try {
+  if(!ajv.getSchema('https://json-schema.org/draft-07/schema')) ajv.addMetaSchema(draft7MetaSchema, 'https://json-schema.org/draft-07/schema');
+} catch (e) {
+  // ignore meta-schema registration errors
+}
 interface CompiledSchema { (data: unknown): boolean; errors?: ErrorObject[] | null }
 const compiled: Record<string, CompiledSchema> = {};
 for(const [k,v] of Object.entries(schemas)) compiled[k] = ajv.compile(v as object) as CompiledSchema;
+
+async function wait(ms:number){ return new Promise(r=>setTimeout(r,ms)); }
+async function waitForIds(lines:string[], ids:number[], timeout=2500, interval=40){
+  const start = Date.now();
+  while(Date.now() - start < timeout){
+    const missing = ids.filter(id=> !lines.find(l => new RegExp(`"id":${id}(?![0-9])`).test(l)));
+    if(missing.length===0) return true;
+    await wait(interval);
+  }
+  return false;
+}
 
 describe('contract schemas', () => {
   const instructionsDir = path.join(process.cwd(), 'instructions');
@@ -27,9 +46,11 @@ describe('contract schemas', () => {
     if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir);
     const alphaPath = path.join(instructionsDir,'alpha.json');
     if(!fs.existsSync(alphaPath)){
+      const now = new Date().toISOString();
       fs.writeFileSync(alphaPath, JSON.stringify({
         id:'alpha', title:'Alpha Instruction', body:'Do Alpha things', priority:10,
-        audience:'all', requirement:'mandatory', categories:['general'], sourceHash:'', schemaVersion:'1', createdAt:'', updatedAt:''
+        audience:'all', requirement:'mandatory', categories:['general'], sourceHash:'', schemaVersion:'1', createdAt:now, updatedAt:now,
+        version:'1.0.0', status:'approved', owner:'unowned', priorityTier:'P1', classification:'internal', lastReviewedAt:now, nextReviewDue:now, changeLog:[{version:'1.0.0', changedAt:now, summary:'initial'}], semanticSummary:'Do Alpha things'
       }, null, 2));
     }
   });
@@ -71,7 +92,10 @@ describe('contract schemas', () => {
   ,['instructions/import', { entries: [ { id:'gamma', title:'Gamma', body:'Gamma body', priority:50, audience:'all', requirement:'optional', categories:['misc'] } ], mode: 'overwrite' }]
     ];
     for(const [m,p] of methods){ pending.push({ id: call(m,p), method: m }); }
-    await new Promise(r => setTimeout(r,300));
+  // Wait until all IDs observed or timeout
+  const allIds = pending.map(p=>p.id);
+  const allReceived = await waitForIds(lines, allIds);
+  expect(allReceived, 'timed out waiting for all RPC responses').toBe(true);
 
     for(const p of pending){
       const line = lines.find(l => new RegExp(`"id":${p.id}(?![0-9])`).test(l));

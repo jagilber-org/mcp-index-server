@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
+import { waitFor } from './testUtils';
 
 function startServer(mutation = true){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], {
@@ -16,12 +17,11 @@ describe('MCP tool registry', () => {
     const server = startServer();
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
-    await new Promise(r => setTimeout(r,150));
   send(server, { jsonrpc:'2.0', id: 2000, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
-  await new Promise(r => setTimeout(r,120));
+  await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===2000; } catch { return false; } }), 3000);
     const id = 42;
     send(server, { jsonrpc:'2.0', id, method: 'meta/tools' });
-    await new Promise(r => setTimeout(r,200));
+  await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===id; } catch { return false; } }), 3000);
     const line = lines.find(l => l.includes('"id":42'));
     expect(line, 'missing meta/tools response').toBeTruthy();
     const obj = JSON.parse(line!);
@@ -44,12 +44,11 @@ describe('MCP tool registry', () => {
     const server = startServer(false);
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
-    await new Promise(r => setTimeout(r,150));
   send(server, { jsonrpc:'2.0', id: 2001, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
-  await new Promise(r => setTimeout(r,120));
+  await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===2001; } catch { return false; } }), 3000);
     const id = 43;
     send(server, { jsonrpc:'2.0', id, method: 'meta/tools' });
-    await new Promise(r => setTimeout(r,200));
+  await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===id; } catch { return false; } }), 3000);
     const line = lines.find(l => l.includes('"id":43'));
     expect(line, 'missing meta/tools response').toBeTruthy();
     const obj = JSON.parse(line!);

@@ -1,12 +1,22 @@
 {
   "name": "mcp-index-server",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "type": "commonjs",
   "scripts": {
-  "build": "tsc -p tsconfig.json",
-  "start": "node dist/server/index.js",
-  "dev": "node --watch dist/server/index.js",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server/index.js",
+  "prestart": "npm run build",
+  "pretest": "npm run build",
+    "dev": "node --watch dist/server/index.js",
+  "build:watch": "tsc -w -p tsconfig.json",
+  "check:dist": "npm run build && git diff --quiet --exit-code dist || (echo Dist out of date. Run npm run build and commit generated files.& exit 1)",
+  "coverage": "vitest run --coverage",
+  "sbom": "npx syft packages dir:. -o json > sbom.json || echo 'Syft not installed'",
+  "coverage:ci": "vitest run --coverage --reporter=default --reporter=json --threshold.lines=75 --threshold.branches=70",
+  "manifest:generate": "node scripts/generate-manifest.mjs",
+  "contract:tools": "node scripts/generate-tools-snapshot.mjs",
+  "verify:manifest": "node scripts/verify-manifest.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:contracts": "vitest run src/tests/contractSchemas.spec.ts",
@@ -19,23 +29,24 @@
     "release:patch": "pwsh scripts/bump-version.ps1 patch",
     "release:minor": "pwsh scripts/bump-version.ps1 minor",
     "release:major": "pwsh scripts/bump-version.ps1 major",
-  "perf": "ts-node src/perf/benchmark.ts",
-  "build:verify": "pwsh scripts/build.ps1",
-  "docs:tools": "node scripts/generate-tools-doc.cjs"
+    "perf": "ts-node src/perf/benchmark.ts",
+    "build:verify": "pwsh scripts/build.ps1",
+    "docs:tools": "node scripts/generate-tools-doc.cjs"
   },
   "devDependencies": {
-    "typescript": "^5.5.0",
-    "vitest": "^1.6.0",
     "@types/node": "^20.11.0",
-    "eslint": "^8.57.0",
-    "@typescript-eslint/parser": "^7.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
     "prettier": "^3.2.5",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.0",
+    "vitest": "^1.6.0"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
     "ajv": "^8.12.0",
-    "@modelcontextprotocol/sdk": "^0.6.0"
+    "ajv-formats": "^2.1.1"
   },
   "optionalScripts": {},
   "promptReviewCriteriaVersion": "1.0.0",
@@ -47,5 +58,6 @@
   "bugs": {
     "url": "https://github.com/jagilber/mcp-index-server/issues"
   },
-  "homepage": "https://github.com/jagilber/mcp-index-server#readme"
+  "homepage": "https://github.com/jagilber/mcp-index-server#readme",
+  "engines": { "node": ">=20 <21" }
 }

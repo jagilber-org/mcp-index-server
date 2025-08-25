@@ -1,0 +1,32 @@
+{
+  "id": "add_persist_1756149703624_0",
+  "title": "add_persist_1756149703624_0",
+  "body": "Body 0",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "temp",
+    "test"
+  ],
+  "sourceHash": "b785f2d8606ae8c04709ec8d5b723a312d4014ec85b88faba590915d0b5118ab",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T19:21:44.640Z",
+  "updatedAt": "2025-08-25T19:21:44.640Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-25T19:21:44.640Z",
+  "nextReviewDue": "2025-11-23T19:21:44.640Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T19:21:44.640Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Body 0"
+}

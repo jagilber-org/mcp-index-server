@@ -11,5 +11,7 @@
   "sourceHash": "6ccaa6415b5ee449e3c5c716f57b4608ebe3b780f5aa6b077bc5d8eee5d961f9",
   "schemaVersion": "1",
   "createdAt": "2025-08-25T12:02:25.516Z",
-  "updatedAt": "2025-08-25T12:02:25.516Z"
+  "updatedAt": "2025-08-25T12:02:25.516Z",
+  "semanticSummary": "Body",
+  "priorityTier": "P1"
 }

@@ -1,0 +1,30 @@
+{
+  "id": "enrich_placeholder_sample",
+  "title": "Enrich Placeholder",
+  "body": "Body",
+  "priority": 70,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "x"
+  ],
+  "sourceHash": "",
+  "schemaVersion": "1",
+  "createdAt": "",
+  "updatedAt": "",
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "",
+  "classification": "internal",
+  "lastReviewedAt": "",
+  "nextReviewDue": "",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "",
+      "summary": "initial"
+    }
+  ],
+  "semanticSummary": ""
+}

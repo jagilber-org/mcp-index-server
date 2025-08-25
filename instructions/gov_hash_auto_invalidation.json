@@ -1,0 +1,30 @@
+{
+  "id": "gov_hash_auto_invalidation",
+  "title": "Gov Hash Auto",
+  "body": "Stable Body",
+  "priority": 5,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "auto"
+  ],
+  "sourceHash": "5eba503ad0aecc563ec135f5c772a2ced93642512e9b39f44c35eb8f3d9528cf",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T19:27:47.425Z",
+  "updatedAt": "2025-08-25T19:27:47.425Z",
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "team-y",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-25T19:27:47.425Z",
+  "nextReviewDue": "2025-08-25T19:27:47.425Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T19:27:47.425Z",
+      "summary": "initial"
+    }
+  ],
+  "semanticSummary": "Stable Body"
+}

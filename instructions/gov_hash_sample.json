@@ -1,0 +1,30 @@
+{
+  "id": "gov_hash_sample",
+  "title": "Gov Hash Sample",
+  "body": "Body Stable",
+  "priority": 10,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "x"
+  ],
+  "sourceHash": "8fe8b68fd32ffc729aeac49fcf11ba555d74cbf5362628887e0758516f5e4f1a",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T19:27:47.537Z",
+  "updatedAt": "2025-08-25T19:27:47.537Z",
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "team-b",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-25T19:27:47.537Z",
+  "nextReviewDue": "2025-08-25T19:27:47.537Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T19:27:47.537Z",
+      "summary": "initial"
+    }
+  ],
+  "semanticSummary": "Body Stable"
+}

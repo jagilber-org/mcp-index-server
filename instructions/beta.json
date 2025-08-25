@@ -1,16 +1,15 @@
 {
   "id": "beta",
-  "title": "Beta Guide",
-  "body": "Beta body text",
-  "priority": 30,
-  "audience": "group",
-  "requirement": "recommended",
+  "title": "Beta",
+  "body": "Beta body",
+  "priority": 40,
+  "audience": "all",
+  "requirement": "optional",
   "categories": [
-    "general",
-    "beta"
+    "b"
   ],
-  "sourceHash": "",
+  "sourceHash": "d053694953b7f16c118e0f8c919f9c7c571a4cbbde9b4f10813eea97a930cf09",
+  "semanticSummary": "Beta body",
   "schemaVersion": "1",
-  "createdAt": "",
-  "updatedAt": ""
+  "priorityTier": "P2"
 }

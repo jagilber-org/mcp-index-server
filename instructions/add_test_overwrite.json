@@ -1,0 +1,39 @@
+{
+  "id": "add_test_overwrite",
+  "title": "add_test_overwrite",
+  "body": "overwrite body",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "4f5d73fe3f8999bf9ab9e5c69b4666e3bafcbb1cfb7f239eaebd311ef1a56127",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T19:27:48.739Z",
+  "updatedAt": "2025-08-25T19:27:49.057Z",
+  "version": "1.0.2",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-25T19:27:48.689Z",
+  "nextReviewDue": "2025-08-25T19:27:48.690Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T19:27:48.690Z",
+      "summary": "initial"
+    },
+    {
+      "version": "1.0.1",
+      "changedAt": "2025-08-25T19:27:48.888Z",
+      "summary": "hash repaired (auto bump)"
+    },
+    {
+      "version": "1.0.2",
+      "changedAt": "2025-08-25T19:27:49.057Z",
+      "summary": "body changed (auto bump)"
+    }
+  ],
+  "semanticSummary": "old",
+  "riskScore": 55
+}

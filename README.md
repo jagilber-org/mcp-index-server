@@ -26,7 +26,70 @@ This server is fully compatible with VS Code MCP clients and GitHub Copilot agen
 
 ### Configuration
 
-Add to your VS Code `mcp.json`:
+You can configure the server either per-workspace or (recommended) globally. To avoid conflicts, this project now expects ONLY a global MCP configuration.
+
+### Global Configuration (Recommended)
+
+Edit (or create) your global VS Code MCP config file:
+
+Windows: `%APPDATA%/Code/User/mcp.json`  
+Example full path: `C:\\Users\\<you>\\AppData\\Roaming\\Code\\User\\mcp.json`
+
+Add (or merge) this entry:
+
+```jsonc
+{
+  "servers": {
+    "mcp-index-server": {
+      "type": "stdio",
+      "command": "node",
+      "cwd": "C:/github/jagilber/mcp-index-server", // adjust to your clone path
+      "args": [
+        "C:/github/jagilber/mcp-index-server/dist/server/index.js",
+        "--dashboard",
+        "--dashboard-port=3210"
+      ],
+      "env": {
+        "MCP_LOG_VERBOSE": "1",
+        "MCP_ENABLE_MUTATION": "1"
+      }
+    }
+  }
+}
+```
+
+Notes:
+- Ensure the `dist/server/index.js` file exists (run `npm run build` first).
+- Use forward slashes or double-escaped backslashes in JSON.
+- Remove any old workspace-level `.vscode/mcp.json` to prevent duplication.
+
+### (Alternative) Workspace Configuration (Deprecated)
+
+Previously you could add a `.vscode/mcp.json` inside the repo. This is no longer recommended and the template file has been removed to reduce confusion. Prefer the global file above.
+
+### Minimal Snippet (No Dashboard)
+
+If you do not need the admin dashboard:
+
+```jsonc
+{
+  "servers": {
+    "mcp-index-server": {
+      "type": "stdio",
+      "command": "node",
+      "cwd": "C:/github/jagilber/mcp-index-server",
+      "args": ["C:/github/jagilber/mcp-index-server/dist/server/index.js"],
+      "env": { "MCP_LOG_VERBOSE": "1" }
+    }
+  }
+}
+```
+
+### Legacy Example (For Reference Only)
+
+If you still want the old style (not recommended):
+
+Add to a workspace `.vscode/mcp.json` (file intentionally removed from repo to avoid accidental use):
 
 ```jsonc
 {
@@ -50,7 +113,7 @@ Add to your VS Code `mcp.json`:
 
 **Note**: Dashboard arguments are optional. The MCP protocol operates independently via stdio.
 
-**Important**: After updating your `mcp.json`, restart VS Code completely to establish the MCP server connection.
+**Important**: After updating your global `mcp.json`, fully restart VS Code (not just reload) to establish the MCP server connection. If you change the path or rebuild, restart again.
 
 ### Critical MCP Functions
 

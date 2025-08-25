@@ -9,3 +9,9 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 ### Added
 
 - Initial project skeleton (models, classification, transport, instruction tools, prompt governance, documentation scaffolding).
+
+## [0.2.0] - 2025-08-25
+
+### Added
+
+- metrics, gates, usage tracking, incremental diff, integrity tools

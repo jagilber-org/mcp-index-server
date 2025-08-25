@@ -1,6 +1,6 @@
 {
   "name": "mcp-index-server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "commonjs",
   "scripts": {
@@ -11,12 +11,12 @@
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --ext .ts",
-  "format": "prettier --write .",
-  "prepare": "node scripts/setup-hooks.cjs",
-  "scan:security": "pwsh scripts/security-scan.ps1",
-  "release:patch": "pwsh scripts/bump-version.ps1 patch",
-  "release:minor": "pwsh scripts/bump-version.ps1 minor",
-  "release:major": "pwsh scripts/bump-version.ps1 major"
+    "format": "prettier --write .",
+    "prepare": "node scripts/setup-hooks.cjs",
+    "scan:security": "pwsh scripts/security-scan.ps1",
+    "release:patch": "pwsh scripts/bump-version.ps1 patch",
+    "release:minor": "pwsh scripts/bump-version.ps1 minor",
+    "release:major": "pwsh scripts/bump-version.ps1 major"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

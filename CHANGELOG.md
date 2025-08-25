@@ -15,3 +15,9 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 ### Added
 
 - metrics, gates, usage tracking, incremental diff, integrity tools
+
+## [0.3.0] - 2025-08-25
+
+### Added
+
+- Add response schemas, contract tests, docs update

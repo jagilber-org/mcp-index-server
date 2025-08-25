@@ -1,6 +1,6 @@
 {
   "name": "mcp-index-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "commonjs",
   "scripts": {
@@ -9,7 +9,7 @@
     "dev": "node --watch dist/server/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
-  "test:contracts": "vitest run src/tests/contractSchemas.spec.ts",
+    "test:contracts": "vitest run src/tests/contractSchemas.spec.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
@@ -17,8 +17,8 @@
     "scan:security": "pwsh scripts/security-scan.ps1",
     "release:patch": "pwsh scripts/bump-version.ps1 patch",
     "release:minor": "pwsh scripts/bump-version.ps1 minor",
-  "release:major": "pwsh scripts/bump-version.ps1 major",
-  "perf": "ts-node src/perf/benchmark.ts"
+    "release:major": "pwsh scripts/bump-version.ps1 major",
+    "perf": "ts-node src/perf/benchmark.ts"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

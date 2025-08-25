@@ -47,13 +47,40 @@ registerHandler<{ q: string }>('instructions/search', (params) => {
   return { items, hash: st.hash, count: items.length };
 });
 
-registerHandler<{ clientHash?: string }>('instructions/diff', (params) => {
+interface KnownEntry { id: string; sourceHash: string }
+interface DiffParams { clientHash?: string; known?: KnownEntry[] }
+registerHandler<DiffParams>('instructions/diff', (params) => {
   const st = ensureLoaded();
-  if(!params.clientHash || params.clientHash === st.hash){
-    return { upToDate: params.clientHash === st.hash, hash: st.hash };
+  const clientHash = params?.clientHash;
+  const known = params?.known;
+  // Fast path when hashes match and no known inventory provided
+  if(!known && clientHash && clientHash === st.hash){
+    return { upToDate: true, hash: st.hash };
   }
-  // Simple diff: return all items for now (optimize later)
-  return { changed: st.list, hash: st.hash };
+  if(known){
+    const mapKnown = new Map<string, string>();
+    for(const k of known){ if(k && k.id) { if(!mapKnown.has(k.id)) mapKnown.set(k.id, k.sourceHash); } }
+    const added: InstructionEntry[] = [];
+    const updated: InstructionEntry[] = [];
+    for(const entry of st.list){
+      const prev = mapKnown.get(entry.id);
+      if(prev === undefined){ added.push(entry); }
+      else if(prev !== entry.sourceHash){ updated.push(entry); }
+    }
+    const removed: string[] = [];
+    for(const id of mapKnown.keys()){
+      if(!st.byId.has(id)) removed.push(id);
+    }
+    if(added.length === 0 && updated.length === 0 && removed.length === 0 && clientHash === st.hash){
+      return { upToDate: true, hash: st.hash };
+    }
+    return { hash: st.hash, added, updated, removed };
+  }
+  // Legacy fallback behaviour when only clientHash supplied: return full set when mismatch
+  if(!clientHash || clientHash !== st.hash){
+    return { hash: st.hash, changed: st.list };
+  }
+  return { upToDate: true, hash: st.hash }; // should have been caught earlier
 });
 
 const promptService = new PromptReviewService();

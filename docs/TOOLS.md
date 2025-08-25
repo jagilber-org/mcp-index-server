@@ -73,18 +73,28 @@ Notes:
 
 Purpose: Client incremental sync vs catalog hash.
 
-Params: `{ clientHash?: string }`
+Params (current incremental form):
 
-Result Cases:
+```json
+{ "clientHash": "<optional aggregate>", "known": [ { "id": "...", "sourceHash": "..." } ] }
+```
 
-1. Up-to-date: `{ upToDate: true, hash }`
-2. Not provided: `{ upToDate: false, hash }` (client should fetch catalog)
-3. Drift: `{ changed: InstructionEntry[], hash }` (naive: returns full list now)
+Behavior:
 
-Planned Evolution:
+- If `known` omitted and `clientHash` matches server hash => `{ upToDate: true, hash }`.
+- If `known` provided: server returns precise changes:
 
-- Contract migration to `{ added: IDSummary[], updated: IDSummary[], removed: string[], hash }`
-- Provide per-item `contentHash` instead of full body for unchanged metadata diff.
+```json
+{ "hash": "...", "added": [ InstructionEntry ], "updated": [ InstructionEntry ], "removed": [ "id" ] }
+```
+
+- Legacy fallback: when only `clientHash` differs and no `known`, returns `{ hash, changed: InstructionEntry[] }`.
+
+Notes:
+
+- `sourceHash` equals `sha256(body)`; treat as content fingerprint.
+- Send only a subset of known entries (e.g., recently used) for partial sync; absent IDs returned as added.
+- Future: separate lightweight metadata structure vs full entries for large bodies.
 
 ## Prompt Governance
 
@@ -164,10 +174,23 @@ Standard JSON-RPC error codes used:
 - -32700 Parse error
 - -32603 Internal error (with `{ message }` in `error.data`)
 
+## Additional Tools
+
+### `integrity/verify`
+
+Recomputes `sha256(body)` for each entry comparing against stored `sourceHash`.
+
+Result:
+
+```json
+{ "hash": "<aggregate>", "count": 42, "issues": [ { "id": "...", "expected": "...", "actual": "..." } ], "issueCount": 0 }
+```
+
+Non-zero `issueCount` indicates catalog drift / tampering.
+
 ## Planned Tools (Roadmap)
 
-- integrity/verify -> `{ summary, issues[] }`
-- integrity/reportDrifts -> incremental diff object
+- integrity/reportDrifts -> incremental diff object (now partially covered by `instructions/diff` with `known` list)
 - usage/track -> side-effect increment (may be batched client-side)
 - metrics/snapshot -> counters & latencies
 - gates/evaluate -> evaluation report using `instructions/gates.json`

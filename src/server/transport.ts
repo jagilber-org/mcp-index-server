@@ -1,3 +1,14 @@
+/**
+ * MCP Transport Layer - stdio JSON-RPC 2.0 Only
+ * 
+ * This module implements the primary MCP server transport over stdin/stdout.
+ * All MCP clients (VS Code, Claude, etc.) communicate exclusively through this stdio transport.
+ * 
+ * Security: Process-isolated communication with no network exposure.
+ * Protocol: JSON-RPC 2.0 line-delimited over stdin/stdout streams.
+ * 
+ * Note: The optional HTTP dashboard is implemented separately and is for admin use only.
+ */
 import { createInterface } from 'readline';
 import { validateParams } from '../services/validationService';
 import fs from 'fs';

@@ -1,4 +1,30 @@
-# MCP Instruction### Configuration
+# MCP Instruction Server
+
+Enterprise-grade local Model Context Protocol server providing a governed, classified, auditable instruction catalog with analytics and optional admin dashboard.
+
+## Transport Architecture
+
+### MCP Protocol (Client Communication)
+
+- **Transport**: JSON-RPC 2.0 over **stdio only**
+- **Purpose**: VS Code, Claude, and other MCP clients communicate via stdin/stdout
+- **Security**: No network exposure, process-isolated communication
+- **Tools**: All 17+ instruction management tools available via MCP protocol
+
+### Admin Dashboard (Optional)
+
+- **Transport**: HTTP server on localhost (admin access only)
+- **Purpose**: Human-readable interface for administrators to monitor server status
+- **Security**: Read-only by default, localhost binding, no remote access
+- **Access**: Local administrators only (not for end users or MCP clients)
+
+**Important**: MCP clients (like VS Code) connect via stdio transport only, not HTTP dashboard.
+
+## VS Code Integration
+
+This server is fully compatible with VS Code MCP clients and GitHub Copilot agent mode.
+
+### Configuration
 
 Add to your VS Code `mcp.json`:
 
@@ -22,7 +48,15 @@ Add to your VS Code `mcp.json`:
 }
 ```
 
+**Note**: Dashboard arguments are optional. The MCP protocol operates independently via stdio.
+
 **Important**: After updating your `mcp.json`, restart VS Code completely to establish the MCP server connection.
+
+### Critical MCP Functions
+
+- **`tools/list`**: Returns all 17+ available tools with JSON schemas for validation
+- **`tools/call`**: Executes tools by name with parameter validation
+- **Protocol compliance**: Proper `initialize` handshake and `server/ready` notifications
 
 ## Troubleshooting VS Code Connection
 
@@ -37,57 +71,17 @@ If VS Code shows "Configured but Not Connected":
    echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | node dist/server/index.js
    ```
 
-5. **Check logs**: Enable `MCP_LOG_VERBOSE=1` to see connection details in VS Code developer consoleterprise-grade local Model Context Protocol server providing a governed, classified, auditable instruction catalog with analytics and a management dashboard.
-
-## Status
-
-✅ **Phase 1 Complete**: Full MCP protocol implementation with VS Code integration support
-
-- Core JSON-RPC 2.0 transport over stdio
-- Standard MCP protocol handlers (`initialize`, `tools/list`, `tools/call`)
-- Tool registry with input/output schemas for client validation
-- Comprehensive test suite (23 tests, 13 test files)
-
-## VS Code Integration
-
-This server is fully compatible with VS Code MCP clients and GitHub Copilot agent mode.
-
-### Configuration
-
-Add to your VS Code `mcp.json`:
-
-```jsonc
-{
-  "servers": {
-    "mcp-instruction-server": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["path/to/dist/server/index.js"],
-      "env": {
-        "MCP_LOG_VERBOSE": "1",
-        "MCP_ENABLE_MUTATION": "1"
-      }
-    }
-  }
-}
-```
-
-### Critical MCP Functions
-
-- **`tools/list`**: Returns all 17+ available tools with JSON schemas for validation
-- **`tools/call`**: Executes tools by name with parameter validation
-- **Protocol compliance**: Proper `initialize` handshake and `server/ready` notifications
+5. **Check logs**: Enable `MCP_LOG_VERBOSE=1` to see connection details in VS Code developer console
 
 ## Key Features
 
-- ✅ Deterministic catalog loading with hashing & integrity verification
-- ✅ Rich classification: audience (individual|group|all), requirement (mandatory|critical|recommended|optional|deprecated), categories, risk scoring
-- ✅ Tools: list/get/search/diff, usage tracking, integrity & drift reports, gate evaluation, metrics
-- ✅ Dashboard: read-only browse → controlled mutations (optional --dashboard flag)
-- ✅ Semantic search with text-based queries
-- ✅ Governance: schema version & hash lock, drift detection, mutation gating
-- ✅ Input validation with AJV schemas and pre-dispatch parameter checking
-- ✅ Performance: Optimized for <50ms response times
+- ✅ **MCP Protocol Compliance**: Full JSON-RPC 2.0 over stdio transport
+- ✅ **Tool Discovery**: 17+ tools with JSON schemas for client validation
+- ✅ **Instruction Management**: list/get/search/diff/import/export/repair/reload
+- ✅ **Usage Analytics**: track/hotset/flush with persistent storage
+- ✅ **Governance**: integrity/verify, gates/evaluate, prompt/review
+- ✅ **Security**: Input validation, mutation gating, audit logging
+- ✅ **Performance**: Optimized for <50ms response times
 
 ### Available Tools
 
@@ -96,40 +90,69 @@ Add to your VS Code `mcp.json`:
 - **Governance**: `integrity/verify`, `gates/evaluate`, `prompt/review`
 - **System**: `health/check`, `metrics/snapshot`, `meta/tools`
 
-## Quick Start
+## Usage
+
+### MCP Client Usage (VS Code, Claude, etc.)
+
+```bash
+# Server runs automatically when VS Code starts
+# All communication via stdio - no manual intervention needed
+node dist/server/index.js
+```
+
+### Admin Dashboard Usage (Optional)
+
+```bash
+# For administrators only - not for MCP clients
+node dist/server/index.js --dashboard --dashboard-port=3210
+# Dashboard accessible at http://localhost:3210
+```
+
+### Development
 
 1. Install dependencies: `npm ci`
 2. Build: `npm run build`
 3. Test: `npm test`
 4. Run: `node dist/server/index.js`
-5. Optional dashboard: `node dist/server/index.js --dashboard --dashboard-port=3210`
 
-### Security & Mutation Control
+## Security & Mutation Control
 
 - **MCP_ENABLE_MUTATION=1**: Enables write operations (import, repair, reload, flush)
 - **MCP_LOG_VERBOSE=1**: Detailed logging for debugging
-- Input validation prevents malformed requests
-- Gated mutations require explicit environment flag
+- **Input validation**: AJV-based schema validation with fail-open fallback
+- **Gated mutations**: Write operations require explicit environment flag
+- **Process isolation**: MCP clients communicate via stdio only (no network access)
 
 ## Testing
 
 Comprehensive test coverage including:
 
-- MCP protocol compliance tests (`mcpProtocol.spec.ts`)
-- Input validation and parameter checking
-- Tool registry and schema validation
-- Contract testing for API stability
-- Security hardening and edge cases
+- **MCP protocol compliance** tests (`mcpProtocol.spec.ts`)
+- **Input validation** and parameter checking
+- **Tool registry** and schema validation
+- **Contract testing** for API stability
+- **Security hardening** and edge cases
 
-Run tests: `npm test` (23 tests across 13 files)
+Run tests: `npm test` (28 tests across 14 files)
 
 ## Architecture
 
-- **Transport**: JSON-RPC 2.0 over stdio with metrics collection
+- **MCP Transport**: JSON-RPC 2.0 over stdio (client communication)
+- **HTTP Dashboard**: Optional localhost web interface (admin monitoring)
 - **Validation**: AJV-based input schema validation with fail-open fallback
 - **Registry**: Centralized tool metadata with input/output schemas
 - **Persistence**: File-based instruction storage with usage analytics
 - **Gating**: Environment-controlled mutation access with audit logging
+
+## Status
+
+✅ **Phase 1 Complete**: Full MCP protocol implementation with VS Code integration support
+
+- Core JSON-RPC 2.0 transport over stdio
+- Standard MCP protocol handlers (`initialize`, `tools/list`, `tools/call`)
+- Tool registry with input/output schemas for client validation
+- Comprehensive test suite (28 tests, 14 test files)
+- Optional admin dashboard with read-only interface
 
 Hooks: Pre-commit runs typecheck, lint, tests, and security scan. Manual scan: `npm run scan:security`.
 

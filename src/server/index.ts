@@ -1,3 +1,16 @@
+/**
+ * MCP Index Server - Dual Transport Architecture
+ * 
+ * PRIMARY TRANSPORT - MCP Protocol (stdin/stdout):
+ * - JSON-RPC 2.0 over stdio for all MCP client communication
+ * - VS Code, Claude, and other MCP clients connect via stdin/stdout only
+ * - Process-isolated, no network exposure
+ * 
+ * SECONDARY TRANSPORT - Admin Dashboard (optional HTTP):
+ * - HTTP server on localhost for administrator monitoring
+ * - Read-only interface for status, tools, and metrics
+ * - Not for MCP client communication - admin use only
+ */
 import { startTransport, listRegisteredMethods } from './transport';
 import '../services/toolHandlers';
 import http from 'http';
@@ -13,6 +26,7 @@ interface CliConfig {
 
 function parseArgs(argv: string[]): CliConfig {
   const config: CliConfig = { dashboard: false, dashboardPort: 8787, dashboardHost: '127.0.0.1', maxPortTries: 10 };
+  
   for(const raw of argv.slice(2)){
     if(raw === '--dashboard') config.dashboard = true;
     else if(raw === '--no-dashboard') config.dashboard = false;
@@ -23,11 +37,33 @@ function parseArgs(argv: string[]): CliConfig {
       printHelpAndExit();
     }
   }
+  
   return config;
 }
 
 function printHelpAndExit(){
-  const help = `mcp-index-server\n\nFlags:\n  --dashboard              Enable read-only dashboard (default off)\n  --dashboard-port=PORT    Desired dashboard port (default 8787)\n  --dashboard-host=HOST    Host/interface to bind (default 127.0.0.1)\n  --dashboard-tries=N      Additional incremental ports to try if in use (default 10)\n  --no-dashboard           Disable dashboard even if previous flag set\n  -h, --help               Show this help and exit\n\nTransport: stdio (JSON-RPC line-delimited).\nOutputs only JSON protocol frames to stdout; logs & dashboard URL go to stderr.`;
+  const help = `mcp-index-server - Model Context Protocol Server
+
+MCP TRANSPORT (Client Communication):
+  Primary transport: JSON-RPC 2.0 over stdio (stdin/stdout)
+  Purpose: VS Code, Claude, and other MCP clients
+  Security: Process-isolated, no network exposure
+
+ADMIN DASHBOARD (Optional):
+  --dashboard              Enable read-only admin dashboard (default off)
+  --dashboard-port=PORT    Dashboard port (default 8787)
+  --dashboard-host=HOST    Dashboard host (default 127.0.0.1)
+  --dashboard-tries=N      Port retry attempts (default 10)
+  --no-dashboard           Disable dashboard
+  Purpose: Local administrator monitoring only
+
+GENERAL:
+  -h, --help               Show this help and exit
+
+IMPORTANT:
+- MCP clients connect via stdio only, not HTTP dashboard
+- Dashboard is for admin monitoring, not client communication
+- All MCP protocol frames output to stdout; logs to stderr`;
   // write to stderr to avoid contaminating stdout protocol
   process.stderr.write(help + '\n');
   process.exit(0);
@@ -51,7 +87,7 @@ async function startDashboard(cfg: CliConfig): Promise<{ url: string } | null> {
         if(req.url === '/' || req.url.startsWith('/index')){
           const tools = listRegisteredMethods();
             res.setHeader('Content-Type','text/html; charset=utf-8');
-            res.end(`<html><head><title>MCP Index Server</title><style>body{font-family:system-ui;margin:1.5rem;}code{background:#f2f2f2;padding:2px 4px;border-radius:4px;}table{border-collapse:collapse;}td,th{border:1px solid #ddd;padding:4px 8px;}</style></head><body><h1>MCP Index Server</h1><p>Version: ${findPackageVersion()}</p><h2>Tools</h2><ul>${tools.map(t => `<li><code>${t}</code></li>`).join('')}</ul><p>Transport: stdio (JSON-RPC 2.0). This dashboard is read-only.</p></body></html>`);
+            res.end(`<html><head><title>MCP Index Server - Admin Dashboard</title><style>body{font-family:system-ui;margin:1.5rem;background:#f9f9f9;}h1{color:#2c3e50;}code{background:#e8f4fd;padding:2px 4px;border-radius:4px;color:#2980b9;}table{border-collapse:collapse;}td,th{border:1px solid #ddd;padding:4px 8px;}.admin-notice{background:#fff3cd;border:1px solid #ffeaa7;padding:1rem;border-radius:5px;margin:1rem 0;}.transport-note{background:#d4edda;border:1px solid #c3e6cb;padding:1rem;border-radius:5px;margin:1rem 0;}</style></head><body><div class="admin-notice"><strong>🔒 Administrator Dashboard</strong><br>This interface is for local administrators only. MCP clients connect via stdio transport, not this HTTP interface.</div><h1>MCP Index Server</h1><p>Version: ${findPackageVersion()}</p><h2>Available Tools</h2><ul>${tools.map(t => `<li><code>${t}</code></li>`).join('')}</ul><div class="transport-note"><strong>📡 Transport Information</strong><br><strong>Primary:</strong> stdio (JSON-RPC 2.0) - for MCP client communication<br><strong>Secondary:</strong> HTTP dashboard - for administrator monitoring (read-only)</div></body></html>`);
         } else if(req.url === '/tools.json'){
           const tools = listRegisteredMethods();
           res.setHeader('Content-Type','application/json');

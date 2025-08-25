@@ -1,0 +1,2 @@
+[promptReviewService] Loaded criteria from C:\github\jagilber\mcp-index-server\docs\PROMPT-CRITERIA.json
+Dashboard available at http://127.0.0.1:3210/

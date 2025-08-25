@@ -71,6 +71,45 @@ Notes:
 
 ### `instructions/diff`
 
+### `instructions/export`
+
+Exports current catalog entries (optionally subset by ids). Large exports may exceed comfortable JSON-RPC line sizes; intended for moderate catalogs.
+
+Params: `{ ids?: string[], metaOnly?: boolean }`
+
+Result: same shape as `instructions/list`.
+
+### `instructions/import` (experimental)
+
+Imports (creates or updates) instruction entries on disk.
+
+Params:
+
+```json
+{
+  "entries": [ { "id": "x", "title": "Title", "body": "...", "priority": 10, "audience": "all", "requirement": "mandatory", "categories": ["general"] } ],
+  "mode": "skip" | "overwrite"
+}
+```
+
+Result:
+
+```json
+{ "hash": "...", "imported": 1, "skipped": 0, "overwritten": 0, "total": 1, "errors": [] }
+```
+
+Notes:
+
+- Computes `sourceHash` automatically; sets timestamps to now.
+- Deduplicates & lowercases categories.
+- Use cautiously; no authentication layer present.
+
+### `instructions/repair`
+
+Recomputes `sourceHash` for each entry and rewrites any mismatched files updating `updatedAt`.
+
+Result: `{ "repaired": 0, "updated": [] }` (counts of fixed entries)
+
 Purpose: Client incremental sync vs catalog hash.
 
 Params (current incremental form):
@@ -240,6 +279,32 @@ Result:
   "summary": { "errors": 0, "warnings": 0, "total": 2 }
 }
 ```
+
+### `meta/tools`
+
+Lists available tool methods (best-effort discovery) and whether each is currently flagged as stable.
+
+Result:
+
+```json
+{ "generatedAt": "...", "tools": [ { "method": "instructions/list", "stable": true } ] }
+```
+
+### `usage/flush`
+
+Forces persistence of in-memory usage counters to disk snapshot.
+
+Result: `{ "flushed": true }`
+
+### `instructions/reload`
+
+Invalidates in-memory catalog and reloads from disk (reindex). Use after adding/removing instruction files.
+
+Result: `{ "reloaded": true, "hash": "...", "count": 42 }`
+
+## Persistence
+
+Usage counts are persisted to `data/usage-snapshot.json` and merged on startup. Use `usage/flush` to force write (normally debounced ~500ms and on shutdown signals).
 
 ## Planned Tools (Roadmap)
 

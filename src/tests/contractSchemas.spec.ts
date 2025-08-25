@@ -50,12 +50,18 @@ describe('contract schemas', () => {
       ['instructions/get', { id: 'alpha' }],
       ['instructions/search', { q: 'alpha' }],
       ['instructions/diff', { clientHash: 'bogus' }],
+  ['instructions/export', {}],
       ['prompt/review', { prompt: 'simple test prompt' }],
       ['integrity/verify'],
+  ['instructions/repair'],
       ['usage/track', { id: 'alpha' }],
       ['usage/hotset', { limit: 5 }],
-      ['metrics/snapshot'],
+  ['metrics/snapshot'],
       ['gates/evaluate']
+  ,['meta/tools']
+  ,['usage/flush']
+  ,['instructions/reload']
+  ,['instructions/import', { entries: [ { id:'gamma', title:'Gamma', body:'Gamma body', priority:50, audience:'all', requirement:'optional', categories:['misc'] } ], mode: 'overwrite' }]
     ];
     for(const [m,p] of methods){ pending.push({ id: call(m,p), method: m }); }
     await new Promise(r => setTimeout(r,300));

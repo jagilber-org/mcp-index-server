@@ -1,4 +1,4 @@
-import { registerHandler, getMetrics } from '../server/transport';
+import { registerHandler, getMetrics, listRegisteredMethods } from '../server/transport';
 import crypto from 'crypto';
 import { CatalogLoader } from './catalogLoader';
 import { InstructionEntry } from '../models/instruction';
@@ -14,6 +14,52 @@ export interface CatalogState {
 }
 
 let state: CatalogState | null = null;
+const usageSnapshotPath = path.join(process.cwd(), 'data', 'usage-snapshot.json');
+let usageDirty = false;
+let usageWriteTimer: NodeJS.Timeout | null = null;
+
+function ensureDataDir(){
+  const dir = path.dirname(usageSnapshotPath);
+  if(!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+
+function loadUsageSnapshot(): Record<string, { usageCount?: number; lastUsedAt?: string }>{
+  try {
+    if(fs.existsSync(usageSnapshotPath)){
+      return JSON.parse(fs.readFileSync(usageSnapshotPath,'utf8'));
+    }
+  } catch { /* ignore */ }
+  return {};
+}
+
+function scheduleUsageFlush(){
+  usageDirty = true;
+  if(usageWriteTimer) return;
+  usageWriteTimer = setTimeout(flushUsageSnapshot, 500);
+}
+
+function flushUsageSnapshot(){
+  if(!usageDirty) return;
+  usageWriteTimer && clearTimeout(usageWriteTimer);
+  usageWriteTimer = null;
+  usageDirty = false;
+  try {
+    ensureDataDir();
+    if(state){
+      const obj: Record<string, { usageCount?: number; lastUsedAt?: string }> = {};
+      for(const e of state.list){
+        if(e.usageCount || e.lastUsedAt){
+          obj[e.id] = { usageCount: e.usageCount, lastUsedAt: e.lastUsedAt };
+        }
+      }
+      fs.writeFileSync(usageSnapshotPath, JSON.stringify(obj, null, 2));
+    }
+  } catch { /* swallow */ }
+}
+
+process.on('SIGINT', () => { flushUsageSnapshot(); process.exit(0); });
+process.on('SIGTERM', () => { flushUsageSnapshot(); process.exit(0); });
+process.on('beforeExit', () => { flushUsageSnapshot(); });
 
 function ensureLoaded(): CatalogState {
   if(state) return state;
@@ -22,6 +68,12 @@ function ensureLoaded(): CatalogState {
   const byId = new Map<string, InstructionEntry>();
   result.entries.forEach(e => byId.set(e.id, e));
   state = { loadedAt: new Date().toISOString(), hash: result.hash, byId, list: result.entries };
+  // merge usage snapshot
+  const usage = loadUsageSnapshot();
+  for(const e of state.list){
+    const u = usage[e.id];
+    if(u){ e.usageCount = u.usageCount; e.lastUsedAt = u.lastUsedAt; }
+  }
   return state;
 }
 
@@ -47,6 +99,18 @@ registerHandler<{ q: string }>('instructions/search', (params) => {
   const q = (params.q || '').toLowerCase();
   const items = st.list.filter(i => i.title.toLowerCase().includes(q) || i.body.toLowerCase().includes(q));
   return { items, hash: st.hash, count: items.length };
+});
+
+// Export instructions (optionally subset by ids)
+registerHandler<{ ids?: string[]; metaOnly?: boolean }>('instructions/export', (params) => {
+  const st = ensureLoaded();
+  let items = st.list;
+  if(params?.ids && params.ids.length){
+    const want = new Set(params.ids);
+    items = items.filter(i => want.has(i.id));
+  }
+  // metaOnly currently returns full items; future: strip body
+  return { hash: st.hash, count: items.length, items };
 });
 
 interface KnownEntry { id: string; sourceHash: string }
@@ -85,6 +149,55 @@ registerHandler<DiffParams>('instructions/diff', (params) => {
   return { upToDate: true, hash: st.hash }; // should have been caught earlier
 });
 
+// Import instructions (create/update on disk) - experimental mutation tool
+interface ImportEntry { id: string; title: string; body: string; priority: number; audience: InstructionEntry['audience']; requirement: InstructionEntry['requirement']; categories: string[]; rationale?: string; deprecatedBy?: string; riskScore?: number }
+interface ImportParams { entries: ImportEntry[]; mode?: 'skip'|'overwrite' }
+registerHandler<ImportParams>('instructions/import', (params) => {
+  const entries = params?.entries || [];
+  const mode = params?.mode || 'skip';
+  if(!Array.isArray(entries) || entries.length === 0){ return { error: 'no entries' }; }
+  const dir = path.join(process.cwd(), 'instructions');
+  if(!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  let imported = 0; let skipped = 0; let overwritten = 0;
+  const errors: Array<{ id: string; error: string }> = [];
+  for(const e of entries){
+    if(!e || !e.id || !e.title || !e.body){ errors.push({ id: e?.id || 'unknown', error: 'missing required fields'}); continue; }
+    const id = e.id;
+    const file = path.join(dir, `${id}.json`);
+    if(fs.existsSync(file) && mode === 'skip'){ skipped++; continue; }
+    if(fs.existsSync(file) && mode === 'overwrite'){ overwritten++; }
+    else if(!fs.existsSync(file)) { imported++; }
+    const now = new Date().toISOString();
+    const categories = Array.from(new Set((e.categories||[]).map(c => c.toLowerCase()))).sort();
+    const sourceHash = crypto.createHash('sha256').update(e.body,'utf8').digest('hex');
+    const record: InstructionEntry = {
+      id,
+      title: e.title,
+      body: e.body,
+      rationale: e.rationale,
+      priority: e.priority,
+      audience: e.audience,
+      requirement: e.requirement,
+      categories,
+      sourceHash,
+      schemaVersion: '1',
+      deprecatedBy: e.deprecatedBy,
+      createdAt: now,
+      updatedAt: now,
+      riskScore: e.riskScore
+    };
+    try {
+      fs.writeFileSync(file, JSON.stringify(record, null, 2));
+    } catch(err){
+      errors.push({ id, error: 'write-failed' });
+    }
+  }
+  // reload state to incorporate new/updated entries
+  state = null;
+  const st = ensureLoaded();
+  return { hash: st.hash, imported, skipped, overwritten, errors, total: entries.length };
+});
+
 const promptService = new PromptReviewService();
 registerHandler<{ prompt: string }>('prompt/review', (params) => {
   const raw = params?.prompt || '';
@@ -113,6 +226,26 @@ registerHandler('integrity/verify', () => {
   return { hash: st.hash, count: st.list.length, issues, issueCount: issues.length };
 });
 
+// Repair tool: recompute and fix mismatched sourceHash values on disk
+registerHandler('instructions/repair', () => {
+  const st = ensureLoaded();
+  const repaired: string[] = [];
+  for(const entry of st.list){
+    const actual = crypto.createHash('sha256').update(entry.body,'utf8').digest('hex');
+    if(actual !== entry.sourceHash){
+      // rewrite file with corrected sourceHash
+      const file = path.join(process.cwd(), 'instructions', `${entry.id}.json`);
+      try {
+        const updated = { ...entry, sourceHash: actual, updatedAt: new Date().toISOString() };
+        fs.writeFileSync(file, JSON.stringify(updated, null, 2));
+        repaired.push(entry.id);
+      } catch { /* ignore write error */ }
+    }
+  }
+  if(repaired.length){ state = null; ensureLoaded(); }
+  return { repaired: repaired.length, updated: repaired };
+});
+
 // Usage tracking (in-memory only)
 registerHandler<{ id: string }>('usage/track', (params) => {
   const st = ensureLoaded();
@@ -122,6 +255,7 @@ registerHandler<{ id: string }>('usage/track', (params) => {
   if(!entry) return { notFound: true };
   entry.usageCount = (entry.usageCount ?? 0) + 1;
   entry.lastUsedAt = new Date().toISOString();
+  scheduleUsageFlush();
   return { id: entry.id, usageCount: entry.usageCount, lastUsedAt: entry.lastUsedAt };
 });
 
@@ -151,6 +285,26 @@ registerHandler('metrics/snapshot', () => {
     maxMs: rec.maxMs
   }));
   return { generatedAt: new Date().toISOString(), methods };
+});
+
+// Tool discovery
+const stableTools = new Set<string>(['health/check','instructions/list','instructions/get','instructions/search']);
+registerHandler('meta/tools', () => {
+  const methods = listRegisteredMethods();
+  return {
+    generatedAt: new Date().toISOString(),
+    tools: methods.map(m => ({ method: m, stable: stableTools.has(m) }))
+  };
+});
+
+// Force usage flush
+registerHandler('usage/flush', () => { flushUsageSnapshot(); return { flushed: true }; });
+
+// Reload (reindex) instructions from disk
+registerHandler('instructions/reload', () => {
+  state = null; // drop cache
+  const st = ensureLoaded();
+  return { reloaded: true, hash: st.hash, count: st.list.length };
 });
 
 // Gates evaluation

@@ -72,6 +72,16 @@ export const schemas: Record<string, unknown> = {
       } }
     ]
   },
+  'instructions/export': listLike,
+  'instructions/import': {
+    anyOf: [
+      { type: 'object', required: ['error'], properties: { error: { type: 'string' } }, additionalProperties: true },
+      { type: 'object', required: ['hash','imported','skipped','overwritten','errors','total'], additionalProperties: false, properties: {
+        hash: { type: 'string' }, imported: { type: 'number' }, skipped: { type: 'number' }, overwritten: { type: 'number' }, total: { type: 'number' }, errors: { type: 'array', items: { type: 'object', required: ['id','error'], properties: { id: { type: 'string' }, error: { type: 'string' } }, additionalProperties: false } }
+      } }
+    ]
+  },
+  'instructions/repair': { type: 'object', required: ['repaired','updated'], additionalProperties: false, properties: { repaired: { type: 'number' }, updated: { type: 'array', items: { type: 'string' } } } },
   'prompt/review': {
     anyOf: [
       { type: 'object', required: ['truncated','message','max'], additionalProperties: false, properties: {
@@ -140,6 +150,19 @@ export const schemas: Record<string, unknown> = {
       } }
     ]
   }
+  ,
+  'meta/tools': {
+    type: 'object', additionalProperties: false,
+    required: ['generatedAt','tools'],
+    properties: {
+      generatedAt: { type: 'string' },
+      tools: { type: 'array', items: { type: 'object', required: ['method','stable'], properties: {
+        method: { type: 'string' }, stable: { type: 'boolean' }
+      }, additionalProperties: false } }
+    }
+  },
+  'usage/flush': { type: 'object', required: ['flushed'], additionalProperties: false, properties: { flushed: { const: true } } },
+  'instructions/reload': { type: 'object', required: ['reloaded','hash','count'], additionalProperties: false, properties: { reloaded: { const: true }, hash: { type: 'string' }, count: { type: 'number' } } }
 };
 
 export type SchemaMap = typeof schemas;

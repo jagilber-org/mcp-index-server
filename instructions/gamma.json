@@ -1,0 +1,15 @@
+{
+  "id": "gamma",
+  "title": "Gamma",
+  "body": "Gamma body",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "misc"
+  ],
+  "sourceHash": "3e1a068232e5ebe9590520bcfd88a4ae7d176afbfd67cfe3e42b3523dc1469a5",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T02:41:05.770Z",
+  "updatedAt": "2025-08-25T02:41:05.770Z"
+}

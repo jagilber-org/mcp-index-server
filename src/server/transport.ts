@@ -39,8 +39,14 @@ interface MetricRecord { count: number; totalMs: number; maxMs: number; }
 const metrics: Record<string, MetricRecord> = {};
 export function getMetrics(){ return metrics; }
 
+const handlerMeta: Record<string, { method: string }> = {};
 export function registerHandler<TParams=unknown>(method: string, handler: Handler<TParams>){
   handlers[method] = handler as Handler;
+  handlerMeta[method] = { method };
+}
+
+export function listRegisteredMethods(): string[]{
+  return Object.keys(handlerMeta).sort();
 }
 
 function makeError(id: string | number | null | undefined, code: number, message: string, data?: unknown): JsonRpcError {

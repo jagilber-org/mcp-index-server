@@ -69,12 +69,13 @@ function makeError(id: string | number | null | undefined, code: number, message
   return { jsonrpc: '2.0', id: id ?? null, error: { code, message, data } };
 }
 
-function respond(obj: JsonRpcResponse){
-  process.stdout.write(JSON.stringify(obj) + '\n');
-}
+// (legacy placeholder removed; responses are written via respondFn inside startTransport)
 
 export function startTransport(){
   const verbose = process.env.MCP_LOG_VERBOSE === '1';
+  const protocolLog = process.env.MCP_LOG_PROTOCOL === '1'; // raw frames (parsed) logging
+  const diag = process.env.MCP_LOG_DIAG === '1' || verbose; // banner + environment snapshot
+
   const log = (level: 'info'|'error'|'debug', msg: string, extra?: unknown) => {
     if(level === 'debug' && !verbose) return;
     const ts = new Date().toISOString();
@@ -83,6 +84,19 @@ export function startTransport(){
       process.stderr.write(line + (extra ? ` ${JSON.stringify(extra)}` : '') + '\n');
     } catch { /* ignore */ }
   };
+
+  if(diag){
+    log('info','startup', {
+      version: VERSION,
+      pid: process.pid,
+      node: process.version,
+      cwd: process.cwd(),
+      mutationEnabled: process.env.MCP_ENABLE_MUTATION === '1',
+      verbose,
+      protocolLog,
+      diagEnv: !!process.env.MCP_LOG_DIAG
+    });
+  }
 
   // Global crash / rejection safety net to aid diagnostics in host clients that only see silent exits.
   process.on('uncaughtException', (err) => {
@@ -110,6 +124,14 @@ export function startTransport(){
   registerHandler('exit', () => { setTimeout(() => process.exit(0), 0); return { exiting: true }; });
 
   const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const respondFn = (obj: JsonRpcResponse) => {
+    if(protocolLog){
+      const base: { id: string | number | null; error?: number; ok?: true } = { id: (obj as JsonRpcSuccess | JsonRpcError).id ?? null };
+      if('error' in obj) base.error = obj.error.code; else base.ok = true;
+      log('debug','send', base);
+    }
+    process.stdout.write(JSON.stringify(obj) + '\n');
+  };
   // Emit ready notification (MCP-style event semantics placeholder)
   process.stdout.write(JSON.stringify({ jsonrpc: '2.0', method: 'server/ready', params: { version: VERSION } }) + '\n');
   rl.on('line', (line: string) => {
@@ -119,13 +141,16 @@ export function startTransport(){
     let req: JsonRpcRequest;
     try {
       req = JSON.parse(trimmed);
+      if(protocolLog){
+        log('debug','recv', { id: req.id ?? null, method: req.method });
+      }
     } catch(err){
       log('error', 'parse_error', { raw: trimmed.slice(0,200) });
-      respond(makeError(null, -32700, 'Parse error'));
+      respondFn(makeError(null, -32700, 'Parse error'));
       return;
     }
     if(req.jsonrpc !== '2.0' || !req.method){
-      respond(makeError(req.id ?? null, -32600, 'Invalid Request'));
+      respondFn(makeError(req.id ?? null, -32600, 'Invalid Request'));
       return;
     }
     const handler = handlers[req.method];
@@ -133,14 +158,14 @@ export function startTransport(){
       // Provide richer context for missing method to help client authors.
       const available = listRegisteredMethods();
       log('debug', 'method_not_found', { requested: req.method, availableCount: available.length });
-      respond(makeError(req.id ?? null, -32601, 'Method not found', { method: req.method, available }));
+      respondFn(makeError(req.id ?? null, -32601, 'Method not found', { method: req.method, available }));
       return;
     }
     // Pre-dispatch parameter validation using registry input schemas (when available)
     try {
       const validation = validateParams(req.method, req.params);
       if(!validation.ok){
-        respond(makeError(req.id ?? null, -32602, 'Invalid params', { method: req.method, errors: validation.errors }));
+  respondFn(makeError(req.id ?? null, -32602, 'Invalid params', { method: req.method, errors: validation.errors }));
         return;
       }
     } catch(e){ /* fail-open on validator issues */ }
@@ -155,7 +180,7 @@ export function startTransport(){
         const rec = metrics[req.method] || (metrics[req.method] = { count:0,totalMs:0,maxMs:0 });
         rec.count++; rec.totalMs += dur; if(dur > rec.maxMs) rec.maxMs = dur;
         if(req.id !== undefined && req.id !== null){
-          respond({ jsonrpc: '2.0', id: req.id, result });
+          respondFn({ jsonrpc: '2.0', id: req.id, result });
         }
       })
       .catch(e => {
@@ -164,7 +189,7 @@ export function startTransport(){
         rec.count++; rec.totalMs += dur; if(dur > rec.maxMs) rec.maxMs = dur;
         const errObj = e instanceof Error ? { message: e.message, stack: e.stack } : { message: 'Unknown error', value: e };
         log('error', 'handler_error', { method: req.method, ...errObj });
-        respond(makeError(req.id ?? null, -32603, 'Internal error', { method: req.method, ...errObj }));
+  respondFn(makeError(req.id ?? null, -32603, 'Internal error', { method: req.method, ...errObj }));
       });
   });
 }

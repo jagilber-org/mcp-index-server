@@ -19,15 +19,16 @@ export class ClassificationService {
       otherCats.push(cRaw);
     }
     // Governance defaults
-    const version = entry.version || '1.0.0';
-    const status = entry.status || (entry.requirement === 'deprecated' ? 'deprecated' : 'approved');
-    const owner = entry.owner || 'unowned';
-    const priorityTier = this.computePriorityTier(entry.priority, entry.requirement);
-    const classification = entry.classification || 'internal';
-    const lastReviewedAt = entry.lastReviewedAt || now;
-    const reviewIntervalDays = this.reviewIntervalDays(priorityTier, entry.requirement);
-    const nextReviewDue = entry.nextReviewDue || new Date(Date.now() + reviewIntervalDays*86400_000).toISOString();
-    const changeLog = entry.changeLog && entry.changeLog.length ? entry.changeLog : [{ version, changedAt: entry.createdAt || now, summary: 'initial import' }];
+  const version = entry.version || '1.0.0';
+  const status = entry.status || (entry.requirement === 'deprecated' ? 'deprecated' : 'approved');
+  const owner = entry.owner || 'unowned';
+  const priorityTier = entry.priorityTier || this.computePriorityTier(entry.priority, entry.requirement);
+  const classification = entry.classification || 'internal';
+  const lastReviewedAt = entry.lastReviewedAt || now;
+  const reviewIntervalDays = this.reviewIntervalDays(priorityTier, entry.requirement);
+  const nextReviewDue = entry.nextReviewDue || new Date(Date.now() + reviewIntervalDays*86400_000).toISOString();
+  const changeLog = entry.changeLog && entry.changeLog.length ? entry.changeLog : [{ version, changedAt: entry.createdAt || now, summary: 'initial import' }];
+  const semanticSummary = entry.semanticSummary || this.deriveSummary(entry.body);
     const norm: NormalizedInstruction = {
       ...entry,
       title: entry.title.trim(),
@@ -48,7 +49,8 @@ export class ClassificationService {
       lastReviewedAt,
       nextReviewDue,
       changeLog: changeLog,
-      supersedes: entry.supersedes
+  supersedes: entry.supersedes,
+  semanticSummary
     };
     return norm;
   }
@@ -95,5 +97,12 @@ export class ClassificationService {
     if(tier === 'P2') return 60;
     if(tier === 'P3') return 90;
     return 120;
+  }
+
+  private deriveSummary(body: string): string {
+    const trimmed = body.trim();
+    const firstLine = trimmed.split(/\r?\n/)[0];
+    // Keep it short (~160 chars)
+    return firstLine.length > 160 ? firstLine.slice(0,157)+'...' : firstLine;
   }
 }

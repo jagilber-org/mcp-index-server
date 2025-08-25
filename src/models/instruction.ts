@@ -31,4 +31,6 @@ export interface InstructionEntry {
   nextReviewDue?: string;     // scheduled review date
   changeLog?: { version: string; changedAt: string; summary: string }[]; // chronological changes
   supersedes?: string;        // id of instruction this one supersedes
+  // Content intelligence (optional)
+  semanticSummary?: string;   // concise summary / first-sentence style abstract of body
 }

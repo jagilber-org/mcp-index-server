@@ -36,6 +36,7 @@ export const instructionEntry = {
   ,nextReviewDue: { type: 'string' }
   ,changeLog: { type: 'array', items: { type: 'object', required: ['version','changedAt','summary'], additionalProperties: false, properties: { version: { type: 'string' }, changedAt: { type: 'string' }, summary: { type: 'string' } } } }
   ,supersedes: { type: 'string' }
+  ,semanticSummary: { type: 'string' }
   }
 } as const;
 
@@ -158,6 +159,19 @@ export const schemas: Record<string, unknown> = {
         method: { type: 'string' }, count: { type: 'number' }, avgMs: { type: 'number' }, maxMs: { type: 'number' }
       } } }
     }
+  },
+  'instructions/health': {
+    anyOf: [
+      { type: 'object', required: ['snapshot','hash','count'], additionalProperties: true, properties: { snapshot: { const: 'missing' }, hash: { type: 'string' }, count: { type: 'number' } } },
+      { type: 'object', required: ['snapshot','hash','count','missing','changed','extra','drift'], additionalProperties: true, properties: {
+        snapshot: { const: 'present' }, hash: { type: 'string' }, count: { type: 'number' },
+        missing: { type: 'array', items: { type: 'string' } },
+        changed: { type: 'array', items: { type: 'string' } },
+        extra: { type: 'array', items: { type: 'string' } },
+        drift: { type: 'number' }
+      } },
+      { type: 'object', required: ['snapshot','hash','error'], additionalProperties: true, properties: { snapshot: { const: 'error' }, hash: { type: 'string' }, error: { type: 'string' } } }
+    ]
   },
   'gates/evaluate': {
     anyOf: [

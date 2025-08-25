@@ -311,6 +311,29 @@ registerHandler('metrics/snapshot', () => {
   return { generatedAt: new Date().toISOString(), methods };
 });
 
+// Catalog drift check against canonical snapshot (if present)
+registerHandler('instructions/health', () => {
+  const st = ensureLoaded();
+  const snapshot = path.join(process.cwd(),'snapshots','canonical-instructions.json');
+  if(!fs.existsSync(snapshot)) return { snapshot: 'missing', hash: st.hash, count: st.list.length };
+  try {
+    const raw = JSON.parse(fs.readFileSync(snapshot,'utf8')) as { items?: { id:string; sourceHash:string }[] };
+    const snapItems = raw.items || [];
+    const snapMap = new Map(snapItems.map(i => [i.id, i.sourceHash] as const));
+    const missing: string[] = [];
+    const changed: string[] = [];
+    for(const e of st.list){
+      const h = snapMap.get(e.id);
+      if(h === undefined) missing.push(e.id);
+      else if(h !== e.sourceHash) changed.push(e.id);
+    }
+    const extra = snapItems.filter(i => !st.byId.has(i.id)).map(i => i.id);
+    return { snapshot: 'present', hash: st.hash, count: st.list.length, missing, changed, extra, drift: missing.length + changed.length + extra.length };
+  } catch(e){
+    return { snapshot: 'error', error: e instanceof Error ? e.message : String(e), hash: st.hash };
+  }
+});
+
 // ---------------- Tool Discovery ----------------
 const stableTools = new Set<string>(Array.from(REGISTRY_STABLE));
 const mutationTools = new Set<string>([

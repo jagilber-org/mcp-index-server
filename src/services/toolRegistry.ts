@@ -48,6 +48,7 @@ const INPUT_SCHEMAS: Record<string, object> = {
   'instructions/groom': { type: 'object', additionalProperties: false, properties: { mode: { type: 'object', additionalProperties: false, properties: { dryRun: { type: 'boolean' }, removeDeprecated: { type: 'boolean' }, mergeDuplicates: { type: 'boolean' }, purgeLegacyScopes: { type: 'boolean' } } } } },
   'prompt/review': stringReq('prompt'),
   'integrity/verify': { type: 'object', additionalProperties: true },
+  'instructions/health': { type: 'object', additionalProperties: true },
   'usage/track': stringReq('id'),
   'usage/hotset': { type: 'object', additionalProperties: false, properties: { limit: { type: 'number', minimum: 1, maximum: 100 } } },
   'usage/flush': { type: 'object', additionalProperties: true },
@@ -100,6 +101,7 @@ function describeTool(name: string): string {
     case 'usage/hotset': return 'Return the most-used instruction entries (hot set).';
     case 'usage/flush': return 'Flush usage snapshot to persistent storage.';
     case 'metrics/snapshot': return 'Performance metrics summary for handled methods.';
+  case 'instructions/health': return 'Compare live catalog to canonical snapshot for drift.';
     case 'gates/evaluate': return 'Evaluate configured gating criteria over current catalog.';
     case 'meta/tools': return 'Enumerate available tools & their metadata.';
     default: return 'Tool description pending.';

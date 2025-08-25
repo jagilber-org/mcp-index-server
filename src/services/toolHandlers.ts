@@ -50,6 +50,7 @@ function resolveInstructionsDir(): string {
 function ensureLoaded(): CatalogState {
   if(state) return state;
   const baseDir = resolveInstructionsDir();
+  logVerbose('catalog baseDir', { baseDir });
   const loader = new CatalogLoader(baseDir);
   const result = loader.load();
   const byId = new Map<string, InstructionEntry>();

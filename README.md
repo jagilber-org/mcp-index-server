@@ -1,6 +1,43 @@
-# MCP Instruction Index Server
+# MCP Instruction### Configuration
 
-Enterprise-grade local Model Context Protocol server providing a governed, classified, auditable instruction catalog with analytics and a management dashboard.
+Add to your VS Code `mcp.json`:
+
+```jsonc
+{
+  "servers": {
+    "mcp-index-server": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "path/to/dist/server/index.js",
+        "--dashboard",
+        "--dashboard-port=3210"
+      ],
+      "env": {
+        "MCP_LOG_VERBOSE": "1",
+        "MCP_ENABLE_MUTATION": "1"
+      }
+    }
+  }
+}
+```
+
+**Important**: After updating your `mcp.json`, restart VS Code completely to establish the MCP server connection.
+
+## Troubleshooting VS Code Connection
+
+If VS Code shows "Configured but Not Connected":
+
+1. **Build the server**: Ensure `dist/server/index.js` exists by running `npm run build`
+2. **Check the path**: Use absolute path to the server executable in your `mcp.json`
+3. **Restart VS Code**: MCP connections require a full VS Code restart after configuration changes
+4. **Test manually**: Verify the server works by running:
+
+   ```bash
+   echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | node dist/server/index.js
+   ```
+
+5. **Check logs**: Enable `MCP_LOG_VERBOSE=1` to see connection details in VS Code developer consoleterprise-grade local Model Context Protocol server providing a governed, classified, auditable instruction catalog with analytics and a management dashboard.
 
 ## Status
 

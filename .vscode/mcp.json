@@ -1,5 +1,18 @@
 {
 	"servers": {
+		"mcp-index-server": {
+			"type": "stdio",
+			"command": "node",
+			"args": [
+				"C:\\github\\jagilber\\mcp-index-server\\dist\\server\\index.js",
+				"--dashboard",
+				"--dashboard-port=3210"
+			],
+			"env": {
+				"MCP_LOG_VERBOSE": "1",
+				"MCP_ENABLE_MUTATION": "1"
+			}
+		}
 	},
 	"inputs": []
 }

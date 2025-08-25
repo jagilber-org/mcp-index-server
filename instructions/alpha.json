@@ -1,0 +1,15 @@
+{
+  "id": "alpha",
+  "title": "Alpha Instruction",
+  "body": "Do Alpha things",
+  "priority": 10,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "general"
+  ],
+  "sourceHash": "",
+  "schemaVersion": "1",
+  "createdAt": "",
+  "updatedAt": ""
+}

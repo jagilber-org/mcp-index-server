@@ -11,7 +11,9 @@
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --ext .ts",
-    "format": "prettier --write ."
+  "format": "prettier --write .",
+  "prepare": "node scripts/setup-hooks.cjs",
+  "scan:security": "pwsh scripts/security-scan.ps1"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

@@ -1,0 +1,16 @@
+{
+  "id": "beta",
+  "title": "Beta Guide",
+  "body": "Beta body text",
+  "priority": 30,
+  "audience": "group",
+  "requirement": "recommended",
+  "categories": [
+    "general",
+    "beta"
+  ],
+  "sourceHash": "",
+  "schemaVersion": "1",
+  "createdAt": "",
+  "updatedAt": ""
+}

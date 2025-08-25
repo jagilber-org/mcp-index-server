@@ -4,28 +4,32 @@ interface JsonRpcRequest {
   jsonrpc: '2.0';
   id?: string | number | null;
   method: string;
-  params?: any;
+  params?: unknown;
 }
 interface JsonRpcSuccess {
   jsonrpc: '2.0';
   id: string | number | null;
-  result: any;
+  result: unknown;
 }
 interface JsonRpcError {
   jsonrpc: '2.0';
   id: string | number | null;
-  error: { code: number; message: string; data?: any };
+  error: { code: number; message: string; data?: unknown };
 }
 
 type JsonRpcResponse = JsonRpcSuccess | JsonRpcError;
 
-type Handler = (params: any) => Promise<any> | any;
+type Handler = (params: unknown) => Promise<unknown> | unknown;
 
 const handlers: Record<string, Handler> = {
   'health/check': () => ({ status: 'ok', timestamp: new Date().toISOString(), version: '0.1.0' })
 };
 
-function makeError(id: string | number | null | undefined, code: number, message: string, data?: any): JsonRpcError {
+export function registerHandler(method: string, handler: Handler){
+  handlers[method] = handler;
+}
+
+function makeError(id: string | number | null | undefined, code: number, message: string, data?: unknown): JsonRpcError {
   return { jsonrpc: '2.0', id: id ?? null, error: { code, message, data } };
 }
 
@@ -64,8 +68,9 @@ export function startTransport(){
           respond({ jsonrpc: '2.0', id: req.id, result: r });
         }
       });
-    } catch(e: any){
-      respond(makeError(req.id ?? null, -32603, 'Internal error', { message: e?.message }));
+    } catch(e: unknown){
+      const errMsg = e instanceof Error ? e.message : 'Unknown error';
+      respond(makeError(req.id ?? null, -32603, 'Internal error', { message: errMsg }));
     }
   });
 }

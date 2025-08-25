@@ -17,5 +17,7 @@ Phase 1 skeleton (models + classification + tests) initialized. Next: Transport 
 ## Quick Start
 Install dependencies then build & test.
 
+Hooks: on first install a pre-commit hook runs typecheck, lint, tests, and secret scan. Manual security scan: `npm run scan:security`.
+
 ## Roadmap
 See `docs/IMPLEMENTATION-PLAN.md` and `docs/ARCHITECTURE.md`.

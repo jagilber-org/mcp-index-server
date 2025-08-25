@@ -9,6 +9,7 @@
     "dev": "node --watch dist/server/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
+  "test:contracts": "vitest run src/tests/contractSchemas.spec.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",

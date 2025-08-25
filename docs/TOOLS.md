@@ -1,6 +1,6 @@
 # MCP Tools API Reference
 
-Version: 0.1.0 (increment when response contracts change)
+Version: 0.2.0 (increment when stable response contracts change)
 
 ## Conventions
 
@@ -265,6 +265,12 @@ Run `npm run perf` to execute a synthetic search benchmark over catalogs of size
 
 ---
 
+## Schemas
+
+Formal JSON Schemas for each tool response live in `src/schemas/index.ts` and are enforced by `npm run test:contracts`.
+Any change to a stable schema requires a semver minor (additive) or major (breaking) bump and TOOLS.md version update.
+
 Change Log:
 
 - 0.1.0: Initial doc covering existing four instruction tools + prompt/review + health.
+- 0.2.0: Added integrity/verify, usage/*, metrics/snapshot, gates/evaluate, incremental diff, security hardening, performance benchmark, schema contracts.

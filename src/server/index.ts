@@ -13,6 +13,7 @@
  */
 import { startTransport, listRegisteredMethods } from './transport';
 import '../services/toolHandlers';
+import { getCatalogState } from '../services/toolHandlers';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
@@ -110,6 +111,7 @@ async function startDashboard(cfg: CliConfig): Promise<{ url: string } | null> {
     if(ok){
   // Local dashboard served over HTTP (intended for local dev only)
   // Local HTTP (dashboard) intentionally non-TLS for dev; restrict host to loopback by default.
+  // Localhost admin dashboard on loopback only (HTTP acceptable for local dev)
   return { url: `http://${host}:${port}/` };
     }
     port++;
@@ -123,6 +125,18 @@ export async function main(){
   const dash = await startDashboard(cfg);
   if(dash){
     process.stderr.write(`Dashboard available at ${dash.url}\n`);
+  }
+  // Extended startup diagnostics (does not emit on stdout)
+  if(process.env.MCP_LOG_VERBOSE === '1' || process.env.MCP_LOG_DIAG === '1'){
+    try {
+      const methods = listRegisteredMethods();
+      // Force catalog load to report initial count/hash
+      const catalog = getCatalogState();
+      const mutation = process.env.MCP_ENABLE_MUTATION === '1';
+      process.stderr.write(`[startup] toolsRegistered=${methods.length} mutationEnabled=${mutation} catalogCount=${catalog.list.length} catalogHash=${catalog.hash}\n`);
+    } catch(e){
+      process.stderr.write(`[startup] diagnostics_error ${(e instanceof Error)? e.message: String(e)}\n`);
+    }
   }
   startTransport();
 }

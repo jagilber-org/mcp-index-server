@@ -19,14 +19,14 @@ interface JsonRpcError {
 
 type JsonRpcResponse = JsonRpcSuccess | JsonRpcError;
 
-type Handler = (params: unknown) => Promise<unknown> | unknown;
+export type Handler<TParams = unknown> = (params: TParams) => Promise<unknown> | unknown;
 
 const handlers: Record<string, Handler> = {
   'health/check': () => ({ status: 'ok', timestamp: new Date().toISOString(), version: '0.1.0' })
 };
 
-export function registerHandler(method: string, handler: Handler){
-  handlers[method] = handler;
+export function registerHandler<TParams=unknown>(method: string, handler: Handler<TParams>){
+  handlers[method] = handler as Handler;
 }
 
 function makeError(id: string | number | null | undefined, code: number, message: string, data?: unknown): JsonRpcError {

@@ -1,6 +1,7 @@
 import { registerHandler } from '../server/transport';
 import { CatalogLoader } from './catalogLoader';
 import { InstructionEntry } from '../models/instruction';
+import { PromptReviewService, summarizeIssues } from './promptReviewService';
 
 interface CatalogState {
   loadedAt: string;
@@ -21,7 +22,7 @@ function ensureLoaded(): CatalogState {
   return state;
 }
 
-registerHandler('instructions/list', (params: { category?: string }) => {
+registerHandler<{ category?: string }>('instructions/list', (params) => {
   const st = ensureLoaded();
   const { category } = params || {};
   let items = st.list;
@@ -29,27 +30,34 @@ registerHandler('instructions/list', (params: { category?: string }) => {
   return { items, hash: st.hash, count: items.length };
 });
 
-registerHandler('instructions/get', (params: { id: string }) => {
+registerHandler<{ id: string }>('instructions/get', (params) => {
   const st = ensureLoaded();
   const item = st.byId.get(params.id);
   if(!item) return { notFound: true };
   return { item, hash: st.hash };
 });
 
-registerHandler('instructions/search', (params: { q: string }) => {
+registerHandler<{ q: string }>('instructions/search', (params) => {
   const st = ensureLoaded();
   const q = (params.q || '').toLowerCase();
   const items = st.list.filter(i => i.title.toLowerCase().includes(q) || i.body.toLowerCase().includes(q));
   return { items, hash: st.hash, count: items.length };
 });
 
-registerHandler('instructions/diff', (params: { clientHash?: string }) => {
+registerHandler<{ clientHash?: string }>('instructions/diff', (params) => {
   const st = ensureLoaded();
   if(!params.clientHash || params.clientHash === st.hash){
     return { upToDate: params.clientHash === st.hash, hash: st.hash };
   }
   // Simple diff: return all items for now (optimize later)
   return { changed: st.list, hash: st.hash };
+});
+
+const promptService = new PromptReviewService();
+registerHandler<{ prompt: string }>('prompt/review', (params) => {
+  const issues = promptService.review(params.prompt || '');
+  const summary = summarizeIssues(issues);
+  return { issues, summary };
 });
 
 export {}; // ensure module scope

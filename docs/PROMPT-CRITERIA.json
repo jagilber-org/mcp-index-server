@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "categories": [
+    {
+      "id": "security",
+      "rules": [
+        {"id": "no-secrets", "pattern": "(AKIA[0-9A-Z]{16}|ghp_[0-9A-Za-z]{36}|-----BEGIN PRIVATE KEY-----)", "severity": "critical", "description": "Potential embedded secret"},
+        {"id": "no-hardcoded-api", "pattern": "api[_-]?key", "severity": "high", "description": "Hardcoded API key mention"}
+      ]
+    },
+    {
+      "id": "mcp",
+      "rules": [
+        {"id": "mention-jsonrpc", "mustContain": "jsonrpc", "severity": "info", "description": "Prompts referencing protocol should mention jsonrpc"}
+      ]
+    },
+    {
+      "id": "enterprise",
+      "rules": [
+  {"id": "avoid-ambiguous", "pattern": "stuff|things", "severity": "medium", "description": "Ambiguous filler words"}
+      ]
+    },
+    {
+      "id": "indexing",
+      "rules": [
+        {"id": "encourage-tags", "mustContain": "categories", "severity": "info", "description": "Should specify categories for indexing context"}
+      ]
+    },
+    {
+      "id": "instructions",
+      "rules": [
+        {"id": "require-audience", "mustContain": "audience", "severity": "high", "description": "Audience scope should be defined"},
+        {"id": "require-requirement", "mustContain": "mandatory|critical|recommended|optional|deprecated", "severity": "high", "description": "Should reference requirement levels"}
+      ]
+    }
+  ]
+}

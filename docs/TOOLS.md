@@ -259,6 +259,10 @@ Result:
 - Designed to be embedded as a subprocess MCP server.
 - Line-delimited JSON; no framing beyond newline.
 
+## Performance Benchmarking
+
+Run `npm run perf` to execute a synthetic search benchmark over catalogs of sizes 100/1000/5000 producing JSON with P95 and max search times.
+
 ---
 
 Change Log:

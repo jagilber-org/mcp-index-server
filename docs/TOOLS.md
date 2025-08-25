@@ -20,7 +20,7 @@ Result:
 
 ```json
 { "status": "ok", "timestamp": "2025-01-01T00:00:00.000Z", "version": "0.1.0" }
-```
+```text
 
 ## Instruction Index Tools
 
@@ -323,6 +323,46 @@ Usage counts are persisted to `data/usage-snapshot.json` and merged on startup. 
 
 - Designed to be embedded as a subprocess MCP server.
 - Line-delimited JSON; no framing beyond newline.
+- Stdout reserved strictly for JSON-RPC protocol frames. Human-readable logs (including dashboard URL) are written to stderr to avoid corrupting the stream.
+
+## Command Line Flags
+
+The server accepts optional flags (pass after the node entrypoint):
+
+```
+--dashboard             Enable read-only dashboard (HTML + /tools.json) (default off)
+--dashboard-port=PORT   Preferred dashboard port (default 8787; auto-increments if busy)
+--dashboard-host=HOST   Host/interface to bind (default 127.0.0.1)
+--dashboard-tries=N     Number of incremental ports to try (default 10)
+--no-dashboard          Explicitly disable dashboard
+-h, --help              Show help (emitted to stderr)
+```
+
+Example start with dashboard:
+
+`node dist/server/index.js --dashboard --dashboard-port=9000`
+
+On success the server logs (to stderr):
+
+`Dashboard available at http://127.0.0.1:9000/`
+
+## VS Code MCP Configuration
+
+Example `mcp.json` snippet to register this server:
+
+```json
+{
+  "servers": {
+    "instructionIndex": {
+      "command": "node",
+      "args": ["dist/server/index.js", "--dashboard"],
+      "transport": "stdio"
+    }
+  }
+}
+```
+
+Ensure the working directory contains `instructions/` before launch. The dashboard is optional and safe to disable in production.
 
 ## Performance Benchmarking
 

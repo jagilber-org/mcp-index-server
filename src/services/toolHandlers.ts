@@ -33,9 +33,24 @@ process.on('SIGTERM', ()=>{ flushUsageSnapshot(); process.exit(0); });
 process.on('beforeExit', ()=>{ flushUsageSnapshot(); });
 
 // ---------------- Catalog Load ----------------
+function resolveInstructionsDir(): string {
+  // Primary: relative to process.cwd()
+  const candidates = [
+    path.join(process.cwd(), 'instructions'),
+    path.join(__dirname, '..', '..', 'instructions'), // when compiled output lives in dist/server/.. relative to project root
+    path.join(process.cwd(), '..', 'instructions') // fallback if cwd inside a subfolder
+  ];
+  for(const c of candidates){
+    try { if(fs.existsSync(c)) return c; } catch { /* ignore */ }
+  }
+  // Return first (even if missing) so loader can surface a meaningful error
+  return candidates[0];
+}
+
 function ensureLoaded(): CatalogState {
   if(state) return state;
-  const loader = new CatalogLoader('./instructions');
+  const baseDir = resolveInstructionsDir();
+  const loader = new CatalogLoader(baseDir);
   const result = loader.load();
   const byId = new Map<string, InstructionEntry>();
   result.entries.forEach(e => byId.set(e.id, e));

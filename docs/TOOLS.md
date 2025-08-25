@@ -252,6 +252,7 @@ Result:
 
 - No mutation tools exposed yet; server is read-only aside from in-memory plan for future usage tracking.
 - Prompt review avoids executing regex with catastrophic backtracking; criteria file kept simple.
+- `prompt/review` enforces a 10KB maximum input length and strips null bytes prior to evaluation.
 
 ## Compatibility Notes
 

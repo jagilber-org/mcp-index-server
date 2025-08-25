@@ -87,9 +87,16 @@ registerHandler<DiffParams>('instructions/diff', (params) => {
 
 const promptService = new PromptReviewService();
 registerHandler<{ prompt: string }>('prompt/review', (params) => {
-  const issues = promptService.review(params.prompt || '');
+  const raw = params?.prompt || '';
+  const MAX = 10_000; // 10KB limit
+  if(raw.length > MAX){
+    return { truncated: true, message: 'prompt too large', max: MAX };
+  }
+  // basic sanitization: remove null bytes
+  const sanitized = raw.replace(/\0/g,'');
+  const issues = promptService.review(sanitized);
   const summary = summarizeIssues(issues);
-  return { issues, summary };
+  return { issues, summary, length: sanitized.length };
 });
 
 // Integrity verification tool: recompute body hash and compare with stored sourceHash

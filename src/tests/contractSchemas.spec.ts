@@ -6,7 +6,11 @@ import Ajv, { ErrorObject } from 'ajv';
 import { schemas } from '../schemas';
 
 function startServer(){
-  return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio: ['pipe','pipe','pipe'] });
+  // Enable mutation so schemas for mutation tools validate against success results
+  return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], {
+    stdio: ['pipe','pipe','pipe'],
+    env: { ...process.env, MCP_ENABLE_MUTATION: '1' }
+  });
 }
 
 type Child = ReturnType<typeof spawn>;
@@ -67,10 +71,16 @@ describe('contract schemas', () => {
     await new Promise(r => setTimeout(r,300));
 
     for(const p of pending){
-  const line = lines.find(l => new RegExp(`"id":${p.id}(?![0-9])`).test(l));
+      const line = lines.find(l => new RegExp(`"id":${p.id}(?![0-9])`).test(l));
       expect(line, `missing response for ${p.method}`).toBeTruthy();
       const obj = JSON.parse(line!);
-      expect(obj.error, `unexpected error for ${p.method}`).toBeFalsy();
+      if(obj.error){
+        // Allow gated mutation errors & treat them as acceptable for contract presence.
+        const msg = (obj.error.data?.message || obj.error.message || '').toLowerCase();
+        const isGated = /mutation disabled/.test(msg);
+        expect(isGated, `unexpected error for ${p.method}`).toBe(true);
+        continue; // skip schema validation when tool intentionally gated
+      }
       const validate = compiled[p.method];
       expect(validate, `no schema for ${p.method}`).toBeTruthy();
       const ok = validate(obj.result);
@@ -89,5 +99,27 @@ describe('contract schemas', () => {
   delete (sample as { hash?: string }).hash;
     const ok = validate(sample);
     expect(ok).toBe(false);
+  });
+
+  it('returns gated error shape for mutation tool when mutation disabled', async () => {
+    // start server WITHOUT mutation env
+    const server = spawn('node', [path.join(__dirname, '../../dist/server/index.js')], {
+      stdio: ['pipe','pipe','pipe'],
+      env: { ...process.env, MCP_ENABLE_MUTATION: '' }
+    });
+    const lines: string[] = [];
+    server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
+    await new Promise(r => setTimeout(r,150));
+    const id = 9999;
+    send(server, { jsonrpc:'2.0', id, method: 'usage/flush' });
+    await new Promise(r => setTimeout(r,200));
+    const line = lines.find(l => new RegExp(`"id":${id}(?![0-9])`).test(l));
+    expect(line, 'missing response for gated tool').toBeTruthy();
+    const obj = JSON.parse(line!);
+    expect(obj.error, 'expected error when mutation disabled').toBeTruthy();
+    expect(obj.error.code).toBe(-32603);
+    expect(obj.error.data?.method).toBe('usage/flush');
+    expect(String(obj.error.data?.message || '')).toMatch(/Mutation disabled/);
+    server.kill();
   });
 });

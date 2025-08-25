@@ -1,0 +1,11 @@
+{
+    "chat.mcp.serverSampling": {
+        "mcp-index-server/.vscode/mcp.json: mcp-instruction-server": {
+            "allowedModels": [
+                "copilot/gpt-4.1",
+                "copilot/claude-sonnet-4",
+                "copilot/gpt-5"
+            ]
+        }
+    }
+}

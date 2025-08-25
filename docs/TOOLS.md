@@ -1,381 +1,293 @@
 # MCP Tools API Reference
 
-Version: 0.2.0 (increment when stable response contracts change)
+Version: 0.4.0 (synchronized with package.json)
 
-## Conventions
+Fully consolidated in 0.4.0 (removed duplicated legacy sections). This document is the single source for tool contracts, env flags, and stability notes.
 
-- Transport: JSON-RPC 2.0 over stdio (one JSON object per line)
-- Request shape: `{ "jsonrpc": "2.0", "id": <string|number>, "method": "<tool>", "params": { ... } }`
-- Success response: `{ "jsonrpc": "2.0", "id": <same>, "result": { ... } }`
-- Error response: JSON-RPC error object with `code`, `message`, optional `data`.
-- All timestamps: ISO 8601 UTC.
+## Overview
 
-## Health
+The server exposes a set of JSON-RPC 2.0 methods ("tools") over stdio. By default it is read‑only. Mutating (write) operations are gated by an environment variable and clearly labeled.
 
-### Method: `health/check`
+Categories:
+
+- Instruction Catalog: list, get, search, diff, export, repair, import, reload
+- Governance & Integrity: prompt/review, integrity/verify, gates/evaluate
+- Usage & Metrics: usage/track, usage/hotset, usage/flush, metrics/snapshot
+- Introspection: meta/tools
+
+## Transport & Conventions
+
+Requests: `{ "jsonrpc": "2.0", "id": <string|number>, "method": "instructions/list", "params": { ... } }`
+Success:  `{ "jsonrpc": "2.0", "id": <same>, "result": { ... } }`
+Errors:   JSON-RPC error object (code, message, optional data)
+Timestamps: ISO 8601 UTC.
+One JSON object per line on stdout; all human logs go to stderr.
+
+Lifecycle methods supported internally: initialize, shutdown, exit (no separate docs; standard JSON-RPC semantics). A missed method returns -32601 and includes a nearby methods hint when verbose logging is enabled.
+
+## Environment Flags
+
+Mutation gating:
+
+- MCP_ENABLE_MUTATION=1  (enable write tools, otherwise they return error: "Mutation disabled. Set MCP_ENABLE_MUTATION=1 to enable.")
+
+Logging / diagnostics (stderr only):
+
+- MCP_LOG_VERBOSE=1   (verbose general logging + implies mutation logging)
+- MCP_LOG_MUTATION=1  (log only mutation tool executions)
+
+Optional (future use / reserved): none presently.
+
+## Mutation Tools (write)
+
+Disabled by default unless MCP_ENABLE_MUTATION=1.
+
+- instructions/import
+- instructions/repair (writes only when fixing hashes)
+- instructions/reload (reindexes; side-effect is catalog reset)
+- usage/flush (forces persistence write)
+
+Rationale: Safer default for embedding in untrusted environments; explicit opt‑in for CI maintenance or local admin.
+
+`meta/tools` exposes:
+
+- mutationEnabled (boolean)
+- Per-tool flags: { method, mutation?: true, disabled?: true, stable?: true }
+
+## Logging Examples (PowerShell)
+
+```powershell
+$env:MCP_LOG_VERBOSE=1; node dist/server/index.js
+$env:MCP_ENABLE_MUTATION=1; $env:MCP_LOG_MUTATION=1; node dist/server/index.js
+```
+
+## Tool Reference
+
+Each method name below is a JSON-RPC method string.
+
+### instructions/list
+
+Params: { category?: string }
+Result: { hash, count, items: [{ id, title? ... }] }
+Filters by lowercase category token when provided.
+
+### instructions/get
+
+Params: { id: string }
+Result (found): { hash, item: InstructionEntry }
+Result (missing): { notFound: true }
+
+### instructions/search
+
+Params: { q: string }
+Case-insensitive substring over title + body.
+Result: { hash, count, items: [...] }
+
+### instructions/diff
+
+Params: { clientHash?: string, known?: [{ id, sourceHash }] }
+Result (up to date): { upToDate: true, hash }
+Result (incremental): { hash, added: [InstructionEntry], updated: [...], removed: [id] }
+Legacy fallback: { hash, changed: [InstructionEntry] }
+
+### instructions/export
+
+Params: { ids?: string[], metaOnly?: boolean }
+Result: { hash, count, items: [...] }
+
+### instructions/import (mutation)
+
+Params: { entries: InstructionEntryInput[], mode: "skip" | "overwrite" }
+Result: { hash, imported, skipped, overwritten, total, errors: [] }
+Notes: Automatically computes sourceHash; timestamps set to now.
+
+### instructions/repair (mutation when rewriting)
+
+Params: { clientHash?: string, known?: [{ id, sourceHash }] }
+Result: Either incremental sync object (same as diff) OR { repaired, updated: [id] } when performing on-disk hash repairs.
+
+### instructions/reload (mutation)
 
 Params: none
+Result: { reloaded: true, hash, count }
+Effect: Clears in-memory cache and reloads from disk.
 
-Result:
+### prompt/review
 
-```json
-{ "status": "ok", "timestamp": "2025-01-01T00:00:00.000Z", "version": "0.1.0" }
-```text
+Params: { prompt: string }
+Result: { issues: [...], summary: { counts, highestSeverity? } }
+Limits: 10KB max input; null bytes stripped.
 
-## Instruction Index Tools
+### integrity/verify
 
-These operate on the loaded in-memory catalog (lazy-loaded on first request from `./instructions`).
+Params: none
+Result: { hash, count, issues: [{ id, expected, actual }], issueCount }
 
-### `instructions/list`
+### gates/evaluate
 
-Params: `{ category?: string }`
+Params: none (reads instructions/gates.json)
+Result: { generatedAt, results: [{ id, passed, count, op, value, severity }], summary: { errors, warnings, total } }
 
-Result:
+### usage/track
 
-```json
-{
-  "hash": "<aggregate-hash>",
-  "count": 12,
-  "items": [ { "id": "..." } ]
-}
-```
+Params: { id }
+Result: { id, usageCount, lastUsedAt } | { notFound: true }
 
-Notes:
+### usage/hotset
 
-- If `category` provided (case-insensitive) filters by category token.
-- Future: pagination & projection fields.
+Params: { limit?: number (default 10, max 100) }
+Result: { hash, count, limit, items: [{ id, usageCount, lastUsedAt }] }
 
-### `instructions/get`
+### usage/flush (mutation)
 
-Params: `{ id: string }`
+Params: none
+Result: { flushed: true }
+Persists in-memory usage snapshot immediately.
 
-Result (found): `{ hash: string, item: InstructionEntry }`
+### metrics/snapshot
 
-Result (not found): `{ notFound: true }`
+Params: none
+Result: { generatedAt, methods: [{ method, count, avgMs, maxMs }] }
 
-Notes: `hash` omitted on notFound? (Currently omitted. Future contract will include hash consistently.)
+### meta/tools
 
-### `instructions/search`
-
-Params: `{ q: string }` (substring match over lowercased title and body)
-
-Result:
-
-```json
-{ "hash": "<aggregate-hash>", "count": 2, "items": [ { "id": "..." } ] }
-```
-
-Notes:
-
-- Simple case-insensitive substring search. Future: tokenization / semantic search.
-
-### `instructions/diff`
-
-### `instructions/export`
-
-Exports current catalog entries (optionally subset by ids). Large exports may exceed comfortable JSON-RPC line sizes; intended for moderate catalogs.
-
-Params: `{ ids?: string[], metaOnly?: boolean }`
-
-Result: same shape as `instructions/list`.
-
-### `instructions/import` (experimental)
-
-Imports (creates or updates) instruction entries on disk.
-
-Params:
+Params: none
+Result: Legacy + structured response:
 
 ```json
 {
-  "entries": [ { "id": "x", "title": "Title", "body": "...", "priority": 10, "audience": "all", "requirement": "mandatory", "categories": ["general"] } ],
-  "mode": "skip" | "overwrite"
-}
-```
-
-Result:
-
-```json
-{ "hash": "...", "imported": 1, "skipped": 0, "overwritten": 0, "total": 1, "errors": [] }
-```
-
-Notes:
-
-- Computes `sourceHash` automatically; sets timestamps to now.
-- Deduplicates & lowercases categories.
-- Use cautiously; no authentication layer present.
-
-### `instructions/repair`
-
-Recomputes `sourceHash` for each entry and rewrites any mismatched files updating `updatedAt`.
-
-Result: `{ "repaired": 0, "updated": [] }` (counts of fixed entries)
-
-Purpose: Client incremental sync vs catalog hash.
-
-Params (current incremental form):
-
-```json
-{ "clientHash": "<optional aggregate>", "known": [ { "id": "...", "sourceHash": "..." } ] }
-```
-
-Behavior:
-
-- If `known` omitted and `clientHash` matches server hash => `{ upToDate: true, hash }`.
-- If `known` provided: server returns precise changes:
-
-```json
-{ "hash": "...", "added": [ InstructionEntry ], "updated": [ InstructionEntry ], "removed": [ "id" ] }
-```
-
-- Legacy fallback: when only `clientHash` differs and no `known`, returns `{ hash, changed: InstructionEntry[] }`.
-
-Notes:
-
-- `sourceHash` equals `sha256(body)`; treat as content fingerprint.
-- Send only a subset of known entries (e.g., recently used) for partial sync; absent IDs returned as added.
-- Future: separate lightweight metadata structure vs full entries for large bodies.
-
-## Prompt Governance
-
-### `prompt/review`
-
-Evaluates a prompt string against rule criteria in `docs/PROMPT-CRITERIA.json`.
-
-Params: `{ prompt: string }`
-
-Result:
-
-```json
-{
-  "issues": [
-    {
-      "ruleId": "no-secrets",
-      "severity": "critical",
-      "description": "Potential embedded secret",
-      "match": "AKIA..."
-    }
-  ],
-  "summary": {
-    "counts": { "critical": 1 },
-    "highestSeverity": "critical"
+  tools: [ { method, stable, mutation, disabled? } ],
+  stable: { tools: [ { method, stable, mutation } ] },
+  dynamic: { generatedAt, mutationEnabled, disabled: [ { method } ] },
+  mcp: {
+    registryVersion: "2025-08-01",
+    tools: [ {
+      name,                // method name
+      description,         // human readable summary
+      stable,              // deterministic read-only
+      mutation,            // requires MCP_ENABLE_MUTATION for side effects
+      inputSchema,         // JSON Schema for params
+      outputSchema?        // JSON Schema for result (when defined in server)
+    } ]
   }
 }
 ```
 
-Future Enhancements:
+The `mcp` block is the new machine-consumable registry enabling client-side validation & discovery. Legacy fields remain for backward compatibility.
 
-- Add `category` to each issue (surface originating category id)
-- Add remediation guidance text in criteria file.
+### Input Validation
 
-## Data Model: InstructionEntry
+The server performs pre-dispatch JSON Schema validation of `params` using the registry `inputSchema`.
 
-```ts
+Failure:
+
+```json
+{ "jsonrpc":"2.0", "id":7, "error": { "code": -32602, "message": "Invalid params", "data": { "method":"instructions/get", "errors": [ /* Ajv errors */ ] } } }
+```
+
+Guidelines:
+
+- Omit `params` or use `{}` for methods with no required fields.
+- Respect `additionalProperties:false` where specified.
+- Surface `error.data.errors` for actionable diagnostics.
+
+## Data Model
+
 interface InstructionEntry {
   id: string;
   title: string;
   body: string;
   rationale?: string;
-  priority: number;              // 1 (highest) .. 100 (lowest)
-  audience: 'individual'|'group'|'all';
-  requirement: 'mandatory'|'critical'|'recommended'|'optional'|'deprecated';
-  categories: string[];          // normalized to lowercase sorted unique
-  sourceHash: string;            // sha256(body) at load time
+  priority: number; // 1 (highest)..100 (lowest)
+  audience: 'individual' | 'group' | 'all';
+  requirement: 'mandatory' | 'critical' | 'recommended' | 'optional' | 'deprecated';
+  categories: string[]; // normalized lowercase unique
+  sourceHash: string;   // sha256(body)
   schemaVersion: string;
   deprecatedBy?: string;
-  createdAt: string;             // ISO timestamp
-  updatedAt: string;             // ISO timestamp
-  usageCount?: number;           // planned: increment via usage tracking service
-  lastUsedAt?: string;           // planned
-  riskScore?: number;            // derived risk metric
+  createdAt: string;
+  updatedAt: string;
+  usageCount?: number;
+  lastUsedAt?: string;
+  riskScore?: number;
 }
-```
 
-## Versioning & Stability
+## Persistence
 
-Stability Levels:
+Usage counts stored in data/usage-snapshot.json (debounced ~500ms + flush on shutdown signals). Force write with usage/flush.
 
-- experimental: subject to change without notice (current tools)
-- stable: contract locked & versioned via semver + schema
-
-Planned Promotion Order:
-
-1. health/check (stable soon)
-2. instructions/list|get|search
-3. instructions/diff (after incremental design)
-4. prompt/review (after adding category & remediation fields)
-
-## Error Handling
-
-Standard JSON-RPC error codes used:
+## Error Codes
 
 - -32601 Method not found
 - -32600 Invalid Request
 - -32700 Parse error
-- -32603 Internal error (with `{ message }` in `error.data`)
+- -32603 Internal error (error.data.message contains detail)
 
-## Additional Tools
+## Security & Safety
 
-### `integrity/verify`
+- Read-only by default; enable mutation explicitly.
+- prompt/review uses simple, bounded pattern checks (no catastrophic regex).
+- integrity/verify & instructions/diff aid tamper detection.
+- Logging segregated to stderr to avoid protocol corruption.
 
-Recomputes `sha256(body)` for each entry comparing against stored `sourceHash`.
+## CLI Flags
 
-Result:
+--dashboard              Enable read-only dashboard (HTML + /tools.json) (default off)
+--dashboard-port=PORT    Desired dashboard port (default 8787)
+--dashboard-host=HOST    Host/interface (default 127.0.0.1)
+--dashboard-tries=N      Additional incremental ports to try (default 10)
+--no-dashboard           Disable dashboard
+-h, --help               Show help
 
-```json
-{ "hash": "<aggregate>", "count": 42, "issues": [ { "id": "...", "expected": "...", "actual": "..." } ], "issueCount": 0 }
-```
+Example: node dist/server/index.js --dashboard --dashboard-port=9000
 
-Non-zero `issueCount` indicates catalog drift / tampering.
+Dashboard URL is written to stderr when available.
 
-### `usage/track`
+## VS Code Integration
 
-Increments in-memory usage counters for an instruction.
-
-Params: `{ id: string }`
-
-Result: `{ id, usageCount, lastUsedAt }` or `{ notFound: true }`.
-
-### `usage/hotset`
-
-Returns high-usage items ranked by `usageCount` then `lastUsedAt`.
-
-Params: `{ limit?: number }` (default 10, max 100)
-
-Result:
-
-```json
-{ "hash": "...", "count": 3, "limit": 10, "items": [ { "id": "...", "usageCount": 5, "lastUsedAt": "..." } ] }
-```
-
-### `metrics/snapshot`
-
-Returns per-method invocation metrics accumulated since process start.
-
-Params: none
-
-Result:
-
-```json
-{
-  "generatedAt": "2025-08-24T00:00:00.000Z",
-  "methods": [
-    { "method": "instructions/list", "count": 12, "avgMs": 1.3, "maxMs": 5 }
-  ]
-}
-```
-
-### `gates/evaluate`
-
-Evaluates policy gates defined in `instructions/gates.json` with count-based conditions.
-
-Result:
-
-```json
-{
-  "generatedAt": "2025-08-24T00:00:00.000Z",
-  "results": [
-    { "id": "min-alpha", "passed": true, "count": 1, "op": ">=", "value": 1, "severity": "error" }
-  ],
-  "summary": { "errors": 0, "warnings": 0, "total": 2 }
-}
-```
-
-### `meta/tools`
-
-Lists available tool methods (best-effort discovery) and whether each is currently flagged as stable.
-
-Result:
-
-```json
-{ "generatedAt": "...", "tools": [ { "method": "instructions/list", "stable": true } ] }
-```
-
-### `usage/flush`
-
-Forces persistence of in-memory usage counters to disk snapshot.
-
-Result: `{ "flushed": true }`
-
-### `instructions/reload`
-
-Invalidates in-memory catalog and reloads from disk (reindex). Use after adding/removing instruction files.
-
-Result: `{ "reloaded": true, "hash": "...", "count": 42 }`
-
-## Persistence
-
-Usage counts are persisted to `data/usage-snapshot.json` and merged on startup. Use `usage/flush` to force write (normally debounced ~500ms and on shutdown signals).
-
-## Planned Tools (Roadmap)
-
-- integrity/reportDrifts -> incremental diff object (now partially covered by `instructions/diff` with `known` list)
-- usage/track -> side-effect increment (may be batched client-side)
-- metrics/snapshot -> counters & latencies
-- gates/evaluate -> evaluation report using `instructions/gates.json`
-
-## Security Considerations
-
-- No mutation tools exposed yet; server is read-only aside from in-memory plan for future usage tracking.
-- Prompt review avoids executing regex with catastrophic backtracking; criteria file kept simple.
-- `prompt/review` enforces a 10KB maximum input length and strips null bytes prior to evaluation.
-
-## Compatibility Notes
-
-- Designed to be embedded as a subprocess MCP server.
-- Line-delimited JSON; no framing beyond newline.
-- Stdout reserved strictly for JSON-RPC protocol frames. Human-readable logs (including dashboard URL) are written to stderr to avoid corrupting the stream.
-
-## Command Line Flags
-
-The server accepts optional flags (pass after the node entrypoint):
-
-```
---dashboard             Enable read-only dashboard (HTML + /tools.json) (default off)
---dashboard-port=PORT   Preferred dashboard port (default 8787; auto-increments if busy)
---dashboard-host=HOST   Host/interface to bind (default 127.0.0.1)
---dashboard-tries=N     Number of incremental ports to try (default 10)
---no-dashboard          Explicitly disable dashboard
--h, --help              Show help (emitted to stderr)
-```
-
-Example start with dashboard:
-
-`node dist/server/index.js --dashboard --dashboard-port=9000`
-
-On success the server logs (to stderr):
-
-`Dashboard available at http://127.0.0.1:9000/`
-
-## VS Code MCP Configuration
-
-Example `mcp.json` snippet to register this server:
+Example mcp.json:
 
 ```json
 {
   "servers": {
     "instructionIndex": {
       "command": "node",
-      "args": ["dist/server/index.js", "--dashboard"],
+      "args": ["dist/server/index.js"],
       "transport": "stdio"
     }
   }
 }
 ```
 
-Ensure the working directory contains `instructions/` before launch. The dashboard is optional and safe to disable in production.
+Ensure an instructions/ directory exists before launch.
 
-## Performance Benchmarking
+## Versioning & Stability
 
-Run `npm run perf` to execute a synthetic search benchmark over catalogs of sizes 100/1000/5000 producing JSON with P95 and max search times.
+Stability tags (stable | experimental) surfaced via meta/tools. Any change to a stable contract triggers a semver minor (additive) or major (breaking) bump and TOOLS.md update.
 
----
+Promotion roadmap (tentative):
 
-## Schemas
+1. instructions/list|get|search
+2. prompt/review (after adding remediation/category fields)
+3. diff / repair incremental contract
 
-Formal JSON Schemas for each tool response live in `src/schemas/index.ts` and are enforced by `npm run test:contracts`.
-Any change to a stable schema requires a semver minor (additive) or major (breaking) bump and TOOLS.md version update.
+## Change Log
 
-Change Log:
+- 0.4.0: Added lifecycle (initialize/shutdown/exit) handling + richer method-not-found diagnostics, consolidated docs, clarified mutation tool list, improved usage persistence & flush gating.
+- 0.4.1 (unreleased): Introduced MCP-style tool registry (meta/tools.mcp) with per-tool input/output schemas and descriptions; added tool registry contract tests.
+  - Added pre-dispatch input validation (-32602 on failure) & generated registry doc script.
+- 0.3.0: Introduced environment gating (MCP_ENABLE_MUTATION), logging flags (MCP_LOG_VERBOSE, MCP_LOG_MUTATION), meta/tools mutation & disabled flags.
+- 0.2.0: Added integrity/verify, usage/*, metrics/snapshot, gates/evaluate, incremental diff, schemas & performance benchmark.
+- 0.1.0: Initial instruction tools + prompt/review + health.
 
-- 0.1.0: Initial doc covering existing four instruction tools + prompt/review + health.
-- 0.2.0: Added integrity/verify, usage/*, metrics/snapshot, gates/evaluate, incremental diff, security hardening, performance benchmark, schema contracts.
+## Future (Roadmap)
+
+- Optional checksum streaming diff endpoint for very large catalogs.
+- Batched usage/track variant.
+- Semantic search extension (vector index) behind feature flag.
+- Policy gate expressions with logical combinators.
+
+## Disclaimer
+
+All experimental contracts may evolve; pin a version and validate with contract tests (npm run test:contracts) before upgrading.
+

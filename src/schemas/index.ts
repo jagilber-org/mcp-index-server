@@ -152,13 +152,49 @@ export const schemas: Record<string, unknown> = {
   }
   ,
   'meta/tools': {
-    type: 'object', additionalProperties: false,
-    required: ['generatedAt','tools'],
+    type: 'object', additionalProperties: true,
+    required: ['stable','dynamic','tools'],
     properties: {
-      generatedAt: { type: 'string' },
-      tools: { type: 'array', items: { type: 'object', required: ['method','stable'], properties: {
-        method: { type: 'string' }, stable: { type: 'boolean' }
-      }, additionalProperties: false } }
+      // Legacy flat list (includes disabled flag)
+      tools: { type: 'array', items: { type: 'object', required: ['method'], additionalProperties: true, properties: {
+        method: { type: 'string' }, stable: { type: 'boolean' }, mutation: { type: 'boolean' }, disabled: { type: 'boolean' }
+      } } },
+      stable: {
+        type: 'object', additionalProperties: false,
+        required: ['tools'],
+        properties: {
+          tools: { type: 'array', items: { type: 'object', required: ['method','stable','mutation'], additionalProperties: true, properties: {
+            method: { type: 'string' },
+            stable: { type: 'boolean' },
+            mutation: { type: 'boolean' }
+          } } }
+        }
+      },
+      dynamic: {
+        type: 'object', additionalProperties: true,
+        required: ['generatedAt','mutationEnabled','disabled'],
+        properties: {
+          generatedAt: { type: 'string' },
+          mutationEnabled: { type: 'boolean' },
+          disabled: { type: 'array', items: { type: 'object', required: ['method'], additionalProperties: false, properties: { method: { type: 'string' } } } }
+        }
+      },
+      // New MCP style registry (optional for now)
+      mcp: {
+        type: 'object', additionalProperties: true,
+        required: ['registryVersion','tools'],
+        properties: {
+          registryVersion: { type: 'string' },
+          tools: { type: 'array', items: { type: 'object', required: ['name','description','stable','mutation','inputSchema'], additionalProperties: false, properties: {
+            name: { type: 'string' },
+            description: { type: 'string' },
+            stable: { type: 'boolean' },
+            mutation: { type: 'boolean' },
+            inputSchema: { type: 'object' },
+            outputSchema: { type: 'object' }
+          } } }
+        }
+      }
     }
   },
   'usage/flush': { type: 'object', required: ['flushed'], additionalProperties: false, properties: { flushed: { const: true } } },

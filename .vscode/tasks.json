@@ -1,0 +1,114 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Verify",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build:verify"
+			],
+			"problemMatcher": [
+				"$tsc",
+				"$eslint-stylish"
+			],
+			"group": "build"
+		},
+		{
+			"label": "build-verify",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build:verify"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc",
+				"$eslint-stylish"
+			],
+			"group": "build"
+		},
+		{
+			"label": "build-verify-2",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build:verify"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc",
+				"$eslint-stylish"
+			],
+			"group": "build"
+		},
+		{
+			"label": "contracts-only",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"test:contracts"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "contracts-only-2",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"test:contracts"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "verify-after-meta-split",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"test:contracts"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "contracts-after-compat",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"test:contracts"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "npm-build",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build"
+			]
+		}
+	]
+}

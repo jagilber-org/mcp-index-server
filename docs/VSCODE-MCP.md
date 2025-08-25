@@ -1,6 +1,6 @@
-# VS Code MCP Integration
+## VS Code MCP Integration
 
-Configure a custom MCP server in VS Code (or a compatible client) by adding an entry similar to:
+Configure a custom MCP server in VS Code (or compatible client) by adding an entry like:
 
 ```jsonc
 {
@@ -14,7 +14,7 @@ Configure a custom MCP server in VS Code (or a compatible client) by adding an e
 }
 ```
 
-Notes:
+### Notes
 
 - Transport is stdio (newline-delimited JSON-RPC 2.0).
 - The server emits a `server/ready` notification with `{ version }`.
@@ -32,14 +32,37 @@ Flags (pass in `args`):
 | `--no-dashboard` | Disable dashboard even if earlier flag provided |
 | `--help` | Print help (stderr) and exit |
 
-Security Considerations:
+### Security Considerations
 
-- Dashboard is local-only by default. Change host with caution.
-- Mutation tools (`instructions/import`, `instructions/repair`) are experimental and unauthenticated; restrict execution context accordingly.
+- Dashboard is local-only by default (bind changes via `--dashboard-host`).
+- Mutation tools are gated; enable with `MCP_ENABLE_MUTATION=1` only in trusted contexts.
+- Prefer leaving gating off in multi-tenant or shared environments.
 
-Troubleshooting:
+### Environment Flags Example
 
-- If no output appears, ensure you built (`npm run build`) and are executing from project root.
-- Conflicting ports: the server will auto-advance; check stderr for the chosen port.
+```jsonc
+{
+  "servers": {
+    "instructionIndex": {
+      "command": "node",
+      "args": ["dist/server/index.js", "--dashboard"],
+      "transport": "stdio",
+      "env": {
+        "MCP_ENABLE_MUTATION": "1",
+        "MCP_LOG_VERBOSE": "1"
+      }
+    }
+  }
+}
+```
+
+Omit the `env` block for read-only default.
+
+### Troubleshooting
+
+- Ensure build: run `npm run build` before launching.
+- Remove any leading slash in the entrypoint path (`dist/server/index.js`, not `/dist/server/index.js`).
+- Set `MCP_LOG_VERBOSE=1` for detailed stderr diagnostics.
+- Port conflicts: server auto-increments; check stderr for chosen port.
 
 Generated schemas are in `src/schemas/index.ts`; enforce via `npm run test:contracts`.

@@ -10,8 +10,39 @@ export interface PromptIssue { ruleId: string; severity: string; description: st
 
 export class PromptReviewService {
   private criteria: PromptCriteria;
-  constructor(criteriaPath = path.join(process.cwd(),'docs','PROMPT-CRITERIA.json')){
-    this.criteria = JSON.parse(fs.readFileSync(criteriaPath,'utf8')) as PromptCriteria;
+  constructor(criteriaPath?: string){
+    // Resolve criteria path with fallbacks so the server doesn't crash if cwd differs.
+    const candidates: string[] = [];
+    if(criteriaPath){
+      candidates.push(criteriaPath);
+    } else {
+      // Original expected (project root when launched correctly)
+      candidates.push(path.join(process.cwd(),'docs','PROMPT-CRITERIA.json'));
+      // From compiled file location: dist/services -> ../../docs
+      candidates.push(path.resolve(__dirname,'..','..','docs','PROMPT-CRITERIA.json'));
+      // Additional fallback: dist/server -> ../docs
+      candidates.push(path.resolve(__dirname,'..','docs','PROMPT-CRITERIA.json'));
+    }
+    let loaded: PromptCriteria | undefined;
+    let usedPath: string | undefined;
+    for(const p of candidates){
+      try {
+        const data = fs.readFileSync(p,'utf8');
+        loaded = JSON.parse(data) as PromptCriteria;
+        usedPath = p;
+        break;
+      } catch { /* continue */ }
+    }
+    if(!loaded){
+      // Graceful fallback: empty criteria so server can still start.
+      const msg = `[promptReviewService] WARN: Could not locate PROMPT-CRITERIA.json in any candidate paths. Using empty criteria.`;
+      // Write to stderr explicitly (console.error already does)
+      console.error(msg);
+      loaded = { version: '0.0.0', categories: [] };
+    } else {
+      console.error(`[promptReviewService] Loaded criteria from ${usedPath}`); // stderr so it won't pollute stdout
+    }
+    this.criteria = loaded;
   }
   review(prompt: string): PromptIssue[] {
     const issues: PromptIssue[] = [];

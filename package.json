@@ -1,10 +1,10 @@
 {
   "name": "mcp-index-server",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+  "build": "tsc -p tsconfig.json",
     "start": "node dist/server/index.js",
     "dev": "node --watch dist/server/index.js",
     "test": "vitest run",
@@ -18,7 +18,9 @@
     "release:patch": "pwsh scripts/bump-version.ps1 patch",
     "release:minor": "pwsh scripts/bump-version.ps1 minor",
     "release:major": "pwsh scripts/bump-version.ps1 major",
-    "perf": "ts-node src/perf/benchmark.ts"
+  "perf": "ts-node src/perf/benchmark.ts",
+  "build:verify": "pwsh scripts/build.ps1",
+  "docs:tools": "node scripts/generate-tools-doc.cjs"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

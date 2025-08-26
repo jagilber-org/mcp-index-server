@@ -1,0 +1,15 @@
+{
+  "ai_code_nav_baseline": {
+    "usageCount": 2,
+    "firstSeenTs": "2025-08-26T12:17:31.027Z",
+    "lastUsedAt": "2025-08-26T12:17:31.417Z"
+  },
+  "ai_debug_triage_prompt": {
+    "usageCount": 1,
+    "firstSeenTs": "2025-08-26T12:17:31.885Z"
+  },
+  "ai_diff_minimality_rule": {
+    "usageCount": 1,
+    "firstSeenTs": "2025-08-26T12:17:32.025Z"
+  }
+}

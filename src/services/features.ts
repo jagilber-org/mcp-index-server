@@ -21,3 +21,11 @@ export function featureStatus(){
     env: RAW.length? RAW: [],
   };
 }
+
+// Test helper / dynamic enable (used in tests to activate features post-initial load)
+export function enableFeature(name: string){
+  if(!SET.has(name)){
+    SET.add(name);
+    incrementCounter(`featureActivated:${name}`);
+  }
+}

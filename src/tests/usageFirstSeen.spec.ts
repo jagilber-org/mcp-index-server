@@ -1,7 +1,9 @@
+process.env.INDEX_FEATURES = process.env.INDEX_FEATURES ? process.env.INDEX_FEATURES + ',usage' : 'usage';
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { incrementUsage } from '../services/catalogContext';
+import { enableFeature } from '../services/features';
 import { getCatalogState } from '../services/toolHandlers';
 import '../services/toolHandlers';
 
@@ -15,7 +17,8 @@ describe('firstSeenTs persistence', () => {
     // Clean usage snapshot to force new firstSeenTs
     const snap = usageSnapshotPath();
     if(fs.existsSync(snap)) fs.unlinkSync(snap);
-    const r1 = incrementUsage(entry.id)!;
+  enableFeature('usage');
+  const r1 = incrementUsage(entry.id)!;
     expect(r1.firstSeenTs).toBeTruthy();
     const first = r1.firstSeenTs!;
     // Second increment should not change firstSeenTs

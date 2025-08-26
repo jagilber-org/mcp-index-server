@@ -39,6 +39,8 @@ export const instructionEntry = {
   ,changeLog: { type: 'array', items: { type: 'object', required: ['version','changedAt','summary'], additionalProperties: false, properties: { version: { type: 'string' }, changedAt: { type: 'string' }, summary: { type: 'string' } } } }
   ,supersedes: { type: 'string' }
   ,semanticSummary: { type: 'string' }
+  ,createdByAgent: { type: 'string' }
+  ,sourceWorkspace: { type: 'string' }
   }
 } as const;
 
@@ -135,6 +137,7 @@ export const schemas: Record<string, unknown> = {
     anyOf: [
       { type: 'object', required: ['error'], properties: { error: { type: 'string' } }, additionalProperties: true },
       { type: 'object', required: ['notFound'], properties: { notFound: { const: true } }, additionalProperties: true },
+  { type: 'object', required: ['featureDisabled'], properties: { featureDisabled: { const: true } }, additionalProperties: true },
       { type: 'object', required: ['id','usageCount','lastUsedAt'], additionalProperties: false, properties: {
         id: { type: 'string' }, usageCount: { type: 'number' }, firstSeenTs: { type: 'string' }, lastUsedAt: { type: 'string' }
       } }
@@ -164,7 +167,8 @@ export const schemas: Record<string, unknown> = {
       generatedAt: { type: 'string' },
       methods: { type: 'array', items: { type: 'object', required: ['method','count','avgMs','maxMs'], additionalProperties: false, properties: {
         method: { type: 'string' }, count: { type: 'number' }, avgMs: { type: 'number' }, maxMs: { type: 'number' }
-      } } }
+      } } },
+      features: { type: 'object', additionalProperties: true }
     }
   },
   'instructions/governanceHash': {

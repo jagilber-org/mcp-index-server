@@ -1,25 +1,33 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { getCatalogState } from '../services/toolHandlers';
+import { incrementUsage } from '../services/catalogContext';
+import { enableFeature } from '../services/features';
 import '../services/toolHandlers';
 
+// Ensure usage feature is active for these tests (Phase 0 gating)
+beforeAll(() => {
+  // Add usage to env feature list (idempotent if already present)
+  process.env.INDEX_FEATURES = (process.env.INDEX_FEATURES ? (process.env.INDEX_FEATURES + ',usage') : 'usage');
+  enableFeature('usage');
+});
+
+interface UsageResult { id: string; usageCount?: number; firstSeenTs?: string; lastUsedAt?: string; featureDisabled?: boolean }
 function track(id: string){
-  const st = getCatalogState();
-  const entry = st.byId.get(id);
-  if(!entry) return { notFound: true };
-  entry.usageCount = (entry.usageCount ?? 0) + 1;
-  entry.lastUsedAt = new Date().toISOString();
-  return { id: entry.id, usageCount: entry.usageCount, lastUsedAt: entry.lastUsedAt };
+  const r = incrementUsage(id) as UsageResult | null;
+  if(!r || r.featureDisabled){
+    throw new Error('usage feature unexpectedly disabled in usageTracking.spec');
+  }
+  return r;
 }
 
 describe('usage tracking', () => {
-  it('increments usage count', () => {
+  it('increments usage count (gated path)', () => {
     const st = getCatalogState();
     const first = st.list[0];
-    const before = first.usageCount ?? 0;
-    const r1 = track(first.id);
-    const r2 = track(first.id);
-  expect((r1.usageCount ?? 0)).toBeGreaterThanOrEqual(before + 1);
-  // Allow possible reload between increments; just ensure non-decreasing
+  const r1 = track(first.id);
+  const r2 = track(first.id);
+  // We only require the count to be >= 1 (fresh or existing) and non-decreasing after second increment.
+  expect((r1.usageCount ?? 0)).toBeGreaterThanOrEqual(1);
   expect((r2.usageCount ?? 0)).toBeGreaterThanOrEqual((r1.usageCount ?? 0));
   });
 

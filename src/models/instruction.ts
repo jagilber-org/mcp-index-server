@@ -34,4 +34,7 @@ export interface InstructionEntry {
   supersedes?: string;        // id of instruction this one supersedes
   // Content intelligence (optional)
   semanticSummary?: string;   // concise summary / first-sentence style abstract of body
+  // Attribution (added in 0.8.x): who/where created the instruction
+  createdByAgent?: string;     // identifier of the MCP agent / client that created this entry
+  sourceWorkspace?: string;    // logical workspace/project identifier at creation time
 }

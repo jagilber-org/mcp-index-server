@@ -66,7 +66,7 @@ describe('property: classification normalization invariants', () => {
     fc.assert(
       fc.property(arbInstruction, catCore, wsSlug, userSlug, teamSlugs, (raw, baseCats, wOpt, uOpt, tArr) => {
         // Build mixed categories with random casing & duplicates & scope prefixes
-        let cats: string[] = [...baseCats];
+  const cats: string[] = [...baseCats];
         if(wOpt) cats.push('scope:workspace:'+wOpt);
         if(uOpt) cats.push('scope:user:'+uOpt.toUpperCase()); // introduce case variance
         for(const t of tArr){ cats.push('scope:team:'+t); if(Math.random()<0.5) cats.push('scope:team:'+t.toUpperCase()); }

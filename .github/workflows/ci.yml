@@ -25,7 +25,8 @@ jobs:
       - name: Test
         # Run tests with default reporter only; removed unsupported --ci and incorrect --reporters flags
         run: |
-          npm test --ignore-scripts --if-present
+          # Allow npm lifecycle scripts (pretest builds dist). Removing --ignore-scripts fixes missing dist/server causing ENOENT & no output.
+          npm test --if-present
       - name: Build
         run: npm run build --if-present
       - name: Collect Coverage Artifact
@@ -37,3 +38,5 @@ jobs:
               coverage
               coverage.xml
               test-results
+            # Note: coverage directory appears only when running with --coverage (coverage or coverage:ci scripts)
+            # test-results will exist once we add a reporter output (future enhancement)

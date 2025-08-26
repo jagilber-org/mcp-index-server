@@ -6,6 +6,7 @@ import { InstructionEntry } from '../models/instruction';
 import { hasFeature, incrementCounter } from './features';
 import { atomicWriteJson } from './atomicFs';
 import { ClassificationService } from './classificationService';
+import { SCHEMA_VERSION, migrateInstructionRecord } from '../versioning/schemaVersion';
 import { resolveOwner } from './ownershipService';
 
 export interface CatalogState { loadedAt: string; hash: string; byId: Map<string, InstructionEntry>; list: InstructionEntry[]; latestMTime: number; fileSignature: string; fileCount: number; versionMTime: number }
@@ -108,7 +109,10 @@ export function ensureLoaded(): CatalogState {
   // changeLog placeholder normalization no longer needed (optional fields)
         if(needsRewrite){
           // Preserve other raw fields, ensure schemaVersion exists
-          if(!raw.schemaVersion) raw.schemaVersion = (entry as InstructionEntry).schemaVersion || '1';
+          if(!raw.schemaVersion || raw.schemaVersion !== SCHEMA_VERSION){
+            const mig = migrateInstructionRecord(raw);
+            if(mig.changed) needsRewrite = true;
+          }
           fs.writeFileSync(file, JSON.stringify(raw,null,2));
         }
       } catch { /* ignore individual file errors */ }

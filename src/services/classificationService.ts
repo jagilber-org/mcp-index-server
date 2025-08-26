@@ -1,4 +1,5 @@
 import { InstructionEntry, RequirementLevel } from '../models/instruction';
+import { SCHEMA_VERSION } from '../versioning/schemaVersion';
 import crypto from 'crypto';
 
 export interface NormalizedInstruction extends InstructionEntry {}
@@ -39,7 +40,7 @@ export class ClassificationService {
       updatedAt: entry.updatedAt || now,
       createdAt: entry.createdAt || now,
   // Guarantee schemaVersion presence (tests assert instructions/list items include this field)
-  schemaVersion: entry.schemaVersion || '1',
+  schemaVersion: entry.schemaVersion || SCHEMA_VERSION,
   // Compute hash from canonical (trimmed) body to ensure stability across innocuous whitespace differences
   sourceHash: entry.sourceHash && entry.sourceHash.length === 64 ? entry.sourceHash : this.computeHash(trimmedBody),
       riskScore: this.computeRisk(entry),

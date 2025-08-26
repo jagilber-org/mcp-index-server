@@ -170,3 +170,6 @@ export async function main(){
 if(require.main === module){
   main();
 }
+
+// Test-only named exports for coverage of argument parsing & dashboard logic
+export { parseArgs as _parseArgs, findPackageVersion as _findPackageVersion, startDashboard as _startDashboard };

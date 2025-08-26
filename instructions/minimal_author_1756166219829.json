@@ -1,5 +1,5 @@
 {
-  "id": "minimal_author_1756149703854",
+  "id": "minimal_author_1756166219829",
   "title": "Minimal Title",
   "body": "First line summary.\nMore body lines.",
   "priority": 55,
@@ -11,6 +11,8 @@
   ],
   "sourceHash": "bb9ed231f5c14fc754f21dc0cbf2411aa1626a2745798d6919a4b7f45fbeb4f8",
   "semanticSummary": "First line summary.",
+  "lastReviewedAt": "2025-08-25T23:56:59.904Z",
+  "nextReviewDue": "2025-11-23T23:56:59.904Z",
   "schemaVersion": "1",
   "priorityTier": "P3"
 }

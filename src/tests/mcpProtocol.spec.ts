@@ -5,12 +5,16 @@
 import { describe, it, expect } from 'vitest';
 import { waitFor } from './testUtils';
 import { spawn } from 'child_process';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 
+const ISOLATED_DIR = fs.mkdtempSync(path.join(os.tmpdir(),'instr-mcp-'));
 function startServer() {
   return spawn('node', ['dist/server/index.js'], {
     stdio: ['pipe', 'pipe', 'pipe'],
     cwd: process.cwd(),
-    env: { ...process.env, MCP_ENABLE_MUTATION: '1' }
+    env: { ...process.env, MCP_ENABLE_MUTATION: '1', INSTRUCTIONS_DIR: ISOLATED_DIR }
   });
 }
 
@@ -131,7 +135,7 @@ describe('MCP Protocol Compliance', () => {
       }
     });
     
-    await new Promise(r => setTimeout(r, 200));
+  await new Promise(r => setTimeout(r, 500));
     
     const responseLine = lines.find(l => l.includes('"id":3'));
     expect(responseLine, 'missing tools/call response').toBeTruthy();
@@ -172,7 +176,7 @@ describe('MCP Protocol Compliance', () => {
       }
     });
     
-    await new Promise(r => setTimeout(r, 200));
+  await new Promise(r => setTimeout(r, 600));
     
     const responseLine = lines.find(l => l.includes('"id":4'));
     expect(responseLine, 'missing tools/call error response').toBeTruthy();

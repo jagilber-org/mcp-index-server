@@ -7,7 +7,7 @@ import { atomicWriteJson } from './atomicFs';
 import { ClassificationService } from './classificationService';
 import { resolveOwner } from './ownershipService';
 
-export interface CatalogState { loadedAt: string; hash: string; byId: Map<string, InstructionEntry>; list: InstructionEntry[]; latestMTime: number }
+export interface CatalogState { loadedAt: string; hash: string; byId: Map<string, InstructionEntry>; list: InstructionEntry[]; latestMTime: number; fileSignature: string; fileCount: number; versionMTime: number }
 let state: CatalogState | null = null;
 
 // Usage snapshot persistence (shared)
@@ -22,34 +22,59 @@ process.on('SIGINT', ()=>{ flushUsageSnapshot(); process.exit(0); });
 process.on('SIGTERM', ()=>{ flushUsageSnapshot(); process.exit(0); });
 process.on('beforeExit', ()=>{ flushUsageSnapshot(); });
 
-function resolveInstructionsDir(): string {
-  const candidates = [
-    path.join(process.cwd(),'instructions'),
-    path.join(__dirname,'..','..','instructions'),
-    path.join(process.cwd(),'..','instructions')
-  ];
-  for(const c of candidates){ try { if(fs.existsSync(c)) return c; } catch { /* ignore */ } }
-  return candidates[0];
+// Single pinned instructions directory for deterministic load/write.
+// Priority: env INSTRUCTIONS_DIR if set -> process.cwd()/instructions
+const PINNED_INSTRUCTIONS_DIR = (() => {
+  const raw = process.env.INSTRUCTIONS_DIR;
+  const resolved = raw ? path.resolve(raw) : path.join(process.cwd(),'instructions');
+  if(!fs.existsSync(resolved)){
+    try { fs.mkdirSync(resolved,{recursive:true}); } catch {/* ignore */}
+  }
+  return resolved;
+})();
+export function getInstructionsDir(){ return PINNED_INSTRUCTIONS_DIR; }
+interface DirMeta { latest:number; signature:string; count:number }
+function computeDirMeta(dir: string): DirMeta {
+  const parts: string[] = [];
+  let latest = 0; let count = 0; const now = Date.now();
+  try {
+    for(const f of fs.readdirSync(dir)){
+      if(!f.endsWith('.json')) continue;
+      const fp = path.join(dir,f);
+      try { const st = fs.statSync(fp); if(!st.isFile()) continue; count++; const effMtime = Math.min(st.mtimeMs, now); latest = Math.max(latest, effMtime); parts.push(`${f}:${st.mtimeMs}:${st.size}`); } catch { /* ignore */ }
+    }
+  } catch { /* ignore */ }
+  parts.sort(); const h = crypto.createHash('sha256'); h.update(parts.join('|'),'utf8');
+  const signature = h.digest('hex');
+  return { latest, signature, count };
 }
-function computeLatestMTime(dir: string){
-  let latest = 0; try { for(const f of fs.readdirSync(dir)){ if(!f.endsWith('.json')) continue; const fp = path.join(dir,f); try { const st = fs.statSync(fp); if(st.isFile()) latest = Math.max(latest, st.mtimeMs); } catch { /* ignore */ } } } catch { /* ignore */ }
-  return latest;
-}
+
+// Simple explicit version marker file touched on every mutation for robust cross-process cache invalidation.
+function getVersionFile(){ return path.join(getInstructionsDir(), '.catalog-version'); }
+export function touchCatalogVersion(){ try { fs.writeFileSync(getVersionFile(), Date.now().toString()); } catch { /* ignore */ } }
+function readVersionMTime(): number { try { const vf=getVersionFile(); if(fs.existsSync(vf)){ return fs.statSync(vf).mtimeMs; } } catch { /* ignore */ } return 0; }
 export function ensureLoaded(): CatalogState {
-  const baseDir = resolveInstructionsDir();
-  if(state){ const latest = computeLatestMTime(baseDir); if(latest > state.latestMTime) state = null; }
+  const baseDir = getInstructionsDir();
+  // Optional escape hatch: disable caching completely for deterministic multi-process CRUD (tests / debug)
+  if(process.env.INSTRUCTIONS_ALWAYS_RELOAD === '1') state = null;
+  if(state){
+    const meta = computeDirMeta(baseDir);
+    const verM = readVersionMTime();
+    if(verM > state.versionMTime || meta.latest > state.latestMTime || meta.signature !== state.fileSignature || meta.count !== state.fileCount){ state = null; }
+  }
   if(state) return state;
   const loader = new CatalogLoader(baseDir);
   const result = loader.load();
   const byId = new Map<string, InstructionEntry>(); result.entries.forEach(e=>byId.set(e.id,e));
-  const latestMTime = computeLatestMTime(baseDir);
-  state = { loadedAt: new Date().toISOString(), hash: result.hash, byId, list: result.entries, latestMTime };
+  const meta = computeDirMeta(baseDir);
+  const versionMTime = readVersionMTime();
+  state = { loadedAt: new Date().toISOString(), hash: result.hash, byId, list: result.entries, latestMTime: meta.latest, fileSignature: meta.signature, fileCount: meta.count, versionMTime };
   // Automatic enrichment persistence pass (startup). If a file contains placeholder governance fields that were
   // normalized in-memory (e.g. empty sourceHash, createdAt/updatedAt timestamps, owner auto-resolution, semanticSummary hash)
   // we rewrite that file once so subsequent processes / drift checks see consistent data on disk.
   try {
     for(const entry of state.list){
-      const file = path.join(baseDir, `${entry.id}.json`);
+  const file = path.join(baseDir, `${entry.id}.json`);
       if(!fs.existsSync(file)) continue;
       try {
         const raw = JSON.parse(fs.readFileSync(file,'utf8')) as Record<string, unknown>;
@@ -58,7 +83,10 @@ export function ensureLoaded(): CatalogState {
         const placeholders: [key: string, isPlaceholder: (v: unknown)=>boolean, value: unknown][] = [
           ['sourceHash', v => !(typeof v === 'string' && v.length>0), entry.sourceHash],
           ['owner', v => v === 'unowned' && !!(entry.owner && entry.owner !== 'unowned'), entry.owner],
-          ['semanticSummary', v => (!(typeof v === 'string' && v.length>0)) && !!entry.semanticSummary, entry.semanticSummary]
+          ['semanticSummary', v => (!(typeof v === 'string' && v.length>0)) && !!entry.semanticSummary, entry.semanticSummary],
+          // Stabilize governance projection fields across restarts by persisting once materialized
+          ['lastReviewedAt', v => !(typeof v === 'string' && v.length>0) && !!entry.lastReviewedAt, entry.lastReviewedAt],
+          ['nextReviewDue', v => !(typeof v === 'string' && v.length>0) && !!entry.nextReviewDue, entry.nextReviewDue]
         ];
         for(const [k,isPh,val] of placeholders){ if(isPh(raw[k])){ raw[k]=val; needsRewrite = true; } }
         // Normalize changeLog changedAt placeholders if present
@@ -91,14 +119,14 @@ export function computeGovernanceHash(entries: InstructionEntry[]): string {
 
 // Mutation helpers (import/add/remove/groom share)
 export function writeEntry(entry: InstructionEntry){
-  const file = path.join(process.cwd(),'instructions', `${entry.id}.json`);
+  const file = path.join(getInstructionsDir(), `${entry.id}.json`);
   const classifier = new ClassificationService();
   const record = classifier.normalize(entry);
   if(record.owner === 'unowned'){ const auto = resolveOwner(record.id); if(auto){ record.owner = auto; record.updatedAt = new Date().toISOString(); } }
   atomicWriteJson(file, record);
 }
 export function removeEntry(id:string){
-  const file = path.join(process.cwd(),'instructions', `${id}.json`);
+  const file = path.join(getInstructionsDir(), `${id}.json`);
   if(fs.existsSync(file)) fs.unlinkSync(file);
 }
 export function scheduleUsagePersist(){ scheduleUsageFlush(); }

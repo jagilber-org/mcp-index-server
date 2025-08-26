@@ -12,8 +12,8 @@
   "sourceHash": "74ce3a3a33c2a562689eaafa5b50447704c34efdc0d79116b91f8d3befb42cc4",
   "schemaVersion": "1",
   "createdAt": "2025-01-01T00:00:00.000Z",
-  "updatedAt": "2025-08-25T19:27:49.480Z",
-  "version": "1.0.1",
+  "updatedAt": "2025-08-26T01:46:20.604Z",
+  "version": "1.0.0",
   "status": "approved",
   "owner": "unowned",
   "priorityTier": "P3",
@@ -25,11 +25,6 @@
       "version": "1.0.0",
       "changedAt": "2025-01-01T00:00:00.000Z",
       "summary": "initial"
-    },
-    {
-      "version": "1.0.1",
-      "changedAt": "2025-08-25T19:27:49.480Z",
-      "summary": "hash repaired (auto bump)"
     }
   ],
   "semanticSummary": "dup body unify",

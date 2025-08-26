@@ -1,0 +1,39 @@
+{
+  "id": "ai_root_cause_chain",
+  "title": "AI Root Cause Chain Construction",
+  "body": "When hypothesizing root cause, express causal chain (Trigger -> Fault -> Propagation -> Symptom) and cite concrete evidence for each link.",
+  "priority": 18,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "ai",
+    "ai-v1",
+    "analysis",
+    "debugging"
+  ],
+  "sourceHash": "46565562ffc267c63f91867cbfdee81aa08bda4a0d1796c374ecf858a482c303",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T23:55:38.298Z",
+  "updatedAt": "2025-08-25T23:56:38.446Z",
+  "riskScore": 132,
+  "owner": "sre",
+  "status": "approved",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "version": "1.0.0",
+  "lastReviewedAt": "2025-08-25T23:55:38.298Z",
+  "nextReviewDue": "2025-09-24T23:55:38.298Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T23:55:38.298Z",
+      "summary": "initial import"
+    },
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T23:56:38.446Z",
+      "summary": "fields update"
+    }
+  ],
+  "semanticSummary": "When hypothesizing root cause, express causal chain (Trigger -> Fault -> Propagation -> Symptom) and cite concrete evidence for each link."
+}

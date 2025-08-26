@@ -2,16 +2,18 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import Ajv, { ErrorObject } from 'ajv';
 import addFormats from 'ajv-formats';
 import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import { schemas } from '../schemas';
 
+const ISOLATED_DIR = fs.mkdtempSync(path.join(os.tmpdir(),'instr-contract-'));
 function startServer(){
   // Enable mutation so schemas for mutation tools validate against success results
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], {
     stdio: ['pipe','pipe','pipe'],
-    env: { ...process.env, MCP_ENABLE_MUTATION: '1' }
+    env: { ...process.env, MCP_ENABLE_MUTATION: '1', INSTRUCTIONS_DIR: ISOLATED_DIR }
   });
 }
 
@@ -41,7 +43,7 @@ async function waitForIds(lines:string[], ids:number[], timeout=2500, interval=4
 }
 
 describe('contract schemas', () => {
-  const instructionsDir = path.join(process.cwd(), 'instructions');
+  const instructionsDir = ISOLATED_DIR;
   beforeAll(() => {
     if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir);
     const alphaPath = path.join(instructionsDir,'alpha.json');
@@ -129,10 +131,11 @@ describe('contract schemas', () => {
   });
 
   it('returns gated error shape for mutation tool when mutation disabled', async () => {
-    // start server WITHOUT mutation env
+    // start server WITHOUT mutation env (isolate instructions dir to avoid interference)
+    const isolated = fs.mkdtempSync(path.join(os.tmpdir(),'instr-contract-gated-'));
     const server = spawn('node', [path.join(__dirname, '../../dist/server/index.js')], {
       stdio: ['pipe','pipe','pipe'],
-      env: { ...process.env, MCP_ENABLE_MUTATION: '' }
+      env: { ...process.env, MCP_ENABLE_MUTATION: '', INSTRUCTIONS_DIR: isolated }
     });
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
@@ -141,8 +144,14 @@ describe('contract schemas', () => {
   await new Promise(r => setTimeout(r,120));
     const id = 9999;
     send(server, { jsonrpc:'2.0', id, method: 'usage/flush' });
-    await new Promise(r => setTimeout(r,200));
-    const line = lines.find(l => new RegExp(`"id":${id}(?![0-9])`).test(l));
+    // Allow additional polling time for gated error to be emitted
+    let line: string | undefined;
+    const start = Date.now();
+    while(Date.now()-start < 3000){
+      line = lines.find(l => new RegExp(`"id":${id}(?![0-9])`).test(l));
+      if(line) break;
+      await new Promise(r => setTimeout(r,80));
+    }
     expect(line, 'missing response for gated tool').toBeTruthy();
     const obj = JSON.parse(line!);
     expect(obj.error, 'expected error when mutation disabled').toBeTruthy();

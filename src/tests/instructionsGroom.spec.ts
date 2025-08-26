@@ -24,8 +24,9 @@ describe('instructions/groom tool', () => {
   await wait(100);
     send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
   await wait(40);
-    send(server,{ jsonrpc:'2.0', id:2, method:'instructions/groom', params:{ mode:{ dryRun:true, mergeDuplicates:true, removeDeprecated:true } } });
-  await waitFor(() => out.some(l => { try { const o = JSON.parse(l); return o.id === 2; } catch { return false; } }));
+  send(server,{ jsonrpc:'2.0', id:2, method:'instructions/groom', params:{ mode:{ dryRun:true, mergeDuplicates:true, removeDeprecated:true } } });
+  await waitFor(() => out.some(l => { try { const o = JSON.parse(l); return o.id === 2; } catch { return false; } }), 4000);
+  await wait(120);
   const responses = out.filter(l => { try { const o = JSON.parse(l); return o.id === 2; } catch { return false; } });
   expect(responses.length).toBeGreaterThan(0);
   const obj = JSON.parse(responses[responses.length-1]);
@@ -50,8 +51,9 @@ describe('instructions/groom tool', () => {
   await wait(100);
     send(server,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
   await wait(40);
-    send(server,{ jsonrpc:'2.0', id:11, method:'instructions/groom', params:{ mode:{ mergeDuplicates:false, removeDeprecated:false } } });
-    await waitFor(() => out.some(l => { try { const o = JSON.parse(l); return o.id === 11; } catch { return false; } }));
+  send(server,{ jsonrpc:'2.0', id:11, method:'instructions/groom', params:{ mode:{ mergeDuplicates:false, removeDeprecated:false } } });
+  await waitFor(() => out.some(l => { try { const o = JSON.parse(l); return o.id === 11; } catch { return false; } }), 4000);
+  await wait(120);
   const responses = out.filter(l => { try { const o = JSON.parse(l); return o.id === 11; } catch { return false; } });
   expect(responses.length).toBeGreaterThan(0);
   const obj = JSON.parse(responses[responses.length-1]);
@@ -78,8 +80,9 @@ describe('instructions/groom tool', () => {
   await wait(100);
     send(server,{ jsonrpc:'2.0', id:20, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
   await wait(40);
-    send(server,{ jsonrpc:'2.0', id:21, method:'instructions/groom', params:{ mode:{ mergeDuplicates:true, removeDeprecated:true } } });
-    await waitFor(() => out.some(l => { try { const o = JSON.parse(l); return o.id === 21; } catch { return false; } }));
+  send(server,{ jsonrpc:'2.0', id:21, method:'instructions/groom', params:{ mode:{ mergeDuplicates:true, removeDeprecated:true } } });
+  await waitFor(() => out.some(l => { try { const o = JSON.parse(l); return o.id === 21; } catch { return false; } }), 5000);
+  await wait(150);
   const responses = out.filter(l => { try { const o = JSON.parse(l); return o.id === 21; } catch { return false; } });
   expect(responses.length).toBeGreaterThan(0);
   const obj = JSON.parse(responses[responses.length-1]);

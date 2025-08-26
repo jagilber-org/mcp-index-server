@@ -202,6 +202,8 @@ If VS Code shows "Configured but Not Connected":
 
 Each instruction JSON now includes lifecycle metadata: version, status, owner, priorityTier, classification, review timestamps, and changelog.
 
+Alpha semantics (current): The server now preserves any governance fields you explicitly supply on add/import (version, owner, priorityTier, semanticSummary, etc.) without auto-bumping or overriding. Defaults are only filled for fields you omit. Previous automatic version patch bumps on body changes have been removed for simplicity and determinism.
+
 Supporting automation:
 
 - Lint: `npm run lint:instructions`
@@ -218,13 +220,13 @@ Primary tool groups:
 
 ### Simplified Authoring Schema (Tier 1)
 
-Author-facing JSON now only requires:
+Author-facing JSON requires only the minimal core fields; all omitted governance fields are derived, but any governance fields you DO provide are preserved as-is:
 
 ```jsonc
 { "id": "...", "title": "...", "body": "...", "priority": 50, "audience": "all", "requirement": "optional", "categories": ["example"] }
 ```
 
-All governance & lifecycle fields (version, status, owner, priorityTier, classification, review dates, changeLog, semanticSummary, sourceHash) are automatically derived at load time by the classification service. The `instructions/enrich` tool can persist any missing placeholders back to disk; this is optional for day-to-day authoring.
+If omitted, governance & lifecycle fields (version, status, owner, priorityTier, classification, review dates, changeLog, semanticSummary, sourceHash) are derived at load time. The `instructions/enrich` tool will not overwrite explicit values you supplied; it only fills gaps.
 
 ### governanceUpdate Tool
 
@@ -246,7 +248,7 @@ Typical workflow:
 4. Later adjust owner/status or force version bump with `instructions/governanceUpdate`.
 
 
-Rationale: Keeps authoring friction low while preserving a deterministic governance projection for hashing and CI gating.
+Rationale: Keeps authoring friction low while making CRUD semantics deterministic—no hidden or retroactive mutation of provided governance values. Hash stability and CI gating operate on exactly what you wrote plus only defaulted fields.
 
 ## Usage
 

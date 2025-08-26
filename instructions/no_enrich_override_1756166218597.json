@@ -1,0 +1,31 @@
+{
+  "id": "no_enrich_override_1756166218597",
+  "title": "no_enrich_override_1756166218597",
+  "body": "Enrich body",
+  "priority": 10,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "enrich"
+  ],
+  "sourceHash": "5113cde07844339c443d436e83b988b44eadd101a874590add03a495cfbe8933",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T23:56:59.499Z",
+  "updatedAt": "2025-08-25T23:56:59.499Z",
+  "riskScore": 95,
+  "version": "5.4.3",
+  "owner": "enrich-owner",
+  "priorityTier": "P1",
+  "semanticSummary": "Custom enrich summary",
+  "status": "approved",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-25T23:56:59.506Z",
+  "nextReviewDue": "2025-09-24T23:56:59.506Z",
+  "changeLog": [
+    {
+      "version": "5.4.3",
+      "changedAt": "2025-08-25T23:56:59.499Z",
+      "summary": "initial import"
+    }
+  ]
+}

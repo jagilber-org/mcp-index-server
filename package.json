@@ -6,17 +6,17 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server/index.js",
-  "prestart": "npm run build",
-  "pretest": "npm run build",
+    "prestart": "npm run build",
+    "pretest": "npm run build",
     "dev": "node --watch dist/server/index.js",
-  "build:watch": "tsc -w -p tsconfig.json",
-  "check:dist": "npm run build && git diff --quiet --exit-code dist || (echo Dist out of date. Run npm run build and commit generated files.& exit 1)",
-  "coverage": "vitest run --coverage",
-  "sbom": "npx syft packages dir:. -o json > sbom.json || echo 'Syft not installed'",
-  "coverage:ci": "vitest run --coverage --reporter=default --reporter=json --threshold.lines=75 --threshold.branches=70",
-  "manifest:generate": "node scripts/generate-manifest.mjs",
-  "contract:tools": "node scripts/generate-tools-snapshot.mjs",
-  "verify:manifest": "node scripts/verify-manifest.mjs",
+    "build:watch": "tsc -w -p tsconfig.json",
+    "check:dist": "npm run build && git diff --quiet --exit-code dist || (echo Dist out of date. Run npm run build and commit generated files.& exit 1)",
+    "coverage": "vitest run --coverage",
+    "sbom": "npx syft packages dir:. -o json > sbom.json || echo 'Syft not installed'",
+    "coverage:ci": "vitest run --coverage --reporter=default --reporter=json --threshold.lines=75 --threshold.branches=70",
+    "manifest:generate": "node scripts/generate-manifest.mjs",
+    "contract:tools": "node scripts/generate-tools-snapshot.mjs",
+    "verify:manifest": "node scripts/verify-manifest.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:contracts": "vitest run src/tests/contractSchemas.spec.ts",
@@ -37,7 +37,9 @@
     "@types/node": "^20.11.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
+    "@vitest/coverage-v8": "^1.6.1",
     "eslint": "^8.57.0",
+    "fast-check": "^3.17.0",
     "prettier": "^3.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.0",
@@ -59,5 +61,7 @@
     "url": "https://github.com/jagilber/mcp-index-server/issues"
   },
   "homepage": "https://github.com/jagilber/mcp-index-server#readme",
-  "engines": { "node": ">=20 <21" }
+  "engines": {
+    "node": ">=20 <21"
+  }
 }

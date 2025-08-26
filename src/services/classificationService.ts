@@ -6,6 +6,8 @@ export interface NormalizedInstruction extends InstructionEntry {}
 export class ClassificationService {
   normalize(entry: InstructionEntry): NormalizedInstruction {
     const now = new Date().toISOString();
+  const trimmedTitle = entry.title.trim();
+  const trimmedBody = entry.body.trim();
     // Derive structured scope fields from legacy category prefixes if not already present
     let workspaceId = entry.workspaceId;
     let userId = entry.userId;
@@ -31,14 +33,15 @@ export class ClassificationService {
   const semanticSummary = entry.semanticSummary || this.deriveSummary(entry.body);
     const norm: NormalizedInstruction = {
       ...entry,
-      title: entry.title.trim(),
-      body: entry.body.trim(),
+      title: trimmedTitle,
+      body: trimmedBody,
       categories: Array.from(new Set(otherCats.map(c => c.toLowerCase()))).sort(),
       updatedAt: entry.updatedAt || now,
       createdAt: entry.createdAt || now,
   // Guarantee schemaVersion presence (tests assert instructions/list items include this field)
   schemaVersion: entry.schemaVersion || '1',
-      sourceHash: entry.sourceHash && entry.sourceHash.length === 64 ? entry.sourceHash : this.computeHash(entry.body),
+  // Compute hash from canonical (trimmed) body to ensure stability across innocuous whitespace differences
+  sourceHash: entry.sourceHash && entry.sourceHash.length === 64 ? entry.sourceHash : this.computeHash(trimmedBody),
       riskScore: this.computeRisk(entry),
       workspaceId,
       userId,

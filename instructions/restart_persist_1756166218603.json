@@ -1,0 +1,31 @@
+{
+  "id": "restart_persist_1756166218603",
+  "title": "restart_persist_1756166218603",
+  "body": "Restart body",
+  "priority": 33,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "restart"
+  ],
+  "sourceHash": "c5800bbc2e83305160111892090c4c2ea1c91e7ba2a51ad41810e087912a8235",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T23:56:59.314Z",
+  "updatedAt": "2025-08-25T23:56:59.314Z",
+  "riskScore": 72,
+  "version": "7.1.0",
+  "owner": "restart-owner",
+  "priorityTier": "P3",
+  "semanticSummary": "Restart summary",
+  "status": "approved",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-25T23:56:59.319Z",
+  "nextReviewDue": "2025-11-23T23:56:59.319Z",
+  "changeLog": [
+    {
+      "version": "7.1.0",
+      "changedAt": "2025-08-25T23:56:59.314Z",
+      "summary": "initial import"
+    }
+  ]
+}

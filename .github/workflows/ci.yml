@@ -22,7 +22,7 @@ jobs:
         run: |
           if [ -f package.json ]; then npm run lint --if-present; fi
       - name: Test
-        run: npm test --ignore-scripts --if-present
+        run: npm test --ignore-scripts --if-present -- --ci --reporters=default --reporters=jest-junit
         env:
           JEST_JUNIT_OUTPUT: test-results/junit.xml
       - name: Build

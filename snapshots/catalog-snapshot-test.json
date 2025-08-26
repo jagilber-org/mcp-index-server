@@ -1,29 +1,29 @@
 {
-  "generatedAt": "2025-08-25T19:27:48.269Z",
+  "generatedAt": "2025-08-26T01:46:17.664Z",
   "items": [
     {
-      "id": "add_persist_1756149703624_0",
-      "sourceHash": "deadbeef606ae8c04709ec8d5b723a312d4014ec85b88faba590915d0b5118ab",
+      "id": "ai_code_nav_baseline",
+      "sourceHash": "deadbeefcb7165bdfeb0d254642e5a01ead061d055e8cc08e6357623631f7ecb",
       "version": "1.0.0"
     },
     {
-      "id": "add_persist_1756149703624_1",
-      "sourceHash": "f52748fc8a9dfb6adc2dbe7e5a4171a89dbadfda31bd4b786a2dec9c81700ba8",
+      "id": "ai_debug_triage_prompt",
+      "sourceHash": "9e37939130bca68ddaba260530233e5ed684a18ebc66b734286ed60b19302748",
       "version": "1.0.0"
     },
     {
-      "id": "add_persist_1756149703624_2",
-      "sourceHash": "a110b1cee1c5c7a82d37c5d71c21ff0ce5f15990e51931f7a630d5203aa32d6e",
+      "id": "ai_diff_minimality_rule",
+      "sourceHash": "de9f28b204782d47ed9677775034ee3569f0573e85d96fc7ecf95472a42a6582",
       "version": "1.0.0"
     },
     {
-      "id": "add_persist_1756149703624_3",
-      "sourceHash": "fab2ce84617b4af098d80d4ff3d37b3bb0e60e41c7efba280b490612d44de1d5",
+      "id": "ai_log_trace_analysis",
+      "sourceHash": "a44a3bf88c45995475a35d96099614a8ad225a11424f803085e9010c0fef3e8e",
       "version": "1.0.0"
     },
     {
-      "id": "add_persist_1756149703624_4",
-      "sourceHash": "1e0c4e9b4d9eb0443ffe2702aac471e4fa2252f30280bc80b29b46a0bf8c09b3",
+      "id": "ai_pattern_anomaly_spotter",
+      "sourceHash": "0f1c885e4cc469d7b65afc15777855dbc8b72d8d5ba2677a3261862f13a33416",
       "version": "1.0.0"
     }
   ]

@@ -1,0 +1,39 @@
+{
+  "id": "ai_perf_regression_check",
+  "title": "AI Performance Regression Check",
+  "body": "For performance issues: compare current vs baseline metrics (p50/p95, error %, throughput), detect resource saturation signals, and output optimized hotspot candidates.",
+  "priority": 16,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "ai",
+    "ai-v1",
+    "analysis",
+    "performance"
+  ],
+  "sourceHash": "f2d80c8cf0215f4ab4c2a3eb5a5c8cb54123b51162e42c6eceefc3012ea2c513",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T23:55:38.293Z",
+  "updatedAt": "2025-08-25T23:56:35.460Z",
+  "riskScore": 134,
+  "owner": "perf",
+  "status": "approved",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "version": "1.0.0",
+  "lastReviewedAt": "2025-08-25T23:55:38.293Z",
+  "nextReviewDue": "2025-09-24T23:55:38.293Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T23:55:38.293Z",
+      "summary": "initial import"
+    },
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T23:56:35.460Z",
+      "summary": "fields update"
+    }
+  ],
+  "semanticSummary": "For performance issues: compare current vs baseline metrics (p50/p95, error %, throughput), detect resource saturation signals, and output optimized hotspot ..."
+}

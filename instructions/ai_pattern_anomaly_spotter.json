@@ -1,0 +1,39 @@
+{
+  "id": "ai_pattern_anomaly_spotter",
+  "title": "AI Pattern & Anomaly Spotter",
+  "body": "Scan code or config for anti-patterns (duplicate logic, unchecked external input, missing timeouts) and emit prioritized remediation list with risk rationale.",
+  "priority": 15,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "ai",
+    "ai-v1",
+    "analysis",
+    "quality"
+  ],
+  "sourceHash": "0f1c885e4cc469d7b65afc15777855dbc8b72d8d5ba2677a3261862f13a33416",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T23:55:38.305Z",
+  "updatedAt": "2025-08-25T23:56:43.573Z",
+  "riskScore": 135,
+  "owner": "architecture",
+  "status": "approved",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "version": "1.0.0",
+  "lastReviewedAt": "2025-08-25T23:55:38.305Z",
+  "nextReviewDue": "2025-09-24T23:55:38.305Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T23:55:38.305Z",
+      "summary": "initial import"
+    },
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T23:56:43.573Z",
+      "summary": "fields update"
+    }
+  ],
+  "semanticSummary": "Scan code or config for anti-patterns (duplicate logic, unchecked external input, missing timeouts) and emit prioritized remediation list with risk rationale."
+}

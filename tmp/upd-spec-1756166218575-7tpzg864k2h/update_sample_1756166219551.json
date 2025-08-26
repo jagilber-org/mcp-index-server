@@ -1,0 +1,41 @@
+{
+  "id": "update_sample_1756166219551",
+  "title": "Orig",
+  "body": "Changed Body",
+  "priority": 10,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "temp"
+  ],
+  "sourceHash": "f8fc78a71cb75281b9cdb91a6ae04e7bb3bea856fe7160b6aa9d47d0a269ccfa",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T23:56:59.578Z",
+  "updatedAt": "2025-08-25T23:56:59.967Z",
+  "riskScore": 95,
+  "version": "2.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-25T23:56:59.580Z",
+  "nextReviewDue": "2025-09-24T23:56:59.580Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T23:56:59.578Z",
+      "summary": "initial import"
+    },
+    {
+      "version": "1.0.1",
+      "changedAt": "2025-08-25T23:56:59.756Z",
+      "summary": "body edit"
+    },
+    {
+      "version": "2.0.0",
+      "changedAt": "2025-08-25T23:56:59.967Z",
+      "summary": "major bump"
+    }
+  ],
+  "semanticSummary": "Initial Body"
+}

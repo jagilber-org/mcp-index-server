@@ -2,10 +2,13 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { waitFor } from './testUtils';
 
+// Per-spec isolated instructions directory to avoid cross-test interference
+const ISOLATED_DIR = fs.mkdtempSync(path.join(os.tmpdir(),'instr-add-'));
 function startServer(mutation:boolean){
-  return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION: mutation ? '1':'', MCP_LOG_VERBOSE:'' } });
+  return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION: mutation ? '1':'', MCP_LOG_VERBOSE:'', INSTRUCTIONS_DIR: ISOLATED_DIR } });
 }
 
 function send(proc: ReturnType<typeof spawn>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
@@ -13,8 +16,8 @@ function send(proc: ReturnType<typeof spawn>, msg: Record<string, unknown>){ pro
 const wait = (ms:number)=> new Promise(r=>setTimeout(r,ms));
 
 describe('instructions/add tool', () => {
-  const instructionsDir = path.join(process.cwd(),'instructions');
-  beforeAll(() => { if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir); });
+  const instructionsDir = ISOLATED_DIR;
+  beforeAll(() => { if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir,{recursive:true}); });
 
   it('creates a new instruction (lax defaults)', async () => {
     const id = 'add_test_create';

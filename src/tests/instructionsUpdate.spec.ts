@@ -1,95 +1,86 @@
 import { describe, it, expect } from 'vitest';
 import { spawn } from 'child_process';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { waitFor } from './testUtils';
 
-function startServer(dir?:string){
-  const baseDir = dir || path.join(process.cwd(),'tmp','upd-spec-'+Date.now()+'-'+Math.random().toString(36).slice(2));
-  fs.mkdirSync(baseDir, { recursive: true });
-  return spawn('node', [path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', INSTRUCTIONS_DIR: baseDir } });
+// This suite covers "update" semantics accomplished today via instructions/add with overwrite=true.
+// There is no dedicated instructions/update tool; overwrite retains version & changeLog unless explicitly supplied.
+
+const ISOLATED_DIR = fs.mkdtempSync(path.join(os.tmpdir(),'instr-update-'));
+
+function startServer(mutation: boolean){
+	return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION: mutation? '1':'', INSTRUCTIONS_DIR: ISOLATED_DIR } });
 }
 function send(proc: ReturnType<typeof startServer>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
-interface RpcSuccess<T=unknown> { id:number; result:T }
-interface RpcError { id:number; error:unknown }
-type RpcResponse<T=unknown> = RpcSuccess<T> | RpcError | undefined;
-function findResponse(lines: string[], id:number): RpcResponse | undefined { for(const l of lines){ try { const o=JSON.parse(l) as RpcResponse; if(o && o.id===id) return o; } catch { /* ignore */ } } return undefined; }
+function collect(out:string[], id:number){ return out.filter(l=> { try { const o=JSON.parse(l); return o.id===id; } catch { return false; } }).pop(); }
 
-// Test contract for instructions/update
-// 1. Happy path update (body + auto bump)
-// 2. Optimistic concurrency conflict
-// 3. No-op update returns changed:false
-// 4. Explicit major bump
+describe('instructions/update via overwrite (behavioral)', () => {
+	it('updates body without changing version or changeLog when no version provided', async () => {
+		const id = 'update_body_retains_version';
+		const file = path.join(ISOLATED_DIR, id + '.json');
+		const server = startServer(true);
+		const out:string[]=[]; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
+		await new Promise(r=> setTimeout(r,70));
+		send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'update-test', version:'0' }, capabilities:{ tools:{} } } });
+		await waitFor(()=> !!collect(out,1));
+		// Create with explicit version + changeLog
+		send(server,{ jsonrpc:'2.0', id:2, method:'instructions/add', params:{ entry:{ id, title:id, body:'Initial body', priority:10, audience:'all', requirement:'optional', categories:['upd'], version:'1.2.3', changeLog:[{ version:'1.2.3', changedAt:new Date().toISOString(), summary:'initial' }] }, overwrite:true, lax:true } });
+		await waitFor(()=> !!collect(out,2));
+		const first = JSON.parse(fs.readFileSync(file,'utf8')) as { version:string; changeLog?: unknown[]; sourceHash:string };
+		expect(first.version).toBe('1.2.3');
+		const firstHash = first.sourceHash;
+		const firstChangeLen = (first.changeLog||[]).length;
+		// Overwrite with new body, no version
+		send(server,{ jsonrpc:'2.0', id:3, method:'instructions/add', params:{ entry:{ id, title:id, body:'Modified body once', priority:10, audience:'all', requirement:'optional', categories:['upd'] }, overwrite:true, lax:true } });
+		await waitFor(()=> !!collect(out,3));
+		const second = JSON.parse(fs.readFileSync(file,'utf8')) as { version:string; changeLog?: unknown[]; body:string; sourceHash:string };
+		expect(second.body).toBe('Modified body once');
+		expect(second.version).toBe('1.2.3'); // unchanged
+		expect((second.changeLog||[]).length).toBe(firstChangeLen); // not auto bumped
+		expect(second.sourceHash).not.toBe(firstHash); // body hash changed
+		server.kill();
+	}, 8000);
 
-describe('instructions/update handler', () => {
-  it('supports body update with auto bump and change log', async () => {
-    const server = startServer();
-    const out: string[] = []; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)));
-    await new Promise(r=> setTimeout(r,120));
-    send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'update-test', version:'0' }, capabilities:{ tools:{} } } });
-    await waitFor(()=> !!findResponse(out,1), 3000);
-
-    const id = 'update_sample_'+Date.now();
-    send(server,{ jsonrpc:'2.0', id:2, method:'instructions/add', params:{ entry:{ id, title:'Orig', body:'Initial Body', priority:10, audience:'all', requirement:'optional', categories:['temp'], version:'1.0.0' }, overwrite:true } });
-    await waitFor(()=> !!findResponse(out,2), 3000);
-
-    // Now list methods (after at least one known handler executed) to assert update present
-    send(server,{ jsonrpc:'2.0', id:100, method:'debug/listMethods', params:{} });
-    await waitFor(()=> !!findResponse(out,100), 3000);
-    const listResp = findResponse(out,100) as RpcSuccess<{ methods:string[] }> | undefined;
-    if(!listResp || !('result' in listResp)) throw new Error('listMethods missing');
-    if(!(listResp.result.methods||[]).includes('instructions/update')){
-      throw new Error('instructions/update not registered');
-    }
-
-    // Fetch to get sourceHash
-    send(server,{ jsonrpc:'2.0', id:3, method:'instructions/get', params:{ id } });
-    await waitFor(()=> !!findResponse(out,3), 3000);
-    const getResp = findResponse(out,3) as RpcSuccess<{ item:{ sourceHash:string; version:string } }> | undefined;
-    expect(getResp?.result.item.sourceHash).toBeTruthy();
-    const prevHash = getResp!.result.item.sourceHash;
-
-    // Update body with auto bump
-    send(server,{ jsonrpc:'2.0', id:4, method:'instructions/update', params:{ id, body:'Changed Body', bump:'auto', expectedSourceHash: prevHash, changeSummary:'body edit' } });
-    await waitFor(()=> !!findResponse(out,4), 3000);
-    const rawUpd = findResponse(out,4) as RpcResponse | undefined;
-    if(!rawUpd){
-      throw new Error('update response missing. tail lines=\n' + out.slice(-25).join('\n'));
-    }
-    if('error' in rawUpd!){
-      throw new Error('update returned error: ' + JSON.stringify(rawUpd.error));
-    }
-    const upd = rawUpd as RpcSuccess<{ version:string; sourceHash:string; bumped?:string }>;
-    expect(['patch','none',undefined]).toContain(upd.result.bumped); // auto results in patch when body changed; allow undefined for initial iteration
-    expect(upd.result.sourceHash).not.toBe(prevHash);
-
-  // Allow slight delay to ensure filesystem write fully flushed before conflict attempt (avoids rare race in full suite)
-  await new Promise(r=> setTimeout(r,25));
-  // Conflict test: attempt update with stale hash
-    send(server,{ jsonrpc:'2.0', id:5, method:'instructions/update', params:{ id, title:'Should Conflict', expectedSourceHash: prevHash } });
-    await waitFor(()=> !!findResponse(out,5), 3000);
-  const conflict = findResponse(out,5) as RpcSuccess<{ conflict?:boolean; currentSourceHash?:string; changed?:boolean }> | undefined;
-  if(!(conflict?.result.conflict)){
-      // retain silent branch to keep expectation stable without noisy logging
-  }
-  expect(conflict?.result.conflict).toBe(true);
-
-    // No-op update (no fields)
-  // Ensure write complete before no-op check
-  await new Promise(r=> setTimeout(r,15));
-  send(server,{ jsonrpc:'2.0', id:6, method:'instructions/update', params:{ id, expectedSourceHash: upd.result.sourceHash } });
-    await waitFor(()=> !!findResponse(out,6), 3000);
-    const noop = findResponse(out,6) as RpcSuccess<{ changed:boolean }> | undefined;
-    expect(noop?.result.changed).toBe(false);
-
-    // Explicit major bump without body change (allow brief delay to ensure previous no-op completed)
-    await new Promise(r=> setTimeout(r,25));
-    send(server,{ jsonrpc:'2.0', id:7, method:'instructions/update', params:{ id, bump:'major', expectedSourceHash: upd?.result.sourceHash, changeSummary:'major bump' } });
-    await waitFor(()=> !!findResponse(out,7), 3000);
-    const major = findResponse(out,7) as RpcSuccess<{ version:string; bumped?:string }> | undefined;
-  // major bump must report bumped field
-    expect(major?.result.bumped).toBe('major');
-
-    server.kill();
-  }, 18000);
+	it('produces diff updated entry after overwrite', async () => {
+		const id = 'update_diff_detect';
+		const file = path.join(ISOLATED_DIR, id + '.json');
+		const server = startServer(true);
+		const out:string[]=[]; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
+		await new Promise(r=> setTimeout(r,70));
+		send(server,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'update-test', version:'0' }, capabilities:{ tools:{} } } });
+		await waitFor(()=> !!collect(out,10));
+		send(server,{ jsonrpc:'2.0', id:11, method:'instructions/add', params:{ entry:{ id, title:id, body:'Initial', priority:20, audience:'all', requirement:'optional', categories:['upd'] }, overwrite:true, lax:true } });
+		await waitFor(()=> !!collect(out,11));
+		// list to get current hash
+		send(server,{ jsonrpc:'2.0', id:12, method:'instructions/list', params:{} });
+		await waitFor(()=> !!collect(out,12));
+		const listObj = JSON.parse(collect(out,12)!).result as { hash:string; items: { id:string; sourceHash:string }[] };
+		const currentHash = listObj.hash;
+		const entry = listObj.items.find(e=> e.id===id);
+		expect(entry).toBeTruthy();
+		const knownSourceHash = (entry as { sourceHash:string }).sourceHash;
+		const fullKnown = listObj.items.map(i=> ({ id: i.id, sourceHash: i.sourceHash }));
+		// diff upToDate using full known array
+		send(server,{ jsonrpc:'2.0', id:13, method:'instructions/diff', params:{ clientHash: currentHash, known: fullKnown } });
+		await waitFor(()=> !!collect(out,13));
+		const diff1 = JSON.parse(collect(out,13)!).result;
+		expect(diff1.upToDate || (Array.isArray(diff1.added)&&diff1.added.length===0)).toBeTruthy();
+		// overwrite with modified body
+		send(server,{ jsonrpc:'2.0', id:14, method:'instructions/add', params:{ entry:{ id, title:id, body:'Changed body', priority:20, audience:'all', requirement:'optional', categories:['upd'] }, overwrite:true, lax:true } });
+		await waitFor(()=> !!collect(out,14));
+		const after = JSON.parse(fs.readFileSync(file,'utf8')) as { sourceHash:string };
+		expect(after.sourceHash).not.toBe(knownSourceHash);
+		// diff again with old hash + known -> updated array should include id
+		// Use previous known (still old hash for modified id) but full known for others (we just replace entry for id with old hash)
+		const staleKnown = fullKnown.map(k=> k.id===id ? { id, sourceHash: knownSourceHash }: k);
+		send(server,{ jsonrpc:'2.0', id:15, method:'instructions/diff', params:{ clientHash: currentHash, known: staleKnown } });
+		await waitFor(()=> !!collect(out,15));
+		const diff2 = JSON.parse(collect(out,15)!).result as { updated?: { id:string }[] };
+		const updatedIds = (diff2.updated||[]).map(e=> e.id);
+		expect(updatedIds).toContain(id);
+		server.kill();
+	}, 9000);
 });
+

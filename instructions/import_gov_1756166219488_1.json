@@ -1,0 +1,32 @@
+{
+  "id": "import_gov_1756166219488_1",
+  "title": "import_gov_1756166219488_1",
+  "body": "Body 1",
+  "priority": 20,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "import",
+    "temp"
+  ],
+  "sourceHash": "f52748fc8a9dfb6adc2dbe7e5a4171a89dbadfda31bd4b786a2dec9c81700ba8",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T23:56:59.543Z",
+  "updatedAt": "2025-08-25T23:56:59.543Z",
+  "riskScore": 85,
+  "version": "3.0.1",
+  "owner": "import-owner-1",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "changeLog": [
+    {
+      "version": "3.0.1",
+      "changedAt": "2025-08-25T23:56:59.489Z",
+      "summary": "seed"
+    }
+  ],
+  "semanticSummary": "Imported summary 1",
+  "status": "approved",
+  "lastReviewedAt": "2025-08-25T23:56:59.543Z",
+  "nextReviewDue": "2025-09-24T23:56:59.543Z"
+}

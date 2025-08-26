@@ -1,0 +1,39 @@
+{
+  "id": "ai_code_nav_baseline",
+  "title": "AI Code Navigation Baseline",
+  "body": "When requesting code context, enumerate target symbol(s), language(s), and scope (file/function/module) before diff generation; avoid speculative edits without symbol confirmation.",
+  "priority": 10,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "ai",
+    "ai-v1",
+    "coding",
+    "navigation"
+  ],
+  "sourceHash": "e4fb750fcb7165bdfeb0d254642e5a01ead061d055e8cc08e6357623631f7ecb",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-25T23:55:38.285Z",
+  "updatedAt": "2025-08-25T23:56:30.209Z",
+  "riskScore": 140,
+  "owner": "platform",
+  "status": "approved",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "version": "1.0.0",
+  "lastReviewedAt": "2025-08-25T23:55:38.285Z",
+  "nextReviewDue": "2025-09-24T23:55:38.285Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T23:55:38.285Z",
+      "summary": "initial import"
+    },
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T23:56:30.209Z",
+      "summary": "fields update"
+    }
+  ],
+  "semanticSummary": "When requesting code context, enumerate target symbol(s), language(s), and scope (file/function/module) before diff generation; avoid speculative edits witho..."
+}

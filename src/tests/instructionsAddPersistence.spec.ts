@@ -2,10 +2,12 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { waitFor } from './testUtils';
 
+const ISOLATED_DIR = fs.mkdtempSync(path.join(os.tmpdir(),'instr-persist-'));
 function startServer(){
-  return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1' } });
+  return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', INSTRUCTIONS_DIR: ISOLATED_DIR } });
 }
 function send(proc: ReturnType<typeof startServer>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
 
@@ -25,7 +27,7 @@ function findResponse(lines: string[], id: number): RpcResponse | undefined {
 }
 
 describe('instructions/add persistence & governance coverage', () => {
-  const instructionsDir = path.join(process.cwd(),'instructions');
+  const instructionsDir = ISOLATED_DIR;
   beforeAll(()=>{ if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir); });
 
   it('adds multiple unique instructions and retains all on list', async () => {
@@ -44,24 +46,22 @@ describe('instructions/add persistence & governance coverage', () => {
   const baselineResp = findResponse(out,2);
   const baseline = isSuccess(baselineResp)? (baselineResp.result as { count?:number }).count ?? 0 : 0;
 
-    // Add each instruction (attempt to inject governance that should be ignored by add)
+  // Add each instruction (now governance fields should persist exactly as provided for alpha)
     for(let i=0;i<ids.length;i++){
       const id = ids[i];
-      send(server,{ jsonrpc:'2.0', id:100+i, method:'instructions/add', params:{ entry:{ id, title:id, body:`Body ${i}`, priority:50+i, audience:'all', requirement:'optional', categories:['temp','Test'], owner:'should-not-stick', priorityTier:'P1', version:'9.9.9' }, lax:true, overwrite:true } });
+  send(server,{ jsonrpc:'2.0', id:100+i, method:'instructions/add', params:{ entry:{ id, title:id, body:`Body ${i}`, priority:50+i, audience:'all', requirement:'optional', categories:['temp','Test'], owner:`owner-${i}`, priorityTier:'P1', version:'9.9.9', classification:'internal', semanticSummary:`Custom summary ${i}` }, lax:true, overwrite:true } });
       await waitFor(()=> !!findResponse(out,100+i));
       const file = path.join(instructionsDir, id + '.json');
       expect(fs.existsSync(file), `missing file for ${id}`).toBe(true);
       const disk = JSON.parse(fs.readFileSync(file,'utf8'));
-      // Owner supplied is ignored (should be unowned or auto-resolved)
-      expect(disk.owner).toBeDefined();
-      expect(['unowned'].includes(disk.owner) || /^team-/.test(disk.owner)).toBe(true);
-      // Version is normalized (not user supplied 9.9.9)
-      expect(disk.version).toBe('1.0.0');
-      // priorityTier derived from priority (should not accept injected P1 unless priority qualifies)
-      if(disk.priority <= 20){ expect(disk.priorityTier).toBe('P1'); }
-      else if(disk.priority <= 40){ expect(disk.priorityTier).toBe('P2'); }
-      else if(disk.priority <= 70){ expect(disk.priorityTier).toBe('P3'); }
-      else { expect(disk.priorityTier).toBe('P4'); }
+  // Owner supplied is preserved
+  expect(disk.owner).toBe(`owner-${i}`);
+  // Version is preserved (no auto-normalization)
+  expect(disk.version).toBe('9.9.9');
+  // priorityTier preserved (no derivation override at add time now)
+  expect(disk.priorityTier).toBe('P1');
+  // semanticSummary preserved
+  expect(disk.semanticSummary).toBe(`Custom summary ${i}`);
     }
 
     // List again and ensure at least baseline+5 items present (none silently dropped)

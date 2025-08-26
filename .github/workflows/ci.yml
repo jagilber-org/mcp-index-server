@@ -22,8 +22,9 @@ jobs:
         run: |
           if [ -f package.json ]; then npm run lint --if-present; fi
       - name: Test
-  # Run tests with default reporter only; removed unsupported --ci and incorrect --reporters flags
-  run: npm test --ignore-scripts --if-present
+        # Run tests with default reporter only; removed unsupported --ci and incorrect --reporters flags
+        run: |
+          npm test --ignore-scripts --if-present
       - name: Build
         run: npm run build --if-present
       - name: Collect Coverage Artifact

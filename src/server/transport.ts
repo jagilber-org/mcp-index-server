@@ -74,17 +74,25 @@ function makeError(id: string | number | null | undefined, code: number, message
 
 // (legacy placeholder removed; responses are written via respondFn inside startTransport)
 
-export function startTransport(){
-  const verbose = process.env.MCP_LOG_VERBOSE === '1';
-  const protocolLog = process.env.MCP_LOG_PROTOCOL === '1'; // raw frames (parsed) logging
-  const diag = process.env.MCP_LOG_DIAG === '1' || verbose; // banner + environment snapshot
+export interface TransportOptions {
+  input?: NodeJS.ReadableStream;        // defaults to process.stdin
+  output?: NodeJS.WritableStream;       // defaults to process.stdout
+  stderr?: NodeJS.WritableStream;       // defaults to process.stderr
+  env?: NodeJS.ProcessEnv;              // defaults to process.env
+}
+
+export function startTransport(opts: TransportOptions = {}){
+  const env = opts.env || process.env;
+  const verbose = env.MCP_LOG_VERBOSE === '1';
+  const protocolLog = env.MCP_LOG_PROTOCOL === '1'; // raw frames (parsed) logging
+  const diag = env.MCP_LOG_DIAG === '1' || verbose; // banner + environment snapshot
 
   const log = (level: 'info'|'error'|'debug', msg: string, extra?: unknown) => {
     if(level === 'debug' && !verbose) return;
     const ts = new Date().toISOString();
     const line = `[${ts}] [${level}] ${msg}`;
     try {
-      process.stderr.write(line + (extra ? ` ${JSON.stringify(extra)}` : '') + '\n');
+      (opts.stderr || process.stderr).write(line + (extra ? ` ${JSON.stringify(extra)}` : '') + '\n');
     } catch { /* ignore */ }
   };
 
@@ -130,19 +138,19 @@ export function startTransport(){
   registerHandler('shutdown', () => ({ shuttingDown: true }));
   registerHandler('exit', () => { setTimeout(() => process.exit(0), 0); return { exiting: true }; });
 
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const rl = createInterface({ input: opts.input || process.stdin, output: (opts.output as NodeJS.WritableStream | undefined) || process.stdout });
   const respondFn = (obj: JsonRpcResponse) => {
     if(protocolLog){
       const base: { id: string | number | null; error?: number; ok?: true } = { id: (obj as JsonRpcSuccess | JsonRpcError).id ?? null };
       if('error' in obj) base.error = obj.error.code; else base.ok = true;
       log('debug','send', base);
     }
-    process.stdout.write(JSON.stringify(obj) + '\n');
+    (opts.output || process.stdout).write(JSON.stringify(obj) + '\n');
   };
   // Emit ready notification (MCP-style event semantics placeholder)
-  process.stdout.write(JSON.stringify({ jsonrpc: '2.0', method: 'server/ready', params: { version: VERSION } }) + '\n');
+  (opts.output || process.stdout).write(JSON.stringify({ jsonrpc: '2.0', method: 'server/ready', params: { version: VERSION } }) + '\n');
   // Proactively emit tools list changed so clients query tools immediately
-  process.stdout.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/tools/list_changed', params: {} }) + '\n');
+  (opts.output || process.stdout).write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/tools/list_changed', params: {} }) + '\n');
   rl.on('line', (line: string) => {
     const trimmed = line.trim();
     if(!trimmed) return;

@@ -1,0 +1,108 @@
+# Migration & Verification Guide
+
+Version: 0.7.0
+
+This guide provides an upgrade path from earlier 0.x versions and a deterministic verification checklist suitable for automated tooling.
+
+## 1. What Changed in 0.7.0
+
+Added:
+
+- New governance metadata projection + deterministic hash (`instructions/governanceHash`).
+- Automatic enrichment persistence pass (fills placeholder governance fields on disk once).
+- Stabilized usage tracking (atomic `firstSeenTs`, immediate flush on first usage).
+- Governance field normalization (owner auto‑resolution, semantic summary hashing, review cadence fields derivation).
+- Deterministic governance hash tests replacing flaky property fuzzing.
+
+Optional:
+
+- `GOV_HASH_TRAILING_NEWLINE=1` stabilization flag (adds a final newline sentinel for environments that historically serialized with a trailing newline).
+
+## 2. Safe Upgrade Path
+
+1. Stop any running prior server instance.
+2. Pull / install new code, run build: `npm ci && npm run build`.
+3. (Optional) Back up your `instructions/` and `data/usage-snapshot.json`.
+4. Start server once with `MCP_ENABLE_MUTATION=1` to allow enrichment rewrite pass.
+5. Observe stderr logs for any enrichment rewrites (only first run should rewrite; subsequent runs should show stable governance hash).
+6. (If you previously depended on a trailing newline in hash input) set `GOV_HASH_TRAILING_NEWLINE=1` consistently across all validating processes.
+
+No manual data migrations are required: enrichment and normalization are automatic and idempotent.
+
+## 3. Verification Checklist (Automatable)
+
+Run each tool via JSON-RPC; compare responses against expectations. Example pseudo sequence (IDs illustrative):
+
+| Step | Action | Expectation |
+|------|--------|-------------|
+| 1 | `meta/tools` | Contains `instructions/governanceHash` marked `stable` |
+| 2 | `instructions/governanceHash` | Returns `{ count>0, governanceHash, items[] }` |
+| 3 | Hash Determinism | Call twice; hashes identical (no intervening mutations) |
+| 4 | Invariance | Modify body-only of a test instruction (do NOT touch governance fields) → governance hash unchanged, but sourceHash changes (validate via diff) |
+| 5 | Sensitivity | Change a governance field (e.g., owner) → governance hash changes |
+| 6 | `integrity/verify` | `issueCount` == 0 after enrichment pass |
+| 7 | Usage Tracking | Call `usage/track` twice on same id: `usageCount` increments; `firstSeenTs` stable, `lastUsedAt` advances |
+| 8 | Persistence | Restart process; `usage/track` shows persisted `usageCount` (>= previous value) |
+| 9 | Diff Consistency | `instructions/diff` with prior hash returns `upToDate:true` when no changes |
+| 10 | Gates | `gates/evaluate` succeeds (even if zero gates) |
+
+## 4. Hash Reproducibility Details
+
+Projection fields per item (sorted by `id` then JSON stringified):
+
+```json
+{ id, title, version, owner, priorityTier, nextReviewDue, semanticSummarySha256, changeLogLength }
+```
+
+Joined with `\n` into a single string. If `GOV_HASH_TRAILING_NEWLINE=1`, a final empty line is appended before hashing (effectively adding a trailing `\n`). The SHA‑256 hex digest of that buffer is `governanceHash`.
+
+Common failure sources:
+
+- Non-deterministic file ordering (always sorted internally; external scripts must mimic if re-computing).
+- Missing enrichment (run once with mutation enabled so placeholders persist).
+- Inconsistent newline flag across processes.
+
+## 5. Rollback Strategy
+
+Because 0.7.0 only adds fields / tools and performs additive enrichment, rollback to an earlier version leaves extra governance fields in JSON. Older versions ignore unknown fields, so rollback is safe. Hash comparison features introduced in 0.7.0 will simply be unavailable.
+
+## 6. CI Recommendations
+
+- Add a contract test invoking `instructions/governanceHash`; persist the returned hash as a snapshot only when intentional governance edits are made.
+- Run `integrity/verify` and assert zero issues.
+- Execute the determinism check: call governanceHash twice in one process and once after a reload.
+- Gate PRs on no unexpected governance hash drift.
+
+## 7. Troubleshooting
+
+| Symptom | Cause | Resolution |
+|---------|-------|-----------|
+| Governance hash changes on restart without edits | Enrichment not persisted yet or newline flag mismatch | Ensure first run completed with mutation enabled; set consistent `GOV_HASH_TRAILING_NEWLINE` |
+| integrity/verify reports unexpected issues | Manual file edits left placeholders | Open & save files through grooming or rerun with mutation enabled |
+| usage/track firstSeenTs missing | Very early crash before flush | Retry; first increment forces flush now |
+
+## 8. Minimal Client Validation Flow
+
+1. Fetch `meta/tools` (record registry version).
+2. Fetch `instructions/governanceHash` (store hash).
+3. Perform operations (optional mutation tests in staging).
+4. Re-fetch governance hash; assert expected delta or stability.
+
+## 9. Backward Compatibility Notes
+
+- All prior read tools untouched.
+- New tool is additive & marked stable; no breaking schema removals.
+- Grooming continues to be idempotent; classification enhancements do not alter existing normalized categories.
+
+## 10. Environment Variable Summary
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| MCP_ENABLE_MUTATION | Enable mutation tools | unset (disabled) |
+| MCP_LOG_VERBOSE | Verbose logging | unset |
+| MCP_LOG_MUTATION | Mutation-only logs | unset |
+| GOV_HASH_TRAILING_NEWLINE | Add trailing newline sentinel before hash | unset (off) |
+
+---
+
+Automated tooling can parse this file to drive end-to-end upgrade validation. Keep textual section headers stable for reliable anchor matching.

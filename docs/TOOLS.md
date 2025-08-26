@@ -11,7 +11,7 @@ The server exposes a set of JSON-RPC 2.0 methods ("tools") over stdio. By defaul
 Categories:
 
 - Instruction Catalog: list, listScoped, get, search, diff, export, add, repair, import, reload, remove, groom
-- Governance & Integrity: prompt/review, integrity/verify, gates/evaluate
+- Governance & Integrity: instructions/governanceHash, prompt/review, integrity/verify, gates/evaluate
 - Usage & Metrics: usage/track, usage/hotset, usage/flush, metrics/snapshot
 - Introspection: meta/tools
 
@@ -36,7 +36,9 @@ Logging / diagnostics (stderr only):
 - MCP_LOG_VERBOSE=1   (verbose general logging + implies mutation logging)
 - MCP_LOG_MUTATION=1  (log only mutation tool executions)
 
-Optional (future use / reserved): none presently.
+Optional (future use / reserved):
+
+- GOV_HASH_TRAILING_NEWLINE=1 (append trailing newline sentinel before hashing governance projection; must be consistent across producers/consumers if used)
 
 ## Mutation Tools (write)
 
@@ -181,6 +183,34 @@ Each instruction now supports governance metadata:
 Grooming / normalization auto-populates defaults on load; future versions will enforce presence at creation.
 
 ### prompt/review
+
+### instructions/governanceHash
+
+Params: none
+Result: `{ count, governanceHash, items: GovernanceProjection[] }`
+
+`GovernanceProjection` fields (stable, order-insensitive across files; items sorted by `id` before hashing):
+
+```json
+{ id, title, version, owner, priorityTier, nextReviewDue, semanticSummarySha256, changeLogLength }
+```
+
+Deterministic hash algorithm:
+
+1. Load all instructions (enrichment ensures placeholders filled once on disk).
+2. Sort by `id` ascending.
+3. Map to projection JSON, stringify each projection.
+4. Join with `\n` separators.
+5. If `GOV_HASH_TRAILING_NEWLINE=1`, append a final `\n` (empty string join entry) for backward compatibility stabilization.
+6. SHA-256 hex digest of the resulting UTF-8 buffer is `governanceHash`.
+
+Invariance: Body-only edits (title & governance fields unchanged) do not alter governance hash; per-field governance edits must change it (validated by tests). Use this tool to detect governance metadata drift independent of content body churn.
+
+Use cases:
+
+- CI snapshot gating (reject unintended governance changes).
+- Cross-process restart stability checks.
+- Fast diff precursor: if governance hash unchanged, skip deeper governance audits.
 
 Params: { prompt: string }
 Result: { issues: [...], summary: { counts, highestSeverity? } }
@@ -349,6 +379,8 @@ Promotion roadmap (tentative):
 3. diff / repair incremental contract
 
 ## Change Log
+
+- 0.7.0: Added `instructions/governanceHash` stable tool, governance projection & deterministic hash, enrichment persistence pass, stabilization of usage tracking (atomic firstSeenTs + synchronous first flush), added governance lifecycle fields documentation, optional `GOV_HASH_TRAILING_NEWLINE` flag.
 
 - 0.5.1: Added instructions/remove mutation tool; updated schemas, registry, docs.
 - 0.6.0: Added structured scoping fields (workspaceId, userId, teamIds), new instructions/listScoped tool, groom purgeLegacyScopes + purgedScopes metric.

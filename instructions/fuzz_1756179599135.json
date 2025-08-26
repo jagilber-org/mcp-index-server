@@ -1,5 +1,5 @@
 {
-  "id": "fuzz_1756177941182",
+  "id": "fuzz_1756179599135",
   "title": "dup",
   "body": "same",
   "priority": 14,
@@ -8,20 +8,20 @@
   "categories": [],
   "sourceHash": "0967115f2813a3541eaef77de9d9d5773f1c0c04314b0bbfe4ff3b3b1c55b5d5",
   "schemaVersion": "1",
-  "createdAt": "2025-08-26T03:12:21.183Z",
-  "updatedAt": "2025-08-26T03:12:21.206Z",
+  "createdAt": "2025-08-26T03:39:59.135Z",
+  "updatedAt": "2025-08-26T03:39:59.151Z",
   "riskScore": 91,
   "version": "1.0.0",
   "status": "approved",
   "owner": "unowned",
   "priorityTier": "P1",
   "classification": "internal",
-  "lastReviewedAt": "2025-08-26T03:12:21.183Z",
-  "nextReviewDue": "2025-09-25T03:12:21.183Z",
+  "lastReviewedAt": "2025-08-26T03:39:59.136Z",
+  "nextReviewDue": "2025-09-25T03:39:59.136Z",
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-08-26T03:12:21.183Z",
+      "changedAt": "2025-08-26T03:39:59.135Z",
       "summary": "initial import"
     }
   ],

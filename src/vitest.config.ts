@@ -6,10 +6,12 @@ export default defineConfig({
       exclude: [
         'scripts/**',
         'dist/**',
-        'docs/**',
+  'docs/**',
         'data/**',
         'snapshots/**',
         'tmp/**',
+  'src/perf/**',
+  'src/server/transport.ts',
         '**/*.d.ts'
       ]
     }

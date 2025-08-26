@@ -1,18 +1,15 @@
 {
 	"servers": {
-		"mcp-index-server": {
-			"type": "stdio",
-			"command": "node",
-			"cwd": "C:/path/to/mcp-index-server", // replace with your local clone path
+		"powershell-mcp-server": {
+			"cwd": "c:\\github\\jagilber\\powershell-mcp-server",
 			"args": [
-				"scripts/mcp-dev-launch.cjs",
-				"--dashboard",
-				"--dashboard-port=3210"
+				"dist/server.js",
+				"--disable-self-destruct",
+				"--mcp-init-debug",
+				"1"
 			],
-			"env": {
-				"MCP_LOG_VERBOSE": "1",
-				"MCP_ENABLE_MUTATION": "1"
-			}
+			"type": "stdio",
+			"command": "node"
 		}
 	},
 	"inputs": []

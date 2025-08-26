@@ -24,11 +24,21 @@ describe('enrich/groom do not override explicit governance', () => {
     send(server,{ jsonrpc:'2.0', id:2, method:'instructions/add', params:{ entry:{ id, title:id, body:'Enrich body', priority:10, audience:'all', requirement:'optional', categories:['enrich'], owner:'enrich-owner', version:'5.4.3', priorityTier:'P1', semanticSummary:'Custom enrich summary' }, overwrite:true, lax:true } });
     await waitFor(()=> !!findResponse(out,2));
     const file = path.join(process.cwd(),'instructions', `${id}.json`);
+    // Poll for file creation to avoid ENOENT race (spawn + async write)
+    {
+      const start = Date.now();
+      const timeoutMs = 2000;
+      while(!fs.existsSync(file) && Date.now()-start < timeoutMs){
+        await new Promise(r=> setTimeout(r,40));
+      }
+    }
     const before = JSON.parse(fs.readFileSync(file,'utf8')) as Record<string, unknown>;
     // Call enrich
     send(server,{ jsonrpc:'2.0', id:3, method:'instructions/enrich', params:{} });
     await waitFor(()=> !!findResponse(out,3));
-    const after = JSON.parse(fs.readFileSync(file,'utf8')) as Record<string, unknown>;
+  // Wait a brief moment to allow enrich to finish writing (if any write happens)
+  await new Promise(r=> setTimeout(r,60));
+  const after = JSON.parse(fs.readFileSync(file,'utf8')) as Record<string, unknown>;
     for(const f of ['owner','version','priorityTier','semanticSummary']){ expect(after[f]).toEqual(before[f]); }
     server.kill();
   }, 15000);

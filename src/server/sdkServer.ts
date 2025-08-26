@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { getToolRegistry } from '../services/toolRegistry';
 import '../services/toolHandlers';
-import { getHandler } from './registry';
+import { getHandler, listRegisteredMethods } from './registry';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
@@ -122,6 +122,26 @@ export function createSdkServer(ServerClass: any) {
       }
     });
   }
+
+  // Register any additional handlers that were registered via registerHandler but
+  // are not present in the tool registry metadata (test-only or internal tools).
+  // This ensures direct JSON-RPC method invocation still works and applies
+  // centralized wrapping (metrics + feature flags) for primitives like test/primitive.
+  try {
+    const known = new Set(registry.map(r => r.name));
+    const already = new Set<string>(['initialize','tools/list','tools/call','ping']);
+    for(const name of listRegisteredMethods()){
+      if(known.has(name) || already.has(name)) continue;
+      server.setRequestHandler(requestSchema(name), async (req: { params?: Record<string, unknown> }) => {
+        const params = (req?.params ?? {}) as Record<string, unknown>;
+        const handler = getHandler(name);
+        if(!handler){
+          throw { code: -32601, message: 'Method not found', data: { method: name } };
+        }
+        return await Promise.resolve(handler(params));
+      });
+    }
+  } catch { /* ignore dynamic registration issues */ }
 
   // Lightweight ping handler (simple reachability / latency measurement)
   server.setRequestHandler(requestSchema('ping'), async () => {

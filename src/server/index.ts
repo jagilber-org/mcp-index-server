@@ -19,6 +19,7 @@ import '../services/handlers.usage';
 import '../services/handlers.prompt';
 import '../services/handlers.metrics';
 import '../services/handlers.gates';
+import '../services/handlers.testPrimitive';
 import { getCatalogState } from '../services/catalogContext';
 import http from 'http';
 import fs from 'fs';

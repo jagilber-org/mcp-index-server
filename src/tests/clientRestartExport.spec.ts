@@ -2,26 +2,38 @@ import { describe, it, expect } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { waitFor } from './testUtils';
 
 function startServer(env: Record<string,string|undefined> = {}){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', ...env } });
+}
+
+/**
+ * Create an isolated instructions directory seeded with the bootstrap file so
+ * restart hash tests are not affected by concurrent suites adding instructions.
+ */
+function makeIsolatedInstructionsDir(): string {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-restart-'));
+  const realDir = path.join(process.cwd(), 'instructions');
+  const bootstrap = 'obfuscation-pattern-gaps-2025.json';
+  const src = path.join(realDir, bootstrap);
+  if(!fs.existsSync(src)) throw new Error('missing bootstrap instruction file at '+src);
+  fs.mkdirSync(base, { recursive: true });
+  fs.copyFileSync(src, path.join(base, bootstrap));
+  return base;
 }
 function send(proc: ReturnType<typeof startServer>, msg: Record<string,unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
 
 interface ExportResult { hash:string; count:number; items:Array<{ id:string; sourceHash:string; version?:string; owner?:string; priorityTier?:string; lastReviewedAt?:string; nextReviewDue?:string }>; }
 
 describe('client restart export continuity', () => {
-  it('exports catalog, restarts server, exports again and compares governance continuity', async () => {
-    // Ensure bootstrap file exists (user may have manually edited it)
-    const instructionsDir = path.join(process.cwd(),'instructions');
-    if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir);
+  it('exports catalog, restarts server (isolated dir) and compares governance continuity deterministically', async () => {
+    const isolatedDir = makeIsolatedInstructionsDir();
     const bootstrapId = 'obfuscation-pattern-gaps-2025';
-    const bootstrapPath = path.join(instructionsDir, bootstrapId + '.json');
-    expect(fs.existsSync(bootstrapPath), 'missing bootstrap instruction file').toBe(true);
 
     // First run
-    const server1 = startServer();
+  const server1 = startServer({ INSTRUCTIONS_DIR: isolatedDir });
     const out1:string[]=[]; server1.stdout.on('data', d=> out1.push(...d.toString().trim().split(/\n+/)) );
     send(server1,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'restart-test', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> out1.some(l=> { try { return JSON.parse(l).id===1; } catch { return false; } }), 2000);
@@ -40,7 +52,7 @@ describe('client restart export continuity', () => {
     server1.kill();
 
     // Simulate client restart: start new server process
-    const server2 = startServer();
+  const server2 = startServer({ INSTRUCTIONS_DIR: isolatedDir });
     const out2:string[]=[]; server2.stdout.on('data', d=> out2.push(...d.toString().trim().split(/\n+/)) );
     send(server2,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'restart-test', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> out2.some(l=> { try { return JSON.parse(l).id===10; } catch { return false; } }), 2000);
@@ -62,12 +74,10 @@ describe('client restart export continuity', () => {
   if(snapshot.nextReviewDue !== boot2.nextReviewDue) diffs.push(`nextReviewDue changed: ${snapshot.nextReviewDue} -> ${boot2.nextReviewDue}`);
 
     expect(diffs.join('\n') || 'OK').toBe('OK');
-    // Basic invariant: catalog hash should be reproducible across restart (unless race with enrichment). Allow difference but warn.
-    if(result1.hash !== result2.hash){
-      // Non-fatal expectation; provide diagnostic but don't fail test.
-      // eslint-disable-next-line no-console
-      console.warn('Catalog hash changed across restart:', result1.hash, '->', result2.hash);
-    }
+  // With isolation the catalog hash SHOULD match exactly; enforce it now.
+  expect(result1.hash).toBe(result2.hash);
     server2.kill();
+  // Cleanup isolated directory (best-effort; ignore errors on Windows locks)
+  try { fs.rmSync(isolatedDir, { recursive: true, force: true }); } catch { /* ignore */ }
   }, 10000);
 });

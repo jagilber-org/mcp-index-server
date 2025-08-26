@@ -127,7 +127,9 @@ export function projectGovernance(e: InstructionEntry){
 }
 export function computeGovernanceHash(entries: InstructionEntry[]): string {
   const h = crypto.createHash('sha256');
+  // Optional deterministic stabilization: if env set, ensure stable newline termination and explicit sorting already applied
   const lines = entries.slice().sort((a,b)=> a.id.localeCompare(b.id)).map(e=> JSON.stringify(projectGovernance(e)));
+  if(process.env.GOV_HASH_TRAILING_NEWLINE === '1'){ lines.push(''); }
   h.update(lines.join('\n'),'utf8');
   return h.digest('hex');
 }
@@ -146,7 +148,6 @@ export function removeEntry(id:string){
 }
 export function scheduleUsagePersist(){ scheduleUsageFlush(); }
 export function incrementUsage(id:string){
-  // Feature gating per Implementation Plan Phase 0
   if(!hasFeature('usage')){ incrementCounter('usage:gated'); return { featureDisabled:true }; }
   const st = ensureLoaded();
   const e = st.byId.get(id);
@@ -154,11 +155,17 @@ export function incrementUsage(id:string){
   const nowIso = new Date().toISOString();
   e.usageCount = (e.usageCount??0)+1;
   incrementCounter('propertyUpdate:usage');
-  if(!e.firstSeenTs){
-    e.firstSeenTs = nowIso; // ensure persistence even if a reload occurs soon
+
+  // Atomically establish firstSeenTs if missing (avoid any window where undefined persists after increment)
+  if(!e.firstSeenTs) e.firstSeenTs = nowIso;
+  e.lastUsedAt = nowIso; // always advance lastUsedAt on any increment
+
+  // For the first usage we force a synchronous flush to guarantee persistence of firstSeenTs quickly;
+  // subsequent usages can rely on the debounce timer to coalesce writes.
+  if(e.usageCount === 1){
     usageDirty = true; if(usageWriteTimer) clearTimeout(usageWriteTimer); usageWriteTimer = null; flushUsageSnapshot();
+  } else {
+    scheduleUsageFlush();
   }
-  e.lastUsedAt = nowIso;
-  scheduleUsageFlush();
   return { id:e.id, usageCount:e.usageCount, firstSeenTs: e.firstSeenTs, lastUsedAt:e.lastUsedAt };
 }

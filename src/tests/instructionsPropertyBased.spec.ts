@@ -65,11 +65,12 @@ describe('property: classification normalization invariants', () => {
     const teamSlugs = fc.array(fc.string({ minLength:3, maxLength:8 }).filter(s=>/^[a-z0-9_-]+$/i.test(s)), {minLength:0,maxLength:3});
     fc.assert(
       fc.property(arbInstruction, catCore, wsSlug, userSlug, teamSlugs, (raw, baseCats, wOpt, uOpt, tArr) => {
-        // Build mixed categories with random casing & duplicates & scope prefixes
+  // Build mixed categories with random casing & duplicates & scope prefixes
   const cats: string[] = [...baseCats];
         if(wOpt) cats.push('scope:workspace:'+wOpt);
         if(uOpt) cats.push('scope:user:'+uOpt.toUpperCase()); // introduce case variance
-        for(const t of tArr){ cats.push('scope:team:'+t); if(Math.random()<0.5) cats.push('scope:team:'+t.toUpperCase()); }
+  // Deterministic team scope duplication: add an upper-case variant for every even index team
+  tArr.forEach((t, idx)=> { cats.push('scope:team:'+t); if(idx % 2 === 0) cats.push('scope:team:'+t.toUpperCase()); });
         // Add deliberate duplicates & mixed case for non-scope
         if(baseCats.length){ cats.push(baseCats[0].toUpperCase()); }
         const base = { sourceHash:'', schemaVersion:'1', createdAt:'', updatedAt:'', ...raw, categories: cats } as unknown as import('../models/instruction').InstructionEntry;

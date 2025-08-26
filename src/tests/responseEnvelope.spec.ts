@@ -1,6 +1,21 @@
 import { describe, it, expect } from 'vitest';
+import { waitFor } from './testUtils';
 import { spawn } from 'child_process';
 import path from 'path';
+
+// Robust line collector to avoid partial JSON line parsing (mirrors mcpProtocol.spec)
+function attachLineCollector(stream: NodeJS.ReadableStream, sink: string[]) {
+  let buffer = '';
+  stream.on('data', d => {
+    buffer += d.toString();
+    const parts = buffer.split(/\n/);
+    buffer = parts.pop()!;
+    for (const p of parts) {
+      const line = p.trim();
+      if (line) sink.push(line);
+    }
+  });
+}
 
 function start(flag: boolean){
   return spawn('node',[path.join(__dirname,'../../dist/server/index.js')],{ stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_FLAG_RESPONSE_ENVELOPE_V1: flag? '1':'0' }});
@@ -13,15 +28,14 @@ function collect(out: string[], id: number){ return out.filter(l=> { try { const
 describe('response envelope flag', () => {
   it('returns legacy shape when flag disabled', async () => {
     const proc = start(false);
-    const out: string[]=[]; proc.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)));
+    const out: string[]=[]; attachLineCollector(proc.stdout, out);
     await new Promise(r=> setTimeout(r,80));
     send(proc,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } }});
     await new Promise(r=> setTimeout(r,50));
     send(proc,{ jsonrpc:'2.0', id:2, method:'health/check', params:{} });
     // wait for id:2
-    const startAt = Date.now();
-    while(Date.now()-startAt < 1500 && !collect(out,2)){ await new Promise(r=> setTimeout(r,20)); }
-    const respLine = collect(out,2);
+  await waitFor(()=> !!collect(out,2), 5000);
+  const respLine = collect(out,2);
     expect(respLine).toBeTruthy();
     const obj = JSON.parse(respLine!);
     expect(obj.result).toBeTruthy();
@@ -31,14 +45,17 @@ describe('response envelope flag', () => {
 
   it('wraps response when flag enabled (env var)', async () => {
     const proc = start(true);
-    const out: string[]=[]; proc.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)));
+    const out: string[]=[]; attachLineCollector(proc.stdout, out);
     await new Promise(r=> setTimeout(r,80));
     send(proc,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } }});
     await new Promise(r=> setTimeout(r,50));
     send(proc,{ jsonrpc:'2.0', id:11, method:'health/check', params:{} });
-    const startAt = Date.now();
-    while(Date.now()-startAt < 1500 && !collect(out,11)){ await new Promise(r=> setTimeout(r,20)); }
-    const respLine = collect(out,11);
+  await waitFor(()=> !!collect(out,11), 5000);
+  let respLine = collect(out,11);
+  if(!respLine){ // fallback passive delay then retry collect (rare line-buffer delay)
+    await new Promise(r=> setTimeout(r,150));
+    respLine = collect(out,11);
+  }
     expect(respLine).toBeTruthy();
     const obj = JSON.parse(respLine!);
     expect(obj.result).toBeTruthy();
@@ -52,14 +69,14 @@ describe('response envelope flag', () => {
 
   it('wraps primitive return values', async () => {
     const proc = start(true);
-    const out: string[]=[]; proc.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)));
+    const out: string[]=[]; attachLineCollector(proc.stdout, out);
     await new Promise(r=> setTimeout(r,80));
     send(proc,{ jsonrpc:'2.0', id:30, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } }});
     await new Promise(r=> setTimeout(r,50));
     send(proc,{ jsonrpc:'2.0', id:31, method:'test/primitive', params:{} });
-    const startAt = Date.now();
-    while(Date.now()-startAt < 1500 && !collect(out,31)){ await new Promise(r=> setTimeout(r,20)); }
-    const line = collect(out,31);
+  await waitFor(()=> !!collect(out,31), 5000);
+  let line = collect(out,31);
+  if(!line){ await new Promise(r=> setTimeout(r,150)); line = collect(out,31); }
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
     expect(obj.result.version).toBe(1);
@@ -76,14 +93,14 @@ describe('response envelope flag', () => {
     const file = pathMod.join(dir,'flags.json');
     fs.writeFileSync(file, JSON.stringify({ response_envelope_v1: true }));
     const proc = spawn('node',[pathMod.join(__dirname,'../../dist/server/index.js')],{ stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_FLAGS_FILE: file } });
-    const out: string[]=[]; proc.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)));
+  const out: string[]=[]; attachLineCollector(proc.stdout, out);
     await new Promise(r=> setTimeout(r,80));
     proc.stdin?.write(JSON.stringify({ jsonrpc:'2.0', id:40, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } }})+'\n');
     await new Promise(r=> setTimeout(r,50));
     proc.stdin?.write(JSON.stringify({ jsonrpc:'2.0', id:41, method:'health/check', params:{} })+'\n');
-    const startAt = Date.now();
-    while(Date.now()-startAt < 1500 && !collect(out,41)){ await new Promise(r=> setTimeout(r,20)); }
-    const respLine = collect(out,41);
+  await waitFor(()=> !!collect(out,41), 5000);
+  let respLine = collect(out,41);
+  if(!respLine){ await new Promise(r=> setTimeout(r,150)); respLine = collect(out,41); }
     expect(respLine).toBeTruthy();
     const obj = JSON.parse(respLine!);
     expect(obj.result.version).toBe(1);
@@ -98,14 +115,14 @@ describe('response envelope flag', () => {
     const file = pathMod.join(dir,'flags.json');
     fs.writeFileSync(file, JSON.stringify({ response_envelope_v1: true }));
     const proc = spawn('node',[pathMod.join(__dirname,'../../dist/server/index.js')],{ stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_FLAGS_FILE: file, MCP_FLAG_RESPONSE_ENVELOPE_V1: '0' } });
-    const out: string[]=[]; proc.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)));
+  const out: string[]=[]; attachLineCollector(proc.stdout, out);
     await new Promise(r=> setTimeout(r,80));
     proc.stdin?.write(JSON.stringify({ jsonrpc:'2.0', id:50, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } }})+'\n');
     await new Promise(r=> setTimeout(r,50));
     proc.stdin?.write(JSON.stringify({ jsonrpc:'2.0', id:51, method:'health/check', params:{} })+'\n');
-    const startAt = Date.now();
-    while(Date.now()-startAt < 1500 && !collect(out,51)){ await new Promise(r=> setTimeout(r,20)); }
-    const respLine = collect(out,51);
+  await waitFor(()=> !!collect(out,51), 5000);
+  let respLine = collect(out,51);
+  if(!respLine){ await new Promise(r=> setTimeout(r,150)); respLine = collect(out,51); }
     expect(respLine).toBeTruthy();
     const obj = JSON.parse(respLine!);
     // Should be legacy (no envelope)

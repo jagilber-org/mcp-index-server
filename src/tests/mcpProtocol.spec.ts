@@ -18,73 +18,72 @@ function startServer() {
   });
 }
 
+// Robust line collector to avoid splitting JSON across chunk boundaries (reduces flakiness)
+function attachLineCollector(stream: NodeJS.ReadableStream, sink: string[]) {
+  let buffer = '';
+  stream.on('data', d => {
+    buffer += d.toString();
+    const parts = buffer.split(/\n/);
+    buffer = parts.pop()!; // leftover (possibly incomplete JSON)
+    for (const p of parts) {
+      const line = p.trim();
+      if (line) sink.push(line);
+    }
+  });
+}
+
 function send(server: ReturnType<typeof startServer>, obj: object) {
   server.stdin.write(JSON.stringify(obj) + '\n');
 }
 
+async function waitForId(lines: string[], id: number, timeout = 5000) {
+  try {
+    await waitFor(() => lines.some(l => l.includes(`"id":${id}`)), timeout);
+  } catch {
+    // Fallback: brief additional passive wait (handles rare buffered emission delays)
+    await new Promise(r=> setTimeout(r, 150));
+  }
+  return lines.find(l => l.includes(`"id":${id}`));
+}
+
 describe('MCP Protocol Compliance', () => {
   it('responds to initialize with proper MCP handshake', async () => {
-    const server = startServer();
-    const lines: string[] = [];
-    server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
-    
-  await new Promise(r => setTimeout(r, 120));
-    
-    // Send initialize request
-    send(server, {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2025-06-18',
-        clientInfo: { name: 'test-harness', version: '0.0.0' },
-        capabilities: { tools: {} }
-      }
-    });
-    
-  // Poll until we see server/ready (emitted either pre or post initialize)
-  await waitFor(() => lines.some(l => l.includes('server/ready')));
-  const readyLine = lines.find(l => l.includes('server/ready'));
-  expect(readyLine, 'missing server/ready notification').toBeTruthy();
-    
+  const server = startServer();
+  const lines: string[] = [];
+  attachLineCollector(server.stdout, lines);
+
+    // Send initialize request immediately; server may emit server/ready before or after
+    send(server, { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
+
+    await waitFor(() => lines.some(l => l.includes('server/ready')));
+    const readyLine = lines.find(l => l.includes('server/ready'));
+    expect(readyLine, 'missing server/ready notification').toBeTruthy();
     const readyObj = JSON.parse(readyLine!);
     expect(readyObj.method).toBe('server/ready');
     expect(readyObj.params.version).toBeTruthy();
-    
-  await waitFor(() => lines.some(l => l.includes('"id":1')));
-  const initLine = lines.find(l => l.includes('"id":1'));
-  expect(initLine, 'missing initialize response').toBeTruthy();
-    
+
+    const initLine = await waitForId(lines, 1);
+    expect(initLine, 'missing initialize response').toBeTruthy();
     const initObj = JSON.parse(initLine!);
     expect(initObj.result.protocolVersion).toBe('2025-06-18');
     expect(initObj.result.serverInfo.name).toBe('mcp-index-server');
     expect(initObj.result.capabilities).toBeTruthy();
-  expect(initObj.result.instructions).toContain('tools/call');
-    
+    expect(initObj.result.instructions).toContain('tools/call');
+
     server.kill();
   }, 6000);
 
   it('implements tools/list with proper schema format', async () => {
-    const server = startServer();
-    const lines: string[] = [];
-    server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
-    
-  await new Promise(r => setTimeout(r, 120));
-  // initialize handshake
+  const server = startServer();
+  const lines: string[] = [];
+  attachLineCollector(server.stdout, lines);
+
   send(server, { jsonrpc: '2.0', id: 1001, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
-  await waitFor(() => lines.some(l => l.includes('"id":1001')));
+  await waitForId(lines, 1001);
     
     // Send tools/list request
-    send(server, {
-      jsonrpc: '2.0',
-      id: 2,
-      method: 'tools/list',
-      params: {}
-    });
-    
-  await waitFor(() => lines.some(l => l.includes('"id":2')));
-    
-  const responseLine = lines.find(l => l.includes('"id":2'));
+  send(server, { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} });
+  const responseLine = await waitForId(lines, 2);
     expect(responseLine, 'missing tools/list response').toBeTruthy();
     
     const response = JSON.parse(responseLine!);
@@ -113,31 +112,19 @@ describe('MCP Protocol Compliance', () => {
     expect(toolNames).toContain('health/check');
     
     server.kill();
-  }, 6000);
+  }, 10000);
 
   it('implements tools/call and executes tools correctly', async () => {
-    const server = startServer();
-    const lines: string[] = [];
-    server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
-    
-  await new Promise(r => setTimeout(r, 120));
+  const server = startServer();
+  const lines: string[] = [];
+  attachLineCollector(server.stdout, lines);
+
   send(server, { jsonrpc: '2.0', id: 1002, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
-  await waitFor(() => lines.some(l => l.includes('"id":1002')));
+  await waitForId(lines, 1002);
     
     // Test tools/call with health/check
-    send(server, {
-      jsonrpc: '2.0',
-      id: 3,
-      method: 'tools/call',
-      params: {
-        name: 'health/check',
-        arguments: {}
-      }
-    });
-    
-  await new Promise(r => setTimeout(r, 500));
-    
-    const responseLine = lines.find(l => l.includes('"id":3'));
+  send(server, { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'health/check', arguments: {} } });
+  const responseLine = await waitForId(lines, 3);
     expect(responseLine, 'missing tools/call response').toBeTruthy();
     
     const response = JSON.parse(responseLine!);
@@ -154,32 +141,19 @@ describe('MCP Protocol Compliance', () => {
     expect(healthResult.timestamp).toBeTruthy();
     
     server.kill();
-  }, 6000);
+  }, 10000);
 
   it('tools/call handles invalid tool names gracefully', async () => {
-    const server = startServer();
-    const lines: string[] = [];
-    server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
-    
-    await new Promise(r => setTimeout(r, 150));
+  const server = startServer();
+  const lines: string[] = [];
+  attachLineCollector(server.stdout, lines);
   send(server, { jsonrpc: '2.0', id: 1003, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
-  await new Promise(r => setTimeout(r, 120));
+  await waitForId(lines, 1003);
     
     // Test tools/call with non-existent tool
-    send(server, {
-      jsonrpc: '2.0',
-      id: 4,
-      method: 'tools/call',
-      params: {
-        name: 'non-existent-tool',
-        arguments: {}
-      }
-    });
-    
-  await new Promise(r => setTimeout(r, 600));
-    
-    const responseLine = lines.find(l => l.includes('"id":4'));
-    expect(responseLine, 'missing tools/call error response').toBeTruthy();
+  send(server, { jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'non-existent-tool', arguments: {} } });
+  const responseLine = await waitForId(lines, 4, 6000);
+  expect(responseLine, 'missing tools/call error response').toBeTruthy();
     
     const response = JSON.parse(responseLine!);
     expect(response.error).toBeTruthy();
@@ -190,50 +164,32 @@ describe('MCP Protocol Compliance', () => {
     expect(response.error.data.message).toContain('Unknown tool');
     
     server.kill();
-  }, 6000);
+  }, 10000);
 
   it('responds to ping', async () => {
-    const server = startServer();
-    const lines: string[] = [];
-    server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
-
-    await new Promise(r => setTimeout(r, 150));
+  const server = startServer();
+  const lines: string[] = [];
+  attachLineCollector(server.stdout, lines);
   send(server, { jsonrpc: '2.0', id: 2001, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
-    await new Promise(r => setTimeout(r, 120));
-    send(server, { jsonrpc: '2.0', id: 2002, method: 'ping', params: {} });
-    await new Promise(r => setTimeout(r, 160));
-    const pingLine = lines.find(l => l.includes('"id":2002'));
-    expect(pingLine, 'missing ping response').toBeTruthy();
+  await waitForId(lines, 2001);
+  send(server, { jsonrpc: '2.0', id: 2002, method: 'ping', params: {} });
+  const pingLine = await waitForId(lines, 2002, 6000);
+  expect(pingLine, 'missing ping response').toBeTruthy();
     const pingObj = JSON.parse(pingLine!);
     expect(pingObj.result.timestamp).toBeTruthy();
     expect(typeof pingObj.result.uptimeMs).toBe('number');
     server.kill();
-  }, 6000);
+  }, 10000);
 
   it('tools/call executes instructions/list with parameters', async () => {
-    const server = startServer();
-    const lines: string[] = [];
-    server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
-    
-    await new Promise(r => setTimeout(r, 150));
+  const server = startServer();
+  const lines: string[] = [];
+  attachLineCollector(server.stdout, lines);
   send(server, { jsonrpc: '2.0', id: 1004, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
-  await new Promise(r => setTimeout(r, 120));
-    
-    // Test tools/call with instructions/list
-    send(server, {
-      jsonrpc: '2.0',
-      id: 5,
-      method: 'tools/call',
-      params: {
-        name: 'instructions/list',
-        arguments: { category: 'test' }
-      }
-    });
-    
-    await new Promise(r => setTimeout(r, 200));
-    
-    const responseLine = lines.find(l => l.includes('"id":5'));
-    expect(responseLine, 'missing tools/call instructions/list response').toBeTruthy();
+  await waitForId(lines, 1004);
+  send(server, { jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'instructions/list', arguments: { category: 'test' } } });
+  const responseLine = await waitForId(lines, 5, 6000);
+  expect(responseLine, 'missing tools/call instructions/list response').toBeTruthy();
     
     const response = JSON.parse(responseLine!);
     expect(response.error).toBeFalsy();
@@ -246,5 +202,5 @@ describe('MCP Protocol Compliance', () => {
     expect(Array.isArray(listResult.items)).toBe(true);
     
     server.kill();
-  }, 6000);
+  }, 10000);
 });

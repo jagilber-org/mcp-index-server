@@ -1,15 +1,17 @@
 {
   "ai_code_nav_baseline": {
-    "usageCount": 2,
-    "firstSeenTs": "2025-08-26T12:17:31.027Z",
-    "lastUsedAt": "2025-08-26T12:17:31.417Z"
+    "usageCount": 1,
+    "firstSeenTs": "2025-08-26T13:55:46.905Z",
+    "lastUsedAt": "2025-08-26T13:55:46.905Z"
   },
   "ai_debug_triage_prompt": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-26T12:17:31.885Z"
+    "firstSeenTs": "2025-08-26T13:55:48.762Z",
+    "lastUsedAt": "2025-08-26T13:55:48.762Z"
   },
   "ai_diff_minimality_rule": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-26T12:17:32.025Z"
+    "firstSeenTs": "2025-08-26T13:55:48.927Z",
+    "lastUsedAt": "2025-08-26T13:55:48.927Z"
   }
 }

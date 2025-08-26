@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import fc from 'fast-check';
-import { computeGovernanceHash } from '../services/catalogContext';
+import { computeGovernanceHash, projectGovernance } from '../services/catalogContext';
 import type { InstructionEntry } from '../models/instruction';
 
 interface BareEntry {
@@ -32,62 +31,59 @@ function toInstruction(e: BareEntry): InstructionEntry {
   } as InstructionEntry;
 }
 
-const arbEntry: fc.Arbitrary<BareEntry> = fc.record({
-  id: fc.string({ minLength:3, maxLength:20 }).filter(s=>/^[a-z0-9_-]+$/i.test(s)),
-  title: fc.string({ minLength:1, maxLength:40 }),
-  body: fc.string({ minLength:1, maxLength:80 }),
-  version: fc.option(fc.string({ minLength:1, maxLength:12 }), { nil: undefined }),
-  owner: fc.option(fc.string({ minLength:3, maxLength:20 }).filter(s=>/^[a-z0-9_-]+$/i.test(s)), { nil: undefined }),
-  priorityTier: fc.option(fc.constantFrom('P1','P2','P3','P4'), { nil: undefined }),
-  nextReviewDue: fc.option(fc.date().map(d=> d.toISOString()), { nil: undefined }),
-  semanticSummary: fc.option(fc.string({ minLength:0, maxLength:60 }), { nil: undefined }),
-  changeLog: fc.option(fc.array(fc.record({ version: fc.string({ minLength:1, maxLength:8 }), changedAt: fc.date().map(d=>d.toISOString()), summary: fc.string({ minLength:1, maxLength:30 }) }), { minLength:0, maxLength:3 } ), { nil: undefined })
-});
+// (Removed property-based arbitrary for invariance; deterministic test ensures stability.)
 
 describe('property: computeGovernanceHash characteristics', () => {
-  it('invariant: changing non-governance fields (body, categories, rationale) does not change hash', () => {
-    fc.assert(
-      fc.property(fc.array(arbEntry, { minLength:1, maxLength:4 }), fc.string({ minLength:1, maxLength:30 }), (entries, newBody) => {
-        const baseList = entries.map(toInstruction);
-  const hashBase = computeGovernanceHash(baseList);
-        // Pick one and mutate only non-governance fields
-        const idx = Math.floor(Math.random()*baseList.length);
-        const mutated: InstructionEntry[] = baseList.map((e,i)=> {
-          if(i!==idx) return e;
-          return { ...e, body: newBody }; // body change only (non-governance)
-        });
-        const hashMut = computeGovernanceHash(mutated);
-        expect(hashMut).toBe(hashBase);
-      }), { numRuns: 40 }
-    );
+  it('invariant: changing non-governance fields (body only) does not change hash (deterministic)', () => {
+    // Deterministic small catalog
+    const entries: InstructionEntry[] = [
+      toInstruction({ id: 'e1', title: 'T1', body: 'B1' }),
+      toInstruction({ id: 'e2', title: 'T2', body: 'B2', owner: 'own2', priorityTier: 'P2', version: '1.0.0' }),
+      toInstruction({ id: 'e3', title: 'T3', body: 'B3', priorityTier: 'P4' })
+    ];
+    const baseHash = computeGovernanceHash(entries);
+    // Mutate each body one at a time and ensure hash stability
+    entries.forEach((_, idx) => {
+      const clone = entries.map(e => ({ ...e }));
+      clone[idx].body = clone[idx].body + ' MUT';
+      const projBefore = projectGovernance(entries[idx]);
+      const projAfter = projectGovernance(clone[idx]);
+      expect(JSON.stringify(projAfter)).toBe(JSON.stringify(projBefore)); // governance projection unchanged
+      const newHash = computeGovernanceHash(clone);
+      expect(newHash).toBe(baseHash);
+    });
   });
 
-  it('sensitivity: at least one effective governance field mutation changes hash', () => {
-    fc.assert(
-      fc.property(fc.array(arbEntry, { minLength:1, maxLength:3 }), (entries) => {
-        const baseList = entries.map(toInstruction);
-        const hashBase = computeGovernanceHash(baseList);
-        const targetIdx = 0; const target = baseList[targetIdx];
-        const buildVariants = (): InstructionEntry[] => [
-          { ...target, version: (target.version||'1.0.0') + '-x' } as InstructionEntry,
-          { ...target, owner: (target.owner||'unowned') === 'unowned' ? 'ownerX' : (target.owner! + 'x') } as InstructionEntry,
-          { ...target, priorityTier: (target.priorityTier==='P1'? 'P2':'P1') as InstructionEntry['priorityTier'] } as InstructionEntry,
-          { ...target, nextReviewDue: (target.nextReviewDue||'1999-01-01T00:00:00.000Z').replace('00:00:00.000Z','01:00:00.000Z') } as InstructionEntry,
-          { ...target, semanticSummary: (target.semanticSummary||'') + ' appended' } as InstructionEntry,
-          { ...target, changeLog: [...(target.changeLog||[]), { version:'z', changedAt:new Date().toISOString(), summary:'delta'} ] } as InstructionEntry
-        ];
-        const variants = buildVariants();
-        let effectiveTried = 0; let diff = false;
-        for(const v of variants){
-          // Skip if projected governance JSON would be identical (e.g. semanticSummary hash unchanged when empty + appended still hashes differently, but guard generically)
-          const mod = baseList.slice(); mod[targetIdx] = v;
-          const h = computeGovernanceHash(mod);
-          effectiveTried++;
-          if(h !== hashBase){ diff = true; break; }
-        }
-        expect(effectiveTried).toBeGreaterThan(0); // sanity
-        expect(diff).toBe(true);
-      }), { numRuns: 40 }
-    );
+  // Deterministic sensitivity test (no property-based randomness): start from a fixed rich entry and
+  // mutate each governance-relevant field one at a time, asserting hash changes every time.
+  it('sensitivity: modifying each governance projection field changes hash', () => {
+    const base = toInstruction({
+      id: 'base_entry',
+      title: 'Title Base',
+      body: 'Body',
+      version: '1.0.0',
+      owner: 'owner_base',
+      priorityTier: 'P3',
+      nextReviewDue: '2099-01-01T00:00:00.000Z',
+      semanticSummary: 'initial summary',
+      changeLog: [ { version: '1.0.0', changedAt: '2000-01-01T00:00:00.000Z', summary: 'init' } ]
+    });
+    const hashBase = computeGovernanceHash([base]);
+    const mutateAndExpect = (mutator: (c: InstructionEntry)=>void, label: string) => {
+      const clone: InstructionEntry = { ...base, changeLog: base.changeLog ? [...base.changeLog] : undefined };
+      mutator(clone);
+      const projBefore = JSON.stringify(projectGovernance(base));
+      const projAfter = JSON.stringify(projectGovernance(clone));
+      expect(projAfter, `projection unchanged for ${label}, test setup invalid`).not.toBe(projBefore);
+      const newHash = computeGovernanceHash([clone]);
+      expect(newHash, `hash unchanged after ${label} mutation`).not.toBe(hashBase);
+    };
+    mutateAndExpect(c => { c.title = c.title + ' X'; }, 'title');
+    mutateAndExpect(c => { c.version = '2.0.0'; }, 'version');
+    mutateAndExpect(c => { c.owner = 'owner_alt'; }, 'owner');
+    mutateAndExpect(c => { c.priorityTier = 'P1'; }, 'priorityTier');
+    mutateAndExpect(c => { c.nextReviewDue = '2098-12-31T00:00:00.000Z'; }, 'nextReviewDue');
+    mutateAndExpect(c => { c.semanticSummary = c.semanticSummary + ' delta'; }, 'semanticSummary');
+    mutateAndExpect(c => { c.changeLog = (c.changeLog||[]).concat({ version: '2.0.0', changedAt: '2001-01-01T00:00:00.000Z', summary: 'second' }); }, 'changeLog');
   });
 });

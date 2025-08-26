@@ -1,11 +1,11 @@
 name: CI
- # noop change to trigger CI run 12
 
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  workflow_dispatch: {}
 
 jobs:
   build-test:
@@ -22,13 +22,18 @@ jobs:
       - name: Lint
         run: |
           if [ -f package.json ]; then npm run lint --if-present; fi
-      - name: Test
-        # Run tests with default reporter only; removed unsupported --ci and incorrect --reporters flags
+      - name: Build (explicit, before tests)
         run: |
-          # Allow npm lifecycle scripts (pretest builds dist). Removing --ignore-scripts fixes missing dist/server causing ENOENT & no output.
+          npm run build --if-present
+      - name: Verify dist artifacts
+        run: |
+          echo "Listing dist/server contents (if any)";
+          if [ -d dist/server ]; then ls -al dist/server; else echo "dist/server missing"; fi
+          if [ ! -f dist/server/index.js ]; then echo "ERROR: dist/server/index.js not found; failing early"; exit 1; fi
+      - name: Test
+        run: |
+          # Pretest build still exists but we already built explicitly; this ensures deterministic availability.
           npm test --if-present
-      - name: Build
-        run: npm run build --if-present
       - name: Collect Coverage Artifact
         if: always()
         uses: actions/upload-artifact@v4

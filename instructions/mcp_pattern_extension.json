@@ -1,0 +1,33 @@
+{
+  "id": "mcp_pattern_extension",
+  "title": "Custom Pattern Extension Protocol",
+  "body": "When adding custom PII patterns: include name, regex tested with 3+ examples, piiType label, and ensure no catastrophic backtracking (RE2 test) before registration.",
+  "priority": 14,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "governance",
+    "mcp",
+    "patterns"
+  ],
+  "sourceHash": "01485b2d2de7c6d0ecda9691c6d44afc3fbbae83dcbf065b2f825051d2eb8cdc",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-26T02:17:35.104Z",
+  "updatedAt": "2025-08-26T02:17:35.104Z",
+  "riskScore": 136,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T02:17:35.104Z",
+  "nextReviewDue": "2025-09-25T02:17:35.104Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T02:17:35.104Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "When adding custom PII patterns: include name, regex tested with 3+ examples, piiType label, and ensure no catastrophic backtracking (RE2 test) before regist..."
+}

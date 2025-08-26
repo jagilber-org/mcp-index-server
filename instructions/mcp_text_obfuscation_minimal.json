@@ -1,0 +1,33 @@
+{
+  "id": "mcp_text_obfuscation_minimal",
+  "title": "Text Obfuscation Minimal Principle",
+  "body": "Use text obfuscation with the least strict security level that meets compliance; escalating from standard->strict->paranoid adds latency. Justify any paranoid usage in change logs.",
+  "priority": 12,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "mcp",
+    "performance",
+    "security"
+  ],
+  "sourceHash": "d5216aa99dc7cea51f5930a69fd4f731a19284bbf315e5c88a566a21bd34f3a4",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-26T02:17:35.098Z",
+  "updatedAt": "2025-08-26T02:17:35.098Z",
+  "riskScore": 138,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T02:17:35.098Z",
+  "nextReviewDue": "2025-09-25T02:17:35.098Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T02:17:35.098Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Use text obfuscation with the least strict security level that meets compliance; escalating from standard->strict->paranoid adds latency. Justify any paranoi..."
+}

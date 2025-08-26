@@ -1,0 +1,33 @@
+{
+  "id": "mcp_auth_basics",
+  "title": "MCP Auth & Key Handling",
+  "body": "Always obtain tokens via registered user login; never embed static secrets. Expire or revoke unused API keys promptly and avoid sharing ephemeral keys across sessions.",
+  "priority": 10,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "auth",
+    "mcp",
+    "security"
+  ],
+  "sourceHash": "b3ebc15e714f0fcf85701e5b4da79f04afa73df339929daefdff2c303e9a807f",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-26T02:17:35.092Z",
+  "updatedAt": "2025-08-26T02:17:35.092Z",
+  "riskScore": 140,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T02:17:35.092Z",
+  "nextReviewDue": "2025-09-25T02:17:35.092Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T02:17:35.092Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Always obtain tokens via registered user login; never embed static secrets. Expire or revoke unused API keys promptly and avoid sharing ephemeral keys across..."
+}

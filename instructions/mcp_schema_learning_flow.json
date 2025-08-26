@@ -1,0 +1,33 @@
+{
+  "id": "mcp_schema_learning_flow",
+  "title": "MCP Schema Learning Flow",
+  "body": "Before large-scale obfuscation, run schema learn on representative samples (>=100 lines) to detect PII fields; review inferred types and adjust custom patterns before production runs.",
+  "priority": 11,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "mcp",
+    "obfuscation",
+    "schema"
+  ],
+  "sourceHash": "d56d2641e824d7db288ac3a0f96064102dcd589f4c9079f4b802b1820aed9762",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-26T02:17:35.096Z",
+  "updatedAt": "2025-08-26T02:17:35.096Z",
+  "riskScore": 139,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T02:17:35.096Z",
+  "nextReviewDue": "2025-09-25T02:17:35.096Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T02:17:35.096Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Before large-scale obfuscation, run schema learn on representative samples (>=100 lines) to detect PII fields; review inferred types and adjust custom patter..."
+}

@@ -1,0 +1,33 @@
+{
+  "id": "mcp_security_hardening",
+  "title": "Security Hardening Steps",
+  "body": "Enable strict securityLevel only for regulated datasets, restrict pattern additions to approved roles, and audit access logs monthly for anomalous key usage.",
+  "priority": 18,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "hardening",
+    "mcp",
+    "security"
+  ],
+  "sourceHash": "ae732fb0e52a5f07828ad55e0f6df63ecf3bade5bcc1a1aae516bcd737f4031b",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-26T02:17:35.119Z",
+  "updatedAt": "2025-08-26T02:17:35.119Z",
+  "riskScore": 132,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T02:17:35.119Z",
+  "nextReviewDue": "2025-09-25T02:17:35.119Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T02:17:35.119Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Enable strict securityLevel only for regulated datasets, restrict pattern additions to approved roles, and audit access logs monthly for anomalous key usage."
+}

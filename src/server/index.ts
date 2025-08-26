@@ -20,7 +20,7 @@ import '../services/handlers.prompt';
 import '../services/handlers.metrics';
 import '../services/handlers.gates';
 import '../services/handlers.testPrimitive';
-import { getCatalogState } from '../services/catalogContext';
+import { getCatalogState, diagnoseInstructionsDir } from '../services/catalogContext';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
@@ -154,11 +154,12 @@ export async function main(){
   // Extended startup diagnostics (does not emit on stdout)
   if(process.env.MCP_LOG_VERBOSE === '1' || process.env.MCP_LOG_DIAG === '1'){
     try {
-      const methods = listRegisteredMethods();
+  const methods = listRegisteredMethods();
       // Force catalog load to report initial count/hash
       const catalog = getCatalogState();
       const mutation = process.env.MCP_ENABLE_MUTATION === '1';
-      process.stderr.write(`[startup] toolsRegistered=${methods.length} mutationEnabled=${mutation} catalogCount=${catalog.list.length} catalogHash=${catalog.hash}\n`);
+  const dirDiag = diagnoseInstructionsDir();
+  process.stderr.write(`[startup] toolsRegistered=${methods.length} mutationEnabled=${mutation} catalogCount=${catalog.list.length} catalogHash=${catalog.hash} instructionsDir="${dirDiag.dir}" exists=${dirDiag.exists} writable=${dirDiag.writable}${dirDiag.error?` dirError=${dirDiag.error.replace(/\s+/g,' ')}`:''}\n`);
     } catch(e){
       process.stderr.write(`[startup] diagnostics_error ${(e instanceof Error)? e.message: String(e)}\n`);
     }

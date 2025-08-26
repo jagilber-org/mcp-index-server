@@ -22,7 +22,8 @@ export const instructionEntry = {
     deprecatedBy: { type: 'string' },
     createdAt: { type: 'string' },
     updatedAt: { type: 'string' },
-    usageCount: { type: 'number' },
+  usageCount: { type: 'number' },
+  firstSeenTs: { type: 'string' },
     lastUsedAt: { type: 'string' },
     riskScore: { type: 'number' }
   ,workspaceId: { type: 'string' }
@@ -135,7 +136,7 @@ export const schemas: Record<string, unknown> = {
       { type: 'object', required: ['error'], properties: { error: { type: 'string' } }, additionalProperties: true },
       { type: 'object', required: ['notFound'], properties: { notFound: { const: true } }, additionalProperties: true },
       { type: 'object', required: ['id','usageCount','lastUsedAt'], additionalProperties: false, properties: {
-        id: { type: 'string' }, usageCount: { type: 'number' }, lastUsedAt: { type: 'string' }
+        id: { type: 'string' }, usageCount: { type: 'number' }, firstSeenTs: { type: 'string' }, lastUsedAt: { type: 'string' }
       } }
     ]
   },
@@ -145,6 +146,11 @@ export const schemas: Record<string, unknown> = {
     properties: {
       hash: { type: 'string' },
       count: { type: 'number' },
+    'feature/status': {
+      type: 'object',
+      properties: {},
+      additionalProperties: false
+    },
       limit: { type: 'number' },
       items: { type: 'array', items: { type: 'object', required: ['id','usageCount'], additionalProperties: false, properties: {
         id: { type: 'string' }, usageCount: { type: 'number' }, lastUsedAt: { type: 'string' }

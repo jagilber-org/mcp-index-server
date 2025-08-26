@@ -15,6 +15,7 @@ export interface InstructionEntry {
   createdAt: string;
   updatedAt: string;
   usageCount?: number;
+  firstSeenTs?: string; // timestamp when usage first observed (Phase 1 index property)
   lastUsedAt?: string;
   riskScore?: number; // derived metric
   // Structured scoping fields (optional)

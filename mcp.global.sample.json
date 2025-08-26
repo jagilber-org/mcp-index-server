@@ -1,0 +1,76 @@
+{
+  "mcpServers": {
+    "mcp-index-repo": {
+      "description": "MCP Index Server using repository instructions directory (mutation enabled)",
+      "command": "node",
+      "args": [
+        "C:/github/jagilber/mcp-index-server/dist/server/index.js"
+      ],
+      "transport": "stdio",
+      "cwd": "C:/github/jagilber/mcp-index-server",
+      "env": {
+        "INSTRUCTIONS_DIR": "C:/github/jagilber/mcp-index-server/instructions",
+        "MCP_ENABLE_MUTATION": "1",
+        "MCP_LOG_DIAG": "0"
+      },
+      "restart": "onExit",
+      "tags": ["index", "catalog", "mutable"],
+      "notes": [
+        "Absolute INSTRUCTIONS_DIR avoids workspace vs global cwd mismatch.",
+        "cwd pinned to repo so usage-snapshot.json lands under data/ and relative schema loads stay consistent.",
+        "Set MCP_LOG_DIAG=1 temporarily to verify startup line shows writable=true.",
+        "Disable mutation by removing MCP_ENABLE_MUTATION or setting it to empty string." 
+      ]
+    },
+    "mcp-index-external-data": {
+      "description": "MCP Index Server with external writable data directory (keeps repo clean)",
+      "command": "node",
+      "args": [
+        "C:/github/jagilber/mcp-index-server/dist/server/index.js"
+      ],
+      "transport": "stdio",
+      "cwd": "C:/github/jagilber/mcp-index-server",
+      "env": {
+        "INSTRUCTIONS_DIR": "C:/mcp-data/instructions",  
+        "MCP_ENABLE_MUTATION": "1",
+        "MCP_LOG_DIAG": "1"  
+      },
+      "restart": "onExit",
+      "tags": ["index", "catalog", "external-data"],
+      "notes": [
+        "Create C:/mcp-data/instructions beforehand with write permissions.",
+        "Diagnostic logging enabled on first run; set MCP_LOG_DIAG back to 0 afterward.",
+        "Ensures global instance does not clash with workspace instructions directory." 
+      ]
+    },
+    "mcp-index-readonly": {
+      "description": "Read-only mode (no mutation) referencing existing catalog",    
+      "command": "node",
+      "args": [
+        "C:/github/jagilber/mcp-index-server/dist/server/index.js"
+      ],
+      "transport": "stdio",
+      "cwd": "C:/github/jagilber/mcp-index-server",
+      "env": {
+        "INSTRUCTIONS_DIR": "C:/github/jagilber/mcp-index-server/instructions",
+        "MCP_ENABLE_MUTATION": ""  
+      },
+      "restart": "onExit",
+      "tags": ["index", "catalog", "readonly"],
+      "notes": [
+        "No writes will occur; useful for auditors or secondary viewers.",
+        "If add/import calls are attempted they will return Mutation disabled errors." 
+      ]
+    }
+  },
+  "__meta": {
+    "lessonsLearned": [
+      "Always specify absolute INSTRUCTIONS_DIR in global configs to avoid silent writes to unintended directories.",
+      "Pin cwd so relative paths (schemas/, data/) resolve predictably.",
+      "Use MCP_LOG_DIAG=1 on first launch to confirm instructionsDir path and writable flag.",
+      "Avoid running multiple instances pointing to different catalogs unless intentional; if sharing, point both to the exact same INSTRUCTIONS_DIR.",
+      "For clean separation, dedicate an external data directory (e.g. C:/mcp-data/instructions)."
+    ],
+    "version": 1
+  }
+}

@@ -215,7 +215,13 @@ Persists in-memory usage snapshot immediately.
 ### metrics/snapshot
 
 Params: none
-Result: { generatedAt, methods: [{ method, count, avgMs, maxMs }] }
+Result: { generatedAt, methods: [{ method, count, avgMs, maxMs }], features: { features: [..], counters: { .. }, env: [] } }
+
+### feature/status
+
+Params: none
+Result: { features: [ 'usage', ... ], counters: { featureActivated:usage, propertyUpdate:usage, usage:gated }, env: ['usage', ...] }
+Notes: Exposes active INDEX_FEATURES flags and internal counters. Use to verify feature gate state without side effects.
 
 ### meta/tools
 

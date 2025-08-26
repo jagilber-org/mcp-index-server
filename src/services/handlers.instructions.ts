@@ -22,6 +22,37 @@ registerHandler('instructions/list', (p:{category?:string})=>{ const st = ensure
 registerHandler('instructions/dir', ()=>{ const dir=getInstructionsDir(); let files:string[]=[]; try { files=fs.readdirSync(dir).filter(f=>f.endsWith('.json')).sort(); } catch { /* ignore */ } return { dir, filesCount: files.length, files }; });
 registerHandler('instructions/listScoped', (p:{ userId?:string; workspaceId?:string; teamIds?: string[] })=>{ const st=ensureLoaded(); const userId=p.userId?.toLowerCase(); const workspaceId=p.workspaceId?.toLowerCase(); const teamIds=(p.teamIds||[]).map(t=>t.toLowerCase()); const all=st.list; const matchUser = userId? all.filter(e=> (e.userId||'').toLowerCase()===userId):[]; if(matchUser.length) return { hash: st.hash, count: matchUser.length, scope:'user', items:matchUser }; const matchWorkspace = workspaceId? all.filter(e=> (e.workspaceId||'').toLowerCase()===workspaceId):[]; if(matchWorkspace.length) return { hash: st.hash, count: matchWorkspace.length, scope:'workspace', items:matchWorkspace }; const teamSet = new Set(teamIds); const matchTeams = teamIds.length? all.filter(e=> Array.isArray(e.teamIds) && e.teamIds.some(t=> teamSet.has(t.toLowerCase()))):[]; if(matchTeams.length) return { hash: st.hash, count: matchTeams.length, scope:'team', items:matchTeams }; const audienceAll = all.filter(e=> e.audience==='all'); return { hash: st.hash, count: audienceAll.length, scope:'all', items: audienceAll }; });
 registerHandler('instructions/get', (p:{id:string})=>{ const st=ensureLoaded(); const item = st.byId.get(p.id); return item? { hash: st.hash, item }: { notFound:true }; });
+// Deep file-level inspection (diagnostics): reveals raw on-disk record, schema / classification issues, normalized form
+registerHandler('instructions/inspect', (p:{id:string})=>{
+  const id = p.id;
+  if(!id) return { error:'missing id' };
+  const dir = getInstructionsDir();
+  const file = path.join(dir, `${id}.json`);
+  if(!fs.existsSync(file)) return { id, exists:false, fileMissing:true };
+  let rawText=''; let raw: unknown = null; let parseError: string | undefined;
+  try { rawText = fs.readFileSync(file,'utf8'); raw = JSON.parse(rawText); } catch(e){ parseError = e instanceof Error? e.message: String(e); }
+  // Re-run schema + classification the same way CatalogLoader does to surface rejection reasons
+  let schemaErrors: string | undefined; let classificationIssues: string[] | undefined; let normalized: InstructionEntry | undefined;
+  try {
+    if(!parseError){
+      try {
+        // Inline (lightweight) schema validation replicate: only essential field presence
+        const rec = raw as Partial<InstructionEntry>;
+        const missing: string[] = [];
+        if(!rec.id) missing.push('missing id');
+        if(!rec.title) missing.push('missing title');
+        if(!rec.body) missing.push('missing body');
+        if(missing.length) schemaErrors = missing.join(', ');
+        const classifier = new ClassificationService();
+        if(!schemaErrors){
+          classificationIssues = classifier.validate(rec as InstructionEntry);
+          if(!classificationIssues.length){ normalized = classifier.normalize(rec as InstructionEntry); }
+        }
+      } catch(err){ schemaErrors = (err as Error).message; }
+    }
+  } catch{ /* ignore */ }
+  return { id, exists:true, file, parseError, schemaErrors, classificationIssues, normalized, raw };
+});
 registerHandler('instructions/search', (p:{q:string})=>{ const st=ensureLoaded(); const q=(p.q||'').toLowerCase(); const items = st.list.filter(i=> i.title.toLowerCase().includes(q)|| i.body.toLowerCase().includes(q)); return { hash: st.hash, count: items.length, items }; });
 registerHandler('instructions/export', (p:{ids?:string[]; metaOnly?:boolean})=>{ const st=ensureLoaded(); let items=st.list; if(p?.ids?.length){ const want=new Set(p.ids); items=items.filter(i=>want.has(i.id)); } if(p?.metaOnly){ items=items.map(i=> ({ ...i, body:'' })); } return { hash: st.hash, count: items.length, items }; });
 registerHandler('instructions/diff', (p:{clientHash?:string; known?:{id:string; sourceHash:string}[]})=>{ const st=ensureLoaded(); const clientHash=p.clientHash; const known=p.known; if(!known && clientHash && clientHash===st.hash) return { upToDate:true, hash: st.hash }; if(known){ const map=new Map<string,string>(); for(const k of known){ if(k && k.id && !map.has(k.id)) map.set(k.id,k.sourceHash); } const added:InstructionEntry[]=[]; const updated:InstructionEntry[]=[]; const removed:string[]=[]; for(const e of st.list){ const prev=map.get(e.id); if(prev===undefined) added.push(e); else if(prev!==e.sourceHash) updated.push(e); } for(const id of map.keys()){ if(!st.byId.has(id)) removed.push(id); } if(!added.length && !updated.length && !removed.length && clientHash===st.hash) return { upToDate:true, hash: st.hash }; return { hash: st.hash, added, updated, removed }; } if(!clientHash || clientHash!==st.hash) return { hash: st.hash, changed: st.list }; return { upToDate:true, hash: st.hash }; });

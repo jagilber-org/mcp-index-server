@@ -32,8 +32,14 @@ describe('metrics/snapshot', () => {
     if(!metricsLine) return;
     const obj = JSON.parse(metricsLine);
     expect(obj.result?.content?.[0]?.type).toBe('text');
-  const snapshot = JSON.parse(obj.result.content[0].text) as { methods: { method: string }[] };
+  const snapshot = JSON.parse(obj.result.content[0].text) as { methods: { method: string }[], features?: { features:string[]; counters:Record<string,number> } };
   expect(Array.isArray(snapshot.methods)).toBe(true);
+  // Features block should exist even if empty (no INDEX_FEATURES set)
+  expect(snapshot.features).toBeTruthy();
+  if(snapshot.features){
+    expect(Array.isArray(snapshot.features.features)).toBe(true);
+    expect(typeof snapshot.features.counters).toBe('object');
+  }
   // Ensure we have at least the tools we invoked
   const names = snapshot.methods.map(m => m.method);
     expect(names).toContain('instructions/list');

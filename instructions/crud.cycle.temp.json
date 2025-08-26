@@ -1,0 +1,33 @@
+{
+  "id": "crud.cycle.temp",
+  "title": "CRUD Cycle Temp",
+  "body": "Cycle v2 updated body",
+  "priority": 55,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "crud",
+    "cycle",
+    "updated"
+  ],
+  "sourceHash": "562a7119ea7c54811b83115f45f81f90d0ab65ae6a5b9fa373ab7b0e64923365",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-26T04:38:28.953Z",
+  "updatedAt": "2025-08-26T04:38:30.861Z",
+  "riskScore": 50,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T04:38:28.953Z",
+  "nextReviewDue": "2025-11-24T04:38:28.953Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T04:38:28.953Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Cycle v1 body"
+}

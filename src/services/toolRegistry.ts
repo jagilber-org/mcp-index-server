@@ -59,6 +59,7 @@ const INPUT_SCHEMAS: Record<string, object> = {
   'instructions/enrich': { type: 'object', additionalProperties: true },
   'prompt/review': stringReq('prompt'),
   'integrity/verify': { type: 'object', additionalProperties: true },
+  'feature/status': { type: 'object', additionalProperties: false, properties: {} },
   'instructions/health': { type: 'object', additionalProperties: true },
   'usage/track': stringReq('id'),
   'usage/hotset': { type: 'object', additionalProperties: false, properties: { limit: { type: 'number', minimum: 1, maximum: 100 } } },
@@ -110,7 +111,8 @@ function describeTool(name: string): string {
   case 'instructions/enrich': return 'Persist normalization of placeholder governance fields to disk.';
   case 'instructions/governanceUpdate': return 'Patch limited governance fields (owner/status/review dates + optional version bump).';
     case 'prompt/review': return 'Static analysis of a prompt returning issues & summary.';
-    case 'integrity/verify': return 'Verify each instruction body hash against stored sourceHash.';
+  case 'integrity/verify': return 'Verify each instruction body hash against stored sourceHash.';
+  case 'feature/status': return 'Report active index feature flags and counters.';
     case 'usage/track': return 'Increment usage counters & timestamps for an instruction id.';
     case 'usage/hotset': return 'Return the most-used instruction entries (hot set).';
     case 'usage/flush': return 'Flush usage snapshot to persistent storage.';

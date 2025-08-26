@@ -44,6 +44,8 @@ For every new defect class discovered:
 - Shrink failure outputs to produce minimal counter-example (default fast-check behavior).  
 - Prefer focused arbitraries: supply only valid characters to avoid noisy schema rejections.
 
+<!-- Historical parked property-based backlog removed as part of plan reset (see new Implementation Plan). -->
+
 ## Pending Enhancements
 
 - Add `loadErrors` tool and tests: assert no silent skips.  

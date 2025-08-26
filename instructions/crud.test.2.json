@@ -1,0 +1,32 @@
+{
+  "id": "crud.test.2",
+  "title": "CRUD Test 2 - Initial",
+  "body": "Initial body v1",
+  "priority": 7,
+  "audience": "individual",
+  "requirement": "optional",
+  "categories": [
+    "crud",
+    "testing"
+  ],
+  "sourceHash": "dc072116208b39cc810dca5032fd849a6620916fcd22811c143aeeb56d2eb63d",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-26T04:38:17.380Z",
+  "updatedAt": "2025-08-26T04:38:17.380Z",
+  "riskScore": 98,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T04:38:17.380Z",
+  "nextReviewDue": "2025-09-25T04:38:17.380Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T04:38:17.380Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Initial body v1"
+}

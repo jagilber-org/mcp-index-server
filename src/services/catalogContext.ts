@@ -3,6 +3,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { CatalogLoader } from './catalogLoader';
 import { InstructionEntry } from '../models/instruction';
+import { hasFeature, incrementCounter } from './features';
 import { atomicWriteJson } from './atomicFs';
 import { ClassificationService } from './classificationService';
 import { resolveOwner } from './ownershipService';
@@ -12,12 +13,12 @@ let state: CatalogState | null = null;
 
 // Usage snapshot persistence (shared)
 const usageSnapshotPath = path.join(process.cwd(),'data','usage-snapshot.json');
-interface UsagePersistRecord { usageCount?: number; lastUsedAt?: string }
+interface UsagePersistRecord { usageCount?: number; firstSeenTs?: string; lastUsedAt?: string }
 let usageDirty = false; let usageWriteTimer: NodeJS.Timeout | null = null;
 function ensureDataDir(){ const dir = path.dirname(usageSnapshotPath); if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true}); }
 function loadUsageSnapshot(){ try { if(fs.existsSync(usageSnapshotPath)) return JSON.parse(fs.readFileSync(usageSnapshotPath,'utf8')); } catch { /* ignore */ } return {}; }
 function scheduleUsageFlush(){ usageDirty = true; if(usageWriteTimer) return; usageWriteTimer = setTimeout(flushUsageSnapshot,500); }
-function flushUsageSnapshot(){ if(!usageDirty) return; if(usageWriteTimer) clearTimeout(usageWriteTimer); usageWriteTimer=null; usageDirty=false; try { ensureDataDir(); if(state){ const obj: Record<string, UsagePersistRecord> = {}; for(const e of state.list){ if(e.usageCount || e.lastUsedAt){ obj[e.id] = { usageCount: e.usageCount, lastUsedAt: e.lastUsedAt }; } } fs.writeFileSync(usageSnapshotPath, JSON.stringify(obj,null,2)); } } catch {/* ignore */} }
+function flushUsageSnapshot(){ if(!usageDirty) return; if(usageWriteTimer) clearTimeout(usageWriteTimer); usageWriteTimer=null; usageDirty=false; try { ensureDataDir(); if(state){ const obj: Record<string, UsagePersistRecord> = {}; for(const e of state.list){ if(e.usageCount || e.lastUsedAt || e.firstSeenTs){ obj[e.id] = { usageCount: e.usageCount, firstSeenTs: e.firstSeenTs, lastUsedAt: e.lastUsedAt }; } } fs.writeFileSync(usageSnapshotPath, JSON.stringify(obj,null,2)); } } catch {/* ignore */} }
 process.on('SIGINT', ()=>{ flushUsageSnapshot(); process.exit(0); });
 process.on('SIGTERM', ()=>{ flushUsageSnapshot(); process.exit(0); });
 process.on('beforeExit', ()=>{ flushUsageSnapshot(); });
@@ -33,6 +34,20 @@ const PINNED_INSTRUCTIONS_DIR = (() => {
   return resolved;
 })();
 export function getInstructionsDir(){ return PINNED_INSTRUCTIONS_DIR; }
+// Lightweight diagnostics for external callers (startup logging / health checks)
+export function diagnoseInstructionsDir(){
+  const dir = getInstructionsDir();
+  let exists = false; let writable = false; let error: string | null = null;
+  try {
+    exists = fs.existsSync(dir);
+    if(exists){
+      // attempt a tiny write to check permissions (guard against sandbox / readonly mounts)
+      const probe = path.join(dir, `.wprobe-${Date.now()}.tmp`);
+      try { fs.writeFileSync(probe, 'ok'); writable = true; fs.unlinkSync(probe); } catch(w){ writable = false; error = (w as Error).message; }
+    }
+  } catch(e){ error = (e as Error).message; }
+  return { dir, exists, writable, error };
+}
 interface DirMeta { latest:number; signature:string; count:number }
 function computeDirMeta(dir: string): DirMeta {
   const parts: string[] = [];
@@ -100,7 +115,7 @@ export function ensureLoaded(): CatalogState {
     }
   } catch { /* ignore global enrichment errors */ }
   const usage = loadUsageSnapshot();
-  for(const e of state.list){ const u = (usage as Record<string, UsagePersistRecord>)[e.id]; if(u){ e.usageCount = u.usageCount; e.lastUsedAt = u.lastUsedAt; } }
+  for(const e of state.list){ const u = (usage as Record<string, UsagePersistRecord>)[e.id]; if(u){ e.usageCount = u.usageCount; e.firstSeenTs = u.firstSeenTs; e.lastUsedAt = u.lastUsedAt; } }
   return state;
 }
 export function invalidate(){ state = null; }
@@ -130,4 +145,20 @@ export function removeEntry(id:string){
   if(fs.existsSync(file)) fs.unlinkSync(file);
 }
 export function scheduleUsagePersist(){ scheduleUsageFlush(); }
-export function incrementUsage(id:string){ const st = ensureLoaded(); const e = st.byId.get(id); if(!e) return null; e.usageCount = (e.usageCount??0)+1; e.lastUsedAt = new Date().toISOString(); scheduleUsageFlush(); return { id:e.id, usageCount:e.usageCount, lastUsedAt:e.lastUsedAt }; }
+export function incrementUsage(id:string){
+  // Feature gating per Implementation Plan Phase 0
+  if(!hasFeature('usage')){ incrementCounter('usage:gated'); return { featureDisabled:true }; }
+  const st = ensureLoaded();
+  const e = st.byId.get(id);
+  if(!e) return null;
+  const nowIso = new Date().toISOString();
+  e.usageCount = (e.usageCount??0)+1;
+  incrementCounter('propertyUpdate:usage');
+  if(!e.firstSeenTs){
+    e.firstSeenTs = nowIso; // ensure persistence even if a reload occurs soon
+    usageDirty = true; if(usageWriteTimer) clearTimeout(usageWriteTimer); usageWriteTimer = null; flushUsageSnapshot();
+  }
+  e.lastUsedAt = nowIso;
+  scheduleUsageFlush();
+  return { id:e.id, usageCount:e.usageCount, firstSeenTs: e.firstSeenTs, lastUsedAt:e.lastUsedAt };
+}

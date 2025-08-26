@@ -1,0 +1,29 @@
+{
+  "id": "crud.rpc.temp",
+  "title": "CRUD RPC Temp",
+  "body": "body text",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "d9fbbc91492fbb3ba8e57ca15b039134e7098030a89578315a4c354f9117ccf2",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-26T04:48:40.190Z",
+  "updatedAt": "2025-08-26T04:48:40.190Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T04:48:40.190Z",
+  "nextReviewDue": "2025-11-24T04:48:40.190Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T04:48:40.190Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "body text"
+}

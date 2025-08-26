@@ -1,6 +1,7 @@
 // Lightweight in-process tool registry used exclusively by the SDK server path.
 // Replaces the prior custom JSON-RPC transport layer.
 import { log, newCorrelationId } from '../services/logger';
+import { wrapResponse } from '../services/responseEnvelope';
 export type Handler<TParams=unknown> = (params: TParams) => Promise<unknown> | unknown;
 
 interface MetricRecord { count: number; totalMs: number; maxMs: number }
@@ -23,7 +24,7 @@ export function registerHandler<TParams=unknown>(name: string, fn: Handler<TPara
     }
     try {
       const result = await Promise.resolve(fn(params));
-      return result;
+      return wrapResponse(result);
     } catch(e){
       if(ENABLE){
         try { log('error','tool_error',{ tool: name, correlationId: corr, data: { message: e instanceof Error ? e.message : String(e) } }); } catch { /* ignore */ }

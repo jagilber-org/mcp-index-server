@@ -1,6 +1,6 @@
 {
-  "id": "concurrent-1756174799984",
-  "title": "concurrent-1756174799984",
+  "id": "concurrent-1756177036515",
+  "title": "concurrent-1756177036515",
   "body": "Body v19",
   "priority": 29,
   "audience": "all",
@@ -10,22 +10,22 @@
   ],
   "sourceHash": "24340b114ecafe683d3a2cc0867e267aa147609eea6e9526ed94e948e4364612",
   "schemaVersion": "1",
-  "createdAt": "2025-08-26T02:19:59.987Z",
-  "updatedAt": "2025-08-26T02:20:03.492Z",
+  "createdAt": "2025-08-26T02:57:19.226Z",
+  "updatedAt": "2025-08-26T02:57:19.595Z",
   "riskScore": 76,
   "version": "1.0.19",
   "owner": "owner-19",
   "status": "approved",
-  "priorityTier": "P1",
+  "priorityTier": "P2",
   "classification": "internal",
-  "lastReviewedAt": "2025-08-26T02:19:59.990Z",
-  "nextReviewDue": "2025-09-25T02:19:59.990Z",
+  "lastReviewedAt": "2025-08-26T02:57:19.226Z",
+  "nextReviewDue": "2025-10-25T02:57:19.226Z",
   "changeLog": [
     {
-      "version": "1.0.0",
-      "changedAt": "2025-08-26T02:19:59.987Z",
+      "version": "1.0.14",
+      "changedAt": "2025-08-26T02:57:19.226Z",
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Body v0"
+  "semanticSummary": "Body v14"
 }

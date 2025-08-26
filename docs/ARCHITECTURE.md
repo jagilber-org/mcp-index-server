@@ -4,46 +4,55 @@ Updated for 0.8.x (governance projection + hash, integrity verification, usage p
 
 ## High-Level Components
 
+Simplified Mermaid (avoids subgraph + complex labels for GitHub compatibility):
+
 ```mermaid
 graph TD
-  subgraph Storage
-    Catalog[Instruction JSON Files]
-    UsageSnap[data/usage-snapshot.json]
-  end
-  Catalog --> Loader[CatalogLoader]
-  Loader --> Classifier[Classification/Enrichment]
-  Classifier --> Migrator[Migration (schemaVersion)]
-  Migrator --> Cache[CatalogContext (In-Memory Index + Hashes)]
-  Cache --> Tools[Tool Handlers]
-  Tools --> Registry[Tool Registry & Schemas]
-  Tools --> Transport[MCP SDK Transport]
-  Transport --> Client[MCP Client]
-  Tools --> Governance[Governance Hash & Projection]
-  Tools --> Integrity[Integrity / Verify]
-  Tools --> Gates[Gates Evaluate]
-  Tools --> Metrics[Metrics Snapshot]
-  Tools --> FeatureStatus[Feature Status]
-  Tools --> UsageTrack[usage/track]
-  UsageTrack --> UsageSnap
-  Cache --> Dashboard[Dashboard HTTP (optional)]
+  Catalog[(Instruction Files)] --> Loader
+  Loader --> Classifier
+  Classifier --> Migrator
+  Migrator --> Cache[CatalogContext]
+  Cache --> Tools[ToolHandlers]
+  Tools --> Transport
+  Transport --> Client
+  Tools --> Governance
+  Tools --> Integrity
+  Tools --> Gates
+  Tools --> Metrics
+  Tools --> UsageTrack
+  UsageTrack --> UsageSnap[(usage-snapshot.json)]
+  Cache --> Dashboard
+```
+
+ASCII Fallback:
+
+```text
+ Instruction Files -> Loader -> Classification -> Migration -> CatalogContext Cache
+       |                                                          |
+       v                                                          v
+    usage-snapshot.json <--- usage/track <--- Tools ---> metrics / governance / integrity / gates / diff / prompt
+                                      |
+                                      v
+                                   Transport -> Client (MCP)
 ```
 
 ## Data Lifecycle
 
 ```mermaid
 graph LR
-  A[Raw Files] --> V[Ajv Validate]
-  V --> N[Normalize / Classify]
-  N --> G[Governance Enrichment]
-  G --> M[Migration (schemaVersion rewrite if needed)]
-  M --> I[In-Memory Index]
-  I --> H1[Catalog Hash]
-  I --> H2[Governance Projection + Hash]
-  I --> T[Serve Tools]
-  T --> U[usage/track]
-  U --> P[Persist Snapshot]
-  P --> I
-  T --> R[metrics/snapshot]
+  Files --> Validate --> Normalize --> Enrich --> Migrate --> Index --> Serve --> Track --> Persist --> Index
+  Serve --> Metrics
+  Serve --> GovernanceHash
+```
+
+ASCII Fallback:
+
+```text
+Files -> Validate -> Normalize -> Enrich -> Migrate -> Index -> Serve -> Track -> Persist
+                                        |                 |           |
+                                        |                 |           +-> Metrics Snapshot
+                                        |                 +-> Governance Hash
+                                        +-> (if schema bump) rewrite schemaVersion
 ```
 
 ## Component Descriptions

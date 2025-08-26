@@ -19,11 +19,33 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Pre-check Advanced Security availability
+        id: precheck
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          echo "Checking Advanced Security status for ${{ github.repository }}"
+          resp=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" -H 'Accept: application/vnd.github+json' https://api.github.com/repos/${{ github.repository }})
+          status=$(echo "$resp" | jq -r '.security_and_analysis.advanced_security.status // "disabled"')
+          echo "advanced_security_status=$status" >> $GITHUB_OUTPUT
+          if [ "$status" != "enabled" ]; then
+            echo "Advanced Security not enabled; skipping CodeQL analysis (prevent upload errors)." | tee -a $GITHUB_STEP_SUMMARY
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
       - name: Init CodeQL
+        if: steps.precheck.outputs.skip != 'true'
         uses: github/codeql-action/init@v3
         with:
-          languages: javascript
+          languages: javascript, typescript
       - name: Autobuild
+        if: steps.precheck.outputs.skip != 'true'
         uses: github/codeql-action/autobuild@v3
       - name: Analyze
+        if: steps.precheck.outputs.skip != 'true'
         uses: github/codeql-action/analyze@v3
+      - name: Skipped summary
+        if: steps.precheck.outputs.skip == 'true'
+        run: |
+          echo "CodeQL skipped: Advanced Security not enabled (private repo). Enable it in repository Settings > Code security and analysis to activate scans." >> $GITHUB_STEP_SUMMARY

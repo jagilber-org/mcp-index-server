@@ -13,8 +13,8 @@
   "lastReviewedAt": "2025-08-25T23:56:59.905Z",
   "nextReviewDue": "2025-09-24T23:56:59.905Z",
   "schemaVersion": "1",
-  "createdAt": "2025-08-26T01:46:18.644Z",
-  "updatedAt": "2025-08-26T01:46:18.644Z",
+  "createdAt": "2025-08-26T01:48:29.753Z",
+  "updatedAt": "2025-08-26T01:48:29.753Z",
   "riskScore": 140,
   "version": "1.0.0",
   "status": "approved",
@@ -24,7 +24,7 @@
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-08-26T01:46:18.644Z",
+      "changedAt": "2025-08-26T01:48:29.753Z",
       "summary": "initial import"
     }
   ]

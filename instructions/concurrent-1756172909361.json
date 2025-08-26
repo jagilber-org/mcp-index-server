@@ -1,0 +1,31 @@
+{
+  "id": "concurrent-1756172909361",
+  "title": "concurrent-1756172909361",
+  "body": "Body v19",
+  "priority": 29,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "test"
+  ],
+  "sourceHash": "24340b114ecafe683d3a2cc0867e267aa147609eea6e9526ed94e948e4364612",
+  "schemaVersion": "1",
+  "createdAt": "2025-08-26T01:48:29.401Z",
+  "updatedAt": "2025-08-26T01:48:31.943Z",
+  "riskScore": 76,
+  "version": "1.0.19",
+  "owner": "owner-19",
+  "status": "approved",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T01:48:29.404Z",
+  "nextReviewDue": "2025-09-25T01:48:29.404Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T01:48:29.401Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Body v0"
+}

@@ -22,9 +22,8 @@ jobs:
         run: |
           if [ -f package.json ]; then npm run lint --if-present; fi
       - name: Test
-        run: npm test --ignore-scripts --if-present -- --ci --reporters=default --reporters=jest-junit
-        env:
-          JEST_JUNIT_OUTPUT: test-results/junit.xml
+  # Run tests with default reporter only; removed unsupported --ci and incorrect --reporters flags
+  run: npm test --ignore-scripts --if-present
       - name: Build
         run: npm run build --if-present
       - name: Collect Coverage Artifact

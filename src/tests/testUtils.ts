@@ -94,6 +94,16 @@ export async function waitForFile(filePath: string, timeoutMs = 4000, predicate:
     throw new Error(`timeout waiting for file ${filePath}`);
   }
 
+  // Wait for a file to be removed (inverse of ensureFileExists)
+  export async function ensureFileGone(filePath:string, timeoutMs=4000, intervalMs=50):Promise<void>{
+    const start = Date.now();
+    while(Date.now() - start < timeoutMs){
+      if(!fs.existsSync(filePath)) return;
+      await new Promise(r=> setTimeout(r, intervalMs));
+    }
+    throw new Error(`timeout waiting for file removal ${filePath}`);
+  }
+
 // Send a JSON-RPC message to a spawned server process
 function send(proc: { stdin?: NodeJS.WritableStream|null }, msg: Record<string, unknown>){
   proc.stdin?.write(JSON.stringify(msg) + '\n');

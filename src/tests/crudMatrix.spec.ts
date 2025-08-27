@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
-import fs from 'fs';
-import { waitFor, parseToolPayload, ensureFileExists } from './testUtils';
+import { waitFor, parseToolPayload, ensureFileExists, ensureFileGone } from './testUtils';
 
 function startServer(){
   return spawn('node', [path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1' } });
@@ -57,12 +56,8 @@ describe('CRUD matrix end-to-end', () => {
     // Remove
   send(server,{ jsonrpc:'2.0', id:7, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'remove', ids:[id] } } });
   await waitFor(()=> !!findLine(out1,7));
-    // Wait until file removed (some OS/fs delays)
-    const startRemove = Date.now();
-    while(Date.now() - startRemove < 4000 && fs.existsSync(filePath)){
-      await new Promise(r=> setTimeout(r,50));
-    }
-    expect(fs.existsSync(filePath)).toBe(false);
+  // Deterministic wait for removal
+  await ensureFileGone(filePath, 6000);
 
     // List absence
   send(server,{ jsonrpc:'2.0', id:8, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } } });

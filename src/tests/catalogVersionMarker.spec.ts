@@ -3,24 +3,13 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { spawn } from 'child_process';
-import { waitFor, parseToolPayload } from './testUtils';
+import { waitFor, parseToolPayload, findResponse, ensureFileExists } from './testUtils';
 
 function startServer(dir:string){
   return spawn('node', [path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', INSTRUCTIONS_DIR: dir } });
 }
 function send(proc: ReturnType<typeof startServer>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
-interface RpcSuccess<T=unknown> { id:number; result:T }
-interface RpcError { id:number; error:unknown }
-function findResponse(lines: string[], id:number){
-  for(const l of lines){
-    try {
-      const o = JSON.parse(l) as unknown;
-      if(typeof o === 'object' && o!==null && 'id' in o && typeof (o as {id:unknown}).id === 'number' && (o as {id:number}).id === id){
-        return o as RpcSuccess|RpcError;
-      }
-    } catch { /* ignore parse */ }
-  }
-}
+// Using shared findResponse from testUtils
 
 // Verifies that .catalog-version marker mtime increases across a mutation and second server invalidates cache without forced reload flag.
 
@@ -50,7 +39,7 @@ describe('catalog version marker invalidation', () => {
     await waitFor(()=> !!findResponse(outA,2), 3000);
 
     // Marker should exist and have newer mtime
-    expect(fs.existsSync(marker)).toBe(true);
+  await ensureFileExists(marker, 6000);
     const afterMtime = fs.statSync(marker).mtimeMs;
     expect(afterMtime).toBeGreaterThan(beforeMtime);
 

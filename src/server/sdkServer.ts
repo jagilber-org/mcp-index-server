@@ -255,8 +255,8 @@ export function createSdkServer(ServerClass: any) {
     } catch { /* ignore */ }
     const handler = getHandler(name);
     if(!handler){
-  // Throw plain JSON-RPC style error object so SDK preserves data
-  throw { code: -32603, message: `Unknown tool: ${name}`, data: { message: `Unknown tool: ${name}`, method: name } };
+      // Explicit method-not-found style for unknown tools (align with JSON-RPC spec -32601)
+      throw { code: -32601, message: `Unknown tool: ${name}`, data: { message: `Unknown tool: ${name}`, method: name } };
     }
     try {
       const result = await Promise.resolve(handler(args));

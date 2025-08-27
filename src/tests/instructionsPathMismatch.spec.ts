@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
-import { waitFor } from './testUtils';
+import { waitFor, findResponse } from './testUtils';
 
 // Reproduction test: when starting the server from a different cwd (dist/server)
 // additions should still appear in list immediately. Current bug: loader baseDir resolves
@@ -17,9 +17,6 @@ function startServerInDist(){
 }
 function send(proc: ReturnType<typeof startServerInDist>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
 interface RpcSuccess<T=unknown> { id:number; result:T }
-interface RpcError { id:number; error:unknown }
-type RpcResponse<T=unknown> = RpcSuccess<T> | RpcError | undefined;
-function findResponse(lines: string[], id:number): RpcResponse | undefined { for(const l of lines){ try { const o=JSON.parse(l) as RpcResponse; if(o && o.id===id) return o; } catch { /* ignore */ } } return undefined; }
 
 // Re-enabled: catalogContext now pins a single instructions directory so adds from a different cwd
 // should be immediately visible in list results.

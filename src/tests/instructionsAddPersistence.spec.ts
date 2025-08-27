@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
-import fs from 'fs';
+import fs from 'fs'; // still used for initial directory setup
 import os from 'os';
-import { waitFor, parseToolPayload } from './testUtils';
+import { waitFor, parseToolPayload, getResponse, xorResultError, ensureFileExists } from './testUtils';
 import { waitForDist } from './distReady';
 
 const ISOLATED_DIR = fs.mkdtempSync(path.join(os.tmpdir(),'instr-persist-'));
@@ -44,20 +44,18 @@ describe('instructions/add persistence & governance coverage', () => {
   // Add each instruction (now governance fields should persist exactly as provided for alpha)
     for(let i=0;i<ids.length;i++){
       const id = ids[i];
-  // Add via dispatcher tool
-  send(server,{ jsonrpc:'2.0', id:100+i, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id, title:id, body:`Body ${i}`, priority:50+i, audience:'all', requirement:'optional', categories:['temp','Test'], owner:`owner-${i}`, priorityTier:'P1', version:'9.9.9', classification:'internal', semanticSummary:`Custom summary ${i}` }, lax:true, overwrite:true } } });
-  await waitFor(()=> !!findLine(out,100+i));
-      const file = path.join(instructionsDir, id + '.json');
-      expect(fs.existsSync(file), `missing file for ${id}`).toBe(true);
-      const disk = JSON.parse(fs.readFileSync(file,'utf8'));
-  // Owner supplied is preserved
-  expect(disk.owner).toBe(`owner-${i}`);
-  // Version is preserved (no auto-normalization)
-  expect(disk.version).toBe('9.9.9');
-  // priorityTier preserved (no derivation override at add time now)
-  expect(disk.priorityTier).toBe('P1');
-  // semanticSummary preserved
-  expect(disk.semanticSummary).toBe(`Custom summary ${i}`);
+      const addId = 100+i;
+      send(server,{ jsonrpc:'2.0', id:addId, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id, title:id, body:`Body ${i}`, priority:50+i, audience:'all', requirement:'optional', categories:['temp','Test'], owner:`owner-${i}`, priorityTier:'P1', version:'9.9.9', classification:'internal', semanticSummary:`Custom summary ${i}` }, lax:true, overwrite:true } } });
+      const env = await getResponse(out, addId, 6000);
+      expect(xorResultError(env)).toBe(true);
+      expect(env.error, `unexpected error for add ${id}: ${JSON.stringify(env.error)}`).toBeFalsy();
+  const file = path.join(instructionsDir, id + '.json');
+  await ensureFileExists(file, 6000);
+  const disk = JSON.parse(fs.readFileSync(file,'utf8'));
+      expect(disk.owner).toBe(`owner-${i}`);
+      expect(disk.version).toBe('9.9.9');
+      expect(disk.priorityTier).toBe('P1');
+      expect(disk.semanticSummary).toBe(`Custom summary ${i}`);
     }
 
     // List again and ensure at least baseline+5 items present (none silently dropped)

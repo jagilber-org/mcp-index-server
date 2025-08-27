@@ -201,8 +201,7 @@
 				"status",
 				"--short"
 			]
-		}
-		,
+		},
 		{
 			"label": "release-commit-tag-push",
 			"type": "shell",
@@ -213,6 +212,40 @@
 				"git add .; git commit -m 'chore(release): 0.9.1 all tests green no skips + skip guard'; git tag v0.9.1 -f; git push --follow-tags || git push --tags --force-with-lease"
 			],
 			"problemMatcher": []
+		},
+		{
+			"label": "deploy-local-prod",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"scripts/deploy-local.ps1",
+				"-Rebuild",
+				"-Overwrite",
+				"-TargetDir",
+				"C:\\mcp\\mcp-index-server"
+			]
+		},
+		{
+			"label": "deploy-local-prod",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"scripts/deploy-local.ps1",
+				"-Rebuild",
+				"-Overwrite",
+				"-TargetDir",
+				"C:\\mcp\\mcp-index-server"
+			]
 		}
 	]
 }

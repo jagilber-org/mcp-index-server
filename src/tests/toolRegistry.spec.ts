@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
-import { waitFor } from './testUtils';
+import { waitForServerReady } from './testUtils';
 
 function startServer(mutation = true){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], {
@@ -10,25 +10,18 @@ function startServer(mutation = true){
   });
 }
 
-function send(proc: ReturnType<typeof spawn>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg) + '\n'); }
+// (send helper not required; no direct manual JSON-RPC sends in this spec)
 
-function callTool(proc: ReturnType<typeof spawn>, id: number, name: string, args: Record<string, unknown> = {}){
-  send(proc,{ jsonrpc:'2.0', id, method:'tools/call', params:{ name, arguments: args } });
-}
+// callTool helper not needed here; waitForServerReady performs meta/tools call
 
 describe('MCP tool registry', () => {
   it('exposes mcp registry with required fields', async () => {
     const server = startServer();
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
-  send(server, { jsonrpc:'2.0', id: 2000, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
-  await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===2000; } catch { return false; } }), 3000);
-  const id = 42;
-  callTool(server, id, 'meta/tools', {});
-  await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===id; } catch { return false; } }), 3000);
-    const line = lines.find(l => l.includes('"id":42'));
-    expect(line, 'missing meta/tools response').toBeTruthy();
-  const obj = JSON.parse(line!);
+    const ready = await waitForServerReady(server, lines, { initId:2000, metaId:42, timeoutMs:5000 });
+    expect(ready, 'missing meta/tools response').toBeTruthy();
+    const obj = ready! as { error?: unknown; result?: { content?: { text?: string }[] } };
   expect(obj.error).toBeFalsy();
   const text = obj.result?.content?.[0]?.text; expect(text).toBeTruthy();
   if(!text){ server.kill(); return; }
@@ -49,16 +42,11 @@ describe('MCP tool registry', () => {
   it('marks mutation tools correctly when disabled', async () => {
     const server = startServer(false);
     const lines: string[] = [];
-    server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
-  send(server, { jsonrpc:'2.0', id: 2001, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
-  await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===2001; } catch { return false; } }), 3000);
-  const id = 43;
-  callTool(server, id, 'meta/tools', {});
-  await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===id; } catch { return false; } }), 3000);
-    const line = lines.find(l => l.includes('"id":43'));
-    expect(line, 'missing meta/tools response').toBeTruthy();
-    const obj = JSON.parse(line!);
-    const text = obj.result?.content?.[0]?.text; expect(text).toBeTruthy();
+  server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
+  const ready = await waitForServerReady(server, lines, { initId:2001, metaId:43, timeoutMs:5000 });
+  expect(ready, 'missing meta/tools response').toBeTruthy();
+  const obj = ready! as { result?: { content?: { text?: string }[] } };
+  const text = obj.result?.content?.[0]?.text; expect(text).toBeTruthy();
     if(text){
       const result = JSON.parse(text);
       const disabledList = (result.dynamic?.disabled as Array<{ method:string }> | undefined)?.map(d=> d.method) || [];

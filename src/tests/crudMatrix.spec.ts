@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
-import { waitFor, parseToolPayload } from './testUtils';
+import { waitFor, parseToolPayload, ensureFileExists } from './testUtils';
 
 function startServer(){
   return spawn('node', [path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1' } });
@@ -28,7 +28,7 @@ describe('CRUD matrix end-to-end', () => {
   send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id, title:id, body:'Body', priority:10, audience:'all', requirement:'optional', categories:['test'], owner:'team:test', version:'1.0.0', priorityTier:'P2' }, overwrite:true, lax:true } } });
   await waitFor(()=> !!findLine(out1,2));
     const filePath = path.join(process.cwd(),'instructions', `${id}.json`);
-    expect(fs.existsSync(filePath)).toBe(true);
+  await ensureFileExists(filePath, 6000);
 
     // Get
   send(server,{ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'get', id } } });
@@ -57,6 +57,11 @@ describe('CRUD matrix end-to-end', () => {
     // Remove
   send(server,{ jsonrpc:'2.0', id:7, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'remove', ids:[id] } } });
   await waitFor(()=> !!findLine(out1,7));
+    // Wait until file removed (some OS/fs delays)
+    const startRemove = Date.now();
+    while(Date.now() - startRemove < 4000 && fs.existsSync(filePath)){
+      await new Promise(r=> setTimeout(r,50));
+    }
     expect(fs.existsSync(filePath)).toBe(false);
 
     // List absence

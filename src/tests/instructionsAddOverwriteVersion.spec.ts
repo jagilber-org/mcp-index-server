@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { waitFor } from './testUtils';
+import { waitFor, ensureFileExists } from './testUtils';
 import { waitForDist } from './distReady';
 
 const ISOLATED_DIR = fs.mkdtempSync(path.join(os.tmpdir(),'instr-overwrite-'));
@@ -33,7 +33,7 @@ describe('instructions/add overwrite version semantics (alpha)', () => {
   send(server,{ jsonrpc:'2.0', id:10, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id, title:id, body:'Initial body', priority:55, audience:'all', requirement:'optional', categories:['alpha'], version:'2.5.0', owner:'alpha-owner', priorityTier:'P2', semanticSummary:'Initial summary' }, overwrite:true, lax:true } }});
   await waitFor(()=> !!findLine(out,10));
     const file = path.join(instructionsDir, id + '.json');
-    expect(fs.existsSync(file)).toBe(true);
+  await ensureFileExists(file, 6000);
   const first = JSON.parse(fs.readFileSync(file,'utf8')) as { version:string; changeLog: { version:string; changedAt:string; summary:string }[]; owner:string; priorityTier:string; semanticSummary:string };
     expect(first.version).toBe('2.5.0');
     expect(first.owner).toBe('alpha-owner');

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
-import { waitFor } from './testUtils';
+import { waitFor, findResponse } from './testUtils';
 import { waitForDist } from './distReady';
 
 async function ensureDist(){ await waitForDist(); }
@@ -10,10 +10,6 @@ function startServer(){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1' } });
 }
 function send(proc: ReturnType<typeof startServer>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
-interface RpcSuccess<T=unknown> { id:number; result:T }
-interface RpcError { id:number; error:unknown }
-type RpcResponse<T=unknown> = RpcSuccess<T> | RpcError | undefined;
-function findResponse(lines: string[], id:number): RpcResponse | undefined { for(const l of lines){ try { const o=JSON.parse(l) as RpcResponse; if(o && o.id===id) return o; } catch { /*ignore*/ } } return undefined; }
 
 // Helper: robust JSON file read with retries to avoid transient ENOENT during async rewrite cycles
 async function readJsonWithRetry<T=unknown>(file: string, timeoutMs=5000, intervalMs=75): Promise<T> {

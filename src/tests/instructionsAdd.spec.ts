@@ -117,7 +117,7 @@ describe('instructions/add tool', () => {
     const line = out.filter(l=> { try { const o=JSON.parse(l); return o.id===31; } catch { return false; } }).pop();
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
-  // Unknown tool now yields -32603 Unknown tool OR mutation gate (-32603). Direct method removed.
+  // Unknown tool now yields -32601 (method not found) or mutation gate (-32603 for disabled mutation handler). Direct method removed.
   expect(obj.error).toBeTruthy();
   expect(obj.error.code).toBe(-32603);
   expect(String(obj.error.data?.method || obj.error.data?.name || '')).toMatch(/instructions\/add/);

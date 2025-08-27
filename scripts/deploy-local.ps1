@@ -15,6 +15,10 @@
 .PARAMETER Overwrite
   When specified, existing destination content is removed first.
 
+.PARAMETER BundleDeps
+  When specified, runs 'npm install --production' inside the destination so runtime dependencies are
+  already present (useful when launching via node directly instead of start.ps1 auto-install logic).
+
 .EXAMPLE
   pwsh scripts/deploy-local.ps1 -Destination C:\mcp\mcp-index-server -Rebuild -Overwrite
 
@@ -24,7 +28,8 @@
 param(
   [string]$Destination = 'C:\mcp\mcp-index-server',
   [switch]$Rebuild,
-  [switch]$Overwrite
+  [switch]$Overwrite,
+  [switch]$BundleDeps
 )
 
 Set-StrictMode -Version Latest
@@ -58,19 +63,28 @@ Copy-Item -Recurse -Force dist/* (Join-Path $Destination 'dist')
 # Minimal runtime package file: strip dev deps to reduce noise
 $pkgPath = Join-Path $PWD 'package.json'
 $pkg = Get-Content $pkgPath -Raw | ConvertFrom-Json
+
+# Helper to safely read a property that may not exist under strict mode
+function Get-PkgProp($obj, $name, $default){
+  if($null -ne $obj -and ($obj.PSObject.Properties.Name -contains $name)){
+    return $obj.$name
+  }
+  return $default
+}
+
 $runtime = [ordered]@{
-  name = $pkg.name
-  version = $pkg.version
+  name = Get-PkgProp $pkg 'name' 'mcp-index-server'
+  version = Get-PkgProp $pkg 'version' '0.0.0'
   type = 'commonjs'
-  license = $pkg.license
-  description = $pkg.description
-  repository = $pkg.repository
-  author = $pkg.author
-  dependencies = $pkg.dependencies
-  engines = $pkg.engines
+  license = Get-PkgProp $pkg 'license' 'MIT'
+  description = Get-PkgProp $pkg 'description' 'MCP Index Server'
+  repository = Get-PkgProp $pkg 'repository' @{ type = 'git'; url = '' }
+  author = Get-PkgProp $pkg 'author' 'Unknown'
+  dependencies = Get-PkgProp $pkg 'dependencies' @{}
+  engines = Get-PkgProp $pkg 'engines' @{ node = '>=20 <21' }
   scripts = @{ start = 'node dist/server/index.js' }
 }
-$runtime | ConvertTo-Json -Depth 6 | Out-File (Join-Path $Destination 'package.json') -Encoding UTF8
+$runtime | ConvertTo-Json -Depth 10 | Out-File (Join-Path $Destination 'package.json') -Encoding UTF8
 
 # Copy license
 Copy-Item -Force LICENSE (Join-Path $Destination 'LICENSE')
@@ -88,18 +102,34 @@ Get-ChildItem instructions -Filter *.json | Where-Object { -not ($_.Name -match 
 $startPs1 = @'
 param(
   [switch]$VerboseLogging,
-  [switch]$EnableMutation
+  [switch]$EnableMutation,
+  [switch]$TraceRequire
 )
 Set-StrictMode -Version Latest
-$env:MCP_LOG_VERBOSE = if($VerboseLogging){ '1' } else { $env:MCP_LOG_VERBOSE }
+if($VerboseLogging){ $env:MCP_LOG_VERBOSE = '1' } elseif(-not $env:MCP_LOG_VERBOSE){ $env:MCP_LOG_VERBOSE = '' }
 if($EnableMutation){ $env:MCP_ENABLE_MUTATION = '1' }
 Write-Host "[start] Launching MCP Index Server..." -ForegroundColor Cyan
-node dist/server/index.js 2>&1 | Tee-Object -FilePath (Join-Path $PSScriptRoot 'logs/server.log')
+# Auto-install production dependencies if not present
+if(-not (Test-Path (Join-Path $PSScriptRoot 'node_modules'))){
+  Write-Host '[start] node_modules missing - installing production dependencies (npm install --production)...' -ForegroundColor Yellow
+  pushd $PSScriptRoot
+  try { npm install --production } catch { Write-Host "[start] npm install failed: $($_.Exception.Message)" -ForegroundColor Red; exit 1 }
+  finally { popd }
+}
+$nodeArgs = @()
+if($TraceRequire){ $nodeArgs += '--trace-require' }
+node @nodeArgs dist/server/index.js 2>&1 | Tee-Object -FilePath (Join-Path $PSScriptRoot 'logs/server.log')
 '@
 Set-Content -Path (Join-Path $Destination 'start.ps1') -Value $startPs1 -Encoding UTF8
 
-$startCmd = "@echo off`r`nset MCP_LOG_VERBOSE=1`r`nnode dist\server\index.js"
+$startCmd = "@echo off" + "`r`nrem Set MCP_LOG_VERBOSE=1 to enable catalogCount / diagnostics" + "`r`nif not exist node_modules (echo [start] Installing production dependencies... & call npm install --production)" + "`r`nnode %* dist\server\index.js"
 Set-Content -Path (Join-Path $Destination 'start.cmd') -Value $startCmd -Encoding ASCII
 
 Write-Host '[deploy] Done.' -ForegroundColor Green
-Write-Host "Next: (cd $Destination ; npm install --production) then run: pwsh .\start.ps1 -VerboseLogging -EnableMutation" -ForegroundColor Cyan
+if($BundleDeps){
+  Write-Host '[deploy] Installing production dependencies into destination (BundleDeps)...' -ForegroundColor Cyan
+  pushd $Destination
+  try { npm install --production } catch { Write-Host "[deploy] npm install failed: $($_.Exception.Message)" -ForegroundColor Red; exit 1 } finally { popd }
+  Write-Host '[deploy] Production dependencies installed.' -ForegroundColor Green
+}
+Write-Host "Next: (cd $Destination ; pwsh .\\start.ps1 -VerboseLogging -EnableMutation)" -ForegroundColor Cyan

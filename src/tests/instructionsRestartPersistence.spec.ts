@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
-import { waitFor, parseToolPayload } from './testUtils';
+import { waitFor, parseToolPayload, ensureFileExists } from './testUtils';
 
 function startServer(){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1' } });
@@ -23,7 +23,7 @@ describe('restart persistence - governance fields survive restart unchanged', ()
   send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id, title:id, body:'Restart body', priority:33, audience:'all', requirement:'optional', categories:['restart'], owner:'restart-owner', version:'7.1.0', priorityTier:'P3', semanticSummary:'Restart summary' }, overwrite:true, lax:true } }});
   await waitFor(()=> !!findLine(out1,2));
     const file = path.join(process.cwd(),'instructions', `${id}.json`);
-    expect(fs.existsSync(file)).toBe(true);
+  await ensureFileExists(file, 6000);
     const first = JSON.parse(fs.readFileSync(file,'utf8')) as Record<string, unknown>;
     server.kill();
 

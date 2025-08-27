@@ -45,7 +45,7 @@ describe('health_check alias removed', () => {
     if(respLine){
       const obj = JSON.parse(respLine);
   expect(obj.error).toBeTruthy();
-  expect(obj.error.code).toBe(-32603);
+  expect(obj.error.code).toBe(-32601);
   expect(String(obj.error.message||'')).toMatch(/Unknown tool/i);
     }
     server.kill();

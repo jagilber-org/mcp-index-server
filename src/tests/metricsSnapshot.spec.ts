@@ -26,11 +26,10 @@ describe('metrics/snapshot', () => {
     // Call metrics snapshot directly (registered as tool)
     send(server,{ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'metrics/snapshot', arguments:{} } });
   await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===3; } catch { return false; } }), 3000);
-    server.kill();
-    const metricsLine = lines.find(l => l.includes('"id":3'));
-    expect(metricsLine).toBeTruthy();
-    if(!metricsLine) return;
-    const obj = JSON.parse(metricsLine);
+  server.kill();
+  const obj = (()=> { for(const l of lines){ try { const o = JSON.parse(l); if(o.id===3) return o; } catch { /* ignore */ } } return undefined; })();
+  expect(obj).toBeTruthy();
+  if(!obj) return;
     expect(obj.result?.content?.[0]?.type).toBe('text');
   const snapshot = JSON.parse(obj.result.content[0].text) as { methods: { method: string }[], features?: { features:string[]; counters:Record<string,number> } };
   expect(Array.isArray(snapshot.methods)).toBe(true);

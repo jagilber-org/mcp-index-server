@@ -54,10 +54,10 @@ describe('createSdkServer unit (no process spawn)', () => {
     expect(tools.length).toBeGreaterThan(0);
   });
 
-  it('tools/call unknown tool yields structured error', async () => {
+  it('tools/call unknown tool yields structured error (-32601)', async () => {
     const fn = findHandler(server, 'tools/call');
     try { await fn({ params:{ name:'not_a_tool', arguments:{} } }); throw new Error('expected error'); }
-    catch(e){ const err = e as { code?: number }; expect(err.code).toBe(-32603); }
+    catch(e){ const err = e as { code?: number }; expect(err.code).toBe(-32601); }
   });
 
   it('ping handler returns uptime info', async () => {

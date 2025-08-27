@@ -111,21 +111,25 @@ describe('usage rate limiting (Phase 1)', () => {
     const testEntry2 = { ...testEntry, id: id2 };
     writeEntry(testEntry1);
     writeEntry(testEntry2);
-    
-    // Fill rate limit for id1
-    for (let i = 0; i < 10; i++) {
-      const result = incrementUsage(id1);
-      expect(result).not.toHaveProperty('rateLimited');
+    // Freeze time so all increments stay in a single window deterministically
+    const base = Date.now();
+    const spy = vi.spyOn(Date, 'now').mockImplementation(() => base);
+    try {
+      // Fill rate limit for id1
+      for (let i = 0; i < 10; i++) {
+        const result = incrementUsage(id1);
+        expect(result).not.toHaveProperty('rateLimited');
+      }
+      // id1 should be blocked on next increment
+      const blocked = incrementUsage(id1);
+      expect(blocked).toHaveProperty('rateLimited', true);
+      // id2 should still work (its own counter)
+      const allowed = incrementUsage(id2);
+      expect(allowed).toBeTruthy();
+      expect(allowed).not.toHaveProperty('rateLimited');
+    } finally {
+      spy.mockRestore();
     }
-    
-    // id1 should be blocked
-    const blocked = incrementUsage(id1);
-    expect(blocked).toHaveProperty('rateLimited', true);
-    
-    // id2 should still work
-    const allowed = incrementUsage(id2);
-    expect(allowed).toBeTruthy();
-    expect(allowed).not.toHaveProperty('rateLimited');
     
     // Cleanup rate limit state
     clearUsageRateLimit(id1);

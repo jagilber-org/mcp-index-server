@@ -7,11 +7,12 @@
   "requirement": "mandatory",
   "categories": [],
   "sourceHash": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c",
-  "schemaVersion": "1",
-  "createdAt": "2025-08-26T13:53:41.408Z",
-  "updatedAt": "2025-08-26T13:53:41.408Z",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-27T03:32:50.306Z",
+  "updatedAt": "2025-08-27T03:32:50.306Z",
   "semanticSummary": "B",
   "lastReviewedAt": "2025-08-26T11:51:38.433Z",
   "nextReviewDue": "2025-09-25T11:51:38.433Z",
+  "reviewIntervalDays": 30,
   "priorityTier": "P1"
 }

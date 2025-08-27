@@ -10,7 +10,7 @@
     "detection"
   ],
   "sourceHash": "5bf6e5279d6e9bf813bc4b4c4e39a641196acc3c43d9b38fc54d04df53aac0bd",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-25T18:45:18.060Z",
   "updatedAt": "2025-08-25T18:45:18.060Z",
   "version": "1.0.0",
@@ -27,5 +27,6 @@
       "summary": "initial"
     }
   ],
-  "semanticSummary": "Catalogue and remediate obfuscation patterns"
+  "semanticSummary": "Catalogue and remediate obfuscation patterns",
+  "reviewIntervalDays": 90
 }

@@ -30,8 +30,10 @@ export interface InstructionEntry {
   classification?: 'public' | 'internal' | 'restricted';
   lastReviewedAt?: string;    // timestamp of last manual review
   nextReviewDue?: string;     // scheduled review date
+  reviewIntervalDays?: number; // persisted review interval (schema v2)
   changeLog?: { version: string; changedAt: string; summary: string }[]; // chronological changes
   supersedes?: string;        // id of instruction this one supersedes
+  archivedAt?: string;        // timestamp when archived (schema v2, placeholder)
   // Content intelligence (optional)
   semanticSummary?: string;   // concise summary / first-sentence style abstract of body
   // Attribution (added in 0.8.x): who/where created the instruction

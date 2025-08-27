@@ -4,7 +4,9 @@
       "id": "min-alpha",
       "description": "Require at least one mandatory instruction",
       "type": "count",
-      "where": { "requirement": "mandatory" },
+      "where": {
+        "requirement": "mandatory"
+      },
       "op": ">=",
       "value": 1,
       "severity": "error"
@@ -13,10 +15,14 @@
       "id": "limit-low-priority",
       "description": "No more than 5 low priority (priority > 50) entries",
       "type": "count",
-      "where": { "priorityGt": 50 },
+      "where": {
+        "priorityGt": 50
+      },
       "op": "<=",
       "value": 5,
       "severity": "warn"
     }
-  ]
+  ],
+  "reviewIntervalDays": 120,
+  "schemaVersion": "2"
 }

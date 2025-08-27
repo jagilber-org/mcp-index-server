@@ -9,7 +9,7 @@
     "restart"
   ],
   "sourceHash": "c5800bbc2e83305160111892090c4c2ea1c91e7ba2a51ad41810e087912a8235",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-25T23:56:59.314Z",
   "updatedAt": "2025-08-25T23:56:59.314Z",
   "riskScore": 72,
@@ -27,5 +27,6 @@
       "changedAt": "2025-08-25T23:56:59.314Z",
       "summary": "initial import"
     }
-  ]
+  ],
+  "reviewIntervalDays": 90
 }

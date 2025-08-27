@@ -1,0 +1,36 @@
+{
+  "id": "powershell_mcp_vscode_configuration_2025",
+  "title": "PowerShell MCP VS Code Configuration Setup",
+  "body": "PowerShell MCP .vscode/mcp.json configuration defines 5 server variants: powershell-enterprise (primary enterprise server: dist/server.js), powershell-minimal (debug handshake: dist/minimalServer.js), powershell-vscode-enterprise (debugging source tree: dist/vscode-server-enterprise.js in development directory), powershell-vscode-enterprise-prod (production commands: dist/vscode-server-enterprise.js in production directory c:\\github\\jagilber\\powershell-mcp-server-prod), powershell-mcp-server (legacy compatibility alias). All servers use stdio transport with node command, common debug flags (--disable-self-destruct, --mcp-init-debug 1), and TypeScript compilation to dist/ JavaScript. Configuration enables development/production separation with independent directory structures for risk isolation, version management, and environment-specific deployments. VS Code MCP client connects to appropriate server based on use case: development testing vs production command execution.",
+  "priority": 17,
+  "audience": "all",
+  "requirement": "recommended",
+  "categories": [
+    "configuration",
+    "mcp",
+    "powershell",
+    "setup",
+    "vscode"
+  ],
+  "sourceHash": "d97b975f988a8150e21731e7d055f024ab303673286818b19abc3db200c902d7",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-26T23:38:28.360Z",
+  "updatedAt": "2025-08-26T23:38:28.360Z",
+  "riskScore": 103,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T23:38:28.360Z",
+  "nextReviewDue": "2025-09-25T23:38:28.360Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T23:38:28.360Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PowerShell MCP .vscode/mcp.json configuration defines 5 server variants: powershell-enterprise (primary enterprise server: dist/server.js), powershell-minima...",
+  "reviewIntervalDays": 30
+}

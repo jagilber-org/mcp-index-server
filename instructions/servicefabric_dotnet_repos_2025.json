@@ -1,0 +1,36 @@
+{
+  "id": "servicefabric_dotnet_repos_2025",
+  "title": "Service Fabric .NET SDK Repositories",
+  "body": "Service Fabric .NET SDK repositories (Azure/service-fabric-services-and-actors-dotnet, Microsoft/service-fabric-aspnetcore) provide .NET development libraries for Service Fabric. Contains reliable services patterns, actor model implementations, ASP.NET Core integration, dependency injection patterns, and communication protocols for building Service Fabric applications in .NET.",
+  "priority": 28,
+  "audience": "all",
+  "requirement": "recommended",
+  "categories": [
+    "development",
+    "dotnet",
+    "repository",
+    "sdk",
+    "service-fabric"
+  ],
+  "sourceHash": "0db918b1c4210f6470ee0eeb9e17eafab8ec2c884c033daff9c999e5e7adb14f",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-26T16:40:09.207Z",
+  "updatedAt": "2025-08-26T16:40:09.207Z",
+  "riskScore": 92,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T16:40:09.208Z",
+  "nextReviewDue": "2025-10-25T16:40:09.208Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T16:40:09.207Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Service Fabric .NET SDK repositories (Azure/service-fabric-services-and-actors-dotnet, Microsoft/service-fabric-aspnetcore) provide .NET development librarie...",
+  "reviewIntervalDays": 60
+}

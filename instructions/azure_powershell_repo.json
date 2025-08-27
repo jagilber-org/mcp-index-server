@@ -1,0 +1,35 @@
+{
+  "id": "azure_powershell_repo",
+  "title": "Azure PowerShell Official Repository",
+  "body": "Official Azure PowerShell repository: https://github.com/Azure/azure-powershell\n\nThe official repository for Azure PowerShell modules containing cmdlets for managing Azure resources from PowerShell. Includes source code, documentation, and issue tracking for Az PowerShell modules. Use this repo for Azure PowerShell issues, contributions, and understanding Azure cmdlet implementation.",
+  "priority": 20,
+  "audience": "developers",
+  "requirement": "recommended",
+  "categories": [
+    "azure",
+    "cloud",
+    "microsoft",
+    "powershell"
+  ],
+  "sourceHash": "7c33b39328605872fc0a3ad19705126fb90cb6ec51a2963d77fefca23c176b27",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-26T16:22:48.061Z",
+  "updatedAt": "2025-08-26T16:22:48.061Z",
+  "riskScore": 100,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T16:22:48.061Z",
+  "nextReviewDue": "2025-09-25T16:22:48.061Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T16:22:48.061Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Official Azure PowerShell repository: https://github.com/Azure/azure-powershell",
+  "reviewIntervalDays": 30
+}

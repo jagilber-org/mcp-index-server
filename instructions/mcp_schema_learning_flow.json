@@ -11,7 +11,7 @@
     "schema"
   ],
   "sourceHash": "d56d2641e824d7db288ac3a0f96064102dcd589f4c9079f4b802b1820aed9762",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-26T02:17:35.096Z",
   "updatedAt": "2025-08-26T02:17:35.096Z",
   "riskScore": 139,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Before large-scale obfuscation, run schema learn on representative samples (>=100 lines) to detect PII fields; review inferred types and adjust custom patter..."
+  "semanticSummary": "Before large-scale obfuscation, run schema learn on representative samples (>=100 lines) to detect PII fields; review inferred types and adjust custom patter...",
+  "reviewIntervalDays": 30
 }

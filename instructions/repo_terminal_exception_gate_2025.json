@@ -1,0 +1,36 @@
+{
+  "id": "repo_terminal_exception_gate_2025",
+  "title": "Repository Gate: Terminal Exception Gate",
+  "body": "PRIORITY 0 REPO RULE: Terminal Exception Gate - All blocking terminal preconditions must be false. Logic: !(toolExists || genericPossible || losesAudit || gitToolExists || priorReplaced). If any tool path is available, terminal access is blocked. Failure action: BLOCK with message 'Terminal blocked: tool path available.' This gate must be evaluated before any terminal access.",
+  "priority": 0,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "gate",
+    "priority-0",
+    "repo-rule",
+    "security",
+    "terminal"
+  ],
+  "sourceHash": "656ba0f1c3a91853e49c3a1c15b069653261635dfd353990792e176e25fa352f",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-27T01:19:57.967Z",
+  "updatedAt": "2025-08-27T01:19:57.967Z",
+  "riskScore": 149,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-27T01:19:57.967Z",
+  "nextReviewDue": "2025-09-26T01:19:57.967Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-27T01:19:57.967Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PRIORITY 0 REPO RULE: Terminal Exception Gate - All blocking terminal preconditions must be false. Logic: !(toolExists || genericPossible || losesAudit || gi...",
+  "reviewIntervalDays": 30
+}

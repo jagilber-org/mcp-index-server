@@ -1,0 +1,36 @@
+{
+  "id": "servicefabric_explorer_repo_2025",
+  "title": "Service Fabric Explorer Repository Reference",
+  "body": "Service Fabric Explorer repository (Microsoft/service-fabric-explorer) provides web-based management interface for Service Fabric clusters. Contains Angular-based UI components, cluster visualization tools, application management features, and health monitoring dashboards. Essential for Service Fabric cluster administration and operational monitoring.",
+  "priority": 26,
+  "audience": "all",
+  "requirement": "recommended",
+  "categories": [
+    "management",
+    "monitoring",
+    "repository",
+    "service-fabric",
+    "web-ui"
+  ],
+  "sourceHash": "2753b479179d9c3974958e870cc289eb471dd1bd7b637d7635e976d5c63cb237",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-26T16:40:01.112Z",
+  "updatedAt": "2025-08-26T16:40:01.112Z",
+  "riskScore": 94,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T16:40:01.112Z",
+  "nextReviewDue": "2025-10-25T16:40:01.112Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T16:40:01.112Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Service Fabric Explorer repository (Microsoft/service-fabric-explorer) provides web-based management interface for Service Fabric clusters. Contains Angular-...",
+  "reviewIntervalDays": 60
+}

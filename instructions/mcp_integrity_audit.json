@@ -11,7 +11,7 @@
     "mcp"
   ],
   "sourceHash": "46a2c12e4c3beccb173c31c763fe1947254faee6bf7391da521d5c7a6bdd09ea",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-26T02:17:35.106Z",
   "updatedAt": "2025-08-26T02:17:35.106Z",
   "riskScore": 100,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Weekly: recompute aggregate catalog hash and compare; on mismatch list drifted IDs, export diff snapshot, and open governance ticket within 24h."
+  "semanticSummary": "Weekly: recompute aggregate catalog hash and compare; on mismatch list drifted IDs, export diff snapshot, and open governance ticket within 24h.",
+  "reviewIntervalDays": 30
 }

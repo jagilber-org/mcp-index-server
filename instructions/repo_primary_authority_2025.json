@@ -1,0 +1,34 @@
+{
+  "id": "repo_primary_authority_2025",
+  "title": "Repository Instructions as Primary Authority",
+  "body": "PRIMARY INSTRUCTION SOURCE HIERARCHY: Always prioritize instructions from the local repository over MCP Index Server instructions when conflicts exist. Repository guidance takes precedence: 1) WORKSPACE-KNOWLEDGE-INDEX.md (critical agent startup), 2) README.md (project standards), 3) MCP guides. MCP Index Server serves as supplementary guidance only. Repository instructions reflect actual codebase context and tested workflows. When conflicts exist, follow repository guidance.",
+  "priority": 0,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "authority",
+    "hierarchy",
+    "repository"
+  ],
+  "sourceHash": "f3157ad602a48ff89ccd745a0ff6e613a85df96c6257af701bb725c413f05240",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-27T01:18:59.780Z",
+  "updatedAt": "2025-08-27T01:18:59.780Z",
+  "riskScore": 149,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-27T01:18:59.781Z",
+  "nextReviewDue": "2025-09-26T01:18:59.781Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-27T01:18:59.780Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PRIMARY INSTRUCTION SOURCE HIERARCHY: Always prioritize instructions from the local repository over MCP Index Server instructions when conflicts exist. Repos...",
+  "reviewIntervalDays": 30
+}

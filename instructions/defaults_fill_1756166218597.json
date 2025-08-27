@@ -9,7 +9,7 @@
     "defaults"
   ],
   "sourceHash": "6dc43ca5dfa7ee82a07999ef72a9a02e6cec87b201b0f2dbb716e8f9f33049d3",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-25T23:56:59.501Z",
   "updatedAt": "2025-08-25T23:56:59.501Z",
   "riskScore": 20,
@@ -27,5 +27,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Body defaults"
+  "semanticSummary": "Body defaults",
+  "reviewIntervalDays": 120
 }

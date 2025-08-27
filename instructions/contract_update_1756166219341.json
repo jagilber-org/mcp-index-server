@@ -7,7 +7,7 @@
   "requirement": "optional",
   "categories": [],
   "sourceHash": "4814d92093ac8a0f4a2163ab87dee509ba306a58f5888be0edcb2fcd0712028b",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-25T23:56:59.349Z",
   "updatedAt": "2025-08-25T23:57:00.367Z",
   "riskScore": 104,
@@ -30,5 +30,6 @@
       "summary": "body change"
     }
   ],
-  "semanticSummary": "b"
+  "semanticSummary": "b",
+  "reviewIntervalDays": 30
 }

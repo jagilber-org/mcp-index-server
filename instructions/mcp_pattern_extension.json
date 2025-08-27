@@ -11,7 +11,7 @@
     "patterns"
   ],
   "sourceHash": "01485b2d2de7c6d0ecda9691c6d44afc3fbbae83dcbf065b2f825051d2eb8cdc",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-26T02:17:35.104Z",
   "updatedAt": "2025-08-26T02:17:35.104Z",
   "riskScore": 136,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "When adding custom PII patterns: include name, regex tested with 3+ examples, piiType label, and ensure no catastrophic backtracking (RE2 test) before regist..."
+  "semanticSummary": "When adding custom PII patterns: include name, regex tested with 3+ examples, piiType label, and ensure no catastrophic backtracking (RE2 test) before regist...",
+  "reviewIntervalDays": 30
 }

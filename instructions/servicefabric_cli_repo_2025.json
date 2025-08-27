@@ -1,0 +1,36 @@
+{
+  "id": "servicefabric_cli_repo_2025",
+  "title": "Service Fabric CLI Repository Reference",
+  "body": "Service Fabric CLI repository (Azure/service-fabric-cli) provides sfctl command-line tools for Service Fabric cluster management. Contains commands for application deployment, cluster monitoring, node management, and service scaling. Includes Python-based tools, REST API wrappers, and automation scripts for Service Fabric operations.",
+  "priority": 24,
+  "audience": "all",
+  "requirement": "recommended",
+  "categories": [
+    "automation",
+    "cli",
+    "management",
+    "repository",
+    "service-fabric"
+  ],
+  "sourceHash": "809353733f511ba9fae5b84d89177f79110f593dbb31dab534709e66a5bab88e",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-26T16:39:54.634Z",
+  "updatedAt": "2025-08-26T16:39:54.634Z",
+  "riskScore": 96,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T16:39:54.634Z",
+  "nextReviewDue": "2025-10-25T16:39:54.634Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T16:39:54.634Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Service Fabric CLI repository (Azure/service-fabric-cli) provides sfctl command-line tools for Service Fabric cluster management. Contains commands for appli...",
+  "reviewIntervalDays": 60
+}

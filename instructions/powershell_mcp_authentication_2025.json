@@ -1,0 +1,36 @@
+{
+  "id": "powershell_mcp_authentication_2025",
+  "title": "PowerShell MCP Authentication & Authorization",
+  "body": "PowerShell MCP Server operates in dual-mode authentication: Development Mode (no authentication when authKey not set) and Enterprise Mode (key-based authentication required). Authentication usage requires including 'key' parameter in all tool requests when server requires it. Security considerations include key-based authentication for production, request tracking with client PID correlation, failed authentication attempts logged, override capability for authorized administrators. Best practices: use strong unique authentication keys, rotate keys regularly, monitor authentication logs, implement additional authorization layers for sensitive operations. Always include 'confirmed: true' for risky operations and 'override: true' only with proper authorization for blocked commands.",
+  "priority": 10,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "authentication",
+    "enterprise",
+    "mcp",
+    "powershell",
+    "security"
+  ],
+  "sourceHash": "8b6fd600031e2d78bba2d4c7660247d7ff80884a7ebf1b3fa6542a62cb8ee03f",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-26T23:37:27.084Z",
+  "updatedAt": "2025-08-26T23:37:27.084Z",
+  "riskScore": 140,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T23:37:27.084Z",
+  "nextReviewDue": "2025-09-25T23:37:27.084Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T23:37:27.084Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PowerShell MCP Server operates in dual-mode authentication: Development Mode (no authentication when authKey not set) and Enterprise Mode (key-based authenti...",
+  "reviewIntervalDays": 30
+}

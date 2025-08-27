@@ -1,0 +1,35 @@
+{
+  "id": "servicefabric_generators",
+  "title": "Service Fabric Yeoman Generators",
+  "body": "Service Fabric Yeoman Generators for project scaffolding:\n\n**Java Applications:**\nhttps://github.com/Azure/generator-azuresfjava\n- Java Reliable Services and Actors templates\n\n**C# Applications:**\nhttps://github.com/Azure/generator-azuresfcsharp\n- .NET Core service templates\n\n**Guest Executables:**\nhttps://github.com/Azure/generator-azuresfguest\n- Packaging existing applications\n\n**Container Applications:**\nhttps://github.com/Azure/generator-azuresfcontainer\n- Docker container service templates\n\nThese generators help bootstrap Service Fabric applications with proper project structure and configuration files.",
+  "priority": 30,
+  "audience": "developers",
+  "requirement": "recommended",
+  "categories": [
+    "azure",
+    "servicefabric",
+    "templates",
+    "yeoman"
+  ],
+  "sourceHash": "8c1b69d8bae63dd68e07941f860761de79f8ad91e68496e392849c805cc71569",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-26T16:28:33.296Z",
+  "updatedAt": "2025-08-26T16:28:33.296Z",
+  "riskScore": 90,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T16:28:33.296Z",
+  "nextReviewDue": "2025-10-25T16:28:33.296Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T16:28:33.296Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Service Fabric Yeoman Generators for project scaffolding:",
+  "reviewIntervalDays": 60
+}

@@ -1,0 +1,35 @@
+{
+  "id": "powershell_best_practices_2025",
+  "title": "PowerShell Development Best Practices",
+  "body": "When developing PowerShell scripts: Use approved verbs (Get-Verb), implement proper error handling with try-catch blocks, validate parameters with [Parameter()] attributes, use Write-Host sparingly (prefer Write-Output), implement -WhatIf for destructive operations, and follow PowerShell naming conventions with PascalCase for functions and camelCase for variables.",
+  "priority": 15,
+  "audience": "all",
+  "requirement": "recommended",
+  "categories": [
+    "best-practices",
+    "development",
+    "powershell",
+    "scripting"
+  ],
+  "sourceHash": "55e5c1bf9e3b4513caf19f6cca71a217c392f797a59a15da86b3345024b3de16",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-26T16:18:16.731Z",
+  "updatedAt": "2025-08-26T16:18:16.731Z",
+  "riskScore": 105,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T16:18:16.731Z",
+  "nextReviewDue": "2025-09-25T16:18:16.731Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T16:18:16.731Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "When developing PowerShell scripts: Use approved verbs (Get-Verb), implement proper error handling with try-catch blocks, validate parameters with [Parameter...",
+  "reviewIntervalDays": 30
+}

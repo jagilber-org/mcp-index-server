@@ -9,7 +9,7 @@
     "x"
   ],
   "sourceHash": "",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "",
   "updatedAt": "",
   "version": "1.0.0",
@@ -26,5 +26,6 @@
       "summary": "initial"
     }
   ],
-  "semanticSummary": ""
+  "semanticSummary": "",
+  "reviewIntervalDays": 120
 }

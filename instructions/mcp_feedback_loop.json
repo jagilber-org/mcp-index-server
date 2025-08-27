@@ -11,7 +11,7 @@
     "mcp"
   ],
   "sourceHash": "cc325055baa3a66e702ab92535edde8dce43bcf85be7455665a1a89ffc7c3fb7",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-26T02:17:35.112Z",
   "updatedAt": "2025-08-26T02:17:35.112Z",
   "riskScore": 90,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Report suspected missed PII via feedback tool including obfuscated token, severity, and approximate location (line/column); prioritize remediation within 2 s..."
+  "semanticSummary": "Report suspected missed PII via feedback tool including obfuscated token, severity, and approximate location (line/column); prioritize remediation within 2 s...",
+  "reviewIntervalDays": 60
 }

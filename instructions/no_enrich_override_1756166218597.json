@@ -9,7 +9,7 @@
     "enrich"
   ],
   "sourceHash": "5113cde07844339c443d436e83b988b44eadd101a874590add03a495cfbe8933",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-25T23:56:59.499Z",
   "updatedAt": "2025-08-25T23:56:59.499Z",
   "riskScore": 95,
@@ -27,5 +27,6 @@
       "changedAt": "2025-08-25T23:56:59.499Z",
       "summary": "initial import"
     }
-  ]
+  ],
+  "reviewIntervalDays": 30
 }

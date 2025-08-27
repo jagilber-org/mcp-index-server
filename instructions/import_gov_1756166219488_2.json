@@ -10,7 +10,7 @@
     "temp"
   ],
   "sourceHash": "a110b1cee1c5c7a82d37c5d71c21ff0ce5f15990e51931f7a630d5203aa32d6e",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-25T23:56:59.547Z",
   "updatedAt": "2025-08-25T23:56:59.547Z",
   "riskScore": 75,
@@ -28,5 +28,6 @@
   "semanticSummary": "Imported summary 2",
   "status": "approved",
   "lastReviewedAt": "2025-08-25T23:56:59.547Z",
-  "nextReviewDue": "2025-09-24T23:56:59.547Z"
+  "nextReviewDue": "2025-09-24T23:56:59.547Z",
+  "reviewIntervalDays": 30
 }

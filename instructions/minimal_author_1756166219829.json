@@ -13,6 +13,7 @@
   "semanticSummary": "First line summary.",
   "lastReviewedAt": "2025-08-25T23:56:59.904Z",
   "nextReviewDue": "2025-11-23T23:56:59.904Z",
-  "schemaVersion": "1",
-  "priorityTier": "P3"
+  "schemaVersion": "2",
+  "priorityTier": "P3",
+  "reviewIntervalDays": 90
 }

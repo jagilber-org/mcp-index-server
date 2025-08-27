@@ -11,7 +11,7 @@
     "sessions"
   ],
   "sourceHash": "581a45de69bb96961980fb096c6f6a38315ef17025640a42c7e33e5fd50e1a69",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-26T02:17:35.109Z",
   "updatedAt": "2025-08-26T02:17:35.109Z",
   "riskScore": 135,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Use a stable agent/session ID for multi-step redaction workflows to maintain token consistency across files; terminate sessions explicitly when workflows end."
+  "semanticSummary": "Use a stable agent/session ID for multi-step redaction workflows to maintain token consistency across files; terminate sessions explicitly when workflows end.",
+  "reviewIntervalDays": 30
 }

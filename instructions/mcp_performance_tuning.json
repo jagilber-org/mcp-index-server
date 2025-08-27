@@ -11,7 +11,7 @@
     "tuning"
   ],
   "sourceHash": "3c058b4c9007481c7603505f2d174669d153e1d49ed020f11b83c17faa5be17d",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-26T02:17:35.117Z",
   "updatedAt": "2025-08-26T02:17:35.117Z",
   "riskScore": 95,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "For slow obfuscation: measure throughput (lines/sec), check securityLevel impact, batch small files, and remove unneeded custom patterns with heavy regex cost."
+  "semanticSummary": "For slow obfuscation: measure throughput (lines/sec), check securityLevel impact, batch small files, and remove unneeded custom patterns with heavy regex cost.",
+  "reviewIntervalDays": 60
 }

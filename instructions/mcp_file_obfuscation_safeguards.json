@@ -11,7 +11,7 @@
     "safeguards"
   ],
   "sourceHash": "acea6f0979ca5482c9eb6a96b94c0c5e32cfe21c7035d3e41c40282b681db5c2",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-26T02:17:35.100Z",
   "updatedAt": "2025-08-26T02:17:35.100Z",
   "riskScore": 137,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Prior to file obfuscation: confirm file size < allowed limit, ensure no binary blobs unless required, and preserve structure flag only when downstream parser..."
+  "semanticSummary": "Prior to file obfuscation: confirm file size < allowed limit, ensure no binary blobs unless required, and preserve structure flag only when downstream parser...",
+  "reviewIntervalDays": 30
 }

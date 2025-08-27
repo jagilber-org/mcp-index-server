@@ -1,0 +1,36 @@
+{
+  "id": "vscode_main_repo_2025",
+  "title": "VS Code Main Repository Reference",
+  "body": "VS Code repository (Microsoft/vscode) is the main codebase for Visual Studio Code editor. Contains source code, architecture documentation, contribution guidelines, extension development patterns, and debugging information. Critical for understanding VS Code internals, developing extensions, and troubleshooting editor issues.",
+  "priority": 14,
+  "audience": "all",
+  "requirement": "recommended",
+  "categories": [
+    "editor",
+    "microsoft",
+    "open-source",
+    "repository",
+    "vscode"
+  ],
+  "sourceHash": "88bbc3d543d13d289ac5f943c5d7839a9f09a9ed8b152fdaf997f08544a396f8",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-26T16:38:41.216Z",
+  "updatedAt": "2025-08-26T16:38:41.216Z",
+  "riskScore": 106,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T16:38:41.216Z",
+  "nextReviewDue": "2025-09-25T16:38:41.216Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T16:38:41.216Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "VS Code repository (Microsoft/vscode) is the main codebase for Visual Studio Code editor. Contains source code, architecture documentation, contribution guid...",
+  "reviewIntervalDays": 30
+}

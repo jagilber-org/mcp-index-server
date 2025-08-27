@@ -1,0 +1,36 @@
+{
+  "id": "repo_security_no_raw_terminal_2025",
+  "title": "Repository Rule: No Raw Terminal Commands",
+  "body": "PRIORITY 0 REPO RULE: Never invoke a raw terminal command if an MCP tool achieves the outcome. Tools provide structured, auditable operations and reduce risk of unsafe commands. Use powershell-command instead of direct shell access. This is a BLOCKING security gate that must be enforced.",
+  "priority": 0,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "gate",
+    "priority-0",
+    "repo-rule",
+    "security",
+    "terminal"
+  ],
+  "sourceHash": "31bed242c207beab9fa7bd09be6e53d76b51018817ea0c5d66fd18d8a3890b62",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-27T01:19:46.275Z",
+  "updatedAt": "2025-08-27T01:19:46.275Z",
+  "riskScore": 149,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-27T01:19:46.275Z",
+  "nextReviewDue": "2025-09-26T01:19:46.276Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-27T01:19:46.275Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PRIORITY 0 REPO RULE: Never invoke a raw terminal command if an MCP tool achieves the outcome. Tools provide structured, auditable operations and reduce risk...",
+  "reviewIntervalDays": 30
+}

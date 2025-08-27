@@ -9,7 +9,7 @@
     "test"
   ],
   "sourceHash": "7677a339988cb6ab5c3cf5ab10ba17495dad817f3f12a09969b34e14fd16e276",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-25T23:56:59.454Z",
   "updatedAt": "2025-08-25T23:57:01.327Z",
   "riskScore": 81,
@@ -27,5 +27,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Body v0"
+  "semanticSummary": "Body v0",
+  "reviewIntervalDays": 30
 }

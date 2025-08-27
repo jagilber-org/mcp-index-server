@@ -9,23 +9,24 @@
     "a"
   ],
   "sourceHash": "d6c2d6a414216a085c17d6f2fe929bfc3ba79f6941b53c8a1ef263071d5b6d86",
-  "schemaVersion": "1",
-  "createdAt": "2025-08-26T13:55:46.350Z",
-  "updatedAt": "2025-08-26T13:55:47.650Z",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-27T03:32:50.183Z",
+  "updatedAt": "2025-08-27T03:32:51.773Z",
   "version": "1.0.0",
   "status": "approved",
   "owner": "unowned",
   "priorityTier": "P3",
   "classification": "internal",
-  "lastReviewedAt": "2025-08-26T13:55:46.350Z",
-  "nextReviewDue": "2025-08-26T13:55:46.350Z",
+  "lastReviewedAt": "2025-08-27T03:32:50.183Z",
+  "nextReviewDue": "2025-08-27T03:32:50.183Z",
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-08-26T13:55:46.350Z",
+      "changedAt": "2025-08-27T03:32:50.183Z",
       "summary": "initial"
     }
   ],
   "semanticSummary": "repair body",
+  "reviewIntervalDays": 90,
   "riskScore": 65
 }

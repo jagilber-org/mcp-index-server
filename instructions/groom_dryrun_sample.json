@@ -9,23 +9,24 @@
     "tag"
   ],
   "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-  "schemaVersion": "1",
-  "createdAt": "2025-08-26T13:55:44.713Z",
-  "updatedAt": "2025-08-26T13:55:47.641Z",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-27T03:32:47.435Z",
+  "updatedAt": "2025-08-27T03:32:51.766Z",
   "version": "1.0.0",
   "status": "approved",
   "owner": "unowned",
   "priorityTier": "P3",
   "classification": "internal",
-  "lastReviewedAt": "2025-08-26T13:55:44.713Z",
-  "nextReviewDue": "2025-08-26T13:55:44.713Z",
+  "lastReviewedAt": "2025-08-27T03:32:47.435Z",
+  "nextReviewDue": "2025-08-27T03:32:47.435Z",
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-08-26T13:55:44.713Z",
+      "changedAt": "2025-08-27T03:32:47.435Z",
       "summary": "initial"
     }
   ],
   "semanticSummary": "body",
+  "reviewIntervalDays": 90,
   "riskScore": 55
 }

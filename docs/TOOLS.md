@@ -399,5 +399,98 @@ Promotion roadmap (tentative):
 
 ## Disclaimer
 
+## MCP Client Discovery & Learning Best Practices
+
+This section provides normative guidance for MCP clients integrating with the Instruction Index server to ensure safe, deterministic feature discovery and adaptive learning without compromising integrity.
+
+### A. Startup Sequence (Recommended Order)
+ 
+1. Open transport (stdio) and send `initialize` (standard JSON-RPC handshake).
+2. Wait for (optional) `server/ready` notification (if emitted) or small timeout fallback.
+3. Call `meta/tools` and cache tool registry (method names, stability, mutation flags, schemas).
+4. If mutation operations are planned, verify `mutationEnabled` OR surface controlled UI to enable `MCP_ENABLE_MUTATION`.
+5. Fetch `instructions/governanceHash` (record `governanceHash`, `count`).
+6. (Optional) Fetch `metrics/snapshot` and `feature/status` to condition UI features.
+7. Perform targeted calls (`instructions/list` or `instructions/diff` with cached hash) rather than bulk re-download.
+
+### B. Conditional Sync Strategy
+ 
+- Maintain last known `hash` from `instructions/list` (catalog hash) and `governanceHash` separately; only refetch full entries when either changes.
+- Use `instructions/diff` with `clientHash` to minimize payload for incremental updates.
+- If diff reports unknown ids or structural mismatch, fall back to a clean `instructions/list`.
+
+### C. Tool Schema Validation
+ 
+- Always validate outbound `params` client-side against `meta/tools.mcp.tools[n].inputSchema` before sending.
+- Reject or correct user input early; surface Ajv-style feedback inline.
+- Tolerate missing `outputSchema` (some tools may not yet declare result schema) by applying defensive parsing.
+
+### D. Governance & Integrity Loop
+ 
+- On each session start: compare new `governanceHash` vs stored; if drift and no local edits expected, surface warning and optionally run `integrity/verify`.
+- After any local mutation (add/import/groom/remove): refetch `instructions/governanceHash` to update baseline.
+- Cache governance projections only if your client needs offline inspection; otherwise rely on hash.
+
+### E. Usage Tracking Etiquette
+ 
+- Avoid spamming `usage/track`; only call at meaningful interaction points (tool invocation, successful suggestion application).
+- Batch (future) or debounce client-side for rapid-fire events; current server debounces persistence but counts all calls.
+
+### F. Feature Flag Adaptation
+ 
+- Use `feature/status` to confirm `usage` feature before rendering usage dashboards.
+- If feature absent, degrade UI silently (do not emit errors to end user).
+
+### G. Mutation Safety Controls
+ 
+- Before invoking any mutation tool, confirm environment gating: if `mutationEnabled` false, either disable mutation UI or prompt to restart with `MCP_ENABLE_MUTATION=1`.
+- After mutation, prefer `instructions/diff` rather than full reload unless you modified many entries (>5% of catalog).
+
+### H. Resilience & Fallbacks
+ 
+- On JSON-RPC method not found (-32601), re-request `meta/tools` in case of dynamic server upgrade.
+- On parse or internal error for a read tool, implement exponential backoff (e.g., 250ms, 500ms, 1s) before retry; log correlation id (request id) for debugging.
+- If `integrity/verify` returns issues unexpectedly, flag local cache invalid and perform full reload cycle.
+
+### I. Multi-Source Precedence Integration
+ 
+- If combining multiple instruction sources, apply precedence BEFORE hashing for governance; this server’s local instructions should sit at precedence tier 0.
+- Tag external entries (e.g., categories `source:external`) so downstream filtering remains explicit.
+- Do not allow external sources to overwrite local ids silently—emit a warning and skip or require explicit user approval.
+
+### J. Learning / Adaptive Ranking (Client-Side)
+ 
+- Use `usage/hotset` to bootstrap ranking of frequently used instructions; combine with recency (lastUsedAt) decay for personalization.
+- Never feed raw body text externally without user consent; treat instruction content as potentially sensitive IP.
+- Track success metrics (acceptance, modification, rejection) out-of-band from this protocol if you need advanced learning.
+
+### K. Caching Guidelines
+ 
+- Persist only: last `hash`, last `governanceHash`, and (optionally) `meta/tools` snapshot; revalidate hashes each new session.
+- Avoid persisting entire instruction bodies unless offline mode required; prefer on-demand `instructions/get` or incremental diffs.
+
+### L. Security Hygiene
+ 
+- Treat all textual instruction data as untrusted until validated; never execute embedded code segments.
+- Enforce a max body length client-side (mirror server expectations) to prevent UI performance degradation.
+- Strip or escape any instruction-provided HTML before rendering in rich clients.
+
+### M. Telemetry (Ethical Use)
+ 
+- Aggregate usage counts; avoid sending per-instruction body content in telemetry.
+- Respect user / workspace privacy; provide opt-outs for analytics layers built above usage tracking.
+
+### N. Version Awareness
+ 
+- Monitor `schemaVersion` on list/diff results; if encountering a future version unknown to client, degrade to read-only mode until client updated.
+
+### O. Prompt Review Integration
+ 
+- Use `prompt/review` pre-deployment for generated or edited instructions; fail CI if severity meets threshold (e.g., error > 0).
+- Display summarized counts in UI; link to detailed issues panel.
+
+---
+Clients adopting these practices achieve deterministic sync, minimized bandwidth, and robust governance drift detection while avoiding accidental mutation in read-only contexts.
+
 All experimental contracts may evolve; pin a version and validate with contract tests (npm run test:contracts) before upgrading.
 

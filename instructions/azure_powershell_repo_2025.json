@@ -1,0 +1,36 @@
+{
+  "id": "azure_powershell_repo_2025",
+  "title": "Azure PowerShell Repository Reference",
+  "body": "Azure PowerShell repository (Azure/azure-powershell) contains cmdlets and modules for Azure resource management. Includes authentication patterns, resource deployment scripts, automation examples, and Azure service integration. Critical for Azure infrastructure as code, automation, and PowerShell-based Azure management workflows.",
+  "priority": 18,
+  "audience": "all",
+  "requirement": "recommended",
+  "categories": [
+    "automation",
+    "azure",
+    "cloud",
+    "powershell",
+    "repository"
+  ],
+  "sourceHash": "1a3b108d31774991668febb1e61ebff6642e7a207bde7aa0ca98a911f457521f",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-26T16:38:52.352Z",
+  "updatedAt": "2025-08-26T16:38:52.352Z",
+  "riskScore": 102,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T16:38:52.352Z",
+  "nextReviewDue": "2025-09-25T16:38:52.352Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T16:38:52.352Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Azure PowerShell repository (Azure/azure-powershell) contains cmdlets and modules for Azure resource management. Includes authentication patterns, resource d...",
+  "reviewIntervalDays": 30
+}

@@ -11,7 +11,7 @@
     "security"
   ],
   "sourceHash": "b3ebc15e714f0fcf85701e5b4da79f04afa73df339929daefdff2c303e9a807f",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-26T02:17:35.092Z",
   "updatedAt": "2025-08-26T02:17:35.092Z",
   "riskScore": 140,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Always obtain tokens via registered user login; never embed static secrets. Expire or revoke unused API keys promptly and avoid sharing ephemeral keys across..."
+  "semanticSummary": "Always obtain tokens via registered user login; never embed static secrets. Expire or revoke unused API keys promptly and avoid sharing ephemeral keys across...",
+  "reviewIntervalDays": 30
 }

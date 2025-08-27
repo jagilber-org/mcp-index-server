@@ -1,0 +1,36 @@
+{
+  "id": "repo_confirmation_gate_2025",
+  "title": "Repository Gate: Confirmation Gate",
+  "body": "PRIORITY 0 REPO RULE: Confirmation Gate - RISKY/UNKNOWN classifications must be confirmed. Logic: !((classification in ['RISKY','UNKNOWN']) && (confirmedFlag == false)). If classification is RISKY or UNKNOWN and confirmedFlag is false, reject the operation. Failure action: REJECT with message 'Confirmation required.' This gate must be evaluated before executing any classified commands.",
+  "priority": 0,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "classification",
+    "confirmation",
+    "gate",
+    "priority-0",
+    "repo-rule"
+  ],
+  "sourceHash": "b7368c685c5cc12cebf0551407e8a7fac1addeed360c70afe35c947436790338",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-27T01:20:02.357Z",
+  "updatedAt": "2025-08-27T01:20:02.357Z",
+  "riskScore": 149,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-27T01:20:02.357Z",
+  "nextReviewDue": "2025-09-26T01:20:02.357Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-27T01:20:02.357Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PRIORITY 0 REPO RULE: Confirmation Gate - RISKY/UNKNOWN classifications must be confirmed. Logic: !((classification in ['RISKY','UNKNOWN']) && (confirmedFlag...",
+  "reviewIntervalDays": 30
+}

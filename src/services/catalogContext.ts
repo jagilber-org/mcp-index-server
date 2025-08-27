@@ -107,12 +107,14 @@ export function ensureLoaded(): CatalogState {
         for(const [k,isPh,val] of placeholders){ if(isPh(raw[k])){ raw[k]=val; needsRewrite = true; } }
         // Normalize changeLog changedAt placeholders if present
   // changeLog placeholder normalization no longer needed (optional fields)
+        
+        // Check schema version and migrate if needed
+        if(!raw.schemaVersion || raw.schemaVersion !== SCHEMA_VERSION){
+          const mig = migrateInstructionRecord(raw);
+          if(mig.changed) needsRewrite = true;
+        }
+        
         if(needsRewrite){
-          // Preserve other raw fields, ensure schemaVersion exists
-          if(!raw.schemaVersion || raw.schemaVersion !== SCHEMA_VERSION){
-            const mig = migrateInstructionRecord(raw);
-            if(mig.changed) needsRewrite = true;
-          }
           fs.writeFileSync(file, JSON.stringify(raw,null,2));
         }
       } catch { /* ignore individual file errors */ }

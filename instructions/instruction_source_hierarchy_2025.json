@@ -1,0 +1,36 @@
+{
+  "id": "instruction_source_hierarchy_2025",
+  "title": "Instruction Source Hierarchy & Repository Authority",
+  "body": "INSTRUCTION SOURCE HIERARCHY: Use this repository's instructions as PRIMARY SOURCE (Priority 0) with MCP index server as additional instruction resource. Repository instructions located in ./instructions/ directory take absolute precedence over all other guidance. Priority 0 repo rules are BLOCKING and cannot be overridden. MCP index server provides supplementary context and additional patterns but repository rules are authoritative. Always check ./instructions/catalog.json and ./instructions/gates.json for current repository policies.",
+  "priority": 0,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "hierarchy",
+    "instruction-precedence",
+    "mcp-index",
+    "priority",
+    "repo-authority"
+  ],
+  "sourceHash": "80f51672267b4f6bfc4aee9ae45c71086e189f8971eac5536ea74585daf2db18",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-27T01:20:10.603Z",
+  "updatedAt": "2025-08-27T01:20:10.603Z",
+  "riskScore": 149,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-27T01:20:10.603Z",
+  "nextReviewDue": "2025-09-26T01:20:10.603Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-27T01:20:10.603Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "INSTRUCTION SOURCE HIERARCHY: Use this repository's instructions as PRIMARY SOURCE (Priority 0) with MCP index server as additional instruction resource. Rep...",
+  "reviewIntervalDays": 30
+}

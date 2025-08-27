@@ -1,0 +1,36 @@
+{
+  "id": "servicefabric_generators_2025",
+  "title": "Service Fabric Yeoman Generators",
+  "body": "Service Fabric Yeoman generators repository (Azure/generator-azuresfcsharp, Azure/generator-azuresfjava) provides project scaffolding tools for Service Fabric applications. Contains templates for C# and Java applications, reliable services, stateful/stateless services, and actor services. Essential for rapid Service Fabric application development and following best practices from project inception.",
+  "priority": 30,
+  "audience": "all",
+  "requirement": "recommended",
+  "categories": [
+    "repository",
+    "scaffolding",
+    "service-fabric",
+    "templates",
+    "yeoman"
+  ],
+  "sourceHash": "73db9343e94a108fb3384c76001813e2db08c0bc2fc9f2955e143aa161a42d8b",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-26T16:40:16.091Z",
+  "updatedAt": "2025-08-26T16:40:16.091Z",
+  "riskScore": 90,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T16:40:16.091Z",
+  "nextReviewDue": "2025-10-25T16:40:16.091Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T16:40:16.091Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Service Fabric Yeoman generators repository (Azure/generator-azuresfcsharp, Azure/generator-azuresfjava) provides project scaffolding tools for Service Fabri...",
+  "reviewIntervalDays": 60
+}

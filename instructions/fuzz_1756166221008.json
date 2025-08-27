@@ -7,7 +7,7 @@
   "requirement": "optional",
   "categories": [],
   "sourceHash": "0967115f2813a3541eaef77de9d9d5773f1c0c04314b0bbfe4ff3b3b1c55b5d5",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-25T23:57:01.008Z",
   "updatedAt": "2025-08-25T23:57:01.028Z",
   "riskScore": 91,
@@ -25,5 +25,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "same"
+  "semanticSummary": "same",
+  "reviewIntervalDays": 30
 }

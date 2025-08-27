@@ -12,7 +12,7 @@
     "tracing"
   ],
   "sourceHash": "318189201c03509ec1e04b14f6da39f0c366cf859e16a957d18759cad52c74bf",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-25T23:55:38.302Z",
   "updatedAt": "2025-08-25T23:56:42.249Z",
   "riskScore": 137,
@@ -35,5 +35,6 @@
       "summary": "fields update"
     }
   ],
-  "semanticSummary": "Compare baseline vs incident trace sets: surface added/removed spans, latency regressions >20%, and new external dependencies."
+  "semanticSummary": "Compare baseline vs incident trace sets: surface added/removed spans, latency regressions >20%, and new external dependencies.",
+  "reviewIntervalDays": 30
 }

@@ -11,7 +11,7 @@
     "security"
   ],
   "sourceHash": "d5216aa99dc7cea51f5930a69fd4f731a19284bbf315e5c88a566a21bd34f3a4",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-26T02:17:35.098Z",
   "updatedAt": "2025-08-26T02:17:35.098Z",
   "riskScore": 138,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Use text obfuscation with the least strict security level that meets compliance; escalating from standard->strict->paranoid adds latency. Justify any paranoi..."
+  "semanticSummary": "Use text obfuscation with the least strict security level that meets compliance; escalating from standard->strict->paranoid adds latency. Justify any paranoi...",
+  "reviewIntervalDays": 30
 }

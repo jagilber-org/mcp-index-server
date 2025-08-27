@@ -12,7 +12,7 @@
     "triage"
   ],
   "sourceHash": "9e37939130bca68ddaba260530233e5ed684a18ebc66b734286ed60b19302748",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-25T23:55:38.286Z",
   "updatedAt": "2025-08-25T23:56:31.435Z",
   "riskScore": 138,
@@ -35,5 +35,6 @@
       "summary": "fields update"
     }
   ],
-  "semanticSummary": "For a defect: restate symptoms, isolate minimal repro steps, list top 3 hypotheses with supporting signals, and propose next instrumented check."
+  "semanticSummary": "For a defect: restate symptoms, isolate minimal repro steps, list top 3 hypotheses with supporting signals, and propose next instrumented check.",
+  "reviewIntervalDays": 30
 }

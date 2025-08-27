@@ -1,0 +1,37 @@
+{
+  "id": "repository_instruction_hierarchy_2025",
+  "title": "Repository Instructions as Primary Authority",
+  "body": "PRIMARY INSTRUCTION SOURCE HIERARCHY: Always prioritize instructions from the local repository (c:\\github\\jagilber\\powershellScripts) over MCP Index Server instructions when conflicts exist. Repository-based guidance takes precedence in this order: 1) WORKSPACE-KNOWLEDGE-INDEX.md - Critical agent startup knowledge base containing tool preferences, security classifications, error handling patterns, and operational workflows, 2) README.md - Project goals, conventions, script structure standards, and quick start guidance, 3) MCP_INDEX_GUIDE.md - MCP server integration specifics, 4) MCP_IMPLEMENTATION_SUMMARY.md - Implementation details and status. MCP Index Server instructions serve as SUPPLEMENTARY guidance only when repository instructions don't cover specific scenarios. Repository instructions reflect the actual codebase context, tested workflows, and project-specific requirements. When repository instructions conflict with MCP Index Server instructions, always follow repository guidance. The repository maintains the authoritative source of truth for this workspace's operational patterns, security policies, and development practices.",
+  "priority": 0,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "authority",
+    "hierarchy",
+    "instructions",
+    "mcp",
+    "repository",
+    "workspace"
+  ],
+  "sourceHash": "fbccf8b6adfeb3e2b039a9b18925c298f6149f4b9705160427672ff6526cacff",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-27T01:18:37.695Z",
+  "updatedAt": "2025-08-27T01:18:37.695Z",
+  "riskScore": 149,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-27T01:18:37.695Z",
+  "nextReviewDue": "2025-09-26T01:18:37.695Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-27T01:18:37.695Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PRIMARY INSTRUCTION SOURCE HIERARCHY: Always prioritize instructions from the local repository (c:\\github\\jagilber\\powershellScripts) over MCP Index Server i...",
+  "reviewIntervalDays": 30
+}

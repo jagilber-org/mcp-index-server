@@ -28,7 +28,7 @@ export class ClassificationService {
   const priorityTier = entry.priorityTier || this.computePriorityTier(entry.priority, entry.requirement);
   const classification = entry.classification || 'internal';
   const lastReviewedAt = entry.lastReviewedAt || now;
-  const reviewIntervalDays = this.reviewIntervalDays(priorityTier, entry.requirement);
+  const reviewIntervalDays = entry.reviewIntervalDays ?? this.reviewIntervalDays(priorityTier, entry.requirement);
   const nextReviewDue = entry.nextReviewDue || new Date(Date.now() + reviewIntervalDays*86400_000).toISOString();
   const changeLog = entry.changeLog && entry.changeLog.length ? entry.changeLog : [{ version, changedAt: entry.createdAt || now, summary: 'initial import' }];
   const semanticSummary = entry.semanticSummary || this.deriveSummary(entry.body);
@@ -54,6 +54,7 @@ export class ClassificationService {
       classification,
       lastReviewedAt,
       nextReviewDue,
+      reviewIntervalDays,
       changeLog: changeLog,
       supersedes: entry.supersedes,
       semanticSummary
@@ -103,6 +104,11 @@ export class ClassificationService {
     if(tier === 'P2') return 60;
     if(tier === 'P3') return 90;
     return 120;
+  }
+
+  // Public helper for schema migration - computes review interval
+  computeReviewIntervalDays(tier: 'P1'|'P2'|'P3'|'P4', requirement: RequirementLevel): number {
+    return this.reviewIntervalDays(tier, requirement);
   }
 
   private deriveSummary(body: string): string {

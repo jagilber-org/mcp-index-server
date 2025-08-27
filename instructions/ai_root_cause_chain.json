@@ -12,7 +12,7 @@
     "debugging"
   ],
   "sourceHash": "46565562ffc267c63f91867cbfdee81aa08bda4a0d1796c374ecf858a482c303",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-25T23:55:38.298Z",
   "updatedAt": "2025-08-25T23:56:38.446Z",
   "riskScore": 132,
@@ -35,5 +35,6 @@
       "summary": "fields update"
     }
   ],
-  "semanticSummary": "When hypothesizing root cause, express causal chain (Trigger -> Fault -> Propagation -> Symptom) and cite concrete evidence for each link."
+  "semanticSummary": "When hypothesizing root cause, express causal chain (Trigger -> Fault -> Propagation -> Symptom) and cite concrete evidence for each link.",
+  "reviewIntervalDays": 30
 }

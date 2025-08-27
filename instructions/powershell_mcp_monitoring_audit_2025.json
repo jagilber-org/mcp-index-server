@@ -1,0 +1,36 @@
+{
+  "id": "powershell_mcp_monitoring_audit_2025",
+  "title": "PowerShell MCP Monitoring & Audit System",
+  "body": "PowerShell MCP Server provides comprehensive monitoring and audit system with three logging mechanisms: 1) MCP Standard Logging - Real-time notifications/message for advanced MCP clients, stderr logging for VS Code/GitHub Copilot; 2) File-based Audit Trail - Structured logs in ./logs/powershell-mcp-audit-YYYY-MM-DD.log with security classifications, execution results, authentication events, error conditions, performance metrics (execution time, memory usage); 3) Real-time Monitoring Options - PowerShell: .\\Simple-LogMonitor.ps1 -Follow, Separate Window: .\\Start-SimpleLogMonitor.ps1, Manual: Get-Content ./logs/powershell-mcp-audit-*.log -Wait -Tail 10. Compliance features include PII sanitization, configurable log retention, structured JSON audit entries, real-time threat detection alerts, process tracking with Client PID → Server PID lineage.",
+  "priority": 12,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "audit",
+    "logging",
+    "mcp",
+    "monitoring",
+    "powershell"
+  ],
+  "sourceHash": "1340c02fec907183e05b5e377955ad952cae8cf360ebc4c71ef6cc8afc9da26b",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-26T23:37:18.412Z",
+  "updatedAt": "2025-08-26T23:37:18.412Z",
+  "riskScore": 138,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T23:37:18.412Z",
+  "nextReviewDue": "2025-09-25T23:37:18.412Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T23:37:18.412Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PowerShell MCP Server provides comprehensive monitoring and audit system with three logging mechanisms: 1) MCP Standard Logging - Real-time notifications/mes...",
+  "reviewIntervalDays": 30
+}

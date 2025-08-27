@@ -1,0 +1,35 @@
+{
+  "id": "dotnet_repos",
+  "title": ".NET Official Repositories",
+  "body": "Official .NET repositories collection:\n\n- Main .NET: https://github.com/dotnet/core (releases, docs, announcements)\n- Runtime: https://github.com/dotnet/runtime\n- ASP.NET Core: https://github.com/dotnet/aspnetcore\n- Entity Framework: https://github.com/dotnet/efcore\n- C# Language: https://github.com/dotnet/csharplang\n\nThese are the official Microsoft repositories containing source code, documentation, and issue tracking for the .NET ecosystem.",
+  "priority": 20,
+  "audience": "developers",
+  "requirement": "recommended",
+  "categories": [
+    "aspnet",
+    "csharp",
+    "dotnet",
+    "microsoft"
+  ],
+  "sourceHash": "0fbbc6bb0f3b082362560c1c8be61a66e2bde1a8a3cd823bff8e56f47c03b50e",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-26T16:22:38.247Z",
+  "updatedAt": "2025-08-26T16:22:38.247Z",
+  "riskScore": 100,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T16:22:38.247Z",
+  "nextReviewDue": "2025-09-25T16:22:38.247Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T16:22:38.247Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Official .NET repositories collection:",
+  "reviewIntervalDays": 30
+}

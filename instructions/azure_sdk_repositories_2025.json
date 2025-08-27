@@ -1,0 +1,36 @@
+{
+  "id": "azure_sdk_repositories_2025",
+  "title": "Azure SDK Repositories Reference",
+  "body": "Azure SDK repositories (Azure/azure-sdk-for-net, Azure/azure-sdk-for-python, etc.) provide official client libraries for Azure services. Contains authentication patterns, service-specific APIs, retry policies, logging configurations, and integration examples. Essential for building applications that interact with Azure services using modern SDK patterns.",
+  "priority": 20,
+  "audience": "all",
+  "requirement": "recommended",
+  "categories": [
+    "api",
+    "azure",
+    "client-libraries",
+    "repository",
+    "sdk"
+  ],
+  "sourceHash": "e4a9da66d61275a41bdfafdfb0763becc8a14f95f5a298f1372dd91006e1fc2f",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-26T16:38:57.322Z",
+  "updatedAt": "2025-08-26T16:38:57.322Z",
+  "riskScore": 100,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T16:38:57.322Z",
+  "nextReviewDue": "2025-09-25T16:38:57.322Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T16:38:57.322Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Azure SDK repositories (Azure/azure-sdk-for-net, Azure/azure-sdk-for-python, etc.) provide official client libraries for Azure services. Contains authenticat...",
+  "reviewIntervalDays": 30
+}

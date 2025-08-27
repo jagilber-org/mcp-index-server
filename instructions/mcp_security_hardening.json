@@ -11,7 +11,7 @@
     "security"
   ],
   "sourceHash": "ae732fb0e52a5f07828ad55e0f6df63ecf3bade5bcc1a1aae516bcd737f4031b",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-26T02:17:35.119Z",
   "updatedAt": "2025-08-26T02:17:35.119Z",
   "riskScore": 132,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Enable strict securityLevel only for regulated datasets, restrict pattern additions to approved roles, and audit access logs monthly for anomalous key usage."
+  "semanticSummary": "Enable strict securityLevel only for regulated datasets, restrict pattern additions to approved roles, and audit access logs monthly for anomalous key usage.",
+  "reviewIntervalDays": 30
 }

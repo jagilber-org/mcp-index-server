@@ -1,0 +1,36 @@
+{
+  "id": "powershell_mcp_ai_agent_integration_2025",
+  "title": "PowerShell MCP AI Agent Integration Best Practices",
+  "body": "PowerShell MCP AI Agent integration best practices: 1) Always check help tool first to understand server capabilities, 2) Test with ai-agent-test tool to validate server functionality before production use, 3) Start with SAFE commands (Get-* commands) for information gathering, 4) Handle confirmations by including 'confirmed: true' for RISKY operations, 5) Monitor security levels in response securityAssessment field. Error handling: check 'success' field in responses, review 'securityAssessment' for blocked commands, use syntax-check tool before executing complex scripts, implement retry logic for transient failures. Performance optimization: set appropriate timeouts for long-running commands, use workingDirectory parameter to avoid path issues, batch related operations when possible, monitor execution time in responses. Testing validation uses ai-agent-test with testSuite options: basic, security, monitoring, comprehensive.",
+  "priority": 11,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "ai-agent",
+    "best-practices",
+    "integration",
+    "mcp",
+    "powershell"
+  ],
+  "sourceHash": "42159f104d9c7eb22bf0b066ee948b5a1df1129f3f01ddaf200052971a9b1d05",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-26T23:37:58.211Z",
+  "updatedAt": "2025-08-26T23:37:58.211Z",
+  "riskScore": 139,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-26T23:37:58.211Z",
+  "nextReviewDue": "2025-09-25T23:37:58.211Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-26T23:37:58.211Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PowerShell MCP AI Agent integration best practices: 1) Always check help tool first to understand server capabilities, 2) Test with ai-agent-test tool to val...",
+  "reviewIntervalDays": 30
+}

@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { ClassificationService } from './classificationService';
+import { SCHEMA_VERSION, migrateInstructionRecord } from '../versioning/schemaVersion';
 import Ajv from 'ajv';
 // Ajv v8 needs explicit format support when strict mode or newer setups; add common formats
 import addFormats from 'ajv-formats';
@@ -39,6 +40,20 @@ export class CatalogLoader {
       const full = path.join(dir, f);
       try {
         const raw = JSON.parse(fs.readFileSync(full,'utf8')) as InstructionEntry;
+        
+        // Check schema version and migrate if needed
+        let needsRewrite = false;
+        if(!raw.schemaVersion || raw.schemaVersion !== SCHEMA_VERSION){
+          const mig = migrateInstructionRecord(raw as unknown as Record<string, unknown>);
+          if(mig.changed) {
+            needsRewrite = true;
+          }
+        }
+        
+        if(needsRewrite){
+          fs.writeFileSync(full, JSON.stringify(raw, null, 2));
+        }
+        
   const mutRaw = raw as InstructionEntry;
   // Derive minimal required fields for backward compatibility (new relaxed schema allows missing governance fields)
   const nowIso = new Date().toISOString();

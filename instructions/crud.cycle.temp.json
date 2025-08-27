@@ -11,7 +11,7 @@
     "updated"
   ],
   "sourceHash": "562a7119ea7c54811b83115f45f81f90d0ab65ae6a5b9fa373ab7b0e64923365",
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "createdAt": "2025-08-26T04:38:28.953Z",
   "updatedAt": "2025-08-26T04:38:30.861Z",
   "riskScore": 50,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Cycle v1 body"
+  "semanticSummary": "Cycle v1 body",
+  "reviewIntervalDays": 90
 }

@@ -1,17 +1,27 @@
 {
   "ai_code_nav_baseline": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-27T03:32:50.234Z",
-    "lastUsedAt": "2025-08-27T03:32:50.234Z"
+    "firstSeenTs": "2025-08-27T04:14:35.926Z",
+    "lastUsedAt": "2025-08-27T04:14:35.926Z"
   },
   "ai_debug_triage_prompt": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-27T03:32:52.876Z",
-    "lastUsedAt": "2025-08-27T03:32:52.876Z"
+    "firstSeenTs": "2025-08-27T04:14:39.124Z",
+    "lastUsedAt": "2025-08-27T04:14:39.124Z"
   },
-  "ai_diff_minimality_rule": {
+  "rate-limit-test-entry": {
+    "usageCount": 14,
+    "firstSeenTs": "2025-08-27T04:14:35.182Z",
+    "lastUsedAt": "2025-08-27T04:14:42.315Z"
+  },
+  "rate-test-1": {
+    "usageCount": 10,
+    "firstSeenTs": "2025-08-27T04:14:43.164Z",
+    "lastUsedAt": "2025-08-27T04:14:43.233Z"
+  },
+  "rate-test-2": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-27T03:32:53.141Z",
-    "lastUsedAt": "2025-08-27T03:32:53.141Z"
+    "firstSeenTs": "2025-08-27T04:14:43.240Z",
+    "lastUsedAt": "2025-08-27T04:14:43.240Z"
   }
 }

@@ -1,0 +1,30 @@
+{
+  "id": "rate-limit-test-entry",
+  "title": "Test Entry for Rate Limiting",
+  "body": "Test entry used for rate limiting tests",
+  "priority": 1,
+  "audience": "individual",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "6dae55c1d8bcff8a99d5bdbee0263fb0258feee9e9438561990a053b2d920891",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-27T04:14:32.733Z",
+  "updatedAt": "2025-08-27T04:14:32.733Z",
+  "riskScore": 104,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-27T04:14:42.316Z",
+  "nextReviewDue": "2025-09-26T04:14:42.316Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-27T04:14:32.733Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Test entry used for rate limiting tests"
+}

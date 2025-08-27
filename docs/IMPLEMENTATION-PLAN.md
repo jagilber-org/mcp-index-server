@@ -26,13 +26,14 @@ Phase 0 (Preparation)
 - Add metrics counters: featureActivated{name}, propertyUpdate{name}, updateErrors{name}.
 - Baseline performance snapshot (mutation + list operations).
 
-Phase 1 (Usage Core)
+Phase 1 (Usage Core) ✅ COMPLETE
 
-- Implement in-memory usage tracking keyed by id; persist lazily (batch flush every N seconds or M mutations, whichever first) to minimize write amplification.
-- On instruction read (get/list/inspect) increment usage if feature enabled.
-- Persist fields into instruction JSON (add/update shape) under metadata.usage.
-- Tests: unit (increment logic), integration (add->get increments), persistence (restart retains counts), concurrency (fused increments under parallel reads).
-- Guardrails: Max increments per second per id (simple rate limiter) to avoid runaway from tight loops.
+- ✅ Implement in-memory usage tracking keyed by id; persist lazily (batch flush every N seconds or M mutations, whichever first) to minimize write amplification.
+- ✅ On instruction read (get/list/inspect) increment usage if feature enabled.
+- ✅ Persist fields into instruction JSON (add/update shape) under metadata.usage.
+- ✅ Tests: unit (increment logic), integration (add->get increments), persistence (restart retains counts), concurrency (fused increments under parallel reads).
+- ✅ Guardrails: Max increments per second per id (10/sec rate limiter) to avoid runaway from tight loops.
+- ✅ Performance baseline script: measures <5% overhead target for mutation and list operations.
 
 Phase 2 (Temporal Windowing)
 
@@ -80,7 +81,7 @@ Feature Flags & Env
 
 Success Metrics
 
-- Phase 1: <5% mutation latency increase (p95) vs baseline; zero data loss across restart test.
+- ✅ Phase 1: <5% mutation latency increase (p95) vs baseline; zero data loss across restart test. (Use `npm run perf:baseline` to verify)
 - Phase 3: Hotset request p95 < 20ms at 10k entries.
 - Drift integrity tool: O(n) scan completes < 1s at 5k entries.
 

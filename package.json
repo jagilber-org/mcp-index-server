@@ -30,6 +30,7 @@
     "release:minor": "pwsh scripts/bump-version.ps1 minor",
     "release:major": "pwsh scripts/bump-version.ps1 major",
     "perf": "ts-node src/perf/benchmark.ts",
+    "perf:baseline": "npm run build && node dist/src/scripts/runPerformanceBaseline.js",
     "build:verify": "pwsh scripts/build.ps1",
     "docs:tools": "node scripts/generate-tools-doc.cjs"
   },

@@ -16,6 +16,29 @@ let state: CatalogState | null = null;
 const usageSnapshotPath = path.join(process.cwd(),'data','usage-snapshot.json');
 interface UsagePersistRecord { usageCount?: number; firstSeenTs?: string; lastUsedAt?: string }
 let usageDirty = false; let usageWriteTimer: NodeJS.Timeout | null = null;
+
+// Rate limiting for usage increments (Phase 1 requirement)
+const USAGE_RATE_LIMIT_PER_SECOND = 10; // max increments per id per second
+const usageRateLimiter = new Map<string, { count: number; windowStart: number }>();
+function checkUsageRateLimit(id: string): boolean {
+  const now = Date.now();
+  const windowStart = Math.floor(now / 1000) * 1000; // 1-second windows
+  
+  const current = usageRateLimiter.get(id);
+  if (!current || current.windowStart !== windowStart) {
+    // New window or first access
+    usageRateLimiter.set(id, { count: 1, windowStart });
+    return true;
+  }
+  
+  if (current.count >= USAGE_RATE_LIMIT_PER_SECOND) {
+    incrementCounter('usage:rateLimited');
+    return false;
+  }
+  
+  current.count++;
+  return true;
+}
 function ensureDataDir(){ const dir = path.dirname(usageSnapshotPath); if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true}); }
 function loadUsageSnapshot(){ try { if(fs.existsSync(usageSnapshotPath)) return JSON.parse(fs.readFileSync(usageSnapshotPath,'utf8')); } catch { /* ignore */ } return {}; }
 function scheduleUsageFlush(){ usageDirty = true; if(usageWriteTimer) return; usageWriteTimer = setTimeout(flushUsageSnapshot,500); }
@@ -155,6 +178,12 @@ export function removeEntry(id:string){
 export function scheduleUsagePersist(){ scheduleUsageFlush(); }
 export function incrementUsage(id:string){
   if(!hasFeature('usage')){ incrementCounter('usage:gated'); return { featureDisabled:true }; }
+  
+  // Phase 1 rate limiting: prevent runaway from tight loops
+  if (!checkUsageRateLimit(id)) {
+    return { id, rateLimited: true, usageCount: 0 };
+  }
+  
   const st = ensureLoaded();
   const e = st.byId.get(id);
   if(!e) return null;

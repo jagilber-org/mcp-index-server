@@ -1,0 +1,37 @@
+{
+  "id": "repo_specific_instruction_policy_2025",
+  "title": "Repository-Specific Instruction Creation Policy",
+  "body": "REPOSITORY INSTRUCTION POLICY: Instructions relevant ONLY to this mcp-index-server repository MUST be written locally in ./instructions/ directory. Examples requiring local instructions: 1) MCP Index Server development practices, testing strategies, schema migration procedures; 2) Project-specific build, deployment, or architecture guidance; 3) Repository governance, ownership, and contribution policies; 4) Local tooling configuration, VS Code settings, or development environment setup; 5) Project roadmaps, implementation plans, or feature specifications; 6) Bug tracking, security protocols, or release management specific to this repo. EXTERNAL AVOIDANCE: Do NOT rely on external MCP servers for repo-specific context - they lack project intimacy and may provide generic or conflicting guidance. LOCAL AUTHORITY: This repo's instruction catalog is authoritative for all mcp-index-server related decisions, patterns, and policies. When creating instructions for repo-specific concerns, always write locally to ensure accuracy and maintain version control alignment.",
+  "rationale": "Ensures repository-specific instructions remain under local control, prevents external instruction pollution, maintains accurate project context, and preserves instruction quality through direct repository alignment.",
+  "priority": 1,
+  "audience": "developers",
+  "requirement": "mandatory",
+  "categories": [
+    "instruction-creation",
+    "local-authority",
+    "policy",
+    "repo-specific",
+    "version-control"
+  ],
+  "sourceWorkspace": "mcp-index-server-repo",
+  "createdByAgent": "github-copilot",
+  "sourceHash": "",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-27T06:00:00.000Z",
+  "updatedAt": "2025-08-27T06:00:00.000Z",
+  "version": "1.0.0",
+  "owner": "maintainers",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "status": "approved",
+  "lastReviewedAt": "2025-08-27T06:00:00.000Z",
+  "nextReviewDue": "2025-09-26T06:00:00.000Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-27T06:00:00.000Z",
+      "summary": "Initial creation for repo-specific instruction policy"
+    }
+  ]
+}

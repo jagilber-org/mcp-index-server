@@ -1,0 +1,25 @@
+{
+  "id": "mcp_index_server_ai_assistant_guidance_2025",
+  "title": "AI Assistant Guidance for MCP Index Server Development",
+  "body": "AI ASSISTANT BEST PRACTICES: When working with this MCP Index Server repository, always prioritize local repository instructions and documentation over external sources. Use semantic_search and grep_search to understand current implementation before making changes. Read comprehensive context from docs/ folder (PRD.md, ARCHITECTURE.md, IMPLEMENTATION-PLAN.md) before proposing solutions. PREFERRED WORKFLOW: 1) Analyze current implementation status via tests (npm test) and existing code, 2) Check feature flags and environment configuration, 3) Review relevant documentation sections, 4) Propose changes aligned with established patterns and roadmap. CODE QUALITY: Maintain TypeScript strict mode, follow existing error handling patterns (fail-open), preserve test coverage, use established services (catalogContext, handlers, features). TESTING REQUIREMENTS: All changes require corresponding tests, run full test suite before committing, maintain governance hash stability, validate migration idempotence. MUTATION SAFETY: Default to read-only operations, require explicit MCP_ENABLE_MUTATION confirmation for write operations, preserve backward compatibility, maintain schema version consistency. PERFORMANCE AWARENESS: Consider memory usage (<2KB per entry overhead), maintain startup time targets (<2s at 10k entries), optimize for list/diff latency (<80ms P95).",
+  "priority": 6,
+  "audience": "ai-assistants",
+  "requirement": "mandatory",
+  "categories": [
+    "ai-assistant",
+    "guidance",
+    "best-practices",
+    "workflow",
+    "development",
+    "safety"
+  ],
+  "sourceHash": "", 
+  "schemaVersion": "2",
+  "createdAt": "2025-08-27T05:44:00.000Z",
+  "updatedAt": "2025-08-27T05:44:00.000Z",
+  "version": "1.0.0",
+  "owner": "team:mcp-maintainers",
+  "priorityTier": "P1", 
+  "classification": "internal",
+  "riskScore": 0
+}

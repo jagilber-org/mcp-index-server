@@ -1,0 +1,36 @@
+{
+  "id": "mcp_dual_source_configuration_guidance_2025",
+  "title": "MCP Dual-Source Configuration Guidance for AI Assistants",
+  "body": "MCP DUAL-SOURCE SETUP: Configure AI assistants (Copilot, GPT-5, Claude) with TWO MCP instruction sources in priority order: PRIMARY (Priority 0): This repository's MCP Index Server (mcp-index-server) - contains authoritative project context, development practices, schema specifications, testing strategies, and repository governance. SECONDARY (Priority 1): Microsoft Index Server MCP - provides broader ecosystem patterns, general best practices, and supplementary context. CONFIGURATION DETAILS: 1) Local MCP server runs from this repo using 'npm start' or VS Code MCP integration; 2) MS Index Server configured as additional resource with lower precedence; 3) Conflict resolution favors local instructions by ID matching; 4) External instructions tagged with 'source:external' category; 5) Local instructions remain untagged or tagged 'source:local'. BENEFITS: Combines project-specific accuracy with ecosystem breadth, maintains local authority while gaining external context, enables instruction source transparency through provenance tracking.",
+  "rationale": "Provides clear configuration guidance for dual-source MCP setups, ensures optimal balance between local authority and external context, and maintains instruction source clarity.",
+  "priority": 2,
+  "audience": "developers",
+  "requirement": "recommended",
+  "categories": [
+    "configuration",
+    "dual-source",
+    "mcp-setup",
+    "priority-management"
+  ],
+  "sourceWorkspace": "mcp-index-server-repo",
+  "createdByAgent": "github-copilot",
+  "sourceHash": "",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-27T06:00:00.000Z",
+  "updatedAt": "2025-08-27T06:00:00.000Z",
+  "version": "1.0.0",
+  "owner": "platform",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "status": "approved",
+  "lastReviewedAt": "2025-08-27T06:00:00.000Z",
+  "nextReviewDue": "2025-10-26T06:00:00.000Z",
+  "reviewIntervalDays": 60,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-27T06:00:00.000Z",
+      "summary": "Initial creation for MCP dual-source configuration guidance"
+    }
+  ]
+}

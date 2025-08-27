@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { waitFor } from './testUtils';
+import { waitFor, waitForServerReady } from './testUtils';
 import { waitForDist } from './distReady';
 
 // Contract style: ensure that overwrite semantics act as an idempotent update pathway and registry advertises add tool only.
@@ -24,9 +24,7 @@ describe('instructions/update contract (via instructions/add overwrite)', () => 
 		await waitForDist();
 		const server = startServer(true);
 		const out:string[]=[]; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
-		await new Promise(r=> setTimeout(r,60));
-		send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'contract', version:'0' }, capabilities:{ tools:{} } } });
-		await waitFor(()=> !!collect(out,1));
+		await waitForServerReady(server, out, { initId: 8001, metaId: 8002 });
 		send(server,{ jsonrpc:'2.0', id:2, method:'tools/list', params:{} });
 		await waitFor(()=> !!collect(out,2));
 		const line = collect(out,2)!; const obj = JSON.parse(line).result as { tools: { name:string }[] };
@@ -42,9 +40,7 @@ describe('instructions/update contract (via instructions/add overwrite)', () => 
 		await waitForDist();
 		const server = startServer(true);
 		const out:string[]=[]; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
-		await new Promise(r=> setTimeout(r,60));
-		send(server,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'contract', version:'0' }, capabilities:{ tools:{} } } });
-		await waitFor(()=> !!collect(out,10));
+		await waitForServerReady(server, out, { initId: 8010, metaId: 8011 });
 		send(server,{ jsonrpc:'2.0', id:11, method:'tools/call', params:{ name:'instructions/add', arguments:{ entry:{ id, title:id, body:'One', priority:5, audience:'all', requirement:'optional', categories:['c'] }, overwrite:true, lax:true } } });
 		await waitFor(()=> !!toolParsed(out,11));
 		JSON.parse(fs.readFileSync(file,'utf8')) as { version?:string; body:string }; // initial snapshot ignored for contract

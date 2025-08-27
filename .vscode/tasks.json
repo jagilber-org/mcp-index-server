@@ -246,6 +246,74 @@
 				"-TargetDir",
 				"C:\\mcp\\mcp-index-server"
 			]
+		},
+		{
+			"label": "npm-test",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"test"
+			]
+		},
+		{
+			"label": "release-commit-1.0.1",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git add .; git commit -m 'chore(release): 1.0.1 semantic error hardening & stress test'; git tag v1.0.1 -f; git push --follow-tags || git push --tags --force-with-lease"
+			]
+		},
+		{
+			"label": "cleanup-artifacts",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Remove-Item -Force -ErrorAction SilentlyContinue .build.lock; Get-ChildItem tmp -Directory -Filter 'minimal-author-*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; Get-ChildItem instructions -Filter 'concurrent-*.json' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue; Get-ChildItem instructions -Filter 'fuzz_*.json' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue; Write-Host 'CLEANUP_DONE'"
+			]
+		},
+		{
+			"label": "cleanup-pre-release",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Remove-Item -Force -ErrorAction SilentlyContinue .build.lock; Get-ChildItem tmp -Directory -Filter 'minimal-author-*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'CLEANUP_STAGE_OK'"
+			]
+		},
+		{
+			"label": "build-override-lock",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$env:ALLOW_STALE_BUILD_LOCK='1'; npm run build:verify"
+			]
+		},
+		{
+			"label": "git-commit-release-1.0.1",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"add",
+				"."
+			]
+		},
+		{
+			"label": "git-commit-release-1.0.1-msg",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"commit",
+				"-m",
+				"chore(release): 1.0.1 semantic error hardening, stress tests, build lock improvements"
+			]
 		}
 	]
 }

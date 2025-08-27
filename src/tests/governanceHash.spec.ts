@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { waitForDist } from './distReady';
-import { parseToolPayload } from './testUtils';
+import { parseToolPayload, ensureDir } from './testUtils';
 
 function startServer(){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1' } });
@@ -30,7 +30,7 @@ interface GovProjection { id:string; title:string; version:string; owner:string;
 
 describe('instructions/governanceHash tool (via tools/call)', () => {
   it('detects governance drift (owner change) without body change', async () => {
-    if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir);
+  ensureDir(instructionsDir);
     const id = 'gov_hash_sample';
     const file = path.join(instructionsDir, id + '.json');
     const now = new Date().toISOString();

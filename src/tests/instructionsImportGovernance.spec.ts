@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
-import { waitFor, findResponse } from './testUtils';
+import { waitFor, findResponse, ensureDir, ensureFileExists } from './testUtils';
 
 function startServer(){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1' } });
@@ -12,7 +12,7 @@ function send(proc: ReturnType<typeof startServer>, msg: Record<string, unknown>
 
 describe('instructions/import preserves governance fields', () => {
   const instructionsDir = path.join(process.cwd(),'instructions');
-  beforeAll(()=>{ if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir); });
+  beforeAll(()=>{ ensureDir(instructionsDir); });
 
   it('imports entries with explicit governance untouched', async () => {
     const server = startServer();
@@ -31,7 +31,7 @@ describe('instructions/import preserves governance fields', () => {
     for(let i=0;i<ids.length;i++){
       const id=ids[i];
       const file = path.join(instructionsDir, id + '.json');
-      expect(fs.existsSync(file)).toBe(true);
+  await ensureFileExists(file, 6000);
       const disk = JSON.parse(fs.readFileSync(file,'utf8')) as { version:string; owner:string; priorityTier:string; classification:string; semanticSummary:string; changeLog:{ version:string; changedAt:string; summary:string }[] };
       expect(disk.version).toBe(`3.0.${i}`);
       expect(disk.owner).toBe(`import-owner-${i}`);

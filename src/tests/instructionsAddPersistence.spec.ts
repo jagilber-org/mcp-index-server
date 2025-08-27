@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs'; // still used for initial directory setup
 import os from 'os';
-import { waitFor, parseToolPayload, getResponse, xorResultError, ensureFileExists } from './testUtils';
+import { waitFor, parseToolPayload, getResponse, xorResultError, ensureFileExists, ensureDir, ensureJsonReadable } from './testUtils';
 import { waitForDist } from './distReady';
 
 const ISOLATED_DIR = fs.mkdtempSync(path.join(os.tmpdir(),'instr-persist-'));
@@ -20,7 +20,7 @@ function findLine(lines: string[], id: number): string | undefined {
 
 describe('instructions/add persistence & governance coverage', () => {
   const instructionsDir = ISOLATED_DIR;
-  beforeAll(()=>{ if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir); });
+  beforeAll(()=>{ ensureDir(instructionsDir); });
 
   it('adds multiple unique instructions and retains all on list', async () => {
     // Create 5 fresh ids
@@ -51,6 +51,7 @@ describe('instructions/add persistence & governance coverage', () => {
       expect(env.error, `unexpected error for add ${id}: ${JSON.stringify(env.error)}`).toBeFalsy();
   const file = path.join(instructionsDir, id + '.json');
   await ensureFileExists(file, 6000);
+  await ensureJsonReadable(file, 6000);
   const disk = JSON.parse(fs.readFileSync(file,'utf8'));
       expect(disk.owner).toBe(`owner-${i}`);
       expect(disk.version).toBe('9.9.9');

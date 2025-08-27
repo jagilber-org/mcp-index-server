@@ -208,9 +208,17 @@ export function startTransport(opts: TransportOptions = {}){
         const dur = Date.now() - start;
         const rec = metrics[req.method] || (metrics[req.method] = { count:0,totalMs:0,maxMs:0 });
         rec.count++; rec.totalMs += dur; if(dur > rec.maxMs) rec.maxMs = dur;
-  const errObj = e instanceof Error ? { message: e.message, stack: e.stack } : { message: 'Unknown error', value: e };
+        // Support structured JSON-RPC style errors (objects with numeric code) without coercing to -32603.
+        interface JsonRpcLikeError { code: number; message?: string; data?: Record<string,unknown>; }
+        const maybeErr = e as Partial<JsonRpcLikeError> | null;
+        if(maybeErr && typeof maybeErr === 'object' && Number.isSafeInteger(maybeErr.code)){
+          log('error', 'handler_error', { method: req.method, message: maybeErr.message, code: maybeErr.code });
+          respondFn(makeError(req.id ?? null, maybeErr.code!, maybeErr.message || 'Error', { method: req.method, ...(maybeErr.data || {}) }));
+          return;
+        }
+        const errObj = e instanceof Error ? { message: e.message, stack: e.stack } : { message: 'Unknown error', value: e };
         log('error', 'handler_error', { method: req.method, ...errObj });
-  respondFn(makeError(req.id ?? null, -32603, 'Internal error', { method: req.method, ...errObj }));
+        respondFn(makeError(req.id ?? null, -32603, 'Internal error', { method: req.method, ...errObj }));
       });
   });
 }

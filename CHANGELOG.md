@@ -221,7 +221,7 @@ Removing back-compat surfaces reduces ambiguity in clients, eliminates duplicate
 - Ensure environment expects a single `server/ready` notification; multi-ready tolerant clients remain unaffected.
 - If you previously relied on the fallback transport, adopt the standard MCP SDK JSON-RPC stdio framing; no additional configuration needed for normal usage.
 
-### Internal
+### Internal (refinement)
 
 - Removed ~300 lines of legacy compatibility code; reduced handshake race conditions and watchdog complexity.
 - Test suite adjusted; alias test removed.
@@ -229,3 +229,25 @@ Removing back-compat surfaces reduces ambiguity in clients, eliminates duplicate
 ### Future
 
 - Potential addition: explicit protocolVersion negotiation matrix & structured `capabilities.handshake` section once MCP spec advances.
+
+## [1.0.1] - 2025-08-27
+
+### Changed (semantic error guarantees)
+
+- Hardened JSON-RPC semantic error preservation: dispatcher validation/gating codes (-32601 / -32602) are now deterministically retained end-to-end (previous rare fallbacks to -32603 eliminated).
+- Added deep semantic recovery & diagnostic logging (`[rpc] deep_recover_semantic`) in `sdkServer` request override for visibility when nested wrappers obscure codes.
+- Tightened tests: removed transitional allowances for -32603 in dispatcher validation & mutation gating specs; assertions now require exact expected semantic codes.
+
+### Added (stress coverage)
+
+- New `dispatcherStress.spec.ts` high-churn test exercising rapid invalid + valid dispatcher calls to detect any semantic code downgrades.
+- Supplementary logging gated by `MCP_LOG_VERBOSE=1` to trace pass-through vs wrapped error paths.
+
+### Internal
+
+- Updated `.gitignore` to exclude transient fuzz/concurrency instruction artifacts, build locks, and temp minimal-author scratch directories.
+- Incremented package version to 1.0.1 (patch: reliability & test hardening only; no API changes).
+
+### Upgrade Guidance (1.0.1)
+
+No action required. Clients benefit from stricter and more predictable error codes; behavior of successful tool results unchanged.

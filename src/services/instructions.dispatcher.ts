@@ -1,5 +1,6 @@
 import { registerHandler, getHandler } from '../server/registry';
 import { instructionActions } from './handlers.instructions';
+import { semanticError } from './errors';
 
 // Dispatcher input type (loosely typed for now; validation handled by upstream schema layer soon)
 interface DispatchBase { action: string }
@@ -15,7 +16,11 @@ function isMutationEnabled(){ return process.env.MCP_ENABLE_MUTATION === '1'; }
 type DispatchParams = DispatchBase & { [k: string]: unknown };
 registerHandler('instructions/dispatch', async (params: DispatchParams) => {
   const action = (params && params.action) as string;
-  if(typeof action !== 'string' || !action.trim()) throw { code:-32602, message:'Missing action', data:{ method:'instructions/dispatch' } };
+  if(typeof action !== 'string' || !action.trim()) {
+    try { if(process.env.MCP_LOG_VERBOSE==='1') process.stderr.write('[dispatcher] semantic_error code=-32602 reason=missing_action\n'); } catch { /* ignore */ }
+    // Include reason hint so downstream fallback mappers can recover original semantic code even if wrapper strips it.
+    semanticError(-32602,'Missing action',{ method:'instructions/dispatch', reason:'missing_action' });
+  }
 
   // Capability listing
   if(action === 'capabilities'){
@@ -55,10 +60,19 @@ registerHandler('instructions/dispatch', async (params: DispatchParams) => {
     add: 'instructions/add', import: 'instructions/import', remove: 'instructions/remove', reload: 'instructions/reload', groom: 'instructions/groom', repair: 'instructions/repair', enrich: 'instructions/enrich', governanceHash: 'instructions/governanceHash', governanceUpdate: 'instructions/governanceUpdate', health: 'instructions/health', inspect: 'instructions/inspect', dir: 'instructions/dir'
   };
   const target = methodMap[action];
-  if(!target) throw { code:-32601, message:`Unknown action: ${action}`, data:{ action } };
-  if(mutationMethods.has(target) && !isMutationEnabled()) throw { code:-32603, message:'Mutation disabled', data:{ action, method: target } };
+  if(!target) {
+    try { if(process.env.MCP_LOG_VERBOSE==='1') process.stderr.write(`[dispatcher] semantic_error code=-32601 reason=unknown_action action=${action}\n`); } catch { /* ignore */ }
+    semanticError(-32601,`Unknown action: ${action}`,{ action, reason:'unknown_action' });
+  }
+  if(mutationMethods.has(target) && !isMutationEnabled()) {
+    try { if(process.env.MCP_LOG_VERBOSE==='1') process.stderr.write(`[dispatcher] semantic_error code=-32601 reason=mutation_disabled action=${action} target=${target}\n`); } catch { /* ignore */ }
+    semanticError(-32601,'Mutation disabled',{ action, method: target, reason:'mutation_disabled' });
+  }
   const handler = getHandler(target);
-  if(!handler) throw { code:-32603, message:'Internal dispatch error (handler missing)', data:{ action, target } };
+  if(!handler) {
+    try { if(process.env.MCP_LOG_VERBOSE==='1') process.stderr.write(`[dispatcher] semantic_error code=-32601 reason=unknown_handler action=${action} target=${target}\n`); } catch { /* ignore */ }
+    semanticError(-32601,'Unknown action handler',{ action, target, reason:'unknown_handler' });
+  }
   // Strip action key for downstream handler params
   const { action: _ignoredAction, ...rest } = params as Record<string, unknown>;
   void _ignoredAction; // explicitly ignore for lint

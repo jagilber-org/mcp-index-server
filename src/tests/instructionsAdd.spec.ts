@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { waitFor } from './testUtils';
+import { waitFor, ensureDir, ensureFileExists, ensureJsonReadable } from './testUtils';
 import { waitForDist } from './distReady';
 
 // Per-spec isolated instructions directory to avoid cross-test interference
@@ -23,7 +23,7 @@ const wait = (ms:number)=> new Promise(r=>setTimeout(r,ms));
 
 describe('instructions/add tool', () => {
   const instructionsDir = ISOLATED_DIR;
-  beforeAll(() => { if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir,{recursive:true}); });
+  beforeAll(() => { ensureDir(instructionsDir); });
 
   it('creates a new instruction (lax defaults)', async () => {
     const id = 'add_test_create';
@@ -48,7 +48,8 @@ describe('instructions/add tool', () => {
       if('skipped' in inner) expect(inner.skipped).toBe(false);
       expect(inner.hash).toBeTypeOf('string');
     }
-    expect(fs.existsSync(file)).toBe(true);
+  await ensureFileExists(file, 4000);
+  await ensureJsonReadable(file, 4000);
     server.kill();
   },6000);
 
@@ -99,7 +100,7 @@ describe('instructions/add tool', () => {
       expect(inner.id).toBe(id);
       if('overwritten' in inner) expect(inner.overwritten).toBe(true);
     }
-    const disk = JSON.parse(fs.readFileSync(file,'utf8'));
+  const disk = JSON.parse(fs.readFileSync(file,'utf8'));
     expect(disk.body).toBe('overwrite body');
     server.kill();
   },6000);
@@ -117,9 +118,9 @@ describe('instructions/add tool', () => {
     const line = out.filter(l=> { try { const o=JSON.parse(l); return o.id===31; } catch { return false; } }).pop();
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
-  // Unknown tool now yields -32601 (method not found) or mutation gate (-32603 for disabled mutation handler). Direct method removed.
+  // Gated mutation returns method-not-found style (-32601) for uniform external posture.
   expect(obj.error).toBeTruthy();
-  expect(obj.error.code).toBe(-32603);
+  expect(obj.error.code).toBe(-32601);
   expect(String(obj.error.data?.method || obj.error.data?.name || '')).toMatch(/instructions\/add/);
     server.kill();
   },6000);

@@ -12,18 +12,18 @@
   "schemaVersion": "2",
   "sourceHash": "43ba0aa0db281daa88b0d90341e0ef52e5d8105175357eb9a1ee57955f255b27",
   "semanticSummary": "Line1 summary",
-  "lastReviewedAt": "2025-08-27T19:29:33.967Z",
-  "nextReviewDue": "2025-12-25T19:29:33.967Z",
+  "lastReviewedAt": "2025-08-27T23:46:11.324Z",
+  "nextReviewDue": "2025-12-25T23:46:11.324Z",
   "owner": "team:alpha",
   "status": "approved",
   "version": "1.0.1",
   "changeLog": [
     {
       "version": "1.0.1",
-      "changedAt": "2025-08-27T19:29:35.369Z",
+      "changedAt": "2025-08-27T23:46:14.459Z",
       "summary": "manual patch bump via governanceUpdate"
     }
   ],
-  "updatedAt": "2025-08-27T19:29:35.369Z",
+  "updatedAt": "2025-08-27T23:46:14.459Z",
   "priorityTier": "P3"
 }

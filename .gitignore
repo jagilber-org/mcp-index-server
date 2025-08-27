@@ -25,6 +25,16 @@ Thumbs.db
 *.db
 !instructions/*.json
 
+# Exclude ephemeral generated instruction fuzz/concurrency artifacts (retain committed curated samples only)
+instructions/concurrent-*.json
+instructions/fuzz_*.json
+
+# Build lock (transient)
+.build.lock
+
+# Temp minimal-author derivation scratch dirs
+tmp/minimal-author-*/
+
 # Ignore local MCP workspace config (contains machine-specific paths)
 .vscode/mcp.json
 

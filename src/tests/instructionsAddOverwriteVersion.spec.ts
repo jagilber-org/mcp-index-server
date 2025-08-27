@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { waitFor, ensureFileExists } from './testUtils';
+import { waitFor, ensureFileExists, ensureDir, ensureJsonReadable } from './testUtils';
 import { waitForDist } from './distReady';
 
 const ISOLATED_DIR = fs.mkdtempSync(path.join(os.tmpdir(),'instr-overwrite-'));
@@ -17,7 +17,7 @@ function findLine(lines: string[], id: number): string | undefined {
 
 describe('instructions/add overwrite version semantics (alpha)', () => {
   const instructionsDir = ISOLATED_DIR;
-  beforeAll(()=>{ if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir); });
+  beforeAll(()=>{ ensureDir(instructionsDir); });
 
   it('retains existing version & changeLog when body changes without explicit version; updates only when provided', async () => {
     const id = `overwrite_version_${Date.now()}`;
@@ -34,6 +34,7 @@ describe('instructions/add overwrite version semantics (alpha)', () => {
   await waitFor(()=> !!findLine(out,10));
     const file = path.join(instructionsDir, id + '.json');
   await ensureFileExists(file, 6000);
+  await ensureJsonReadable(file, 6000);
   const first = JSON.parse(fs.readFileSync(file,'utf8')) as { version:string; changeLog: { version:string; changedAt:string; summary:string }[]; owner:string; priorityTier:string; semanticSummary:string };
     expect(first.version).toBe('2.5.0');
     expect(first.owner).toBe('alpha-owner');
@@ -44,6 +45,7 @@ describe('instructions/add overwrite version semantics (alpha)', () => {
     // Overwrite with new body but no version -> version must stay 2.5.0 and changeLog length unchanged
   send(server,{ jsonrpc:'2.0', id:11, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id, title:id, body:'Modified body once', priority:55, audience:'all', requirement:'optional', categories:['alpha'] }, overwrite:true, lax:true } }});
   await waitFor(()=> !!findLine(out,11));
+  await ensureJsonReadable(file, 6000);
   const second = JSON.parse(fs.readFileSync(file,'utf8')) as { version:string; changeLog: { version:string; changedAt:string; summary:string }[]; body:string };
     expect(second.body).toBe('Modified body once');
     expect(second.version).toBe('2.5.0');
@@ -52,6 +54,7 @@ describe('instructions/add overwrite version semantics (alpha)', () => {
     // Overwrite with explicit new version -> version updates, changeLog may be replaced if provided else normalized keeps existing
   send(server,{ jsonrpc:'2.0', id:12, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id, title:id, body:'Modified body twice', priority:55, audience:'all', requirement:'optional', categories:['alpha'], version:'2.6.0' }, overwrite:true, lax:true } }});
   await waitFor(()=> !!findLine(out,12));
+  await ensureJsonReadable(file, 6000);
   const third = JSON.parse(fs.readFileSync(file,'utf8')) as { version:string; changeLog: { version:string; changedAt:string; summary:string }[]; body:string };
     expect(third.body).toBe('Modified body twice');
     expect(third.version).toBe('2.6.0');

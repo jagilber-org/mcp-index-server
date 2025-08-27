@@ -26,6 +26,45 @@ export interface RpcEnvelope {
   error?: { code: number; message?: string; data?: unknown };
 }
 
+// Standard JSON-RPC error codes we assert against in tests
+export const JSON_RPC_ERRORS = {
+  PARSE_ERROR: -32700,
+  INVALID_REQUEST: -32600,
+  METHOD_NOT_FOUND: -32601,
+  INVALID_PARAMS: -32602,
+  INTERNAL_ERROR: -32603,
+} as const;
+
+// Normalize an arbitrary thrown error-like value into a JSON-RPC error shape.
+// - If it already has a safe integer code in the JSON-RPC range, preserve it (unless out-of-policy)
+// - Map dispatcher validation problems to INVALID_PARAMS
+// - Map unknown action/tool/method issues to METHOD_NOT_FOUND
+// - Fallback to INTERNAL_ERROR
+export function normalizeError(e: unknown, fallbackMethod?: string){
+  const base: { code: number; message: string; data?: Record<string, unknown> } = { code: JSON_RPC_ERRORS.INTERNAL_ERROR, message: 'Internal error' };
+  const obj = (typeof e === 'object' && e) ? e as Record<string, unknown> : {};
+  const code = typeof obj.code === 'number' ? obj.code : undefined;
+  const message = typeof obj.message === 'string' ? obj.message : undefined;
+  const data = (obj.data && typeof obj.data === 'object') ? obj.data as Record<string, unknown> : undefined;
+  if(code && Number.isSafeInteger(code) && code <= -32000 && code >= -32768){
+    base.code = code as number; base.message = message || base.message; if(data) base.data = data; return base;
+  }
+  // Heuristic message classification
+  const msg = (message || '').toLowerCase();
+  if(/unknown (action|tool|method)/.test(msg)){
+    base.code = JSON_RPC_ERRORS.METHOD_NOT_FOUND;
+    base.message = message || 'Method not found';
+  } else if(/missing (action|param|required)/.test(msg) || /invalid param/.test(msg)){
+    base.code = JSON_RPC_ERRORS.INVALID_PARAMS;
+    base.message = message || 'Invalid params';
+  } else {
+    base.code = JSON_RPC_ERRORS.INTERNAL_ERROR;
+    base.message = message || base.message;
+  }
+  if(fallbackMethod){ base.data = { ...(base.data||{}), method: fallbackMethod }; }
+  return base;
+}
+
 // Assert (optionally) that an envelope satisfies XOR invariant: exactly one of result or error present (and id defined unless notification)
 export function xorResultError(e: RpcEnvelope): boolean {
   // Notifications have no id and no result/error; only enforce when id is present
@@ -69,6 +108,9 @@ export async function getResponse(lines: string[], id: number, timeoutMs = 4000)
 
 // Wait for a file to appear (and optionally satisfy a predicate) up to timeout
 import fs from 'fs';
+import path from 'path';
+import { CatalogLoader } from '../services/catalogLoader';
+import type { InstructionEntry } from '../models/instruction';
 export async function waitForFile(filePath: string, timeoutMs = 4000, predicate: (txt: string)=>boolean = ()=>true): Promise<string> {
   const start = Date.now();
   let content = '';
@@ -94,6 +136,58 @@ export async function waitForFile(filePath: string, timeoutMs = 4000, predicate:
     throw new Error(`timeout waiting for file ${filePath}`);
   }
 
+  // Wait for a file to exist AND be valid JSON (returns parsed JSON) to mitigate transient EBUSY / partial write races on Windows with AV scanners.
+  export async function ensureJsonReadable<T=unknown>(filePath: string, timeoutMs=4000, intervalMs=50): Promise<T> {
+    const start = Date.now();
+    let lastErr: string | undefined;
+    while(Date.now() - start < timeoutMs){
+      if(fs.existsSync(filePath)){
+        try {
+          const txt = fs.readFileSync(filePath,'utf8');
+          // Heuristic: ensure file not empty and last char likely '}' or ']' to reduce chance of truncation
+          if(txt.trim().length && /[}\]]\s*$/.test(txt)){
+            return JSON.parse(txt) as T;
+          }
+          lastErr = 'incomplete content heuristic failed';
+        } catch(e){
+          lastErr = (e as Error).message;
+        }
+      }
+      await new Promise(r=> setTimeout(r, intervalMs));
+    }
+    throw new Error(`ensureJsonReadable timeout for ${filePath} lastErr=${lastErr}`);
+  }
+
+  // Poll a directory for a catalog entry id using CatalogLoader (fresh instance each attempt) with diagnostics.
+  export async function waitForCatalogEntry(dir: string, id: string, timeoutMs=3000, intervalMs=50): Promise<{ entry: InstructionEntry; errors: string[]; attempts: number; }> {
+    const start = Date.now();
+    let lastErrors: string[] = [];
+    let attempts = 0;
+    while(Date.now() - start < timeoutMs){
+      attempts++;
+      try {
+        const { entries, errors } = new CatalogLoader(dir).load();
+        lastErrors = errors.map(e=> e.error);
+        const found = entries.find(e=> e.id === id);
+        if(found) return { entry: found, errors: lastErrors, attempts };
+      } catch(e){
+        lastErrors = [(e as Error).message];
+      }
+      await new Promise(r=> setTimeout(r, intervalMs));
+    }
+    // One final attempt to gather diagnostics
+    const final = new CatalogLoader(dir).load();
+    lastErrors = final.errors.map(e=> e.error);
+    const listing = fs.existsSync(dir)? fs.readdirSync(dir).join(',') : 'missing-dir';
+    const filePath = path.join(dir, id + '.json');
+    const present = fs.existsSync(filePath);
+    let snippet = '';
+    if(present){
+      try { snippet = fs.readFileSync(filePath,'utf8').slice(0,200); } catch(err){ snippet = 'read error: ' + (err as Error).message; }
+    }
+    throw new Error(`waitForCatalogEntry timeout id=${id} dir=${dir} attempts=${attempts} errors=${lastErrors.join('|')} listing=${listing} filePresent=${present} snippet=${snippet}`);
+  }
+
   // Wait for a file to be removed (inverse of ensureFileExists)
   export async function ensureFileGone(filePath:string, timeoutMs=4000, intervalMs=50):Promise<void>{
     const start = Date.now();
@@ -102,6 +196,16 @@ export async function waitForFile(filePath: string, timeoutMs = 4000, predicate:
       await new Promise(r=> setTimeout(r, intervalMs));
     }
     throw new Error(`timeout waiting for file removal ${filePath}`);
+  }
+
+  // Idempotent directory ensure (used to replace ad-hoc mkdir guards in specs)
+  export function ensureDir(dirPath: string){
+    try {
+      if(!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive:true });
+    } catch (e){
+      // surface with context
+      throw new Error(`ensureDir failed for ${dirPath}: ${(e as Error)?.message || e}`);
+    }
   }
 
 // Send a JSON-RPC message to a spawned server process
@@ -117,6 +221,8 @@ interface ServerReadyOptions {
   clientName?: string;
   clientVersion?: string;
   protocolVersion?: string;
+  probeList?: boolean; // if true, perform an instructions/dispatch list probe after meta/tools
+  listId?: number; // id to use for list probe (default metaId+1)
 }
 
 // Waits for MCP server readiness by performing initialize then meta/tools call.
@@ -130,7 +236,9 @@ export async function waitForServerReady(proc: { stdin?: NodeJS.WritableStream|n
     capabilities = { tools: {} },
     clientName = 'test-harness',
     clientVersion = '0.0.0',
-    protocolVersion = '2025-06-18'
+  protocolVersion = '2025-06-18',
+  probeList = false,
+  listId = metaId + 1
   } = opts;
 
   // If initialize response already present, skip sending again (support reuse in some tests)
@@ -145,5 +253,36 @@ export async function waitForServerReady(proc: { stdin?: NodeJS.WritableStream|n
     send(proc, { jsonrpc:'2.0', id: metaId, method:'tools/call', params:{ name:'meta/tools', arguments:{} } });
   }
   await waitFor(hasMeta, timeoutMs);
+  // Optional readiness probe: issue a list call and ensure we get a proper success envelope
+  if(probeList){
+    const hasList = () => !!findResponse(lines, listId);
+    if(!hasList()){
+      send(proc, { jsonrpc:'2.0', id: listId, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } } });
+    }
+    await waitFor(hasList, timeoutMs);
+    const env = findResponse(lines, listId);
+    if(!env || env.error){
+      const tail = lines.slice(-10).join('\n');
+      throw new Error(`waitForServerReady list probe failed id=${listId} env=${JSON.stringify(env)} tail=\n${tail}`);
+    }
+  }
   return findResponse(lines, metaId);
+}
+
+// Attach a line collector to a child process (stderr + stdout) returning the backing array (idempotent).
+export function attachLineCollector(proc: { stdout?: NodeJS.ReadableStream|null; stderr?: NodeJS.ReadableStream|null }, out: string[]): string[]{
+  const add = (chunk: Buffer|string) => {
+    const text = (chunk instanceof Buffer)? chunk.toString('utf8'): String(chunk);
+    for(const line of text.split(/\r?\n/)){ if(line.trim()) out.push(line); }
+  };
+  proc.stdout?.on('data', add);
+  proc.stderr?.on('data', add);
+  return out;
+}
+
+// Expect helper: assert envelope is an error with specific code (optional message regex)
+export function expectError(env: RpcEnvelope, code: number, msgPattern?: RegExp){
+  if(!env.error) throw new Error(`Expected error envelope code=${code} got success`);
+  if(env.error.code !== code) throw new Error(`Expected error code ${code} got ${env.error.code}`);
+  if(msgPattern && !msgPattern.test(env.error.message || '')) throw new Error(`Error message mismatch pattern=${msgPattern} actual=${env.error.message}`);
 }

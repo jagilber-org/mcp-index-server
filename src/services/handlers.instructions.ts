@@ -15,7 +15,7 @@ interface ImportEntry { id:string; title:string; body:string; rationale?:string;
   version?: string; owner?: string; status?: InstructionEntry['status']; priorityTier?: InstructionEntry['priorityTier']; classification?: InstructionEntry['classification']; lastReviewedAt?: string; nextReviewDue?: string; changeLog?: InstructionEntry['changeLog']; semanticSummary?: string }
 
 function guard<TParams, TResult>(name:string, fn:(p:TParams)=>TResult){
-  return (p:TParams)=>{ if(!isMutationEnabled()) throw { code:-32603, message:'Mutation disabled', data:{ method:name } }; return fn(p); };
+  return (p:TParams)=>{ if(!isMutationEnabled()) throw { code:-32601, message:'Mutation disabled', data:{ method:name } }; return fn(p); };
 }
 
 // Legacy individual instruction handlers removed in favor of unified dispatcher (instructions/dispatch).

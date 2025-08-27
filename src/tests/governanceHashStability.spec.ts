@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { waitFor, parseToolPayload } from './testUtils';
+import { waitFor, parseToolPayload, ensureFileExists, ensureJsonReadable } from './testUtils';
 const ISOLATED_DIR = fs.mkdtempSync(path.join(os.tmpdir(),'instr-govhash-'));
 function startServer(){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', INSTRUCTIONS_DIR: ISOLATED_DIR } });
@@ -30,8 +30,10 @@ describe('governance hash stability across restart', () => {
   const firstParsed = firstLine? parseToolPayload<{ governanceHash?:string }>(firstLine) : undefined;
   if(!firstParsed || !firstParsed.governanceHash) throw new Error('missing first governanceHash');
   const firstHash = firstParsed.governanceHash;
-    // Ensure file exists
-  expect(fs.existsSync(path.join(ISOLATED_DIR, `${id}.json`))).toBe(true);
+    // Ensure file exists (robust polling) and is fully readable JSON before proceeding
+  const targetFile = path.join(ISOLATED_DIR, `${id}.json`);
+  await ensureFileExists(targetFile, 6000);
+  await ensureJsonReadable(targetFile, 6000);
     server.kill();
 
     // Restart and compute hash again

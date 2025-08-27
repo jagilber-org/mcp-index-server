@@ -23,16 +23,14 @@ describe('input validation (dispatcher)', () => {
   send(server, { jsonrpc:'2.0', id: 3000, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
   await waitFor(() => !!findResponse(lines, 3000));
     const id = 101;
-    // Missing action entirely should trigger -32602
+  // Missing action entirely should trigger -32602
   send(server, { jsonrpc:'2.0', id, method: 'tools/call', params:{ name:'instructions/dispatch', arguments:{} } });
   await waitFor(() => !!findResponse(lines, id));
   const resp = findResponse(lines, id) as RpcEnvelope | undefined;
     expect(resp).toBeTruthy();
   const obj = resp!;
     expect(obj.error).toBeTruthy();
-  // Dispatcher currently surfaces missing action as internal/generic (-32603)
-  // obj.error asserted truthy above
-  expect(obj.error!.code).toBe(-32603);
+  expect(obj.error!.code).toBe(-32602);
     server.kill();
   }, 6000);
   it('rejects unknown action', async () => {
@@ -49,8 +47,8 @@ describe('input validation (dispatcher)', () => {
     expect(resp).toBeTruthy();
   const obj = resp!;
     expect(obj.error).toBeTruthy();
-  // Unknown action currently surfaces generic error (-32603)
-  expect(obj.error!.code).toBe(-32603);
+  // Unknown action should map to method not found (-32601)
+  expect(obj.error!.code).toBe(-32601);
     server.kill();
   }, 6000);
 

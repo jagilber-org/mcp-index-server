@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { waitFor, parseToolPayload } from './testUtils';
+import { waitFor, parseToolPayload, ensureFileExists, ensureJsonReadable } from './testUtils';
 
 const ISOLATED_DIR = fs.mkdtempSync(path.join(os.tmpdir(),'instr-disappear-'));
 function startServer(){
@@ -44,7 +44,8 @@ describe('regression: added instructions persist across restart and retain gover
       await waitFor(()=> !!findLine(out1,rpcId));
       rpcId++;
   const file = path.join(ISOLATED_DIR, `${id}.json`);
-      expect(fs.existsSync(file), `missing file ${id}`).toBe(true);
+  await ensureFileExists(file, 4000);
+  await ensureJsonReadable(file, 4000);
       const disk = JSON.parse(fs.readFileSync(file,'utf8')) as Record<string, unknown>;
       expect(disk.owner).toBe(`owner-${id}`);
       expect(disk.version).toBe('1.1.0');
@@ -55,7 +56,8 @@ describe('regression: added instructions persist across restart and retain gover
   send(server,{ jsonrpc:'2.0', id:50, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id:minimalId, title:minimalId, body:'Minimal body' }, lax:true, overwrite:true } }});
     await waitFor(()=> !!findLine(out1,50));
   const minimalFile = path.join(ISOLATED_DIR, `${minimalId}.json`);
-    expect(fs.existsSync(minimalFile)).toBe(true);
+  await ensureFileExists(minimalFile, 4000);
+  await ensureJsonReadable(minimalFile, 4000);
 
     // Add short id entry with governance
   send(server,{ jsonrpc:'2.0', id:60, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id:shortId, title:shortId, body:'Short body', priority:55, audience:'all', requirement:'optional', categories:['short'], owner:'short-owner', version:'2.0.0', priorityTier:'P3', semanticSummary:'Short summary' }, lax:true, overwrite:true } }});

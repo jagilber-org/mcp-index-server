@@ -18,9 +18,26 @@ Write-Section "Type Check"
 # Simple file lock to avoid overlapping build:verify executions that race on cleaning dist/
 # Extend wait to cover full typical test duration; only break if explicitly allowed via env.
 $lock = ".build.lock"
+# Helper: determine if existing lock appears stale (owner PID gone OR age > threshold)
+function Test-StaleLock($path){
+  try {
+    if(!(Test-Path $path)) { return $false }
+    $info = Get-Item $path -ErrorAction SilentlyContinue
+    $ageSeconds = (New-TimeSpan -Start $info.LastWriteTime -End (Get-Date)).TotalSeconds
+    $pidLine = (Get-Content $path -TotalCount 1 -ErrorAction SilentlyContinue)
+    if($pidLine -match '^[0-9]+$'){
+      try { $null = Get-Process -Id [int]$pidLine -ErrorAction Stop } catch { return $true } # owner pid missing => stale
+    }
+    if($ageSeconds -gt 60){ return $true } # age heuristic
+    return $false
+  } catch { return $false }
+}
+
 if (Test-Path $lock) {
-  if ($env:ALLOW_STALE_BUILD_LOCK -eq '1') {
-    Write-Host "Detected build lock but ALLOW_STALE_BUILD_LOCK=1 set. Forcing immediate override." -ForegroundColor Yellow
+  $isStale = Test-StaleLock $lock
+  if ($env:ALLOW_STALE_BUILD_LOCK -eq '1' -or $isStale) {
+    $reason = ($env:ALLOW_STALE_BUILD_LOCK -eq '1') ? 'ALLOW_STALE_BUILD_LOCK=1' : 'stale lock heuristics'
+    Write-Host "Detected build lock ($reason). Forcing immediate override." -ForegroundColor Yellow
     try { Remove-Item $lock -ErrorAction SilentlyContinue } catch {}
   } else {
     Write-Host "Detected existing build lock. Waiting for it to release..." -ForegroundColor DarkGray
@@ -28,6 +45,11 @@ if (Test-Path $lock) {
     $maxWaitSeconds = 240
     while (Test-Path $lock) {
       Start-Sleep -Milliseconds 300
+      if(Test-StaleLock $lock){
+        Write-Host "Lock became stale during wait (auto-override)." -ForegroundColor Yellow
+        try { Remove-Item $lock -ErrorAction SilentlyContinue } catch {}
+        break
+      }
       $elapsed = (New-TimeSpan -Start $waitStart -End (Get-Date)).TotalSeconds
       if ($elapsed -gt $maxWaitSeconds) {
         if ($env:ALLOW_STALE_BUILD_LOCK -eq '1') {
@@ -41,7 +63,7 @@ if (Test-Path $lock) {
     }
   }
 }
-New-Item -Path $lock -ItemType File -Force | Out-Null
+Set-Content -Path $lock -Value $PID -Encoding ASCII -Force | Out-Null
 try {
   # Pre-clean dist to avoid stale compiled artifacts on the FIRST run only. Subsequent rapid cycles
   # are likely intentional re-verifications where cleaning introduces a race with test spawns.

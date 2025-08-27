@@ -45,6 +45,7 @@ async function waitForIds(lines:string[], ids:number[], timeout=2500, interval=4
 describe('contract schemas', () => {
   const instructionsDir = ISOLATED_DIR;
   beforeAll(() => {
+    // Ensure directory exists (idempotent)
     if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir);
     const alphaPath = path.join(instructionsDir,'alpha.json');
     if(!fs.existsSync(alphaPath)){
@@ -104,7 +105,7 @@ describe('contract schemas', () => {
       expect(line, `missing response for ${p.method}`).toBeTruthy();
       const obj = JSON.parse(line!);
       if(obj.error){
-        // Current dispatcher returns -32601 for unknown/removed tools and -32603 for internal/gated.
+  // Dispatcher now returns -32601 for unknown/removed tools and for gated mutation operations.
         const msg = (obj.error.data?.message || obj.error.message || '').toLowerCase();
         const allowed = /mutation disabled/.test(msg) || /unknown tool/.test(msg) || /method not found/.test(msg) || /health\/check/.test(p.method);
         expect(allowed, `unexpected error for ${p.method}`).toBe(true);
@@ -154,8 +155,8 @@ describe('contract schemas', () => {
     expect(line, 'missing response for gated tool').toBeTruthy();
     const obj = JSON.parse(line!);
   expect(obj.error, 'expected error when mutation disabled').toBeTruthy();
-  // Implementation now surfaces -32601 (method not found) for gated mutation tool; accept either legacy -32603 or current -32601
-  expect([-32603,-32601]).toContain(obj.error.code);
+  // Gated mutation tool standardized to -32601
+  expect(obj.error.code).toBe(-32601);
   expect(obj.error.data?.method).toBe('usage/flush');
   // Allow empty gating message temporarily; plan to enforce explicit text once server standardizes.
   const msg = String(obj.error.data?.message || '');

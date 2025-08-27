@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
-import { waitFor, parseToolPayload } from './testUtils';
+import { parseToolPayload, ensureDir, ensureJsonReadable, waitForServerReady, getResponse } from './testUtils';
 import { waitForDist } from './distReady';
 
 const instructionsDir = path.join(process.cwd(),'instructions');
@@ -15,75 +15,51 @@ async function startServer(mutation:boolean){
 }
 function send(proc: ReturnType<typeof spawn>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
 // Collect the last JSON line with matching id; ignore non-JSON or sentinel strings
-function collect(out:string[], id:number){
-  // Scan from end for a valid JSON RPC line with matching id; ignore stray 'undefined' or log noise.
-  for(let i=out.length-1;i>=0;i--){
-    const raw = out[i];
-    if(!raw) continue;
-    const trimmed = raw.trim();
-    if(!trimmed || trimmed === 'undefined') continue;
-    const first = trimmed[0];
-    if(first !== '{' && first !== '[') continue;
-    try {
-      const obj = JSON.parse(trimmed);
-      if(obj && typeof obj === 'object' && 'id' in obj && (obj as { id?:unknown }).id === id){
-        return trimmed;
-      }
-    } catch { /* ignore parse errors (partial lines) */ }
-  }
-  return undefined;
-}
+// collect helper no longer needed (using getResponse + parseToolPayload on envelope JSON)
 
 describe('instructions/governanceUpdate', () => {
   it('patches owner + status and performs version bump', async () => {
-    if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir,{recursive:true});
+  ensureDir(instructionsDir);
     const id='gov_update_sample';
     const file=path.join(instructionsDir, id + '.json');
     const base={ id, title:'Governance Update Sample', body:'Line1 summary', priority:50, audience:'all', requirement:'optional', categories:['testing'] };
-    fs.writeFileSync(file, JSON.stringify(base,null,2));
+  fs.writeFileSync(file, JSON.stringify(base,null,2));
+  // Ensure the freshly written file is fully flushed & readable before server loads it
+  await ensureJsonReadable(file, 4000);
   const server = await startServer(true);
     const out:string[]=[]; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
-    // init
-    await new Promise(r=> setTimeout(r,60));
-    send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
-    await waitFor(()=> !!collect(out,1));
-    // list before update
-  send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } }});
-  await waitFor(()=> !!collect(out,2));
-  // small settle delay to ensure file write flush before governanceUpdate
-  await new Promise(r=> setTimeout(r,40));
-  const beforeLine = collect(out,2)!;
-  const beforeObj = parseToolPayload<{ items: { id:string; version?:string }[] }>(beforeLine);
+  // Deterministic handshake (initialize + meta/tools + list probe)
+  await waitForServerReady(server, out, { initId: 6001, metaId: 6002, probeList: true, listId: 6003 });
+  // First list already performed by readiness probe (id 6003). Perform an explicit pre-update list for clarity.
+  send(server,{ jsonrpc:'2.0', id:6004, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } }});
+  const beforeEnv = await getResponse(out,6004,6000);
+  // Extract tool payload for list
+  const beforeObj = parseToolPayload<{ items: { id:string; version?:string }[] }>(JSON.stringify(beforeEnv));
   if(!beforeObj) throw new Error('missing beforeObj payload');
   const beforeEntry = beforeObj.items.find(x=> x.id===id);
     expect(beforeEntry).toBeTruthy();
     const prevVersion = beforeEntry?.version;
     // governanceUpdate patch
-  send(server,{ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'instructions/governanceUpdate', arguments:{ id, owner:'team:alpha', status:'approved', bump:'patch' } }});
-    await waitFor(()=> !!collect(out,3));
-  const updLine = collect(out,3);
-  expect(updLine, 'no JSON RPC response line for governanceUpdate id=3').toBeTruthy();
-  const updObj = updLine? parseToolPayload<{ changed:boolean; owner:string; status:string; version:string }>(updLine): undefined;
+  send(server,{ jsonrpc:'2.0', id:6005, method:'tools/call', params:{ name:'instructions/governanceUpdate', arguments:{ id, owner:'team:alpha', status:'approved', bump:'patch' } }});
+  const updEnv = await getResponse(out,6005,6000);
+  const updObj = parseToolPayload<{ changed:boolean; owner:string; status:string; version:string }>(JSON.stringify(updEnv));
   if(!updObj) throw new Error('missing updObj payload');
     expect(updObj.changed).toBe(true);
     expect(updObj.owner).toBe('team:alpha');
     expect(updObj.version).not.toBe(prevVersion);
     // list again
-  send(server,{ jsonrpc:'2.0', id:4, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } }});
-    await waitFor(()=> !!collect(out,4));
-  const afterLine = collect(out,4)!;
-  const afterObj = parseToolPayload<{ items:{ id:string; owner?:string; status?:string; version?:string }[] }>(afterLine);
+  send(server,{ jsonrpc:'2.0', id:6006, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } }});
+  const afterEnv = await getResponse(out,6006,6000);
+  const afterObj = parseToolPayload<{ items:{ id:string; owner?:string; status?:string; version?:string }[] }>(JSON.stringify(afterEnv));
   if(!afterObj) throw new Error('missing afterObj payload');
   const afterEntry = afterObj.items.find(x=> x.id===id);
     expect(afterEntry?.owner).toBe('team:alpha');
     expect(afterEntry?.status).toBe('approved');
     expect(afterEntry?.version).toBe(updObj.version);
     // idempotent second call
-  send(server,{ jsonrpc:'2.0', id:5, method:'tools/call', params:{ name:'instructions/governanceUpdate', arguments:{ id, owner:'team:alpha', status:'approved', bump:'none' } }});
-    await waitFor(()=> !!collect(out,5));
-  const secondLine = collect(out,5);
-  expect(secondLine, 'no JSON RPC response line for second governanceUpdate id=5').toBeTruthy();
-  const second = secondLine? parseToolPayload<{ changed:boolean }>(secondLine) : undefined;
+  send(server,{ jsonrpc:'2.0', id:6007, method:'tools/call', params:{ name:'instructions/governanceUpdate', arguments:{ id, owner:'team:alpha', status:'approved', bump:'none' } }});
+  const secondEnv = await getResponse(out,6007,6000);
+  const second = parseToolPayload<{ changed:boolean }>(JSON.stringify(secondEnv));
     expect(second?.changed).toBe(false);
     server.kill();
   }, 10000);

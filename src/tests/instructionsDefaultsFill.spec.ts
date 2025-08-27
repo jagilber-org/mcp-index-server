@@ -8,10 +8,7 @@ function startServer(){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1' } });
 }
 function send(proc: ReturnType<typeof startServer>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
-interface RpcSuccess<T=unknown> { id:number; result:T }
-interface RpcError { id:number; error:unknown }
-type RpcResponse<T=unknown> = RpcSuccess<T> | RpcError | undefined;
-function findResponse(lines: string[], id:number): RpcResponse | undefined { for(const l of lines){ try { const o=JSON.parse(l) as RpcResponse; if(o && o.id===id) return o; } catch { /*ignore*/ } } return undefined; }
+function findLine(lines:string[], id:number){ return lines.find(l=> { try { return JSON.parse(l).id===id; } catch { return false; } }); }
 
 describe('defaults fill only when governance fields omitted', () => {
   it('derives defaults only for missing fields, not overriding provided subset', async () => {
@@ -20,10 +17,10 @@ describe('defaults fill only when governance fields omitted', () => {
     const out: string[] = []; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)));
     await new Promise(r=> setTimeout(r,120));
     send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'defaults-test', version:'0' }, capabilities:{ tools:{} } } });
-    await waitFor(()=> !!findResponse(out,1));
+  await waitFor(()=> !!findLine(out,1));
     // Provide only owner & version; omit priorityTier & semanticSummary to allow derivation
-    send(server,{ jsonrpc:'2.0', id:2, method:'instructions/add', params:{ entry:{ id, title:id, body:'Body defaults', priority:85, audience:'all', requirement:'optional', categories:['defaults'], owner:'defaults-owner', version:'1.2.3' }, overwrite:true, lax:true } });
-    await waitFor(()=> !!findResponse(out,2));
+  send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id, title:id, body:'Body defaults', priority:85, audience:'all', requirement:'optional', categories:['defaults'], owner:'defaults-owner', version:'1.2.3' }, overwrite:true, lax:true } } });
+  await waitFor(()=> !!findLine(out,2));
     const file = path.join(process.cwd(),'instructions', `${id}.json`);
     const disk = JSON.parse(fs.readFileSync(file,'utf8')) as { owner:string; version:string; priorityTier:string; semanticSummary:string };
     expect(disk.owner).toBe('defaults-owner');

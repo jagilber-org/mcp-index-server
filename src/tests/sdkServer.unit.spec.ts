@@ -29,59 +29,41 @@ describe('createSdkServer unit (no process spawn)', () => {
   let server: FakeServer;
   beforeAll(() => {
     delete process.env.MCP_ENABLE_MUTATION; // force mutation disabled
-  // createSdkServer returns the provided ServerClass instance; cast via unknown to FakeServer
-  server = createSdkServer(FakeServer as unknown as { new(info:unknown, caps:unknown): unknown }) as unknown as FakeServer;
-    // Trigger oninitialized to exercise notification path
+    server = createSdkServer(FakeServer as unknown as { new(info:unknown, caps:unknown): unknown }) as unknown as FakeServer;
     server.oninitialized?.();
   });
 
-  it('lists tools', async () => {
+  it('exposes tools/list + tools/call + ping handlers only (no direct per-tool handlers)', () => {
+    const expected = new Set(['tools/list','tools/call','ping','initialize']);
+    // Introspect zod literal method value (test-only; suppress any lint for internal shape access)
+    const methods = server.handlers.map(h=>{
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      try { const lit = (h.schema as unknown as any)?._def?.shape()?.method?._def?.value; return lit; } catch { return undefined; }
+    }).filter((v): v is string => !!v);
+    // Ensure required handlers present
+    for(const m of expected){ expect(methods).toContain(m); }
+    // Ensure removed legacy handler not present
+    expect(methods).not.toContain('instructions/add');
+  });
+
+  it('tools/list returns tool registry snapshot', async () => {
     const fn = findHandler(server, 'tools/list');
-  const result = await fn({ params:{} }) as { tools?: unknown };
-  const tools = Array.isArray(result.tools) ? result.tools : [];
-  expect(Array.isArray(tools)).toBe(true);
-  expect(tools.length).toBeGreaterThan(0);
+    const result = await fn({ params:{} }) as { tools?: unknown };
+    const tools = Array.isArray(result.tools) ? result.tools : [];
+    expect(Array.isArray(tools)).toBe(true);
+    expect(tools.length).toBeGreaterThan(0);
   });
 
-  it('returns validation error for instructions/add missing entry', async () => {
-    const fn = findHandler(server, 'instructions/add');
-    try {
-      await fn({ params:{} });
-      throw new Error('expected error');
-    } catch(e){
-      const err = e as { code?: number; message?: string };
-      expect(err.code).toBe(-32602); // Invalid params
-    }
-  });
-
-  it('returns mutation disabled error for instructions/add valid entry', async () => {
-    const fn = findHandler(server, 'instructions/add');
-    try {
-      await fn({ params:{ entry:{ id:'t1', body:'body', title:'t1', priority:1, audience:'all', requirement:'optional', categories:[] } } });
-      throw new Error('expected mutation disabled error');
-    } catch(e){
-      const err = e as { code?: number; message?: string };
-      expect(err.code).toBe(-32603);
-      expect(err.message?.toLowerCase()).toContain('mutation');
-    }
-  });
-
-  it('returns unknown tool error via tools/call', async () => {
+  it('tools/call unknown tool yields structured error', async () => {
     const fn = findHandler(server, 'tools/call');
-    try {
-      await fn({ params:{ name:'not_a_tool', arguments:{} } });
-      throw new Error('expected unknown tool error');
-    } catch(e){
-  const err = e as { code?: number; message?: string; data?: unknown };
-      expect(err.code).toBe(-32603);
-      expect(err.message).toMatch(/Unknown tool/i);
-    }
+    try { await fn({ params:{ name:'not_a_tool', arguments:{} } }); throw new Error('expected error'); }
+    catch(e){ const err = e as { code?: number }; expect(err.code).toBe(-32603); }
   });
 
   it('ping handler returns uptime info', async () => {
     const fn = findHandler(server, 'ping');
-  const result = await fn({ params:{} }) as { timestamp?: unknown; uptimeMs?: unknown };
-  expect(typeof result.timestamp).toBe('string');
-  expect(typeof result.uptimeMs).toBe('number');
+    const result = await fn({ params:{} }) as { timestamp?: unknown; uptimeMs?: unknown };
+    expect(typeof result.timestamp).toBe('string');
+    expect(typeof result.uptimeMs).toBe('number');
   });
 });

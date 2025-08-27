@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
-import { waitFor } from './testUtils';
+import { waitFor, parseToolPayload } from './testUtils';
 
 function startServer(mutation:boolean){
   return spawn('node', [path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION: mutation? '1':'0' } });
@@ -29,17 +29,16 @@ describe('instructions/enrich tool', () => {
     send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'enrich-test', version:'0' }, capabilities:{ tools:{} } }});
     await waitFor(()=> out.some(l=> { try { return JSON.parse(l).id===1; } catch { return false; } }), 2000);
   // sanity: fetch meta/tools to ensure handler registered
-  send(server,{ jsonrpc:'2.0', id:10, method:'meta/tools', params:{} });
+    send(server,{ jsonrpc:'2.0', id:10, method:'tools/call', params:{ name:'meta/tools', arguments:{} } });
   await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===10 && o.result && Array.isArray(o.result.tools); } catch { return false; } }), 3000);
   // call enrich
-    send(server,{ jsonrpc:'2.0', id:2, method:'instructions/enrich', params:{} });
+    send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/enrich', arguments:{} } });
   await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===2 && o.result && typeof o.result.rewritten==='number'; } catch { return false; } }), 4000);
   const enrichLine = out.reverse().find(l=> { try { const o=JSON.parse(l); return o.id===2 && o.result; } catch { return false; } });
     expect(enrichLine).toBeTruthy();
-    const enrichObj = JSON.parse(enrichLine!);
-  expect(typeof enrichObj.result.rewritten).toBe('number');
-  // Accept zero rewrites if startup auto-enrichment already fixed placeholders before explicit enrich call
-  expect(enrichObj.result.rewritten).toBeGreaterThanOrEqual(0);
+  const enrichPayload = enrichLine? parseToolPayload<{ rewritten:number }>(enrichLine): undefined;
+    expect(typeof enrichPayload?.rewritten).toBe('number');
+    if(enrichPayload) expect(enrichPayload.rewritten).toBeGreaterThanOrEqual(0);
 
   // Verify file updated with non-empty critical enrichment fields
     // Wait for file rewrite (in case underlying FS timestamp precision delays detection)
@@ -49,7 +48,7 @@ describe('instructions/enrich tool', () => {
     const updatedRaw = JSON.parse(fs.readFileSync(file,'utf8')) as Record<string, unknown>;
     if(!(typeof updatedRaw.sourceHash==='string' && (updatedRaw.sourceHash as string).length>0)){
       // Fallback: query server state directly
-  send(server,{ jsonrpc:'2.0', id:99, method:'instructions/dispatch', params:{ action:'get', id: tmpId } });
+      send(server,{ jsonrpc:'2.0', id:99, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'get', id: tmpId } } });
       await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===99; } catch { return false; } }), 3000);
       const getLine = out.find(l=> { try { const o=JSON.parse(l); return o.id===99; } catch { return false; } });
       if(getLine){

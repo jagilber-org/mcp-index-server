@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { waitFor } from './testUtils';
+import { waitFor, parseToolPayload } from './testUtils';
 
 function startServer(env: Record<string,string|undefined> = {}){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', ...env } });
@@ -24,6 +24,8 @@ function makeIsolatedInstructionsDir(): string {
   return base;
 }
 function send(proc: ReturnType<typeof startServer>, msg: Record<string,unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
+function haveId(lines:string[], id:number){ return lines.some(l=> { try { const o=JSON.parse(l); return o && o.id===id; } catch { return false; } }); }
+function findLine(lines:string[], id:number){ return lines.find(l=> { try { const o=JSON.parse(l); return o && o.id===id; } catch { return false; } }); }
 
 interface ExportResult { hash:string; count:number; items:Array<{ id:string; sourceHash:string; version?:string; owner?:string; priorityTier?:string; lastReviewedAt?:string; nextReviewDue?:string }>; }
 
@@ -35,14 +37,15 @@ describe('client restart export continuity', () => {
     // First run
   const server1 = startServer({ INSTRUCTIONS_DIR: isolatedDir });
     const out1:string[]=[]; server1.stdout.on('data', d=> out1.push(...d.toString().trim().split(/\n+/)) );
-    send(server1,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'restart-test', version:'0' }, capabilities:{ tools:{} } } });
-    await waitFor(()=> out1.some(l=> { try { return JSON.parse(l).id===1; } catch { return false; } }), 2000);
-  send(server1,{ jsonrpc:'2.0', id:2, method:'instructions/dispatch', params:{ action:'export' } });
-    await waitFor(()=> out1.some(l=> { try { return JSON.parse(l).id===2; } catch { return false; } }), 3000);
-    const exportLine1 = out1.find(l=> { try { return JSON.parse(l).id===2; } catch { return false; } });
-    expect(exportLine1).toBeTruthy();
-    const exportObj1 = JSON.parse(exportLine1!); const result1:ExportResult = exportObj1.result;
-    expect(result1.items.some(i=> i.id===bootstrapId)).toBe(true);
+  send(server1,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'restart-test', version:'0' }, capabilities:{ tools:{} } } });
+  await waitFor(()=> haveId(out1,1), 2000);
+  send(server1,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'export' } } });
+  await waitFor(()=> haveId(out1,2), 3000);
+  const exportLine1 = findLine(out1,2);
+  expect(exportLine1, 'missing export line 1').toBeTruthy();
+  const result1 = exportLine1? parseToolPayload<ExportResult>(exportLine1) : undefined;
+  if(!result1) throw new Error('missing export result1 (parseToolPayload returned undefined)');
+  expect(result1.items.some(i=> i.id===bootstrapId)).toBe(true);
     // Capture snapshot of governance fields for bootstrap instruction
   const boot1 = result1.items.find(i=> i.id===bootstrapId)!;
   // Ensure review governance fields present after enrichment
@@ -54,14 +57,15 @@ describe('client restart export continuity', () => {
     // Simulate client restart: start new server process
   const server2 = startServer({ INSTRUCTIONS_DIR: isolatedDir });
     const out2:string[]=[]; server2.stdout.on('data', d=> out2.push(...d.toString().trim().split(/\n+/)) );
-    send(server2,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'restart-test', version:'0' }, capabilities:{ tools:{} } } });
-    await waitFor(()=> out2.some(l=> { try { return JSON.parse(l).id===10; } catch { return false; } }), 2000);
-  send(server2,{ jsonrpc:'2.0', id:11, method:'instructions/dispatch', params:{ action:'export' } });
-    await waitFor(()=> out2.some(l=> { try { return JSON.parse(l).id===11; } catch { return false; } }), 3000);
-    const exportLine2 = out2.find(l=> { try { return JSON.parse(l).id===11; } catch { return false; } });
-    expect(exportLine2).toBeTruthy();
-    const exportObj2 = JSON.parse(exportLine2!); const result2:ExportResult = exportObj2.result;
-    expect(result2.items.some(i=> i.id===bootstrapId)).toBe(true);
+  send(server2,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'restart-test', version:'0' }, capabilities:{ tools:{} } } });
+  await waitFor(()=> haveId(out2,10), 2000);
+  send(server2,{ jsonrpc:'2.0', id:11, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'export' } } });
+  await waitFor(()=> haveId(out2,11), 3000);
+  const exportLine2 = findLine(out2,11);
+  expect(exportLine2, 'missing export line 2').toBeTruthy();
+  const result2 = exportLine2? parseToolPayload<ExportResult>(exportLine2) : undefined;
+  if(!result2) throw new Error('missing export result2 (parseToolPayload returned undefined)');
+  expect(result2.items.some(i=> i.id===bootstrapId)).toBe(true);
     const boot2 = result2.items.find(i=> i.id===bootstrapId)!;
 
     // Assert continuity: same governance fields (unless intentionally changed externally)

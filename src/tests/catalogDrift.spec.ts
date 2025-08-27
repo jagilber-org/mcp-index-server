@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { waitFor } from './testUtils';
+import { waitFor, parseToolPayload } from './testUtils';
 
 // Helper to start server with mutation enabled (we only read export, no mutation needed but keep consistent env)
 function startServer(){
@@ -27,14 +27,16 @@ describe('catalog drift snapshot vs export', () => {
     const out: string[] = []; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
     send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'drift-test', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> out.some(l=> { try { return JSON.parse(l).id===1; } catch { return false; } }), 1500);
-  send(server,{ jsonrpc:'2.0', id:2, method:'instructions/dispatch', params:{ action:'export' } });
+  // Export via tools/call dispatcher
+  send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'export' } } });
     await waitFor(()=> out.some(l=> { try { return JSON.parse(l).id===2; } catch { return false; } }), 2000);
     const exportLine = out.filter(l=> { try { return JSON.parse(l).id===2; } catch { return false; } }).pop();
     expect(exportLine).toBeTruthy();
-    const exportObj = JSON.parse(exportLine!);
-    const items: ExportItem[] = exportObj.result.items;
+  const payload = parseToolPayload<{ items:ExportItem[]; hash:string }>(exportLine!);
+  expect(payload, 'missing dispatcher export payload').toBeTruthy();
+  const items: ExportItem[] = payload!.items as ExportItem[];
     expect(Array.isArray(items)).toBe(true);
-    const currentHash = exportObj.result.hash;
+  const currentHash = payload!.hash;
     expect(typeof currentHash).toBe('string');
   // Baseline guard: ensure critical bootstrap id present
   const ids = new Set(items.map(i=>i.id));

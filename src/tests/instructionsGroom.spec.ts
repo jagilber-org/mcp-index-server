@@ -8,6 +8,14 @@ function startServer(mutation:boolean){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION: mutation ? '1':'', MCP_LOG_VERBOSE:'' } });
 }
 function send(proc: ReturnType<typeof spawn>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
+function parseTool(line: string){
+  try {
+    const outer = JSON.parse(line);
+    const txt = outer.result?.content?.[0]?.text;
+    if(txt){ return JSON.parse(txt); }
+  } catch { /* ignore */ }
+  return undefined;
+}
 const wait = (ms:number)=> new Promise(r=>setTimeout(r,ms));
 
 const instructionsDir = path.join(process.cwd(),'instructions');
@@ -24,17 +32,17 @@ describe('instructions/groom tool', () => {
   await wait(100);
     send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
   await wait(40);
-  send(server,{ jsonrpc:'2.0', id:2, method:'instructions/groom', params:{ mode:{ dryRun:true, mergeDuplicates:true, removeDeprecated:true } } });
+  send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/groom', arguments:{ mode:{ dryRun:true, mergeDuplicates:true, removeDeprecated:true } } } });
   await waitFor(() => out.some(l => { try { const o = JSON.parse(l); return o.id === 2; } catch { return false; } }), 4000);
   await wait(120);
   const responses = out.filter(l => { try { const o = JSON.parse(l); return o.id === 2; } catch { return false; } });
   expect(responses.length).toBeGreaterThan(0);
-  const obj = JSON.parse(responses[responses.length-1]);
-    expect(obj.result.dryRun).toBe(true);
-    expect(obj.result.scanned).toBeGreaterThan(0);
+  const payload = parseTool(responses[responses.length-1]);
+    expect(payload?.dryRun).toBe(true);
+    expect(payload?.scanned).toBeGreaterThan(0);
   // Hash may change if loader normalization adjusts records even in dryRun
-  expect(obj.result.previousHash).toBeTypeOf('string');
-  expect(obj.result.hash).toBeTypeOf('string');
+  expect(typeof payload?.previousHash).toBe('string');
+  expect(typeof payload?.hash).toBe('string');
     server.kill();
     // File should remain with wrong hash
     const disk = JSON.parse(fs.readFileSync(file,'utf8'));
@@ -51,16 +59,16 @@ describe('instructions/groom tool', () => {
   await wait(100);
     send(server,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
   await wait(40);
-  send(server,{ jsonrpc:'2.0', id:11, method:'instructions/groom', params:{ mode:{ mergeDuplicates:false, removeDeprecated:false } } });
+  send(server,{ jsonrpc:'2.0', id:11, method:'tools/call', params:{ name:'instructions/groom', arguments:{ mode:{ mergeDuplicates:false, removeDeprecated:false } } } });
   await waitFor(() => out.some(l => { try { const o = JSON.parse(l); return o.id === 11; } catch { return false; } }), 4000);
   await wait(120);
   const responses = out.filter(l => { try { const o = JSON.parse(l); return o.id === 11; } catch { return false; } });
   expect(responses.length).toBeGreaterThan(0);
-  const obj = JSON.parse(responses[responses.length-1]);
-  expect(obj.result.dryRun).toBe(false);
+  const payload = parseTool(responses[responses.length-1]);
+  expect(payload?.dryRun).toBe(false);
   // repairedHashes may be zero if placeholder already matches computed hash after loader normalization
-  expect(obj.result.repairedHashes).toBeGreaterThanOrEqual(0);
-  expect(obj.result.normalizedCategories).toBeGreaterThanOrEqual(0);
+  expect(payload!.repairedHashes).toBeGreaterThanOrEqual(0);
+  expect(payload!.normalizedCategories).toBeGreaterThanOrEqual(0);
     server.kill();
     const disk = JSON.parse(fs.readFileSync(file,'utf8'));
   expect(typeof disk.sourceHash).toBe('string');
@@ -80,13 +88,13 @@ describe('instructions/groom tool', () => {
   await wait(100);
     send(server,{ jsonrpc:'2.0', id:20, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
   await wait(40);
-  send(server,{ jsonrpc:'2.0', id:21, method:'instructions/groom', params:{ mode:{ mergeDuplicates:true, removeDeprecated:true } } });
+  send(server,{ jsonrpc:'2.0', id:21, method:'tools/call', params:{ name:'instructions/groom', arguments:{ mode:{ mergeDuplicates:true, removeDeprecated:true } } } });
   await waitFor(() => out.some(l => { try { const o = JSON.parse(l); return o.id === 21; } catch { return false; } }), 5000);
   await wait(150);
   const responses = out.filter(l => { try { const o = JSON.parse(l); return o.id === 21; } catch { return false; } });
   expect(responses.length).toBeGreaterThan(0);
-  const obj = JSON.parse(responses[responses.length-1]);
-    expect(obj.result.deprecatedRemoved + obj.result.duplicatesMerged).toBeGreaterThan(0);
+  const payload = parseTool(responses[responses.length-1]);
+    expect((payload!.deprecatedRemoved || 0) + (payload!.duplicatesMerged || 0)).toBeGreaterThan(0);
     server.kill();
     // One file should remain
     const existsA = fs.existsSync(a);

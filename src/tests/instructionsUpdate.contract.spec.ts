@@ -14,6 +14,10 @@ function startServer(mutation:boolean){
 }
 function send(proc: ReturnType<typeof startServer>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
 function collect(out:string[], id:number){ return out.filter(l=> { try { const o=JSON.parse(l); return o.id===id; } catch { return false; } }).pop(); }
+function toolParsed(out:string[], id:number){
+	const line = collect(out,id); if(!line) return undefined;
+	try { const obj = JSON.parse(line); const txt = obj.result?.content?.[0]?.text; return txt? JSON.parse(txt): undefined; } catch { return undefined; }
+}
 
 describe('instructions/update contract (via instructions/add overwrite)', () => {
 	it('registry does not expose instructions/update, only instructions/add', async () => {
@@ -41,17 +45,17 @@ describe('instructions/update contract (via instructions/add overwrite)', () => 
 		await new Promise(r=> setTimeout(r,60));
 		send(server,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'contract', version:'0' }, capabilities:{ tools:{} } } });
 		await waitFor(()=> !!collect(out,10));
-		send(server,{ jsonrpc:'2.0', id:11, method:'instructions/add', params:{ entry:{ id, title:id, body:'One', priority:5, audience:'all', requirement:'optional', categories:['c'] }, overwrite:true, lax:true } });
-		await waitFor(()=> !!collect(out,11));
+		send(server,{ jsonrpc:'2.0', id:11, method:'tools/call', params:{ name:'instructions/add', arguments:{ entry:{ id, title:id, body:'One', priority:5, audience:'all', requirement:'optional', categories:['c'] }, overwrite:true, lax:true } } });
+		await waitFor(()=> !!toolParsed(out,11));
 		JSON.parse(fs.readFileSync(file,'utf8')) as { version?:string; body:string }; // initial snapshot ignored for contract
 		// Add a manual version via second call
-		send(server,{ jsonrpc:'2.0', id:12, method:'instructions/add', params:{ entry:{ id, title:id, body:'Two', priority:5, audience:'all', requirement:'optional', categories:['c'], version:'0.1.0' }, overwrite:true, lax:true } });
-		await waitFor(()=> !!collect(out,12));
+		send(server,{ jsonrpc:'2.0', id:12, method:'tools/call', params:{ name:'instructions/add', arguments:{ entry:{ id, title:id, body:'Two', priority:5, audience:'all', requirement:'optional', categories:['c'], version:'0.1.0' }, overwrite:true, lax:true } } });
+		await waitFor(()=> !!toolParsed(out,12));
 		const second = JSON.parse(fs.readFileSync(file,'utf8')) as { version?:string; body:string };
 		expect(second.version).toBe('0.1.0');
 		// Third call without version should retain 0.1.0
-		send(server,{ jsonrpc:'2.0', id:13, method:'instructions/add', params:{ entry:{ id, title:id, body:'Three', priority:5, audience:'all', requirement:'optional', categories:['c'] }, overwrite:true, lax:true } });
-		await waitFor(()=> !!collect(out,13));
+		send(server,{ jsonrpc:'2.0', id:13, method:'tools/call', params:{ name:'instructions/add', arguments:{ entry:{ id, title:id, body:'Three', priority:5, audience:'all', requirement:'optional', categories:['c'] }, overwrite:true, lax:true } } });
+		await waitFor(()=> !!toolParsed(out,13));
 		const third = JSON.parse(fs.readFileSync(file,'utf8')) as { version?:string; body:string };
 		expect(third.body).toBe('Three');
 		expect(third.version).toBe('0.1.0');

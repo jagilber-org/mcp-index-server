@@ -54,23 +54,28 @@ describe('MCP Protocol Compliance', () => {
   const lines: string[] = [];
   attachLineCollector(server.stdout, lines);
 
-    // Send initialize request immediately; server may emit server/ready before or after
-    send(server, { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
+  // Send initialize request; per revised handshake we expect initialize response first, then server/ready
+  send(server, { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
 
-    await waitFor(() => lines.some(l => l.includes('server/ready')));
-    const readyLine = lines.find(l => l.includes('server/ready'));
-    expect(readyLine, 'missing server/ready notification').toBeTruthy();
-    const readyObj = JSON.parse(readyLine!);
-    expect(readyObj.method).toBe('server/ready');
-    expect(readyObj.params.version).toBeTruthy();
+  const initLine = await waitForId(lines, 1);
+  expect(initLine, 'missing initialize response').toBeTruthy();
+  const initObj = JSON.parse(initLine!);
+  expect(initObj.result.protocolVersion).toBe('2025-06-18');
+  expect(initObj.result.serverInfo.name).toBe('mcp-index-server');
+  expect(initObj.result.capabilities).toBeTruthy();
+  expect(initObj.result.instructions).toContain('tools/call');
 
-    const initLine = await waitForId(lines, 1);
-    expect(initLine, 'missing initialize response').toBeTruthy();
-    const initObj = JSON.parse(initLine!);
-    expect(initObj.result.protocolVersion).toBe('2025-06-18');
-    expect(initObj.result.serverInfo.name).toBe('mcp-index-server');
-    expect(initObj.result.capabilities).toBeTruthy();
-    expect(initObj.result.instructions).toContain('tools/call');
+  // Wait explicitly (with timeout) for server/ready after initialize (ordering enforced server-side)
+  await waitFor(() => lines.some(l => l.includes('server/ready')), 1500);
+  const readyLine = lines.find(l => l.includes('server/ready'));
+  if(!readyLine){
+    // Provide diagnostic dump to aid flaky triage
+    const snapshot = lines.slice(0,15).join('\n');
+    throw new Error('missing server/ready notification\nFirst lines:\n'+snapshot);
+  }
+  const readyObj = JSON.parse(readyLine!);
+  expect(readyObj.method).toBe('server/ready');
+  expect(readyObj.params.version).toBeTruthy();
 
     server.kill();
   }, 6000);

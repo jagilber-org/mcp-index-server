@@ -41,14 +41,14 @@ describe('enrich/groom do not override explicit governance', () => {
     await new Promise(r=> setTimeout(r,120));
     send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'enrich-test', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> !!findResponse(out,1));
-    send(server,{ jsonrpc:'2.0', id:2, method:'instructions/add', params:{ entry:{ id, title:id, body:'Enrich body', priority:10, audience:'all', requirement:'optional', categories:['enrich'], owner:'enrich-owner', version:'5.4.3', priorityTier:'P1', semanticSummary:'Custom enrich summary' }, overwrite:true, lax:true } });
+  send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id, title:id, body:'Enrich body', priority:10, audience:'all', requirement:'optional', categories:['enrich'], owner:'enrich-owner', version:'5.4.3', priorityTier:'P1', semanticSummary:'Custom enrich summary' }, overwrite:true, lax:true } } });
     await waitFor(()=> !!findResponse(out,2));
   const file = path.join(process.cwd(),'instructions', `${id}.json`);
   // Poll (waitFor) for file creation to avoid ENOENT race (spawn + async write)
   await waitFor(()=> fs.existsSync(file), 8000);
   const before = await readJsonWithRetry<Record<string, unknown>>(file);
     // Call enrich
-    send(server,{ jsonrpc:'2.0', id:3, method:'instructions/enrich', params:{} });
+  send(server,{ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'instructions/enrich', arguments:{} } });
     await waitFor(()=> !!findResponse(out,3));
   // Wait for potential async rewrite completion (file may be rewritten transiently)
   await waitFor(()=> fs.existsSync(file), 8000);

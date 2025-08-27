@@ -76,6 +76,19 @@ try {
 
   Write-Section "Compile"
   npm run build | Write-Host
+  # Detect stale build artifacts containing removed readiness probe strings (e.g. 'interval-probe').
+  # If found, force a full clean + rebuild to eliminate mixed old/new emission logic that causes handshake flakiness.
+  try {
+    $distIndex = Join-Path dist 'server' | Join-Path -ChildPath 'index.js'
+    if (Test-Path $distIndex) {
+      $distContent = Get-Content $distIndex -Raw -ErrorAction SilentlyContinue
+      if ($distContent -match 'interval-probe') {
+        Write-Host "Stale emission probe string detected in dist (interval-probe). Forcing clean rebuild." -ForegroundColor Yellow
+        try { Remove-Item -Recurse -Force dist -ErrorAction Stop } catch { Write-Host "Warning: forced dist clean failed: $($_.Exception.Message)" -ForegroundColor Red }
+        npm run build | Write-Host
+      }
+    }
+  } catch { Write-Host "Warning: stale artifact detection failed: $($_.Exception.Message)" -ForegroundColor Yellow }
   # Immediately create/update sentinels after a successful compile so rapid subsequent cycles skip cleaning.
   try {
     if (-not (Test-Path $rootSentinel)) { Set-Content -Path $rootSentinel -Value 'persist dist between rapid test cycles' -Encoding UTF8 }

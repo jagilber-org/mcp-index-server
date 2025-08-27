@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
-import { waitFor } from './testUtils';
+import { waitFor, parseToolPayload } from './testUtils';
 
 function startServer(){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1' } });
@@ -26,28 +26,30 @@ describe('governance hash auto invalidation (mtime)', () => {
     const out:string[]=[]; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
   send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
   await waitFor(()=> out.some(l=> { try { return JSON.parse(l).id===1; } catch { return false; } }), 3000);
-  send(server,{ jsonrpc:'2.0', id:2, method:'instructions/governanceHash', params:{} });
+  send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/governanceHash', arguments:{} } });
   await waitFor(()=> out.some(l=> { try { return JSON.parse(l).id===2; } catch { return false; } }), 3000);
-    const firstRespLine = out.find(l=>{ try { const o = JSON.parse(l); return o.id===2; } catch { return false; } });
-    expect(firstRespLine).toBeTruthy();
-    const firstObj = JSON.parse(firstRespLine!);
-    const firstHash = firstObj.result.governanceHash;
+  const firstRespLine = out.find(l=>{ try { const o = JSON.parse(l); return o.id===2; } catch { return false; } });
+  expect(firstRespLine).toBeTruthy();
+  const firstPayload = firstRespLine? parseToolPayload<{ governanceHash:string; items:GovProjection[] }>(firstRespLine): undefined;
+  if(!firstPayload) throw new Error('missing first governanceHash payload');
+  const firstHash = firstPayload.governanceHash;
     expect(typeof firstHash).toBe('string');
     // Modify only owner (metadata)
     const disk = JSON.parse(fs.readFileSync(file,'utf8'));
     disk.owner = 'team-y';
     fs.writeFileSync(file, JSON.stringify(disk,null,2));
     // Call governanceHash again WITHOUT reload; auto mtime invalidation should pick it up
-  send(server,{ jsonrpc:'2.0', id:3, method:'instructions/governanceHash', params:{} });
+  send(server,{ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'instructions/governanceHash', arguments:{} } });
   await waitFor(()=> out.some(l=> { try { return JSON.parse(l).id===3; } catch { return false; } }), 3000);
-    const secondRespLine = out.find(l=>{ try { const o = JSON.parse(l); return o.id===3; } catch { return false; } });
-    expect(secondRespLine).toBeTruthy();
-    const secondObj = JSON.parse(secondRespLine!);
-    const secondHash = secondObj.result.governanceHash;
+  const secondRespLine = out.find(l=>{ try { const o = JSON.parse(l); return o.id===3; } catch { return false; } });
+  expect(secondRespLine).toBeTruthy();
+  const secondPayload = secondRespLine? parseToolPayload<{ governanceHash:string; items:GovProjection[] }>(secondRespLine): undefined;
+  if(!secondPayload) throw new Error('missing second governanceHash payload');
+  const secondHash = secondPayload.governanceHash;
     expect(secondHash).not.toBe(firstHash);
     // Confirm projection reflects owner change
-  const firstItem = (firstObj.result.items as GovProjection[]).find(i=> i.id===id)!;
-  const secondItem = (secondObj.result.items as GovProjection[]).find(i=> i.id===id)!;
+  const firstItem = firstPayload.items.find(i=> i.id===id)!;
+  const secondItem = secondPayload.items.find(i=> i.id===id)!;
     expect(firstItem.owner).toBe('team-x');
     expect(secondItem.owner).toBe('team-y');
     server.kill();

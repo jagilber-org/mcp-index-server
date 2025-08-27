@@ -1,5 +1,5 @@
 // Clean shim implementation
-import { registerHandler, listRegisteredMethods, getHandler } from '../server/registry';
+import { registerHandler, listRegisteredMethods } from '../server/registry';
 import { getToolRegistry, REGISTRY_VERSION, STABLE as REGISTRY_STABLE } from './toolRegistry';
 import { computeGovernanceHash, projectGovernance, getCatalogState } from './catalogContext';
 
@@ -11,6 +11,7 @@ import './handlers.integrity';
 import './handlers.prompt';
 import './handlers.usage';
 import './handlers.gates';
+import './handlers.testPrimitive'; // test helper primitive handler registration
 
 // Rich meta/tools implementation (stable vs dynamic)
 function mutationEnabled(){ return process.env.MCP_ENABLE_MUTATION === '1'; }
@@ -29,32 +30,7 @@ registerHandler('meta/tools', () => {
   };
 });
 
-// Alias methods (underscore variants) for back-compat
-const ALIAS_MAP: Record<string,string> = {
-  'health_check': 'health/check',
-  // legacy read-only instruction aliases removed (consolidated under instructions/dispatch)
-  'instructions_query': 'instructions/query',
-  'instructions_categories': 'instructions/categories',
-  'instructions_import': 'instructions/import',
-  'instructions_add': 'instructions/add',
-  'instructions_repair': 'instructions/repair',
-  'instructions_reload': 'instructions/reload',
-  'instructions_remove': 'instructions/remove',
-  'instructions_groom': 'instructions/groom',
-  'instructions_health': 'instructions/health',
-  'prompt_review': 'prompt/review',
-  'integrity_verify': 'integrity/verify',
-  'integrity_manifest': 'integrity/manifest',
-  'usage_track': 'usage/track',
-  'usage_hotset': 'usage/hotset',
-  'usage_flush': 'usage/flush',
-  'metrics_snapshot': 'metrics/snapshot',
-  'gates_evaluate': 'gates/evaluate',
-  'meta_tools': 'meta/tools'
-};
-for(const [alias, orig] of Object.entries(ALIAS_MAP)){
-  const h = getHandler(orig); if(h){ registerHandler(alias, (params: unknown) => h(params)); }
-}
+// Back-compat alias map removed in 1.0.0 (BREAKING CHANGE): callers must use canonical tool names.
 
 // Export governance helpers & catalog accessor (back-compat for tests)
 export { computeGovernanceHash, projectGovernance, getCatalogState };

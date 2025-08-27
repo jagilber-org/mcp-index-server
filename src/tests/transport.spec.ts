@@ -19,14 +19,16 @@ describe('transport health handler', () => {
   server.stdin.write(JSON.stringify({ jsonrpc:'2.0', id:99, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } }) + '\n');
   await waitForDist();
   await waitFor(() => outputs.some(l => l.includes('"id":99')));
-    server.stdin.write(JSON.stringify({ jsonrpc:'2.0', id:1, method:'health/check' }) + '\n');
+  server.stdin.write(JSON.stringify({ jsonrpc:'2.0', id:1, method:'tools/call', params:{ name:'health/check', arguments:{} } }) + '\n');
   await waitFor(() => outputs.some(l => /"id":1/.test(l)));
     server.kill();
   const responseLine = outputs.find(l => /"id":1/.test(l));
     expect(responseLine).toBeTruthy();
     if(responseLine){
       const obj = JSON.parse(responseLine);
-      expect(obj.result.status).toBe('ok');
+  const text = obj.result?.content?.[0]?.text;
+  expect(text).toBeTruthy();
+  if(text){ const parsed = JSON.parse(text); expect(parsed.status).toBe('ok'); }
     }
   }, 5000);
 });

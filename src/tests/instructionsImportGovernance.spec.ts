@@ -27,7 +27,7 @@ describe('instructions/import preserves governance fields', () => {
     const ids = Array.from({ length:3 }, (_,i)=> `import_gov_${Date.now()}_${i}`);
     const entries = ids.map((id,i)=> ({ id, title:id, body:`Body ${i}`, priority:10*(i+1), audience:'all', requirement:'optional', categories:['Import','Temp'], version:`3.0.${i}`, owner:`import-owner-${i}`, priorityTier:'P1', classification:'internal', semanticSummary:`Imported summary ${i}`, changeLog:[{ version:`3.0.${i}`, changedAt:new Date().toISOString(), summary:'seed' }] }));
 
-    send(server,{ jsonrpc:'2.0', id:2, method:'instructions/import', params:{ entries, mode:'overwrite' } });
+  send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/import', arguments:{ entries, mode:'overwrite' } } });
     await waitFor(()=> !!findResponse(out,2));
 
     // Verify each file on disk retains governance fields

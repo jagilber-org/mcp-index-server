@@ -8,11 +8,11 @@
   "categories": [
     "b"
   ],
-  "reviewIntervalDays": 120,
-  "schemaVersion": "2",
   "sourceHash": "d053694953b7f16c118e0f8c919f9c7c571a4cbbde9b4f10813eea97a930cf09",
   "semanticSummary": "Beta body",
-  "lastReviewedAt": "2025-08-27T13:42:03.403Z",
-  "nextReviewDue": "2025-12-25T13:42:03.403Z",
+  "lastReviewedAt": "2025-08-27T16:38:51.631Z",
+  "nextReviewDue": "2025-12-25T16:38:51.631Z",
+  "reviewIntervalDays": 120,
+  "schemaVersion": "2",
   "priorityTier": "P2"
 }

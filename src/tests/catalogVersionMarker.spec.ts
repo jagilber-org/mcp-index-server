@@ -3,7 +3,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { spawn } from 'child_process';
-import { waitFor } from './testUtils';
+import { waitFor, parseToolPayload } from './testUtils';
 
 function startServer(dir:string){
   return spawn('node', [path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', INSTRUCTIONS_DIR: dir } });
@@ -40,13 +40,13 @@ describe('catalog version marker invalidation', () => {
     await waitFor(()=> !!findResponse(outB,1), 3000);
 
     // Prime B cache (empty list)
-  send(serverB,{ jsonrpc:'2.0', id:2, method:'instructions/dispatch', params:{ action:'list' } });
+  send(serverB,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } } });
     await waitFor(()=> !!findResponse(outB,2), 3000);
 
     const beforeMtime = fs.existsSync(marker)? fs.statSync(marker).mtimeMs : 0;
 
     const newId = 'marker-' + Date.now();
-    send(serverA,{ jsonrpc:'2.0', id:2, method:'instructions/add', params:{ entry:{ id:newId, body:'body', title:newId, priority:5, audience:'all', requirement:'optional', categories:['vm'] }, overwrite:true } });
+  send(serverA,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id:newId, body:'body', title:newId, priority:5, audience:'all', requirement:'optional', categories:['vm'] }, overwrite:true } } });
     await waitFor(()=> !!findResponse(outA,2), 3000);
 
     // Marker should exist and have newer mtime
@@ -55,10 +55,11 @@ describe('catalog version marker invalidation', () => {
     expect(afterMtime).toBeGreaterThan(beforeMtime);
 
     // B lists again and should see newId via version invalidation
-  send(serverB,{ jsonrpc:'2.0', id:3, method:'instructions/dispatch', params:{ action:'list' } });
+  send(serverB,{ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } } });
     await waitFor(()=> !!findResponse(outB,3), 3000);
-    const listB = findResponse(outB,3) as RpcSuccess<{ items:{ id:string }[] }> | undefined;
-    expect(listB?.result.items.some(i=> i.id===newId)).toBe(true);
+  const listLine = outB.find(l=> { try { return JSON.parse(l).id===3; } catch { return false; } });
+  const payload = listLine? parseToolPayload<{ items:{ id:string }[] }>(listLine): undefined;
+  expect(!!payload && payload.items.some(i=> i.id===newId)).toBe(true);
 
     serverA.kill(); serverB.kill();
   }, 12000);

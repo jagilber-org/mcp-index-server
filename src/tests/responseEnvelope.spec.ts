@@ -26,22 +26,22 @@ function send(p: ReturnType<typeof start>, msg: Record<string,unknown>){ p.stdin
 
 function collect(out: string[], id: number){ return out.filter(l=> { try { const o=JSON.parse(l); return o.id===id; } catch { return false; } }).pop(); }
 
-describe('response envelope flag', () => {
-  it('returns legacy shape when flag disabled', async () => {
+describe('response envelope flag (deprecated behavior retained as no-op)', () => {
+  it('returns direct tools/call payload when flag disabled', async () => {
     const proc = start(false);
     const out: string[]=[]; attachLineCollector(proc.stdout, out);
     await waitForDist();
     await new Promise(r=> setTimeout(r,80));
     send(proc,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } }});
     await new Promise(r=> setTimeout(r,50));
-    send(proc,{ jsonrpc:'2.0', id:2, method:'health/check', params:{} });
+  send(proc,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'health/check', arguments:{} } });
     // wait for id:2
   await waitFor(()=> !!collect(out,2), 5000);
   const respLine = collect(out,2);
     expect(respLine).toBeTruthy();
     const obj = JSON.parse(respLine!);
-    expect(obj.result).toBeTruthy();
-    expect(obj.result.version).toBeTruthy(); // direct properties (no envelope)
+  const text = obj.result?.content?.[0]?.text; expect(text).toBeTruthy();
+  if(text){ const parsed = JSON.parse(text); expect(parsed.version).toBeTruthy(); }
     proc.kill();
   }, 4000);
 
@@ -52,7 +52,7 @@ describe('response envelope flag', () => {
     await new Promise(r=> setTimeout(r,80));
     send(proc,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } }});
     await new Promise(r=> setTimeout(r,50));
-    send(proc,{ jsonrpc:'2.0', id:11, method:'health/check', params:{} });
+  send(proc,{ jsonrpc:'2.0', id:11, method:'tools/call', params:{ name:'health/check', arguments:{} } });
   await waitFor(()=> !!collect(out,11), 5000);
   let respLine = collect(out,11);
   if(!respLine){ // fallback passive delay then retry collect (rare line-buffer delay)
@@ -61,34 +61,33 @@ describe('response envelope flag', () => {
   }
     expect(respLine).toBeTruthy();
     const obj = JSON.parse(respLine!);
-    expect(obj.result).toBeTruthy();
-    // Envelope present
-    expect(obj.result.version).toBe(1); // envelope version
-    expect(obj.result.serverVersion).toBeTruthy();
-    expect(obj.result.data).toBeTruthy();
-    expect(obj.result.data.version).toBeTruthy();
+  // Envelope removed in 1.0.0 simplification: expect direct tools/call shape
+  const inner = obj.result?.content?.[0]?.text; expect(inner).toBeTruthy();
+  if(inner){ const parsed = JSON.parse(inner); expect(parsed && (parsed.status || parsed.version)).toBeTruthy(); }
     proc.kill();
   }, 4000);
 
-  it('wraps primitive return values', async () => {
+  it('returns primitive payload JSON-encoded in content[0].text', async () => {
     const proc = start(true);
     const out: string[]=[]; attachLineCollector(proc.stdout, out);
     await waitForDist();
     await new Promise(r=> setTimeout(r,80));
     send(proc,{ jsonrpc:'2.0', id:30, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } }});
     await new Promise(r=> setTimeout(r,50));
-    send(proc,{ jsonrpc:'2.0', id:31, method:'test/primitive', params:{} });
+  send(proc,{ jsonrpc:'2.0', id:31, method:'tools/call', params:{ name:'test/primitive', arguments:{} } });
   await waitFor(()=> !!collect(out,31), 5000);
   let line = collect(out,31);
   if(!line){ await new Promise(r=> setTimeout(r,150)); line = collect(out,31); }
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
-    expect(obj.result.version).toBe(1);
-    expect(obj.result.data).toBe(42);
+  // Primitive test tool returns primitive number directly now (no envelope)
+  expect(obj.result?.content).toBeTruthy();
+  const txt = obj.result?.content?.[0]?.text; expect(txt).toBeTruthy();
+  if(txt){ const parsed: unknown = JSON.parse(txt); let val: unknown = parsed; if(parsed && typeof parsed==='object' && 'data' in (parsed as Record<string,unknown>)){ val = (parsed as Record<string,unknown>).data; } expect(val).toBe(42); }
     proc.kill();
   }, 4000);
 
-  it('flag loaded from flags.json when env absent', async () => {
+  it('flags.json response_envelope_v1 ignored (still direct shape)', async () => {
     // Create temporary flags file
     const fs = await import('fs');
     const os = await import('os');
@@ -102,17 +101,18 @@ describe('response envelope flag', () => {
     await new Promise(r=> setTimeout(r,80));
     proc.stdin?.write(JSON.stringify({ jsonrpc:'2.0', id:40, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } }})+'\n');
     await new Promise(r=> setTimeout(r,50));
-    proc.stdin?.write(JSON.stringify({ jsonrpc:'2.0', id:41, method:'health/check', params:{} })+'\n');
+  proc.stdin?.write(JSON.stringify({ jsonrpc:'2.0', id:41, method:'tools/call', params:{ name:'health/check', arguments:{} } })+'\n');
   await waitFor(()=> !!collect(out,41), 5000);
   let respLine = collect(out,41);
   if(!respLine){ await new Promise(r=> setTimeout(r,150)); respLine = collect(out,41); }
     expect(respLine).toBeTruthy();
     const obj = JSON.parse(respLine!);
-    expect(obj.result.version).toBe(1);
+  // Envelope file flag ignored; still legacy direct shape
+  const inner2 = obj.result?.content?.[0]?.text; expect(inner2).toBeTruthy();
     proc.kill();
   }, 5000);
 
-  it('env var overrides flags file (disables)', async () => {
+  it('env var overrides flags file (disables) - still direct shape', async () => {
     const fs = await import('fs');
     const os = await import('os');
     const pathMod = await import('path');
@@ -125,15 +125,14 @@ describe('response envelope flag', () => {
     await new Promise(r=> setTimeout(r,80));
     proc.stdin?.write(JSON.stringify({ jsonrpc:'2.0', id:50, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } }})+'\n');
     await new Promise(r=> setTimeout(r,50));
-    proc.stdin?.write(JSON.stringify({ jsonrpc:'2.0', id:51, method:'health/check', params:{} })+'\n');
+  proc.stdin?.write(JSON.stringify({ jsonrpc:'2.0', id:51, method:'tools/call', params:{ name:'health/check', arguments:{} } })+'\n');
   await waitFor(()=> !!collect(out,51), 5000);
   let respLine = collect(out,51);
   if(!respLine){ await new Promise(r=> setTimeout(r,150)); respLine = collect(out,51); }
     expect(respLine).toBeTruthy();
     const obj = JSON.parse(respLine!);
-    // Should be legacy (no envelope)
-    expect(obj.result.version).toBeTruthy(); // direct version field from health/check
-    expect(obj.result.data).toBeUndefined();
+  // Should be legacy (no envelope) -> we still receive tools/call shape
+  const txt = obj.result?.content?.[0]?.text; expect(txt).toBeTruthy(); if(txt){ const parsed = JSON.parse(txt); expect(parsed.version).toBeTruthy(); }
     proc.kill();
   }, 5000);
 });

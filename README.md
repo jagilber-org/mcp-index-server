@@ -8,6 +8,7 @@ Enterprise-grade local Model Context Protocol server providing a governed, class
 
 Windows: `%APPDATA%/Code/User/mcp.json`  
 Example full path: `C:\\Users\\<you>\\AppData\\Roaming\\Code\\User\\mcp.json`
+ 
 - **Security**: No network exposure, process-isolated communication
 - **Tools**: All 17+ instruction management tools available via MCP protocol
 
@@ -260,6 +261,54 @@ Rationale: Keeps authoring friction low while making CRUD semantics deterministi
 node dist/server/index.js
 ```
 
+## Local Production Deployment (c:\mcp)
+
+Quick script creates a trimmed runtime copy (dist + minimal package.json + seed instructions) at `C:\mcp\mcp-index-server`.
+
+Steps:
+
+1. Build locally (if not already):
+
+  ```powershell
+  npm run build
+  ```
+
+1. Deploy:
+
+  ```powershell
+  pwsh scripts/deploy-local.ps1 -Destination C:\mcp\mcp-index-server -Rebuild -Overwrite
+  ```
+
+1. Install production deps (inside destination):
+
+  ```powershell
+  cd C:\mcp\mcp-index-server
+  npm install --production
+  ```
+
+1. Start server (PowerShell):
+
+  ```powershell
+  pwsh .\start.ps1 -VerboseLogging -EnableMutation
+  ```
+
+  Or (cmd):
+
+  ```cmd
+  start.cmd
+  ```
+
+1. Configure global VS Code `mcp.json` to point `cwd` to `C:/mcp/mcp-index-server` and `args: ["dist/server/index.js"]`.
+
+Notes:
+
+- The deploy script skips copying transient or fuzz / concurrent temp instruction files.
+- Re-run the deploy with `-Overwrite` to refresh everything (will replace runtime copy).
+- Governance & usage data live inside the instruction JSON files; a simple file backup is your persistence strategy.
+
+Optional: Create a scheduled task or Windows Service wrapper invoking `pwsh -File C:\mcp\mcp-index-server\start.ps1 -EnableMutation` for auto-start.
+
+
 ### Admin Dashboard Usage (Optional)
 
 ```bash
@@ -336,9 +385,20 @@ First matching regex wins; fallback keeps `unowned`.
 
 Workflow `.github/workflows/instruction-bootstrap-guard.yml` runs catalog enrichment (`node scripts/bootstrap-catalog.mjs`) and fails if any normalized governance fields or canonical snapshot changes were not committed, preventing drift between PR content and canonical state.
 
-### Tool Name Compatibility
+### Tool Name Compatibility (1.0.0 Simplification)
 
-Some clients warn on `/` in JSON-RPC method names. Underscore aliases are now registered (e.g. `instructions_add`) alongside canonical names. Prefer canonical names where supported.
+All legacy underscore alias method names were removed in 1.0.0. Only canonical slash-form tool names are supported and must be invoked via `tools/call`.
+
+Migration examples:
+
+| Legacy (pre-1.0) direct call | 1.0+ Required Form |
+|------------------------------|--------------------|
+| `{ "method":"health/check" }` | `{ "method":"tools/call", "params": { "name":"health/check", "arguments":{} } }` |
+| `{ "method":"health_check" }` | (unsupported) use canonical above |
+| `{ "method":"metrics_snapshot" }` | `{ "method":"tools/call", "params": { "name":"metrics/snapshot" } }` |
+| `{ "method":"usage_track" }` | `{ "method":"tools/call", "params": { "name":"usage/track", "arguments": { "id":"sample" } } }` |
+
+Rationale: a single execution pathway (tools/call) eliminates duplicate validation, reduces races, and clarifies capability negotiation.
 
 ### Governance Validation Script
 
@@ -359,7 +419,7 @@ Comprehensive green test suite (no skipped tests) covering:
 - Enrichment / grooming behaviors & property-based idempotence (seeded for determinism)
 - Security hardening (prompt size limits, null byte sanitation) & prompt review criteria
 
-Run tests: `npm test` (125 tests across 69 files at 0.9.1)
+Run tests: `npm test` (updated for 1.0.0 – legacy alias & direct method tests removed)
 
 Contract-only schema verification: `npm run test:contracts` (3 focused contract tests)
 

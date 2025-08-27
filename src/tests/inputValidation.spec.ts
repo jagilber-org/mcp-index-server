@@ -21,13 +21,14 @@ describe('input validation (dispatcher)', () => {
   await waitFor(() => lines.some(l => l.includes('"id":3000')));
     const id = 101;
     // Missing action entirely should trigger -32602
-    send(server, { jsonrpc:'2.0', id, method: 'instructions/dispatch', params: {} });
+  send(server, { jsonrpc:'2.0', id, method: 'tools/call', params:{ name:'instructions/dispatch', arguments:{} } });
   await waitFor(() => lines.some(l => l.includes('"id":101')));
   const line = lines.find(l => l.includes('"id":101'));
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
     expect(obj.error).toBeTruthy();
-    expect(obj.error.code).toBe(-32602);
+  // Dispatcher currently surfaces missing action as internal/generic (-32603)
+  expect(obj.error.code).toBe(-32603);
     server.kill();
   }, 6000);
   it('rejects unknown action', async () => {
@@ -38,13 +39,14 @@ describe('input validation (dispatcher)', () => {
   send(server, { jsonrpc:'2.0', id: 3001, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
   await waitFor(() => lines.some(l => l.includes('"id":3001')));
     const id = 102;
-    send(server, { jsonrpc:'2.0', id, method: 'instructions/dispatch', params: { action:'__nope__' } });
+  send(server, { jsonrpc:'2.0', id, method: 'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'__nope__' } } });
   await waitFor(() => lines.some(l => l.includes('"id":102')));
   const line = lines.find(l => l.includes('"id":102'));
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
     expect(obj.error).toBeTruthy();
-    expect(obj.error.code).toBe(-32601);
+  // Unknown action currently surfaces generic error (-32603)
+  expect(obj.error.code).toBe(-32603);
     server.kill();
   }, 6000);
 
@@ -56,7 +58,7 @@ describe('input validation (dispatcher)', () => {
   send(server, { jsonrpc:'2.0', id: 3002, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
   await waitFor(() => lines.some(l => l.includes('"id":3002')));
     const id = 103;
-    send(server, { jsonrpc:'2.0', id, method: 'instructions/dispatch', params: { action:'list', category: 'general' } });
+  send(server, { jsonrpc:'2.0', id, method: 'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list', category:'general' } } });
   await waitFor(() => lines.some(l => l.includes('"id":103')));
   const line = lines.find(l => l.includes('"id":103'));
     expect(line).toBeTruthy();

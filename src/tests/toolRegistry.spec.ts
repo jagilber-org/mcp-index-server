@@ -12,6 +12,10 @@ function startServer(mutation = true){
 
 function send(proc: ReturnType<typeof spawn>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg) + '\n'); }
 
+function callTool(proc: ReturnType<typeof spawn>, id: number, name: string, args: Record<string, unknown> = {}){
+  send(proc,{ jsonrpc:'2.0', id, method:'tools/call', params:{ name, arguments: args } });
+}
+
 describe('MCP tool registry', () => {
   it('exposes mcp registry with required fields', async () => {
     const server = startServer();
@@ -19,14 +23,16 @@ describe('MCP tool registry', () => {
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
   send(server, { jsonrpc:'2.0', id: 2000, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
   await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===2000; } catch { return false; } }), 3000);
-    const id = 42;
-    send(server, { jsonrpc:'2.0', id, method: 'meta/tools' });
+  const id = 42;
+  callTool(server, id, 'meta/tools', {});
   await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===id; } catch { return false; } }), 3000);
     const line = lines.find(l => l.includes('"id":42'));
     expect(line, 'missing meta/tools response').toBeTruthy();
-    const obj = JSON.parse(line!);
-    expect(obj.error).toBeFalsy();
-    const result = obj.result;
+  const obj = JSON.parse(line!);
+  expect(obj.error).toBeFalsy();
+  const text = obj.result?.content?.[0]?.text; expect(text).toBeTruthy();
+  if(!text){ server.kill(); return; }
+  const result = JSON.parse(text);
     expect(result.mcp, 'missing mcp registry block').toBeTruthy();
     expect(typeof result.mcp.registryVersion).toBe('string');
     expect(Array.isArray(result.mcp.tools)).toBe(true);
@@ -46,14 +52,18 @@ describe('MCP tool registry', () => {
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
   send(server, { jsonrpc:'2.0', id: 2001, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
   await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===2001; } catch { return false; } }), 3000);
-    const id = 43;
-    send(server, { jsonrpc:'2.0', id, method: 'meta/tools' });
+  const id = 43;
+  callTool(server, id, 'meta/tools', {});
   await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===id; } catch { return false; } }), 3000);
     const line = lines.find(l => l.includes('"id":43'));
     expect(line, 'missing meta/tools response').toBeTruthy();
     const obj = JSON.parse(line!);
-  const disabledList = (obj.result.dynamic.disabled as Array<{ method:string }>).map(d => d.method);
-    expect(disabledList).toContain('instructions/import');
+    const text = obj.result?.content?.[0]?.text; expect(text).toBeTruthy();
+    if(text){
+      const result = JSON.parse(text);
+      const disabledList = (result.dynamic?.disabled as Array<{ method:string }> | undefined)?.map(d=> d.method) || [];
+      expect(disabledList).toContain('instructions/import');
+    }
     server.kill();
   }, 6000);
 });

@@ -147,7 +147,7 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 - Documentation (TOOLS, PRD) pending full rewrite to reflect dispatcher (will land immediately post-merge)
 - Performance & probe scripts migrated to dispatcher
 
-### Migration Guide
+### Migration Guide (1.0.0)
 
 | Old | New (dispatcher) |
 |-----|------------------|
@@ -158,7 +158,7 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 | instructions/diff | instructions/dispatch { action:"diff", clientHash?, known? } |
 | instructions/export | instructions/dispatch { action:"export", ids?, metaOnly? } |
 
-### Rationale
+### Rationale (1.0.0)
 
 Unifying read-only catalog operations behind a single tool reduces handshake/tool enumeration overhead, enables richer batching, and provides a single stability / gating surface. Future specialized actions (advanced query planner) can ship without expanding the top-level tool set.
 
@@ -177,7 +177,7 @@ Unifying read-only catalog operations behind a single tool reduces handshake/too
 - Clarified architecture doc to reflect 0.9.x dispatcher consolidation (previous note referenced 0.8.x only).
 - Refreshed tools registry generated notes for stabilization pass.
 
-### Internal
+### Internal (1.0.0)
 
 - No API surface changes vs 0.9.0 (patch release). Dispatcher contract & tool schemas unchanged.
 - Pure documentation + test reliability improvements; safe for consumers.
@@ -185,3 +185,47 @@ Unifying read-only catalog operations behind a single tool reduces handshake/too
 ### Upgrade Guidance
 
 No action required for clients already on 0.9.0. Optional: pull to benefit from fuller test coverage and clarified documentation.
+
+## [1.0.0] - 2025-08-27
+
+### Breaking Changes
+
+- Removed all legacy direct JSON-RPC per-tool method handlers (e.g. calling `health/check` directly). Clients MUST use `tools/call` with `{ name:"<tool>" }`.
+- Removed underscore alias methods (e.g. `health_check`, `metrics_snapshot`, `usage_track`, etc.). Canonical slash-form tool names only.
+- Removed fallback minimal stdio transport path (SDK transport now required; process exits fast if unavailable).
+- Removed Ajv validation layer for direct handlers (tool argument validation remains schema-based internally where needed or enforced by tool logic).
+
+### Added / Changed
+
+- Simplified handshake: deterministic ordering `initialize` response -> single `server/ready` -> optional `tools/list_changed` (idempotent ready emitter with trace logging via `MCP_HANDSHAKE_TRACE=1`).
+- Added structured handshake trace events (`initialize_received`, `ready_emitted`, watchdog diagnostics) for observability.
+- Hardened tool list change ordering: prevents premature `tools/list_changed` before `server/ready`.
+- Updated tests to exclusively exercise `tools/call` path (`transport.spec.ts`, `responseEnvelope.spec.ts`, latency & coverage suites).
+
+### Migration Guide
+
+| Legacy Pattern | 1.0+ Replacement |
+|----------------|------------------|
+| `{ method:"health/check" }` | `{ method:"tools/call", params:{ name:"health/check", arguments:{} } }` |
+| `{ method:"health_check" }` | (unsupported) use canonical above |
+| `{ method:"metrics_snapshot" }` | `{ method:"tools/call", params:{ name:"metrics/snapshot" } }` |
+| Direct instruction tool names (dispatcher unaffected) | Use dispatcher or existing canonical tool via tools/call |
+
+### Rationale
+
+Removing back-compat surfaces reduces ambiguity in clients, eliminates duplicate execution pathways, and tightens protocol compliance (single ready emission, no early notifications). Observability via trace events aids debugging without impacting normal stderr noise (opt-in flag).
+
+### Upgrade Notes
+
+- Update any bespoke clients or scripts invoking legacy underscore methods to the canonical names via `tools/call`.
+- Ensure environment expects a single `server/ready` notification; multi-ready tolerant clients remain unaffected.
+- If you previously relied on the fallback transport, adopt the standard MCP SDK JSON-RPC stdio framing; no additional configuration needed for normal usage.
+
+### Internal
+
+- Removed ~300 lines of legacy compatibility code; reduced handshake race conditions and watchdog complexity.
+- Test suite adjusted; alias test removed.
+
+### Future
+
+- Potential addition: explicit protocolVersion negotiation matrix & structured `capabilities.handshake` section once MCP spec advances.

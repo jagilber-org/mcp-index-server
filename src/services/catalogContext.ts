@@ -194,9 +194,16 @@ export function incrementUsage(id:string){
     return { id, rateLimited: true, usageCount: 0 };
   }
   
-  const st = ensureLoaded();
-  const e = st.byId.get(id);
-  if(!e) return null;
+  let st = ensureLoaded();
+  let e = st.byId.get(id);
+  if(!e){
+    // Possible race: caller invalidated then immediately incremented before file write completed on disk.
+    // Perform a single forced reload to self-heal (cheap because metadata hash will differ or file now present).
+    invalidate();
+    st = ensureLoaded();
+    e = st.byId.get(id);
+    if(!e) return null; // genuinely absent
+  }
   const nowIso = new Date().toISOString();
   e.usageCount = (e.usageCount??0)+1;
   incrementCounter('propertyUpdate:usage');

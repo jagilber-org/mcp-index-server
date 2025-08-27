@@ -16,6 +16,16 @@ function startServer(mutation: boolean){
 }
 function send(proc: ReturnType<typeof startServer>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
 function collect(out:string[], id:number){ return out.filter(l=> { try { const o=JSON.parse(l); return o.id===id; } catch { return false; } }).pop(); }
+function parseTool(out:string[], id:number){
+	const line = collect(out,id);
+	if(!line) return undefined;
+	try {
+		const obj = JSON.parse(line);
+		const txt = obj.result?.content?.[0]?.text;
+		if(!txt) return undefined;
+		return JSON.parse(txt);
+	} catch { return undefined; }
+}
 
 describe('instructions/update via overwrite (behavioral)', () => {
 	it('updates body without changing version or changeLog when no version provided', async () => {
@@ -28,15 +38,16 @@ describe('instructions/update via overwrite (behavioral)', () => {
 		send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'update-test', version:'0' }, capabilities:{ tools:{} } } });
 		await waitFor(()=> !!collect(out,1));
 		// Create with explicit version + changeLog
-		send(server,{ jsonrpc:'2.0', id:2, method:'instructions/add', params:{ entry:{ id, title:id, body:'Initial body', priority:10, audience:'all', requirement:'optional', categories:['upd'], version:'1.2.3', changeLog:[{ version:'1.2.3', changedAt:new Date().toISOString(), summary:'initial' }] }, overwrite:true, lax:true } });
-		await waitFor(()=> !!collect(out,2));
+		// create via tools/call wrapper
+		send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/add', arguments:{ entry:{ id, title:id, body:'Initial body', priority:10, audience:'all', requirement:'optional', categories:['upd'], version:'1.2.3', changeLog:[{ version:'1.2.3', changedAt:new Date().toISOString(), summary:'initial' }] }, overwrite:true, lax:true } } });
+		await waitFor(()=> !!parseTool(out,2));
 		const first = JSON.parse(fs.readFileSync(file,'utf8')) as { version:string; changeLog?: unknown[]; sourceHash:string };
 		expect(first.version).toBe('1.2.3');
 		const firstHash = first.sourceHash;
 		const firstChangeLen = (first.changeLog||[]).length;
 		// Overwrite with new body, no version
-		send(server,{ jsonrpc:'2.0', id:3, method:'instructions/add', params:{ entry:{ id, title:id, body:'Modified body once', priority:10, audience:'all', requirement:'optional', categories:['upd'] }, overwrite:true, lax:true } });
-		await waitFor(()=> !!collect(out,3));
+		send(server,{ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'instructions/add', arguments:{ entry:{ id, title:id, body:'Modified body once', priority:10, audience:'all', requirement:'optional', categories:['upd'] }, overwrite:true, lax:true } } });
+		await waitFor(()=> !!parseTool(out,3));
 		const second = JSON.parse(fs.readFileSync(file,'utf8')) as { version:string; changeLog?: unknown[]; body:string; sourceHash:string };
 		expect(second.body).toBe('Modified body once');
 		expect(second.version).toBe('1.2.3'); // unchanged
@@ -54,33 +65,34 @@ describe('instructions/update via overwrite (behavioral)', () => {
 		await new Promise(r=> setTimeout(r,70));
 		send(server,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'update-test', version:'0' }, capabilities:{ tools:{} } } });
 		await waitFor(()=> !!collect(out,10));
-		send(server,{ jsonrpc:'2.0', id:11, method:'instructions/add', params:{ entry:{ id, title:id, body:'Initial', priority:20, audience:'all', requirement:'optional', categories:['upd'] }, overwrite:true, lax:true } });
-		await waitFor(()=> !!collect(out,11));
-		// list to get current hash
-		send(server,{ jsonrpc:'2.0', id:12, method:'instructions/dispatch', params:{ action:'list' } });
-		await waitFor(()=> !!collect(out,12));
-		const listObj = JSON.parse(collect(out,12)!).result as { hash:string; items: { id:string; sourceHash:string }[] };
+		send(server,{ jsonrpc:'2.0', id:11, method:'tools/call', params:{ name:'instructions/add', arguments:{ entry:{ id, title:id, body:'Initial', priority:20, audience:'all', requirement:'optional', categories:['upd'] }, overwrite:true, lax:true } } });
+		await waitFor(()=> !!parseTool(out,11));
+		// list to get current hash via dispatcher tool
+		send(server,{ jsonrpc:'2.0', id:12, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } } });
+		await waitFor(()=> !!parseTool(out,12));
+		const listObj = parseTool(out,12) as { hash:string; items: { id:string; sourceHash:string }[] };
 		const currentHash = listObj.hash;
 		const entry = listObj.items.find(e=> e.id===id);
 		expect(entry).toBeTruthy();
 		const knownSourceHash = (entry as { sourceHash:string }).sourceHash;
 		const fullKnown = listObj.items.map(i=> ({ id: i.id, sourceHash: i.sourceHash }));
 		// diff upToDate using full known array
-		send(server,{ jsonrpc:'2.0', id:13, method:'instructions/dispatch', params:{ action:'diff', clientHash: currentHash, known: fullKnown } });
-		await waitFor(()=> !!collect(out,13));
-		const diff1 = JSON.parse(collect(out,13)!).result;
+		send(server,{ jsonrpc:'2.0', id:13, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'diff', clientHash: currentHash, known: fullKnown } } });
+		await waitFor(()=> !!parseTool(out,13));
+		interface DiffResult { upToDate?: boolean; added?: unknown[] }
+		const diff1 = parseTool(out,13) as DiffResult;
 		expect(diff1.upToDate || (Array.isArray(diff1.added)&&diff1.added.length===0)).toBeTruthy();
 		// overwrite with modified body
-		send(server,{ jsonrpc:'2.0', id:14, method:'instructions/add', params:{ entry:{ id, title:id, body:'Changed body', priority:20, audience:'all', requirement:'optional', categories:['upd'] }, overwrite:true, lax:true } });
-		await waitFor(()=> !!collect(out,14));
+		send(server,{ jsonrpc:'2.0', id:14, method:'tools/call', params:{ name:'instructions/add', arguments:{ entry:{ id, title:id, body:'Changed body', priority:20, audience:'all', requirement:'optional', categories:['upd'] }, overwrite:true, lax:true } } });
+		await waitFor(()=> !!parseTool(out,14));
 		const after = JSON.parse(fs.readFileSync(file,'utf8')) as { sourceHash:string };
 		expect(after.sourceHash).not.toBe(knownSourceHash);
 		// diff again with old hash + known -> updated array should include id
 		// Use previous known (still old hash for modified id) but full known for others (we just replace entry for id with old hash)
 		const staleKnown = fullKnown.map(k=> k.id===id ? { id, sourceHash: knownSourceHash }: k);
-		send(server,{ jsonrpc:'2.0', id:15, method:'instructions/dispatch', params:{ action:'diff', clientHash: currentHash, known: staleKnown } });
-		await waitFor(()=> !!collect(out,15));
-		const diff2 = JSON.parse(collect(out,15)!).result as { updated?: { id:string }[] };
+		send(server,{ jsonrpc:'2.0', id:15, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'diff', clientHash: currentHash, known: staleKnown } } });
+		await waitFor(()=> !!parseTool(out,15));
+		const diff2 = parseTool(out,15) as { updated?: { id:string }[] };
 		const updatedIds = (diff2.updated||[]).map(e=> e.id);
 		expect(updatedIds).toContain(id);
 		server.kill();

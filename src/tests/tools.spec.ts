@@ -11,9 +11,8 @@ function startServer(){
 }
 
 type Child = ReturnType<typeof spawn>;
-function send(proc: Child, msg: Record<string, unknown>){
-  proc.stdin?.write(JSON.stringify(msg) + '\n');
-}
+function send(proc: Child, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg) + '\n'); }
+function callTool(proc: Child, id: number, name: string, args: Record<string, unknown> = {}){ send(proc,{ jsonrpc:'2.0', id, method:'tools/call', params:{ name, arguments: args } }); }
 
 describe('instruction tool handlers', () => {
   const instructionsDir = path.join(process.cwd(), 'instructions');
@@ -36,12 +35,13 @@ describe('instruction tool handlers', () => {
   send(server,{ jsonrpc:'2.0', id:99, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
   await waitForDist();
   await waitFor(() => out.some(l => l.includes('"id":99')));
-  send(server,{ jsonrpc:'2.0', id:1, method:'instructions/dispatch', params:{ action:'list' } });
+  callTool(server,1,'instructions/dispatch',{ action:'list' });
   await waitFor(() => out.some(l => /"id":1/.test(l)));
   const line = out.find(l => /"id":1/.test(l));
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
-    expect(obj.result.items.length).toBeGreaterThanOrEqual(2);
+    const text = obj.result?.content?.[0]?.text; expect(text).toBeTruthy();
+    if(text){ const inner = JSON.parse(text); expect(inner.items.length).toBeGreaterThanOrEqual(2); }
     server.kill();
   }, 6000);
 });

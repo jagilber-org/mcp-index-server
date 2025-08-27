@@ -14,6 +14,11 @@ function startServer(mutation:boolean){
 
 function send(proc: ReturnType<typeof spawn>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
 
+// Helper to call a tool (new unified surface)
+function callTool(proc: ReturnType<typeof spawn>, id: number, name: string, args: Record<string, unknown>){
+  send(proc,{ jsonrpc:'2.0', id, method:'tools/call', params:{ name, arguments: args }});
+}
+
 const wait = (ms:number)=> new Promise(r=>setTimeout(r,ms));
 
 describe('instructions/add tool', () => {
@@ -30,15 +35,19 @@ describe('instructions/add tool', () => {
     await wait(60);
     send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===1; } catch { return false; } }), 1500);
-    send(server,{ jsonrpc:'2.0', id:2, method:'instructions/add', params:{ entry:{ id, body:'Body only' }, lax:true } });
+  callTool(server,2,'instructions/add',{ entry:{ id, body:'Body only' }, lax:true });
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===2; } catch { return false; } }), 2000);
     const line = out.filter(l=> { try { const o=JSON.parse(l); return o.id===2; } catch { return false; } }).pop();
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
-    expect(obj.result.id).toBe(id);
-    if('created' in obj.result) expect(obj.result.created).toBe(true);
-    if('skipped' in obj.result) expect(obj.result.skipped).toBe(false);
-    expect(obj.result.hash).toBeTypeOf('string');
+    const text = obj.result?.content?.[0]?.text; expect(text).toBeTruthy();
+    if(text){
+      const inner = JSON.parse(text);
+      expect(inner.id).toBe(id);
+      if('created' in inner) expect(inner.created).toBe(true);
+      if('skipped' in inner) expect(inner.skipped).toBe(false);
+      expect(inner.hash).toBeTypeOf('string');
+    }
     expect(fs.existsSync(file)).toBe(true);
     server.kill();
   },6000);
@@ -53,15 +62,19 @@ describe('instructions/add tool', () => {
     await wait(60);
     send(server,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===10; } catch { return false; } }));
-    send(server,{ jsonrpc:'2.0', id:11, method:'instructions/add', params:{ entry:{ id, body:'new body attempt' }, lax:true } });
+  callTool(server,11,'instructions/add',{ entry:{ id, body:'new body attempt' }, lax:true });
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===11; } catch { return false; } }));
     const line = out.filter(l=> { try { const o=JSON.parse(l); return o.id===11; } catch { return false; } }).pop();
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
-    expect(obj.result.id).toBe(id);
-    if('skipped' in obj.result) expect(obj.result.skipped).toBe(true);
-    if('created' in obj.result) expect(obj.result.created).toBe(false);
-    if('overwritten' in obj.result) expect(obj.result.overwritten).toBe(false);
+    const text = obj.result?.content?.[0]?.text; expect(text).toBeTruthy();
+    if(text){
+      const inner = JSON.parse(text);
+      expect(inner.id).toBe(id);
+      if('skipped' in inner) expect(inner.skipped).toBe(true);
+      if('created' in inner) expect(inner.created).toBe(false);
+      if('overwritten' in inner) expect(inner.overwritten).toBe(false);
+    }
     server.kill();
   },6000);
 
@@ -75,13 +88,17 @@ describe('instructions/add tool', () => {
     await wait(60);
     send(server,{ jsonrpc:'2.0', id:20, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===20; } catch { return false; } }));
-    send(server,{ jsonrpc:'2.0', id:21, method:'instructions/add', params:{ entry:{ id, body:'overwrite body' }, lax:true, overwrite:true } });
+  callTool(server,21,'instructions/add',{ entry:{ id, body:'overwrite body' }, lax:true, overwrite:true });
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===21; } catch { return false; } }));
     const line = out.filter(l=> { try { const o=JSON.parse(l); return o.id===21; } catch { return false; } }).pop();
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
-    expect(obj.result.id).toBe(id);
-    if('overwritten' in obj.result) expect(obj.result.overwritten).toBe(true);
+    const text = obj.result?.content?.[0]?.text; expect(text).toBeTruthy();
+    if(text){
+      const inner = JSON.parse(text);
+      expect(inner.id).toBe(id);
+      if('overwritten' in inner) expect(inner.overwritten).toBe(true);
+    }
     const disk = JSON.parse(fs.readFileSync(file,'utf8'));
     expect(disk.body).toBe('overwrite body');
     server.kill();
@@ -95,14 +112,15 @@ describe('instructions/add tool', () => {
     await wait(60);
     send(server,{ jsonrpc:'2.0', id:30, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===30; } catch { return false; } }));
-    send(server,{ jsonrpc:'2.0', id:31, method:'instructions/add', params:{ entry:{ id, body:'gated attempt'}, lax:true } });
+  callTool(server,31,'instructions/add',{ entry:{ id, body:'gated attempt'}, lax:true });
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===31; } catch { return false; } }));
     const line = out.filter(l=> { try { const o=JSON.parse(l); return o.id===31; } catch { return false; } }).pop();
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
-    expect(obj.error).toBeTruthy();
-    expect(obj.error.code).toBe(-32603);
-    expect(obj.error.data?.method).toBe('instructions/add');
+  // Unknown tool now yields -32603 Unknown tool OR mutation gate (-32603). Direct method removed.
+  expect(obj.error).toBeTruthy();
+  expect(obj.error.code).toBe(-32603);
+  expect(String(obj.error.data?.method || obj.error.data?.name || '')).toMatch(/instructions\/add/);
     server.kill();
   },6000);
 });

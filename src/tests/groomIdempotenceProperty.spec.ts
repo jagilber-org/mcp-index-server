@@ -4,7 +4,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { waitFor } from './testUtils';
+import { waitFor, parseToolPayload } from './testUtils';
 
 // Property: Groom is idempotent – after one non-dry run that may normalize/merge/repair,
 // a second immediate run (same mode flags) performs no further changes.
@@ -72,25 +72,26 @@ describe('property: groom idempotence', () => {
           await wait(60);
           send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
           await wait(40);
-          send(server,{ jsonrpc:'2.0', id:2, method:'instructions/groom', params:{ mode:{ mergeDuplicates:true, removeDeprecated:true } } });
+          send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/groom', arguments:{ mode:{ mergeDuplicates:true, removeDeprecated:true } } } });
           await waitFor(() => out.some(l => { try { const o = JSON.parse(l); return o.id === 2; } catch { return false; } }), 5000);
           await wait(80);
           const resp1Lines = out.filter(l => { try { const o = JSON.parse(l); return o.id === 2; } catch { return false; } });
           expect(resp1Lines.length).toBeGreaterThan(0);
           interface GroomResult { previousHash:string; hash:string; normalizedCategories:number; repairedHashes:number; duplicatesMerged:number; deprecatedRemoved:number; filesRewritten:number; }
-          // First run result intentionally ignored (only second run idempotence enforced)
-          JSON.parse(resp1Lines[resp1Lines.length-1]).result as GroomResult;
+          const firstPayload = parseToolPayload<GroomResult>(resp1Lines[resp1Lines.length-1]);
+          expect(firstPayload).toBeTruthy();
           // Second run
-          send(server,{ jsonrpc:'2.0', id:3, method:'instructions/groom', params:{ mode:{ mergeDuplicates:true, removeDeprecated:true } } });
+          send(server,{ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'instructions/groom', arguments:{ mode:{ mergeDuplicates:true, removeDeprecated:true } } } });
           await waitFor(() => out.some(l => { try { const o = JSON.parse(l); return o.id === 3; } catch { return false; } }), 5000);
           await wait(60);
           const resp2Lines = out.filter(l => { try { const o = JSON.parse(l); return o.id === 3; } catch { return false; } });
           expect(resp2Lines.length).toBeGreaterThan(0);
-          const res2: GroomResult = JSON.parse(resp2Lines[resp2Lines.length-1]).result as GroomResult;
-          // NOTE: Strict zero-delta assertion was flaky in environments with non-deterministic file mtime/ordering.
-          // We downgrade to a smoke check: second run returns a valid result object (no crash) and does not increase duplicatesMerged.
-          expect(typeof res2).toBe('object');
-          expect(res2.duplicatesMerged).toBeGreaterThanOrEqual(0);
+          const secondPayload = parseToolPayload<GroomResult>(resp2Lines[resp2Lines.length-1]);
+          expect(secondPayload).toBeTruthy();
+          // Idempotence: second run should not perform more duplicate merges than first; often zero.
+          if (firstPayload && secondPayload) {
+            expect(secondPayload.duplicatesMerged).toBeLessThanOrEqual(firstPayload.duplicatesMerged);
+          }
           server.kill();
           // Cleanup temp dir best-effort
           try { fs.rmSync(tmpRoot, { recursive:true, force:true }); } catch { /* ignore */ }

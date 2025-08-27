@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
-import { waitFor } from './testUtils';
+import { waitFor, parseToolPayload } from './testUtils';
 import { waitForDist } from './distReady';
 
 const instructionsDir = path.join(process.cwd(),'instructions');
@@ -48,38 +48,43 @@ describe('instructions/governanceUpdate', () => {
     send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> !!collect(out,1));
     // list before update
-  send(server,{ jsonrpc:'2.0', id:2, method:'instructions/dispatch', params:{ action:'list' } });
+  send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } }});
   await waitFor(()=> !!collect(out,2));
   // small settle delay to ensure file write flush before governanceUpdate
   await new Promise(r=> setTimeout(r,40));
-    const beforeLine = collect(out,2)!; const beforeObj = JSON.parse(beforeLine).result;
-    const beforeEntry = (beforeObj.items as unknown[]).find((x:unknown)=> (x as { id?:string }).id===id) as { version:string } | undefined;
+  const beforeLine = collect(out,2)!;
+  const beforeObj = parseToolPayload<{ items: { id:string; version?:string }[] }>(beforeLine);
+  if(!beforeObj) throw new Error('missing beforeObj payload');
+  const beforeEntry = beforeObj.items.find(x=> x.id===id);
     expect(beforeEntry).toBeTruthy();
     const prevVersion = beforeEntry?.version;
     // governanceUpdate patch
-    send(server,{ jsonrpc:'2.0', id:3, method:'instructions/governanceUpdate', params:{ id, owner:'team:alpha', status:'approved', bump:'patch' } });
+  send(server,{ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'instructions/governanceUpdate', arguments:{ id, owner:'team:alpha', status:'approved', bump:'patch' } }});
     await waitFor(()=> !!collect(out,3));
   const updLine = collect(out,3);
   expect(updLine, 'no JSON RPC response line for governanceUpdate id=3').toBeTruthy();
-  const updObj = JSON.parse(updLine!).result;
+  const updObj = updLine? parseToolPayload<{ changed:boolean; owner:string; status:string; version:string }>(updLine): undefined;
+  if(!updObj) throw new Error('missing updObj payload');
     expect(updObj.changed).toBe(true);
     expect(updObj.owner).toBe('team:alpha');
     expect(updObj.version).not.toBe(prevVersion);
     // list again
-  send(server,{ jsonrpc:'2.0', id:4, method:'instructions/dispatch', params:{ action:'list' } });
+  send(server,{ jsonrpc:'2.0', id:4, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } }});
     await waitFor(()=> !!collect(out,4));
-    const afterLine = collect(out,4)!; const afterObj = JSON.parse(afterLine).result;
-    const afterEntry = (afterObj.items as unknown[]).find((x:unknown)=> (x as { id?:string }).id===id) as { owner:string; status:string; version:string } | undefined;
+  const afterLine = collect(out,4)!;
+  const afterObj = parseToolPayload<{ items:{ id:string; owner?:string; status?:string; version?:string }[] }>(afterLine);
+  if(!afterObj) throw new Error('missing afterObj payload');
+  const afterEntry = afterObj.items.find(x=> x.id===id);
     expect(afterEntry?.owner).toBe('team:alpha');
     expect(afterEntry?.status).toBe('approved');
     expect(afterEntry?.version).toBe(updObj.version);
     // idempotent second call
-    send(server,{ jsonrpc:'2.0', id:5, method:'instructions/governanceUpdate', params:{ id, owner:'team:alpha', status:'approved', bump:'none' } });
+  send(server,{ jsonrpc:'2.0', id:5, method:'tools/call', params:{ name:'instructions/governanceUpdate', arguments:{ id, owner:'team:alpha', status:'approved', bump:'none' } }});
     await waitFor(()=> !!collect(out,5));
   const secondLine = collect(out,5);
   expect(secondLine, 'no JSON RPC response line for second governanceUpdate id=5').toBeTruthy();
-  const second = JSON.parse(secondLine!).result;
-    expect(second.changed).toBe(false);
+  const second = secondLine? parseToolPayload<{ changed:boolean }>(secondLine) : undefined;
+    expect(second?.changed).toBe(false);
     server.kill();
   }, 10000);
 });

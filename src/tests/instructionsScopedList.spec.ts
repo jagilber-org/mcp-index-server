@@ -10,7 +10,7 @@ describe('dispatcher list (scoped placeholder)', () => {
     const lines: string[]=[]; proc.stdout.on('data', d=> lines.push(...d.toString().trim().split(/\n+/))); 
     proc.stdin?.write(JSON.stringify({ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'scoped-list', version:'0' }, capabilities:{ tools:{} } } })+'\n');
     await waitFor(()=> lines.some(l=>{ try { const o=JSON.parse(l); return o.id===1 && !!o.result; } catch { return false; } }), 3000);
-    proc.stdin?.write(JSON.stringify({ jsonrpc:'2.0', id:2, method:'instructions/dispatch', params:{ action:'list' } })+'\n');
+  proc.stdin?.write(JSON.stringify({ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } } })+'\n');
     await waitFor(()=> lines.some(l=>{ try { const o=JSON.parse(l); return o.id===2; } catch { return false; } }), 4000);
     const listLine = lines.find(l=> { try { const o=JSON.parse(l); return o.id===2; } catch { return false; } });
     expect(listLine).toBeTruthy();

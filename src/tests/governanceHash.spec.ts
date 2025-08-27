@@ -3,6 +3,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { waitForDist } from './distReady';
+import { parseToolPayload } from './testUtils';
 
 function startServer(){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1' } });
@@ -25,7 +26,9 @@ const instructionsDir = path.join(process.cwd(),'instructions');
 
 interface GovProjection { id:string; title:string; version:string; owner:string; priorityTier:string; nextReviewDue:string; semanticSummarySha256:string; changeLogLength:number }
 
-describe('instructions/governanceHash tool', () => {
+// Using shared parseToolPayload from testUtils
+
+describe('instructions/governanceHash tool (via tools/call)', () => {
   it('detects governance drift (owner change) without body change', async () => {
     if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir);
     const id = 'gov_hash_sample';
@@ -40,27 +43,29 @@ describe('instructions/governanceHash tool', () => {
   const initRespLine = await waitForLine(out, l=>{ try { const o = JSON.parse(l); return o.id===1; } catch { return false; } });
   expect(initRespLine, 'timeout waiting for initialize response').toBeTruthy();
   // Request governance hash (id:2)
-  send(server,{ jsonrpc:'2.0', id:2, method:'instructions/governanceHash', params:{} });
+  send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/governanceHash', arguments:{} } });
   const firstRespLine = await waitForLine(out, l=>{ try { const o = JSON.parse(l); return o.id===2; } catch { return false; } });
   expect(firstRespLine, 'timeout waiting for first governanceHash response').toBeTruthy();
-    const firstObj = JSON.parse(firstRespLine!);
-    const firstHash = firstObj.result.governanceHash;
+  const firstPayload = parseToolPayload<{ governanceHash:string; items:GovProjection[] }>(firstRespLine!);
+  expect(firstPayload).toBeTruthy();
+  const firstHash = firstPayload!.governanceHash;
     expect(typeof firstHash).toBe('string');
     // Change only owner in file directly
     const disk = JSON.parse(fs.readFileSync(file,'utf8'));
     disk.owner = 'team-b';
     fs.writeFileSync(file, JSON.stringify(disk,null,2));
   // Reload to pick up change (id:3) then wait deterministically for its response before requesting hash again
-  send(server,{ jsonrpc:'2.0', id:3, method:'instructions/reload', params:{} });
+  send(server,{ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'instructions/reload', arguments:{} } });
   const reloadRespLine = await waitForLine(out, l=>{ try { const o = JSON.parse(l); return o.id===3; } catch { return false; } });
   expect(reloadRespLine, 'timeout waiting for reload response').toBeTruthy();
-  send(server,{ jsonrpc:'2.0', id:4, method:'instructions/governanceHash', params:{} });
+  send(server,{ jsonrpc:'2.0', id:4, method:'tools/call', params:{ name:'instructions/governanceHash', arguments:{} } });
   const secondRespLine = await waitForLine(out, l=>{ try { const o = JSON.parse(l); return o.id===4; } catch { return false; } });
   expect(secondRespLine, 'timeout waiting for second governanceHash response').toBeTruthy();
-  const secondObj = JSON.parse(secondRespLine!);
+  const secondPayload = parseToolPayload<{ governanceHash:string; items:GovProjection[] }>(secondRespLine!);
+  expect(secondPayload).toBeTruthy();
   // Extract projection items to verify owner actually changed
-  const firstItems = firstObj.result.items;
-  const secondItems = secondObj.result.items;
+  const firstItems = firstPayload!.items;
+  const secondItems = secondPayload!.items;
   const firstProj = (firstItems as GovProjection[]).find(x=> x.id===id)!;
   const secondProj = (secondItems as GovProjection[]).find(x=> x.id===id)!;
   expect(firstProj).toBeTruthy();
@@ -69,7 +74,7 @@ describe('instructions/governanceHash tool', () => {
   // We cannot see owner directly in projection (owner included) so confirm difference
   expect(firstProj.owner).toBe('team-a');
   expect(secondProj.owner).toBe('team-b');
-    const secondHash = secondObj.result.governanceHash;
+  const secondHash = secondPayload!.governanceHash;
     // Governance hash should differ after owner change
     expect(secondHash).not.toBe(firstHash);
     server.kill();

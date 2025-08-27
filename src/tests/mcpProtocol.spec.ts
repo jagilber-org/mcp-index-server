@@ -4,6 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { waitFor } from './testUtils';
+import { waitForDist } from './distReady';
 import { spawn } from 'child_process';
 import fs from 'fs';
 import os from 'os';
@@ -11,7 +12,7 @@ import path from 'path';
 
 const ISOLATED_DIR = fs.mkdtempSync(path.join(os.tmpdir(),'instr-mcp-'));
 function startServer() {
-  return spawn('node', ['dist/server/index.js'], {
+  return spawn('node', [path.join(process.cwd(),'dist','server','index.js')], {
     stdio: ['pipe', 'pipe', 'pipe'],
     cwd: process.cwd(),
     env: { ...process.env, MCP_ENABLE_MUTATION: '1', INSTRUCTIONS_DIR: ISOLATED_DIR }
@@ -48,6 +49,7 @@ async function waitForId(lines: string[], id: number, timeout = 5000) {
 
 describe('MCP Protocol Compliance', () => {
   it('responds to initialize with proper MCP handshake', async () => {
+  await waitForDist();
   const server = startServer();
   const lines: string[] = [];
   attachLineCollector(server.stdout, lines);
@@ -74,6 +76,7 @@ describe('MCP Protocol Compliance', () => {
   }, 6000);
 
   it('implements tools/list with proper schema format', async () => {
+  await waitForDist();
   const server = startServer();
   const lines: string[] = [];
   attachLineCollector(server.stdout, lines);
@@ -96,8 +99,8 @@ describe('MCP Protocol Compliance', () => {
     
     // Check that each tool has proper MCP format
     interface McpTool { name: string; description: string; inputSchema: object; }
-    const sampleTool = (tools as McpTool[]).find(t => t.name === 'instructions/list');
-    expect(sampleTool, 'missing instructions/list tool').toBeTruthy();
+  const sampleTool = (tools as McpTool[]).find(t => t.name === 'instructions/dispatch');
+  expect(sampleTool, 'missing instructions/dispatch tool').toBeTruthy();
     if (!sampleTool) return; // Type guard
     expect(sampleTool.description).toBeTruthy();
     expect(typeof sampleTool.description).toBe('string');
@@ -106,15 +109,14 @@ describe('MCP Protocol Compliance', () => {
     
     // Verify critical tools are present
     const toolNames = (tools as McpTool[]).map(t => t.name);
-    expect(toolNames).toContain('instructions/list');
-    expect(toolNames).toContain('instructions/get');
-    expect(toolNames).toContain('instructions/search');
+  expect(toolNames).toContain('instructions/dispatch');
     expect(toolNames).toContain('health/check');
     
     server.kill();
   }, 10000);
 
   it('implements tools/call and executes tools correctly', async () => {
+  await waitForDist();
   const server = startServer();
   const lines: string[] = [];
   attachLineCollector(server.stdout, lines);
@@ -144,6 +146,7 @@ describe('MCP Protocol Compliance', () => {
   }, 10000);
 
   it('tools/call handles invalid tool names gracefully', async () => {
+  await waitForDist();
   const server = startServer();
   const lines: string[] = [];
   attachLineCollector(server.stdout, lines);
@@ -167,6 +170,7 @@ describe('MCP Protocol Compliance', () => {
   }, 10000);
 
   it('responds to ping', async () => {
+  await waitForDist();
   const server = startServer();
   const lines: string[] = [];
   attachLineCollector(server.stdout, lines);
@@ -181,15 +185,16 @@ describe('MCP Protocol Compliance', () => {
     server.kill();
   }, 10000);
 
-  it('tools/call executes instructions/list with parameters', async () => {
+  it('tools/call executes dispatcher list action with parameters', async () => {
+  await waitForDist();
   const server = startServer();
   const lines: string[] = [];
   attachLineCollector(server.stdout, lines);
   send(server, { jsonrpc: '2.0', id: 1004, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'test-harness', version: '0.0.0' }, capabilities: { tools: {} } } });
   await waitForId(lines, 1004);
-  send(server, { jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'instructions/list', arguments: { category: 'test' } } });
+  send(server, { jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action:'list', category: 'test' } } });
   const responseLine = await waitForId(lines, 5, 6000);
-  expect(responseLine, 'missing tools/call instructions/list response').toBeTruthy();
+  expect(responseLine, 'missing tools/call dispatcher list response').toBeTruthy();
     
     const response = JSON.parse(responseLine!);
     expect(response.error).toBeFalsy();

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { waitFor } from './testUtils';
+import { waitForDist } from './distReady';
 import { spawn } from 'child_process';
 import path from 'path';
 
@@ -29,6 +30,7 @@ describe('response envelope flag', () => {
   it('returns legacy shape when flag disabled', async () => {
     const proc = start(false);
     const out: string[]=[]; attachLineCollector(proc.stdout, out);
+    await waitForDist();
     await new Promise(r=> setTimeout(r,80));
     send(proc,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } }});
     await new Promise(r=> setTimeout(r,50));
@@ -46,6 +48,7 @@ describe('response envelope flag', () => {
   it('wraps response when flag enabled (env var)', async () => {
     const proc = start(true);
     const out: string[]=[]; attachLineCollector(proc.stdout, out);
+    await waitForDist();
     await new Promise(r=> setTimeout(r,80));
     send(proc,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } }});
     await new Promise(r=> setTimeout(r,50));
@@ -70,6 +73,7 @@ describe('response envelope flag', () => {
   it('wraps primitive return values', async () => {
     const proc = start(true);
     const out: string[]=[]; attachLineCollector(proc.stdout, out);
+    await waitForDist();
     await new Promise(r=> setTimeout(r,80));
     send(proc,{ jsonrpc:'2.0', id:30, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } }});
     await new Promise(r=> setTimeout(r,50));
@@ -94,6 +98,7 @@ describe('response envelope flag', () => {
     fs.writeFileSync(file, JSON.stringify({ response_envelope_v1: true }));
     const proc = spawn('node',[pathMod.join(__dirname,'../../dist/server/index.js')],{ stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_FLAGS_FILE: file } });
   const out: string[]=[]; attachLineCollector(proc.stdout, out);
+    await waitForDist();
     await new Promise(r=> setTimeout(r,80));
     proc.stdin?.write(JSON.stringify({ jsonrpc:'2.0', id:40, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } }})+'\n');
     await new Promise(r=> setTimeout(r,50));
@@ -116,6 +121,7 @@ describe('response envelope flag', () => {
     fs.writeFileSync(file, JSON.stringify({ response_envelope_v1: true }));
     const proc = spawn('node',[pathMod.join(__dirname,'../../dist/server/index.js')],{ stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_FLAGS_FILE: file, MCP_FLAG_RESPONSE_ENVELOPE_V1: '0' } });
   const out: string[]=[]; attachLineCollector(proc.stdout, out);
+    await waitForDist();
     await new Promise(r=> setTimeout(r,80));
     proc.stdin?.write(JSON.stringify({ jsonrpc:'2.0', id:50, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } }})+'\n');
     await new Promise(r=> setTimeout(r,50));

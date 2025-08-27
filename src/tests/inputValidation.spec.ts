@@ -11,8 +11,8 @@ function startServer(){
 }
 function send(proc: ReturnType<typeof spawn>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg) + '\n'); }
 
-describe('input validation', () => {
-  it('rejects missing required param', async () => {
+describe('input validation (dispatcher)', () => {
+  it('rejects missing required action', async () => {
     const server = startServer();
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
@@ -20,8 +20,8 @@ describe('input validation', () => {
   send(server, { jsonrpc:'2.0', id: 3000, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
   await waitFor(() => lines.some(l => l.includes('"id":3000')));
     const id = 101;
-    // instructions/get requires id
-    send(server, { jsonrpc:'2.0', id, method: 'instructions/get', params: {} });
+    // Missing action entirely should trigger -32602
+    send(server, { jsonrpc:'2.0', id, method: 'instructions/dispatch', params: {} });
   await waitFor(() => lines.some(l => l.includes('"id":101')));
   const line = lines.find(l => l.includes('"id":101'));
     expect(line).toBeTruthy();
@@ -30,8 +30,7 @@ describe('input validation', () => {
     expect(obj.error.code).toBe(-32602);
     server.kill();
   }, 6000);
-
-  it('rejects additional properties when disallowed', async () => {
+  it('rejects unknown action', async () => {
     const server = startServer();
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
@@ -39,17 +38,17 @@ describe('input validation', () => {
   send(server, { jsonrpc:'2.0', id: 3001, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
   await waitFor(() => lines.some(l => l.includes('"id":3001')));
     const id = 102;
-    send(server, { jsonrpc:'2.0', id, method: 'instructions/list', params: { category: 'general', extra: 'x' } });
+    send(server, { jsonrpc:'2.0', id, method: 'instructions/dispatch', params: { action:'__nope__' } });
   await waitFor(() => lines.some(l => l.includes('"id":102')));
   const line = lines.find(l => l.includes('"id":102'));
     expect(line).toBeTruthy();
     const obj = JSON.parse(line!);
     expect(obj.error).toBeTruthy();
-    expect(obj.error.code).toBe(-32602);
+    expect(obj.error.code).toBe(-32601);
     server.kill();
   }, 6000);
 
-  it('accepts valid params', async () => {
+  it('accepts valid list action', async () => {
     const server = startServer();
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));
@@ -57,7 +56,7 @@ describe('input validation', () => {
   send(server, { jsonrpc:'2.0', id: 3002, method: 'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
   await waitFor(() => lines.some(l => l.includes('"id":3002')));
     const id = 103;
-    send(server, { jsonrpc:'2.0', id, method: 'instructions/list', params: { category: 'general' } });
+    send(server, { jsonrpc:'2.0', id, method: 'instructions/dispatch', params: { action:'list', category: 'general' } });
   await waitFor(() => lines.some(l => l.includes('"id":103')));
   const line = lines.find(l => l.includes('"id":103'));
     expect(line).toBeTruthy();

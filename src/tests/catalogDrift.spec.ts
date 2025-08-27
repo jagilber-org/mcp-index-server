@@ -27,7 +27,7 @@ describe('catalog drift snapshot vs export', () => {
     const out: string[] = []; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
     send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'drift-test', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> out.some(l=> { try { return JSON.parse(l).id===1; } catch { return false; } }), 1500);
-    send(server,{ jsonrpc:'2.0', id:2, method:'instructions/export', params:{} });
+  send(server,{ jsonrpc:'2.0', id:2, method:'instructions/dispatch', params:{ action:'export' } });
     await waitFor(()=> out.some(l=> { try { return JSON.parse(l).id===2; } catch { return false; } }), 2000);
     const exportLine = out.filter(l=> { try { return JSON.parse(l).id===2; } catch { return false; } }).pop();
     expect(exportLine).toBeTruthy();

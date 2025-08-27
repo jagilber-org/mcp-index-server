@@ -4,6 +4,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { waitFor } from './testUtils';
+import { waitForDist } from './distReady';
 
 // Contract style: ensure that overwrite semantics act as an idempotent update pathway and registry advertises add tool only.
 
@@ -16,6 +17,7 @@ function collect(out:string[], id:number){ return out.filter(l=> { try { const o
 
 describe('instructions/update contract (via instructions/add overwrite)', () => {
 	it('registry does not expose instructions/update, only instructions/add', async () => {
+		await waitForDist();
 		const server = startServer(true);
 		const out:string[]=[]; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
 		await new Promise(r=> setTimeout(r,60));
@@ -33,6 +35,7 @@ describe('instructions/update contract (via instructions/add overwrite)', () => 
 	it('idempotent overwrite toggles overwritten flag and preserves version when absent', async () => {
 		const id = 'contract_overwrite';
 		const file = path.join(ISOLATED_DIR, id + '.json');
+		await waitForDist();
 		const server = startServer(true);
 		const out:string[]=[]; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
 		await new Promise(r=> setTimeout(r,60));

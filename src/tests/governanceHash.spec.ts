@@ -2,17 +2,20 @@ import { describe, it, expect } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import { waitForDist } from './distReady';
 
 function startServer(){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1' } });
 }
 function send(proc: ReturnType<typeof spawn>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
 const wait = (ms:number)=> new Promise(r=>setTimeout(r,ms));
-async function waitForLine(arr:string[], predicate:(l:string)=>boolean, timeout=2000, interval=30){
+async function waitForLine(arr:string[], predicate:(l:string)=>boolean, timeout=4000, interval=25){
   const start = Date.now();
   while(Date.now() - start < timeout){
-    const line = arr.find(predicate);
-    if(line) return line;
+    const idx = arr.findIndex(predicate);
+    if(idx !== -1){
+      return arr[idx];
+    }
     await wait(interval);
   }
   return undefined;
@@ -31,9 +34,12 @@ describe('instructions/governanceHash tool', () => {
     fs.writeFileSync(file, JSON.stringify({ id, title:'Gov Hash Sample', body:'Body Stable', priority:10, audience:'all', requirement:'mandatory', categories:['x'], sourceHash:'', schemaVersion:'1', createdAt:now, updatedAt:now, version:'1.0.0', status:'approved', owner:'team-a', priorityTier:'P1', classification:'internal', lastReviewedAt:now, nextReviewDue:now, changeLog:[{version:'1.0.0', changedAt:now, summary:'initial'}], semanticSummary:'Body Stable' },null,2));
     const server = startServer();
     const out:string[]=[]; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
-    await wait(120);
-    send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
-  await wait(140);
+  await waitForDist();
+  // Initialize server and wait explicitly for response id:1 to eliminate race
+  send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
+  const initRespLine = await waitForLine(out, l=>{ try { const o = JSON.parse(l); return o.id===1; } catch { return false; } });
+  expect(initRespLine, 'timeout waiting for initialize response').toBeTruthy();
+  // Request governance hash (id:2)
   send(server,{ jsonrpc:'2.0', id:2, method:'instructions/governanceHash', params:{} });
   const firstRespLine = await waitForLine(out, l=>{ try { const o = JSON.parse(l); return o.id===2; } catch { return false; } });
   expect(firstRespLine, 'timeout waiting for first governanceHash response').toBeTruthy();
@@ -44,9 +50,10 @@ describe('instructions/governanceHash tool', () => {
     const disk = JSON.parse(fs.readFileSync(file,'utf8'));
     disk.owner = 'team-b';
     fs.writeFileSync(file, JSON.stringify(disk,null,2));
-    // Reload to pick up change
+  // Reload to pick up change (id:3) then wait deterministically for its response before requesting hash again
   send(server,{ jsonrpc:'2.0', id:3, method:'instructions/reload', params:{} });
-  await wait(50); // brief delay before reload reply processed
+  const reloadRespLine = await waitForLine(out, l=>{ try { const o = JSON.parse(l); return o.id===3; } catch { return false; } });
+  expect(reloadRespLine, 'timeout waiting for reload response').toBeTruthy();
   send(server,{ jsonrpc:'2.0', id:4, method:'instructions/governanceHash', params:{} });
   const secondRespLine = await waitForLine(out, l=>{ try { const o = JSON.parse(l); return o.id===4; } catch { return false; } });
   expect(secondRespLine, 'timeout waiting for second governanceHash response').toBeTruthy();

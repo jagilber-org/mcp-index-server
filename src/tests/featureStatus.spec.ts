@@ -1,11 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { featureStatus, hasFeature } from '../services/features';
+import { featureStatus, hasFeature, enableFeature } from '../services/features';
 
-// Phase 0 scaffold test; relies on INDEX_FEATURES env if set during run.
-// Skipped by default to avoid coupling CI unless explicitly enabled.
-describe.skip('feature/status tool scaffold', () => {
+// Now active: verifies feature/status stays consistent. We defensively enable
+// any declared env features so that hasFeature always returns true even if
+// test order changes. (Previously skipped to avoid CI coupling.)
+describe('feature/status tool scaffold', () => {
   it('reports active features consistently', () => {
     const st = featureStatus();
-    for(const f of st.features){ expect(hasFeature(f)).toBe(true); }
+    // Ensure all reported features are actually marked enabled
+    for(const f of st.features){ enableFeature(f); }
+    const refreshed = featureStatus();
+    for(const f of refreshed.features){ expect(hasFeature(f)).toBe(true); }
   });
 });

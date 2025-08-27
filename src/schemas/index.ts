@@ -44,16 +44,7 @@ export const instructionEntry = {
   }
 } as const;
 
-const listLike = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['hash','count','items'],
-  properties: {
-    hash: { type: 'string' },
-    count: { type: 'number', minimum: 0 },
-    items: { type: 'array', items: instructionEntry }
-  }
-} as const;
+// (listLike schema removed after dispatcher consolidation of read-only instruction methods)
 
 // Using unknown for schema values to avoid any and preserve flexibility
 export const schemas: Record<string, unknown> = {
@@ -66,40 +57,19 @@ export const schemas: Record<string, unknown> = {
       version: { type: 'string' }
     }
   },
-  'instructions/list': listLike,
-  'instructions/listScoped': {
-    type: 'object', additionalProperties: false,
-    required: ['hash','count','items','scope'],
-    properties: {
-      hash: { type: 'string' },
-      count: { type: 'number', minimum: 0 },
-      scope: { enum: ['user','workspace','team','all'] },
-      items: { type: 'array', items: instructionEntry }
-    }
-  },
-  'instructions/search': listLike,
-  'instructions/get': {
+  'instructions/dispatch': {
+    // Dispatcher returns varying shapes; keep loose but assert required action echo when capabilities.
     anyOf: [
-      { type: 'object', additionalProperties: false, required: ['notFound'], properties: { notFound: { const: true } } },
-      { type: 'object', additionalProperties: false, required: ['hash','item'], properties: { hash: { type: 'string' }, item: instructionEntry } }
-    ]
-  },
-  'instructions/diff': {
-    oneOf: [
-      { type: 'object', required: ['upToDate','hash'], additionalProperties: false, properties: { upToDate: { const: true }, hash: { type: 'string' } } },
-      { type: 'object', required: ['hash','added','updated','removed'], additionalProperties: false, properties: {
-        hash: { type: 'string' },
-        added: { type: 'array', items: instructionEntry },
-        updated: { type: 'array', items: instructionEntry },
-        removed: { type: 'array', items: { type: 'string' } }
+      { type: 'object', required: ['supportedActions','mutationEnabled','version'], additionalProperties: true, properties: {
+        version: { type: 'string' },
+        supportedActions: { type: 'array', items: { type: 'string' } },
+        mutationEnabled: { type: 'boolean' }
       } },
-      { type: 'object', required: ['hash','changed'], additionalProperties: false, properties: {
-        hash: { type: 'string' },
-        changed: { type: 'array', items: instructionEntry }
-      } }
+      { type: 'object', required: ['results'], additionalProperties: true, properties: { results: { type: 'array' } } },
+      { type: 'object', required: ['hash'], additionalProperties: true, properties: { hash: { type: 'string' } } },
+      { type: 'object', required: ['error'], additionalProperties: true, properties: { error: { type: 'string' } } }
     ]
   },
-  'instructions/export': listLike,
   'instructions/import': {
     anyOf: [
       { type: 'object', required: ['error'], properties: { error: { type: 'string' } }, additionalProperties: true },

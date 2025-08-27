@@ -1,6 +1,6 @@
 # ARCHITECTURE
 
-Updated for 0.8.x (governance projection + hash, integrity verification, usage persistence, schema migration hook).
+Updated for 0.9.x (dispatcher consolidation, governance projection + hash, integrity verification, usage persistence, schema migration hook).
 
 ## High-Level Components
 

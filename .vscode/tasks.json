@@ -183,14 +183,36 @@
 		{
 			"label": "git-commit-all-simple",
 			"type": "shell",
-			"command": "git add .; git commit -m \"feat: add new handlers and tests\"",
-			"group": "build"
+			"command": "git add .; git commit -m 'chore(release): 0.9.1 all tests green no skips + skip guard'; git tag v0.9.1 -f; git push --follow-tags || git push --tags --force-with-lease",
+			"group": "build",
+			"problemMatcher": []
 		},
 		{
 			"label": "git-commit-all-noquote",
 			"type": "shell",
 			"command": "git add .; git commit -m feat-add-handlers-tests",
 			"group": "build"
+		},
+		{
+			"label": "git-status",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"status",
+				"--short"
+			]
+		}
+		,
+		{
+			"label": "release-commit-tag-push",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git add .; git commit -m 'chore(release): 0.9.1 all tests green no skips + skip guard'; git tag v0.9.1 -f; git push --follow-tags || git push --tags --force-with-lease"
+			],
+			"problemMatcher": []
 		}
 	]
 }

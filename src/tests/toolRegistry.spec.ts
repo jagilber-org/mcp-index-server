@@ -31,8 +31,8 @@ describe('MCP tool registry', () => {
     expect(typeof result.mcp.registryVersion).toBe('string');
     expect(Array.isArray(result.mcp.tools)).toBe(true);
   interface RegistryEntry { name:string; description:string; stable:boolean; mutation:boolean; inputSchema:unknown; outputSchema?:unknown }
-  const sample = (result.mcp.tools as RegistryEntry[]).find(t => t.name === 'instructions/list');
-    expect(sample, 'expected instructions/list registry entry').toBeTruthy();
+  const sample = (result.mcp.tools as RegistryEntry[]).find(t => t.name === 'instructions/dispatch');
+    expect(sample, 'expected instructions/dispatch registry entry').toBeTruthy();
   expect(sample).toBeTruthy();
   if(!sample) return; // type guard for TS
   expect(sample.description && typeof sample.description === 'string').toBeTruthy();

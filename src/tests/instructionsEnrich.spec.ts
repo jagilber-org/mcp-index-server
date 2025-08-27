@@ -49,7 +49,7 @@ describe('instructions/enrich tool', () => {
     const updatedRaw = JSON.parse(fs.readFileSync(file,'utf8')) as Record<string, unknown>;
     if(!(typeof updatedRaw.sourceHash==='string' && (updatedRaw.sourceHash as string).length>0)){
       // Fallback: query server state directly
-      send(server,{ jsonrpc:'2.0', id:99, method:'instructions/get', params:{ id: tmpId } });
+  send(server,{ jsonrpc:'2.0', id:99, method:'instructions/dispatch', params:{ action:'get', id: tmpId } });
       await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===99; } catch { return false; } }), 3000);
       const getLine = out.find(l=> { try { const o=JSON.parse(l); return o.id===99; } catch { return false; } });
       if(getLine){

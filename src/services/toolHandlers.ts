@@ -5,6 +5,7 @@ import { computeGovernanceHash, projectGovernance, getCatalogState } from './cat
 
 // Side-effect registrations from modular handlers
 import './handlers.instructions';
+import './instructions.dispatcher'; // ensure dispatcher registered regardless of server entrypoint
 import './handlers.metrics';
 import './handlers.integrity';
 import './handlers.prompt';
@@ -31,12 +32,9 @@ registerHandler('meta/tools', () => {
 // Alias methods (underscore variants) for back-compat
 const ALIAS_MAP: Record<string,string> = {
   'health_check': 'health/check',
-  'instructions_list': 'instructions/list',
-  'instructions_listScoped': 'instructions/listScoped',
-  'instructions_get': 'instructions/get',
-  'instructions_search': 'instructions/search',
-  'instructions_export': 'instructions/export',
-  'instructions_diff': 'instructions/diff',
+  // legacy read-only instruction aliases removed (consolidated under instructions/dispatch)
+  'instructions_query': 'instructions/query',
+  'instructions_categories': 'instructions/categories',
   'instructions_import': 'instructions/import',
   'instructions_add': 'instructions/add',
   'instructions_repair': 'instructions/repair',

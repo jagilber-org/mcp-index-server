@@ -138,7 +138,10 @@ export function startTransport(opts: TransportOptions = {}){
   registerHandler('shutdown', () => ({ shuttingDown: true }));
   registerHandler('exit', () => { setTimeout(() => process.exit(0), 0); return { exiting: true }; });
 
-  const rl = createInterface({ input: opts.input || process.stdin, output: (opts.output as NodeJS.WritableStream | undefined) || process.stdout });
+  // Use readline only for input parsing; do NOT set output to avoid echoing client-sent
+  // JSON-RPC request lines back to stdout (which confused tests expecting only server
+  // responses and caused false negatives when matching initialize/result frames).
+  const rl = createInterface({ input: opts.input || process.stdin });
   const respondFn = (obj: JsonRpcResponse) => {
     if(protocolLog){
       const base: { id: string | number | null; error?: number; ok?: true } = { id: (obj as JsonRpcSuccess | JsonRpcError).id ?? null };
@@ -197,6 +200,7 @@ export function startTransport(opts: TransportOptions = {}){
         const rec = metrics[req.method] || (metrics[req.method] = { count:0,totalMs:0,maxMs:0 });
         rec.count++; rec.totalMs += dur; if(dur > rec.maxMs) rec.maxMs = dur;
         if(req.id !== undefined && req.id !== null){
+          try { if(protocolLog || verbose) log('debug','respond_success', { id: req.id, method: req.method }); } catch { /* ignore */ }
           respondFn({ jsonrpc: '2.0', id: req.id, result });
         }
       })
@@ -204,7 +208,7 @@ export function startTransport(opts: TransportOptions = {}){
         const dur = Date.now() - start;
         const rec = metrics[req.method] || (metrics[req.method] = { count:0,totalMs:0,maxMs:0 });
         rec.count++; rec.totalMs += dur; if(dur > rec.maxMs) rec.maxMs = dur;
-        const errObj = e instanceof Error ? { message: e.message, stack: e.stack } : { message: 'Unknown error', value: e };
+  const errObj = e instanceof Error ? { message: e.message, stack: e.stack } : { message: 'Unknown error', value: e };
         log('error', 'handler_error', { method: req.method, ...errObj });
   respondFn(makeError(req.id ?? null, -32603, 'Internal error', { method: req.method, ...errObj }));
       });

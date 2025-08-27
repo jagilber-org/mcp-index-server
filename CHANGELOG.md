@@ -99,7 +99,7 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 - `additionalProperties` enabled to allow forward-compatible governance extensions without breaking authors
 - Loader & enrichment narrowed: removed automatic placeholder injection for most governance fields (now derived in-memory)
 
-### Added
+### Added (dispatcher)
 
 - Minimal author path test (`minimalAuthor.spec.ts`) ensuring derivation of version, priorityTier, semanticSummary, review cycle
 - Multi-add persistence test clarifying intentional ignoring of user-supplied governance overrides in `instructions/add`
@@ -116,11 +116,72 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 - New mutation tool `instructions/governanceUpdate` enabling controlled patch of `owner`, `status`, review timestamps, and optional semantic version bump (`patch|minor|major`)
 - README documentation for simplified schema + governance patch workflow
 
-### Changed
+### Changed (schemas & docs)
 
 - Tool registry updated (schema + mutation set) and description added
 - Registry version implicitly advanced; package version bumped
 
-### Rationale
+### Rationale (consolidation)
 
 - Decouples routine content edits from governance curation; reduces author friction while maintaining an auditable lifecycle
+
+## [0.9.0] - 2025-08-27
+
+### Breaking (dispatcher consolidation)
+
+- Removed legacy read-only instruction tools: `instructions/list`, `instructions/listScoped`, `instructions/get`, `instructions/search`, `instructions/diff`, `instructions/export`
+- Added unified dispatcher tool `instructions/dispatch` supporting actions: `list`, `listScoped`, `get`, `search`, `diff`, `export`, `query`, `categories`, `dir`, plus mutation/governance actions: `add`, `import`, `remove`, `reload`, `groom`, `repair`, `enrich`, `governanceHash`, `governanceUpdate`, `health`, `inspect`, `dir`, `capabilities`, `batch`
+- Tests and internal registry updated to only surface `instructions/dispatch` (reduces tool surface for clients, simplifies capability negotiation)
+
+### Added
+
+- Dispatcher batch execution (`action: "batch"`) to perform multiple sub-actions in one round trip
+- Capabilities action returning: `{ version, supportedActions, mutationEnabled }`
+- Negative schema drift test migrated to dispatcher schema
+- Regenerated `docs/TOOLS-GENERATED.md` to reflect dispatcher (single tool surface + flexible schema)
+- Added dispatcher capabilities & batch test suites (`dispatcherCapabilities.spec.ts`, `dispatcherBatch.spec.ts`)
+
+### Changed
+
+- Schemas: removed per-method instruction response schemas; introduced flexible dispatcher response schema (loose anyOf) for rapid iteration
+- Documentation (TOOLS, PRD) pending full rewrite to reflect dispatcher (will land immediately post-merge)
+- Performance & probe scripts migrated to dispatcher
+
+### Migration Guide
+
+| Old | New (dispatcher) |
+|-----|------------------|
+| instructions/list | instructions/dispatch { action:"list", ... } |
+| instructions/listScoped | instructions/dispatch { action:"listScoped", ... } |
+| instructions/get | instructions/dispatch { action:"get", id } |
+| instructions/search | instructions/dispatch { action:"search", q } |
+| instructions/diff | instructions/dispatch { action:"diff", clientHash?, known? } |
+| instructions/export | instructions/dispatch { action:"export", ids?, metaOnly? } |
+
+### Rationale
+
+Unifying read-only catalog operations behind a single tool reduces handshake/tool enumeration overhead, enables richer batching, and provides a single stability / gating surface. Future specialized actions (advanced query planner) can ship without expanding the top-level tool set.
+
+## [0.9.1] - 2025-08-27
+
+### Changed (test suite & reliability)
+
+- Eliminated all skipped tests; expanded suite to 125 assertions across 69 files (dispatcher, governance hash stability, enrichment, error paths, property-based grooming, usage gating).
+- Strengthened dispatcher, transport core, governance update, and error-path coverage (malformed JSON-RPC, unknown methods) with deterministic waits & diagnostics.
+- Seeded property-based groom idempotence test for reproducibility.
+- Added explicit feature flag enable/disable coverage (usage gating & feature/status reporting).
+
+### Added (documentation)
+
+- Updated README test section (current counts, no skips) and clarified dispatcher-only surface & mutation gating.
+- Clarified architecture doc to reflect 0.9.x dispatcher consolidation (previous note referenced 0.8.x only).
+- Refreshed tools registry generated notes for stabilization pass.
+
+### Internal
+
+- No API surface changes vs 0.9.0 (patch release). Dispatcher contract & tool schemas unchanged.
+- Pure documentation + test reliability improvements; safe for consumers.
+
+### Upgrade Guidance
+
+No action required for clients already on 0.9.0. Optional: pull to benefit from fuller test coverage and clarified documentation.

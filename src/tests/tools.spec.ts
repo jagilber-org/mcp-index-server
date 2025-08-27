@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { waitFor } from './testUtils';
 import { spawn } from 'child_process';
+import { waitForDist } from './distReady';
 import path from 'path';
 import fs from 'fs';
 
@@ -33,8 +34,9 @@ describe('instruction tool handlers', () => {
   await new Promise(r => setTimeout(r, 120));
   // Perform initialize first per MCP spec
   send(server,{ jsonrpc:'2.0', id:99, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
+  await waitForDist();
   await waitFor(() => out.some(l => l.includes('"id":99')));
-  send(server,{ jsonrpc:'2.0', id:1, method:'instructions/list', params:{} });
+  send(server,{ jsonrpc:'2.0', id:1, method:'instructions/dispatch', params:{ action:'list' } });
   await waitFor(() => out.some(l => /"id":1/.test(l)));
   const line = out.find(l => /"id":1/.test(l));
     expect(line).toBeTruthy();

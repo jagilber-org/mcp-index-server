@@ -96,7 +96,7 @@ describe('property: groom idempotence', () => {
           try { fs.rmSync(tmpRoot, { recursive:true, force:true }); } catch { /* ignore */ }
         }
       ),
-      { numRuns: 5 } // keep runtime low
+  { numRuns: 5, seed: 12345 } // deterministic seed & bounded runs
     );
   }, 30000);
 });

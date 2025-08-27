@@ -35,7 +35,7 @@ describe('regression: added instructions persist across restart and retain gover
     await waitFor(()=> !!findResponse(out1,1));
 
     // Baseline list count
-    send(server,{ jsonrpc:'2.0', id:2, method:'instructions/list', params:{} });
+  send(server,{ jsonrpc:'2.0', id:2, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(out1,2));
     const baselineResp = findResponse(out1,2) as RpcSuccess<{ count:number }> | undefined;
     const baseline = baselineResp? baselineResp.result.count : 0;
@@ -65,7 +65,7 @@ describe('regression: added instructions persist across restart and retain gover
     await waitFor(()=> !!findResponse(out1,60));
 
     // Verify list includes all new ids
-    send(server,{ jsonrpc:'2.0', id:70, method:'instructions/list', params:{} });
+  send(server,{ jsonrpc:'2.0', id:70, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(out1,70));
     const listAfterAdd = findResponse(out1,70) as RpcSuccess<{ items:{ id:string }[]; count:number }> | undefined;
     if(!listAfterAdd) throw new Error('missing listAfterAdd');
@@ -76,7 +76,7 @@ describe('regression: added instructions persist across restart and retain gover
     // Direct get each id to check retrieval path
     rpcId = 80;
     for(const id of [...richIds, minimalId, shortId]){
-      send(server,{ jsonrpc:'2.0', id:rpcId, method:'instructions/get', params:{ id } });
+  send(server,{ jsonrpc:'2.0', id:rpcId, method:'instructions/dispatch', params:{ action:'get', id } });
       await waitFor(()=> !!findResponse(out1,rpcId));
       const resp = findResponse(out1,rpcId) as RpcSuccess<{ item: Record<string, unknown> }> | undefined;
       expect(resp && resp.result.item.id).toBe(id);
@@ -92,7 +92,7 @@ describe('regression: added instructions persist across restart and retain gover
     send(server,{ jsonrpc:'2.0', id:101, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'persist-regression-2', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> !!findResponse(out2,101));
 
-    send(server,{ jsonrpc:'2.0', id:102, method:'instructions/list', params:{} });
+  send(server,{ jsonrpc:'2.0', id:102, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(out2,102));
     const listAfterRestart = findResponse(out2,102) as RpcSuccess<{ items:{ id:string; owner?:string; version?:string; priorityTier?:string }[] }> | undefined;
     if(!listAfterRestart) throw new Error('missing listAfterRestart');
@@ -116,7 +116,7 @@ describe('regression: added instructions persist across restart and retain gover
     expect(restartMap.has(minimalId)).toBe(true);
 
     // Direct get after restart for one rich id
-    send(server,{ jsonrpc:'2.0', id:200, method:'instructions/get', params:{ id: richIds[0] } });
+  send(server,{ jsonrpc:'2.0', id:200, method:'instructions/dispatch', params:{ action:'get', id: richIds[0] } });
     await waitFor(()=> !!findResponse(out2,200));
     const getAfterRestart = findResponse(out2,200) as RpcSuccess<{ item: Record<string, unknown> }> | undefined;
     expect(getAfterRestart && getAfterRestart.result.item.id).toBe(richIds[0]);

@@ -27,7 +27,7 @@ describe('env override INSTRUCTIONS_DIR', () => {
     await waitFor(()=> !!findResponse(out1,1));
 
     // Baseline list
-    send(server1,{ jsonrpc:'2.0', id:2, method:'instructions/list', params:{} });
+  send(server1,{ jsonrpc:'2.0', id:2, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(out1,2));
     const baseResp = findResponse(out1,2) as RpcSuccess<{ count:number; items:{id:string}[] }> | undefined;
     const baseCount = baseResp?.result.count || 0;
@@ -36,7 +36,7 @@ describe('env override INSTRUCTIONS_DIR', () => {
     send(server1,{ jsonrpc:'2.0', id:3, method:'instructions/add', params:{ entry:{ id, title:id, body:'Body', priority:5, audience:'all', requirement:'optional', categories:['env'], owner:'team:env', version:'0.0.1' }, overwrite:true, lax:true } });
     await waitFor(()=> !!findResponse(out1,3));
 
-    send(server1,{ jsonrpc:'2.0', id:4, method:'instructions/list', params:{} });
+  send(server1,{ jsonrpc:'2.0', id:4, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(out1,4));
     const afterResp = findResponse(out1,4) as RpcSuccess<{ count:number; items:{id:string}[] }> | undefined;
     if(!afterResp) throw new Error('missing afterResp');
@@ -57,7 +57,7 @@ describe('env override INSTRUCTIONS_DIR', () => {
     send(server2,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'env-override-2', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> !!findResponse(out2,10));
 
-    send(server2,{ jsonrpc:'2.0', id:11, method:'instructions/list', params:{} });
+  send(server2,{ jsonrpc:'2.0', id:11, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(out2,11));
     const restartResp = findResponse(out2,11) as RpcSuccess<{ count:number; items:{id:string}[] }> | undefined;
     if(!restartResp) throw new Error('missing restartResp');

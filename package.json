@@ -1,13 +1,13 @@
 {
   "name": "mcp-index-server",
-  "version": "0.8.0",
+  "version": "0.9.1",
   "private": true,
   "type": "commonjs",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server/index.js",
     "prestart": "npm run build",
-    "pretest": "npm run build",
+  "pretest": "pwsh scripts/pretest-build-or-skip.ps1",
     "dev": "node --watch dist/server/index.js",
     "build:watch": "tsc -w -p tsconfig.json",
     "check:dist": "npm run build && git diff --quiet --exit-code dist || (echo Dist out of date. Run npm run build and commit generated files.& exit 1)",
@@ -32,7 +32,8 @@
     "perf": "ts-node src/perf/benchmark.ts",
     "perf:baseline": "npm run build && node dist/src/scripts/runPerformanceBaseline.js",
     "build:verify": "pwsh scripts/build.ps1",
-    "docs:tools": "node scripts/generate-tools-doc.cjs"
+  "docs:tools": "node scripts/generate-tools-doc.cjs",
+  "guard:skips": "node scripts/check-no-skips.mjs"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

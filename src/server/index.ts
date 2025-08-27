@@ -14,6 +14,8 @@
 import { listRegisteredMethods } from './registry';
 import { startSdkServer } from './sdkServer';
 import '../services/handlers.instructions';
+// Register unified dispatcher (was missing causing instructions/dispatch tests to timeout)
+import '../services/instructions.dispatcher';
 import '../services/handlers.integrity';
 import '../services/handlers.usage';
 import '../services/handlers.prompt';
@@ -24,6 +26,25 @@ import { getCatalogState, diagnoseInstructionsDir } from '../services/catalogCon
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
+
+// Global fatal error diagnostics (test-only aid; safe no-op in normal operation)
+if(!process.listeners('uncaughtException').some(l => (l as unknown as { name?:string }).name === 'mcpIndexFatalHandler')){
+  process.on('uncaughtException', (err) => {
+    try { process.stderr.write(`[fatal] uncaught_exception ${(err && (err as Error).stack) || err}\n`); } catch { /* ignore */ }
+  });
+  process.on('unhandledRejection', (reason) => {
+    try { process.stderr.write(`[fatal] unhandled_rejection ${String(reason)}\n`); } catch { /* ignore */ }
+  });
+}
+
+// Low-level ingress tracing: echo raw stdin frames when verbose enabled (diagnostic only)
+try {
+  if(process.env.MCP_LOG_VERBOSE === '1' && !process.stdin.listenerCount('data')){
+    process.stdin.on('data', chunk => {
+      try { process.stderr.write(`[in] ${chunk.toString().replace(/\n/g,'\\n')}\n`); } catch { /* ignore */ }
+    });
+  }
+} catch { /* ignore */ }
 
 interface CliConfig {
   dashboard: boolean;

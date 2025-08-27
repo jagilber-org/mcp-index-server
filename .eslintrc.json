@@ -19,5 +19,15 @@
       "parserOptions": { "project": [] },
       "rules": { }
     }
+    ,{
+      "files": ["scripts/*.ts"],
+      "parserOptions": { "project": [] },
+      "rules": { }
+    }
+    ,{
+      "files": ["scripts/*.mjs"],
+      "parserOptions": { "project": [] },
+      "rules": { }
+    }
   ]
 }

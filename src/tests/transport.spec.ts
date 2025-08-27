@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { waitFor } from './testUtils';
 import { spawn } from 'child_process';
+import { waitForDist } from './distReady';
 import path from 'path';
 
 function startServer(){
@@ -16,6 +17,7 @@ describe('transport health handler', () => {
   await new Promise(r => setTimeout(r, 120));
   // initialize first
   server.stdin.write(JSON.stringify({ jsonrpc:'2.0', id:99, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } }) + '\n');
+  await waitForDist();
   await waitFor(() => outputs.some(l => l.includes('"id":99')));
     server.stdin.write(JSON.stringify({ jsonrpc:'2.0', id:1, method:'health/check' }) + '\n');
   await waitFor(() => outputs.some(l => /"id":1/.test(l)));

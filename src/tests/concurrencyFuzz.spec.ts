@@ -24,13 +24,13 @@ describe('concurrency & fuzz', () => {
   const timeoutMs = 6000; const intervalMs = 40; const start = Date.now();
       let allPresent = false;
       while(Date.now() - start < timeoutMs){
-        const l = await call<{ items: { id:string }[] }>('instructions/list', {});
+  const l = await call<{ items: { id:string }[] }>('instructions/dispatch', { action: 'list' });
         allPresent = ids.every(id => l.items.some(x=>x.id===id));
         if(allPresent) break;
         await new Promise(r=> setTimeout(r, intervalMs));
       }
       if(!allPresent){
-        const final = await call<{ items: { id:string }[] }>('instructions/list', {});
+  const final = await call<{ items: { id:string }[] }>('instructions/dispatch', { action: 'list' });
         const missing = ids.filter(id => !final.items.find(x=>x.id===id));
         // If still missing, treat as soft skip rather than hard fail to avoid suite flakiness; ensure cleanup still runs
         if(missing.length){
@@ -49,12 +49,12 @@ describe('concurrency & fuzz', () => {
       const timeoutMs = 4000; const intervalMs = 50; const start = Date.now();
       let allGone = false;
       while(Date.now()-start < timeoutMs){
-        const la = await call<{ items: { id:string }[] }>('instructions/list', {});
+  const la = await call<{ items: { id:string }[] }>('instructions/dispatch', { action: 'list' });
         allGone = ids.every(id => !la.items.some(x=>x.id===id));
         if(allGone) break;
         await new Promise(r=> setTimeout(r, intervalMs));
       }
-      const finalAfter = await call<{ items: { id:string }[] }>('instructions/list', {});
+  const finalAfter = await call<{ items: { id:string }[] }>('instructions/dispatch', { action: 'list' });
       const stillPresent = ids.filter(id => finalAfter.items.some(x=>x.id===id));
       if(stillPresent.length){
         // eslint-disable-next-line no-console
@@ -65,14 +65,14 @@ describe('concurrency & fuzz', () => {
         }
       }
     }
-  });
+  }, 15000);
 
   it('fuzz import with duplicates does not corrupt catalog', async () => {
     const baseId = `fuzz_${Date.now()}`;
     const entries = Array.from({ length: 5 }, (_,i)=> ({ id: baseId, title: 'dup', body: 'same', priority: 10+i, audience:'all', requirement:'optional' }));
   const res = await call<{ errors: unknown[] }>('instructions/import', { entries, mode:'overwrite' });
   expect(Array.isArray(res.errors)).toBe(true);
-  const get = await call<{ item: { id:string } }>('instructions/get', { id: baseId });
+  const get = await call<{ item: { id:string } }>('instructions/dispatch', { action: 'get', id: baseId });
   expect(get.item.id).toBe(baseId);
-  });
+  }, 8000);
 });

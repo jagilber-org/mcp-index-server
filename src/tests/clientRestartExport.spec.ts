@@ -37,7 +37,7 @@ describe('client restart export continuity', () => {
     const out1:string[]=[]; server1.stdout.on('data', d=> out1.push(...d.toString().trim().split(/\n+/)) );
     send(server1,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'restart-test', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> out1.some(l=> { try { return JSON.parse(l).id===1; } catch { return false; } }), 2000);
-    send(server1,{ jsonrpc:'2.0', id:2, method:'instructions/export', params:{} });
+  send(server1,{ jsonrpc:'2.0', id:2, method:'instructions/dispatch', params:{ action:'export' } });
     await waitFor(()=> out1.some(l=> { try { return JSON.parse(l).id===2; } catch { return false; } }), 3000);
     const exportLine1 = out1.find(l=> { try { return JSON.parse(l).id===2; } catch { return false; } });
     expect(exportLine1).toBeTruthy();
@@ -56,7 +56,7 @@ describe('client restart export continuity', () => {
     const out2:string[]=[]; server2.stdout.on('data', d=> out2.push(...d.toString().trim().split(/\n+/)) );
     send(server2,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'restart-test', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> out2.some(l=> { try { return JSON.parse(l).id===10; } catch { return false; } }), 2000);
-    send(server2,{ jsonrpc:'2.0', id:11, method:'instructions/export', params:{} });
+  send(server2,{ jsonrpc:'2.0', id:11, method:'instructions/dispatch', params:{ action:'export' } });
     await waitFor(()=> out2.some(l=> { try { return JSON.parse(l).id===11; } catch { return false; } }), 3000);
     const exportLine2 = out2.find(l=> { try { return JSON.parse(l).id===11; } catch { return false; } });
     expect(exportLine2).toBeTruthy();

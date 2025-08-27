@@ -3,7 +3,9 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { waitFor } from './testUtils';
+import { waitForDist } from './distReady';
 
+async function ensureDist(){ await waitForDist(); }
 function startServer(){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1' } });
 }
@@ -32,8 +34,9 @@ async function readJsonWithRetry<T=unknown>(file: string, timeoutMs=5000, interv
 
 describe('enrich/groom do not override explicit governance', () => {
   it('explicit governance fields remain unchanged after enrich invocation', async () => {
-    const id = `no_enrich_override_${Date.now()}`;
-    const server = startServer();
+  const id = `no_enrich_override_${Date.now()}`;
+  await ensureDist();
+  const server = startServer();
     const out: string[] = []; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)));
     await new Promise(r=> setTimeout(r,120));
     send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'enrich-test', version:'0' }, capabilities:{ tools:{} } } });

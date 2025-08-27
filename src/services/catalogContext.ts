@@ -39,6 +39,16 @@ function checkUsageRateLimit(id: string): boolean {
   current.count++;
   return true;
 }
+
+// Export for testing
+export function clearUsageRateLimit(id?: string) {
+  if (id) {
+    usageRateLimiter.delete(id);
+  } else {
+    usageRateLimiter.clear();
+  }
+}
+
 function ensureDataDir(){ const dir = path.dirname(usageSnapshotPath); if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true}); }
 function loadUsageSnapshot(){ try { if(fs.existsSync(usageSnapshotPath)) return JSON.parse(fs.readFileSync(usageSnapshotPath,'utf8')); } catch { /* ignore */ } return {}; }
 function scheduleUsageFlush(){ usageDirty = true; if(usageWriteTimer) return; usageWriteTimer = setTimeout(flushUsageSnapshot,500); }

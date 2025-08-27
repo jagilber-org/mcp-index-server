@@ -1,0 +1,3 @@
+scripts/performanceBaseline.ts
+dist
+node_modules

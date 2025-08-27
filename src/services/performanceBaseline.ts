@@ -1,7 +1,7 @@
 // Performance baseline measurement script for Phase 1 usage tracking
 // Measures mutation and list operation timing to establish <5% overhead target
 
-import { spawn, ChildProcess } from 'child_process';
+import { spawn } from 'child_process';
 import { performance } from 'perf_hooks';
 import fs from 'fs';
 import path from 'path';

@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { waitFor } from './testUtils';
+import { waitForDist } from './distReady';
 
 // Per-spec isolated instructions directory to avoid cross-test interference
 const ISOLATED_DIR = fs.mkdtempSync(path.join(os.tmpdir(),'instr-add-'));
@@ -23,7 +24,8 @@ describe('instructions/add tool', () => {
     const id = 'add_test_create';
     const file = path.join(instructionsDir, id + '.json');
     if(fs.existsSync(file)) fs.unlinkSync(file);
-    const server = startServer(true);
+  await waitForDist();
+  const server = startServer(true);
     const out:string[]=[]; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
     await wait(60);
     send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
@@ -45,7 +47,8 @@ describe('instructions/add tool', () => {
     const id = 'add_test_skip';
     const file = path.join(instructionsDir, id + '.json');
     fs.writeFileSync(file, JSON.stringify({ id, title:id, body:'seed', priority:50, audience:'all', requirement:'optional', categories:[], sourceHash:'', schemaVersion:'1', createdAt:'', updatedAt:'', version:'1.0.0', status:'approved', owner:'unowned', priorityTier:'P3', classification:'internal', lastReviewedAt:new Date().toISOString(), nextReviewDue:new Date().toISOString(), changeLog:[{version:'1.0.0', changedAt:new Date().toISOString(), summary:'initial'}], semanticSummary:'seed' }, null,2));
-    const server = startServer(true);
+  await waitForDist();
+  const server = startServer(true);
     const out:string[]=[]; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
     await wait(60);
     send(server,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
@@ -66,7 +69,8 @@ describe('instructions/add tool', () => {
     const id = 'add_test_overwrite';
     const file = path.join(instructionsDir, id + '.json');
     fs.writeFileSync(file, JSON.stringify({ id, title:id, body:'old', priority:50, audience:'all', requirement:'optional', categories:[], sourceHash:'', schemaVersion:'1', createdAt:'', updatedAt:'', version:'1.0.0', status:'approved', owner:'unowned', priorityTier:'P3', classification:'internal', lastReviewedAt:new Date().toISOString(), nextReviewDue:new Date().toISOString(), changeLog:[{version:'1.0.0', changedAt:new Date().toISOString(), summary:'initial'}], semanticSummary:'old' }, null,2));
-    const server = startServer(true);
+  await waitForDist();
+  const server = startServer(true);
     const out:string[]=[]; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
     await wait(60);
     send(server,{ jsonrpc:'2.0', id:20, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });
@@ -85,7 +89,8 @@ describe('instructions/add tool', () => {
 
   it('is gated when mutation disabled', async () => {
     const id = 'add_test_gated';
-    const server = startServer(false);
+  await waitForDist();
+  const server = startServer(false);
     const out:string[]=[]; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
     await wait(60);
     send(server,{ jsonrpc:'2.0', id:30, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test', version:'0' }, capabilities:{ tools:{} } } });

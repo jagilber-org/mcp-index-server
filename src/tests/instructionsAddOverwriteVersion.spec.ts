@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { waitFor } from './testUtils';
+import { waitForDist } from './distReady';
 
 const ISOLATED_DIR = fs.mkdtempSync(path.join(os.tmpdir(),'instr-overwrite-'));
 function startServer(){
@@ -26,6 +27,7 @@ describe('instructions/add overwrite version semantics (alpha)', () => {
 
   it('retains existing version & changeLog when body changes without explicit version; updates only when provided', async () => {
     const id = `overwrite_version_${Date.now()}`;
+    await waitForDist();
     const server = startServer();
     const out: string[] = []; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)));
     await new Promise(r=> setTimeout(r,120));

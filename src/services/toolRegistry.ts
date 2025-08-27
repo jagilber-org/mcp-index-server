@@ -20,8 +20,7 @@ const stringReq = (name: string) => ({ type: 'object', additionalProperties: fal
 // Explicit param schemas derived from handlers in toolHandlers.ts
 const INPUT_SCHEMAS: Record<string, object> = {
   'health/check': { type: 'object', additionalProperties: true }, // no params
-  'instructions/list': { type: 'object', additionalProperties: false, properties: { category: { type: 'string' } } },
-  'instructions/listScoped': { type: 'object', additionalProperties: false, properties: { userId: { type: 'string' }, workspaceId: { type: 'string' }, teamIds: { type: 'array', items: { type: 'string' } } } },
+  'instructions/dispatch': { type: 'object', additionalProperties: true, required: ['action'], properties: { action: { type: 'string' } } },
   'instructions/governanceHash': { type: 'object', additionalProperties: true },
   'instructions/governanceUpdate': { type: 'object', additionalProperties: false, required: ['id'], properties: {
     id: { type: 'string' },
@@ -31,13 +30,21 @@ const INPUT_SCHEMAS: Record<string, object> = {
     nextReviewDue: { type: 'string' },
     bump: { type: 'string', enum: ['patch','minor','major','none'] }
   } },
-  'instructions/get': stringReq('id'),
-  'instructions/search': stringReq('q'),
-  'instructions/export': { type: 'object', additionalProperties: false, properties: { ids: { type: 'array', items: { type: 'string' } }, metaOnly: { type: 'boolean' } } },
-  'instructions/diff': { type: 'object', additionalProperties: false, properties: {
-    clientHash: { type: 'string' },
-    known: { type: 'array', items: { type: 'object', required: ['id','sourceHash'], additionalProperties: false, properties: { id: { type: 'string' }, sourceHash: { type: 'string' } } } }
+  // Re-expose legacy read-only query endpoints for direct invocation paths still in tests
+  'instructions/query': { type: 'object', additionalProperties: true, properties: {
+    categoriesAll: { type: 'array', items: { type: 'string' } },
+    categoriesAny: { type: 'array', items: { type: 'string' } },
+    excludeCategories: { type: 'array', items: { type: 'string' } },
+    priorityMin: { type: 'number' },
+    priorityMax: { type: 'number' },
+    priorityTiers: { type: 'array', items: { type: 'string', enum: ['P1','P2','P3','P4'] } },
+    requirements: { type: 'array', items: { type: 'string', enum: ['mandatory','critical','recommended','optional','deprecated'] } },
+    text: { type: 'string' },
+    limit: { type: 'number', minimum:1, maximum:1000 },
+    offset: { type: 'number', minimum:0 }
   } },
+  'instructions/categories': { type: 'object', additionalProperties: true },
+  // legacy read-only instruction method schemas removed in favor of dispatcher
   'instructions/import': { type: 'object', additionalProperties: false, required: ['entries'], properties: {
     entries: { type: 'array', minItems: 1, items: { type: 'object', required: ['id','title','body','priority','audience','requirement'], additionalProperties: true, properties: {
       id: { type: 'string' }, title: { type: 'string' }, body: { type: 'string' }, rationale: { type: 'string' }, priority: { type: 'number' }, audience: { type: 'string' }, requirement: { type: 'string' }, categories: { type: 'array', items: { type: 'string' } }, mode: { type: 'string' }
@@ -70,7 +77,7 @@ const INPUT_SCHEMAS: Record<string, object> = {
 };
 
 // Stable & mutation classification lists (mirrors usage in toolHandlers; exported to remove duplication there).
-export const STABLE = new Set(['health/check','instructions/list','instructions/listScoped','instructions/governanceHash','instructions/get','instructions/search','instructions/diff','instructions/export','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools']);
+export const STABLE = new Set(['health/check','instructions/dispatch','instructions/governanceHash','instructions/query','instructions/categories','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools']);
 const MUTATION = new Set(['instructions/add','instructions/import','instructions/repair','instructions/reload','instructions/remove','instructions/groom','instructions/enrich','instructions/governanceUpdate','usage/flush']);
 
 export function getToolRegistry(): ToolRegistryEntry[] {
@@ -95,13 +102,11 @@ export function getToolRegistry(): ToolRegistryEntry[] {
 function describeTool(name: string): string {
   switch(name){
     case 'health/check': return 'Returns server health status & version.';
-    case 'instructions/list': return 'List all instruction entries (optionally filtered by category).';
-  case 'instructions/listScoped': return 'List instructions matching structured scope (user > workspace > team > all).';
+  case 'instructions/dispatch': return 'Unified dispatcher for instruction catalog actions (list,get,search,diff,export,query,categories,dir & mutations).';
   case 'instructions/governanceHash': return 'Return governance projection & deterministic governance hash.';
-    case 'instructions/get': return 'Fetch a single instruction entry by id.';
-    case 'instructions/search': return 'Search instructions by text query across title & body.';
-    case 'instructions/export': return 'Export full instruction catalog, optionally subset by ids.';
-    case 'instructions/diff': return 'Incremental diff of catalog relative to client known state/hash.';
+  case 'instructions/query': return 'Filter instruction catalog by categories, priorities, tiers, requirements, and text search.';
+  case 'instructions/categories': return 'Return category taxonomy with occurrence counts.';
+  // legacy read-only instruction descriptions removed (handled via dispatcher)
     case 'instructions/import': return 'Import (create/overwrite) instruction entries from provided objects.';
   case 'instructions/add': return 'Add a single instruction (lax mode fills defaults; overwrite optional).';
     case 'instructions/repair': return 'Repair out-of-sync sourceHash fields (noop if none drifted).';
@@ -124,4 +129,5 @@ function describeTool(name: string): string {
   }
 }
 
-export const REGISTRY_VERSION = '2025-08-25';
+// Registry version bumped to align with dispatcher consolidation docs regeneration (TOOLS-GENERATED.md)
+export const REGISTRY_VERSION = '2025-08-27';

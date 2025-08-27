@@ -44,7 +44,7 @@ describe('cross-process visibility (expected to FAIL until cache invalidation im
     send(serverB,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'xproc-B', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> !!findResponse(outB,1), 3000);
   // Prime cache: first list BEFORE new file exists — loads catalog containing only sentinel
-  send(serverB,{ jsonrpc:'2.0', id:2, method:'instructions/list', params:{} });
+  send(serverB,{ jsonrpc:'2.0', id:2, method:'instructions/dispatch', params:{ action:'list' } });
   await waitFor(()=> !!findResponse(outB,2), 3000);
 
     // Start Server A which will perform add
@@ -62,7 +62,7 @@ describe('cross-process visibility (expected to FAIL until cache invalidation im
   expect(fs.existsSync(newPath)).toBe(true);
 
     // Sanity: Server A sees it in list
-    send(serverA,{ jsonrpc:'2.0', id:4, method:'instructions/list', params:{} });
+  send(serverA,{ jsonrpc:'2.0', id:4, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(outA,4), 3000);
     const listA = findResponse(outA,4) as RpcSuccess<{ items:{ id:string }[] }> | undefined;
     expect(listA?.result.items.some(i=> i.id===newId)).toBe(true); // sanity
@@ -75,7 +75,7 @@ describe('cross-process visibility (expected to FAIL until cache invalidation im
     // Poll a few times (eventual consistency within short window should be guaranteed by signature invalidation)
     let saw=false; const maxAttempts=5;
     for(let attempt=0; attempt<maxAttempts && !saw; attempt++){
-      send(serverB,{ jsonrpc:'2.0', id:10+attempt, method:'instructions/list', params:{} });
+  send(serverB,{ jsonrpc:'2.0', id:10+attempt, method:'instructions/dispatch', params:{ action:'list' } });
       await waitFor(()=> !!findResponse(outB,10+attempt), 1200);
       const listBresp = findResponse(outB,10+attempt) as RpcSuccess<{ items:{ id:string }[] }> | undefined;
       saw = !!listBresp?.result.items.some(i=> i.id===newId);

@@ -19,8 +19,8 @@ describe('metrics/snapshot', () => {
   // Wait a moment for process spin-up and perform initialize; then wait for its response deterministically
   send(server,{ jsonrpc:'2.0', id:90, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'test-harness', version:'0.0.0' }, capabilities:{ tools: {} } } });
   await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===90; } catch { return false; } }), 3000);
-    // Invoke a couple of tools via tools/call (SDK will route)
-    send(server,{ jsonrpc:'2.0', id:1, method:'tools/call', params:{ name:'instructions/list', arguments:{} } });
+  // Invoke a couple of tools via tools/call (SDK will route) using dispatcher
+  send(server,{ jsonrpc:'2.0', id:1, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } } });
     send(server,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'health/check', arguments:{} } });
   await waitFor(()=> lines.some(l=> { try { return JSON.parse(l).id===1; } catch { return false; } }) && lines.some(l=> { try { return JSON.parse(l).id===2; } catch { return false; } }), 3000);
     // Call metrics snapshot directly (registered as tool)
@@ -42,7 +42,7 @@ describe('metrics/snapshot', () => {
   }
   // Ensure we have at least the tools we invoked
   const names = snapshot.methods.map(m => m.method);
-    expect(names).toContain('instructions/list');
+    expect(names).toContain('instructions/dispatch');
     expect(names).toContain('health/check');
   }, 8000);
 });

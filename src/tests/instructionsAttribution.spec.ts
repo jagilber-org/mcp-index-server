@@ -28,7 +28,7 @@ describe('instructions attribution', () => {
     const id = 'attrib-' + Date.now();
     send(server,{ jsonrpc:'2.0', id:1, method:'instructions/add', params:{ entry:{ id, body:'Body attrib', title:id }, overwrite:true, lax:true } });
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===1; } catch { return false; } }), 2000);
-    send(server,{ jsonrpc:'2.0', id:2, method:'instructions/get', params:{ id } });
+  send(server,{ jsonrpc:'2.0', id:2, method:'instructions/dispatch', params:{ action:'get', id } });
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===2; } catch { return false; } }), 2000);
     const line = out.filter(l=> { try { const o=JSON.parse(l); return o.id===2; } catch { return false; } }).pop();
     expect(line).toBeTruthy();
@@ -46,7 +46,7 @@ describe('instructions attribution', () => {
     const id = 'attrib-scope-' + Date.now();
     send(server,{ jsonrpc:'2.0', id:1, method:'instructions/add', params:{ entry:{ id, body:'Scoped Body', title:id }, overwrite:true, lax:true } });
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===1; } catch { return false; } }), 2000);
-    send(server,{ jsonrpc:'2.0', id:2, method:'instructions/listScoped', params:{ workspaceId:'non-matching-workspace' } });
+  send(server,{ jsonrpc:'2.0', id:2, method:'instructions/dispatch', params:{ action:'listScoped', workspaceId:'non-matching-workspace' } });
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===2; } catch { return false; } }), 2000);
     const line = out.filter(l=> { try { const o=JSON.parse(l); return o.id===2; } catch { return false; } }).pop();
     expect(line).toBeTruthy();

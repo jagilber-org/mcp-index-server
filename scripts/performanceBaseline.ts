@@ -86,10 +86,10 @@ async function measureListOperations(enableUsage: boolean, iterations = 50): Pro
     });
     await waitFor(output, line => line.includes('"id":1'));
     
-    // Measure list operations
+  // Measure list operations via dispatcher
     for (let i = 0; i < iterations; i++) {
       const start = performance.now();
-      send(server, { jsonrpc: '2.0', id: 100 + i, method: 'instructions/list', params: {} });
+  send(server, { jsonrpc: '2.0', id: 100 + i, method: 'instructions/dispatch', params: { action:'list' } });
       await waitFor(output, line => line.includes(`"id":${100 + i}`));
       const end = performance.now();
       timings.push(end - start);

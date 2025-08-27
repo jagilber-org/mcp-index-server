@@ -38,7 +38,7 @@ describe('concurrency: add same id concurrently', () => {
     // Attempt to fetch; retry a few times if needed
     let got: RpcSuccess<{ item: InstructionItem }> | undefined;
     for(let attempt=0; attempt<5 && !got; attempt++){
-      send(server,{ jsonrpc:'2.0', id:200+attempt, method:'instructions/get', params:{ id:baseId } });
+  send(server,{ jsonrpc:'2.0', id:200+attempt, method:'instructions/dispatch', params:{ action:'get', id:baseId } });
       const pollStart = Date.now();
       while(Date.now()-pollStart < 1200 && !findResponse(out,200+attempt)){
         await new Promise(r=> setTimeout(r,100));
@@ -52,7 +52,7 @@ describe('concurrency: add same id concurrently', () => {
 
     // Fallback: list and locate if direct get did not surface
     if(!got){
-      send(server,{ jsonrpc:'2.0', id:500, method:'instructions/list', params:{} });
+  send(server,{ jsonrpc:'2.0', id:500, method:'instructions/dispatch', params:{ action:'list' } });
       await waitFor(()=> !!findResponse(out,500));
       const listResp = findResponse(out,500) as RpcSuccess<{ items: InstructionItem[] }> | undefined;
       const found = listResp?.result.items.find(i=> i.id===baseId);

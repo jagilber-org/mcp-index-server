@@ -1,0 +1,32 @@
+{
+  "id": "batch-seed",
+  "title": "Seed",
+  "body": "Seed body",
+  "priority": 1,
+  "audience": "all",
+  "requirement": "recommended",
+  "categories": [
+    "test"
+  ],
+  "sourceHash": "b6b3b2b1bdd1694f13e7cd554bd42badafa8db744e9094fd0e41afc79104fa77",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-27T13:24:44.088Z",
+  "updatedAt": "2025-08-27T13:24:44.088Z",
+  "riskScore": 119,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-27T13:24:44.090Z",
+  "nextReviewDue": "2025-09-26T13:24:44.090Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-27T13:24:44.088Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Seed body"
+}

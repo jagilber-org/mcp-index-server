@@ -21,8 +21,13 @@ interface RpcError { id:number; error:unknown }
 type RpcResponse<T=unknown> = RpcSuccess<T> | RpcError | undefined;
 function findResponse(lines: string[], id:number): RpcResponse | undefined { for(const l of lines){ try { const o=JSON.parse(l) as RpcResponse; if(o && o.id===id) return o; } catch { /* ignore */ } } return undefined; }
 
+// Re-enabled: catalogContext now pins a single instructions directory so adds from a different cwd
+// should be immediately visible in list results.
 describe('repro: path mismatch add invisibility', () => {
   it('add should appear in list even when cwd differs (currently fails)', async () => {
+      // This test is expected to fail due to path mismatch issues.
+      // The server is started in a different working directory, which causes
+      // the newly added instructions to be invisible in the list.
     const server = startServerInDist();
     const out: string[] = []; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)));
     await new Promise(r=> setTimeout(r,150));
@@ -30,7 +35,7 @@ describe('repro: path mismatch add invisibility', () => {
     await waitFor(()=> !!findResponse(out,1));
 
     // Baseline list count
-    send(server,{ jsonrpc:'2.0', id:2, method:'instructions/list', params:{} });
+  send(server,{ jsonrpc:'2.0', id:2, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(out,2));
     const listBaseline = findResponse(out,2) as RpcSuccess<{ items:{ id:string }[]; count:number }> | undefined;
     const baselineCount = listBaseline?.result.count || 0;
@@ -40,7 +45,7 @@ describe('repro: path mismatch add invisibility', () => {
     await waitFor(()=> !!findResponse(out,10));
 
     // Immediately list again
-    send(server,{ jsonrpc:'2.0', id:11, method:'instructions/list', params:{} });
+  send(server,{ jsonrpc:'2.0', id:11, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(out,11));
     const listAfter = findResponse(out,11) as RpcSuccess<{ items:{ id:string }[]; count:number }> | undefined;
     if(!listAfter) throw new Error('missing listAfter');
@@ -51,5 +56,5 @@ describe('repro: path mismatch add invisibility', () => {
     expect(listAfter.result.count).toBeGreaterThanOrEqual(baselineCount + 1);
 
     server.kill();
-  }, 15000);
+    }, 8000);
 });

@@ -1,8 +1,8 @@
 # MCP Tools API Reference
 
-Version: 0.7.0 (synchronized with package.json)
+Version: 0.9.0 (dispatcher consolidation – breaking change)
 
-Fully consolidated in 0.4.0 (removed duplicated legacy sections). This document is the single source for tool contracts, env flags, and stability notes.
+0.9.0 replaces the fragmented `instructions/*` tool surface with a single dispatcher tool `instructions/dispatch` supporting an `action` field. Legacy methods (`instructions/list`, `instructions/get`, etc.) were removed; see CHANGELOG 0.9.0 for migration guidance.
 
 ## Overview
 
@@ -10,14 +10,14 @@ The server exposes a set of JSON-RPC 2.0 methods ("tools") over stdio. By defaul
 
 Categories:
 
-- Instruction Catalog: list, listScoped, get, search, diff, export, add, repair, import, reload, remove, groom
-- Governance & Integrity: instructions/governanceHash, prompt/review, integrity/verify, gates/evaluate
+- Instruction Catalog (dispatcher): `instructions/dispatch` (actions: list, listScoped, get, search, diff, export, query, categories, dir, capabilities, batch, inspect, health, governanceHash, add, import, remove, reload, groom, repair, enrich, governanceUpdate)
+- Governance & Integrity: integrity/verify, prompt/review, gates/evaluate, metrics/snapshot, usage/*, meta/tools
 - Usage & Metrics: usage/track, usage/hotset, usage/flush, metrics/snapshot
 - Introspection: meta/tools
 
 ## Transport & Conventions
 
-Requests: `{ "jsonrpc": "2.0", "id": <string|number>, "method": "instructions/list", "params": { ... } }`
+Requests (dispatcher): `{ "jsonrpc": "2.0", "id": 7, "method": "instructions/dispatch", "params": { "action": "list" } }`
 Success:  `{ "jsonrpc": "2.0", "id": <same>, "result": { ... } }`
 Errors:   JSON-RPC error object (code, message, optional data)
 Timestamps: ISO 8601 UTC.
@@ -40,17 +40,19 @@ Optional (future use / reserved):
 
 - GOV_HASH_TRAILING_NEWLINE=1 (append trailing newline sentinel before hashing governance projection; must be consistent across producers/consumers if used)
 
-## Mutation Tools (write)
+## Mutation Actions (write)
 
-Disabled by default unless MCP_ENABLE_MUTATION=1.
+Disabled by default unless MCP_ENABLE_MUTATION=1. Exposed via `instructions/dispatch` unless otherwise noted.
 
-- instructions/add (single entry convenience; lax mode fills defaults)
-- instructions/import
-- instructions/repair (writes only when fixing hashes)
-- instructions/reload (reindexes; side-effect is catalog reset)
-- instructions/remove (permanently deletes entries by id)
-- instructions/groom (catalog normalization, duplicate merge, deprecated cleanup, optional legacy scope purge)
-- usage/flush (forces persistence write)
+- add (single entry convenience; lax mode fills defaults)
+- import
+- repair (writes only when fixing hashes)
+- reload (reindexes; side-effect is catalog reset)
+- remove (permanently deletes entries by id)
+- groom (catalog normalization, duplicate merge, deprecated cleanup, optional legacy scope purge)
+- enrich (fills missing computed governance fields)
+- governanceUpdate (controlled patch + optional semver bump)
+- usage/flush (separate top-level tool – forces persistence write)
 
 Rationale: Safer default for embedding in untrusted environments; explicit opt‑in for CI maintenance or local admin.
 
@@ -58,6 +60,7 @@ Rationale: Safer default for embedding in untrusted environments; explicit opt�
 
 - mutationEnabled (boolean)
 - Per-tool flags: { method, mutation?: true, disabled?: true, stable?: true }
+- Dispatcher advertised as a single tool `instructions/dispatch`; individual legacy names removed.
 
 ## Logging Examples (PowerShell)
 
@@ -68,55 +71,74 @@ $env:MCP_ENABLE_MUTATION=1; $env:MCP_LOG_MUTATION=1; node dist/server/index.js
 
 ## Tool Reference
 
-Each method name below is a JSON-RPC method string.
+Each method name below is a JSON-RPC method string unless otherwise noted. The dispatcher encapsulates many prior methods inside a single tool.
 
-### instructions/list
+### instructions/dispatch
 
-Params: { category?: string }
-Result: { hash, count, items: [{ id, title? ... }] }
-Filters by lowercase category token when provided.
+Universal catalog + governance dispatcher. All requests include at minimum:
 
-### instructions/listScoped
+```json
+{ "action": "<actionName>", /* action-specific params */ }
+```
 
-Params: { userId?: string, workspaceId?: string, teamIds?: string[] }
-Result: { hash, count, scope: "user"|"workspace"|"team"|"all", items: [...] }
-Resolution order: user > workspace > team > all (audience=all entries). Returns the first non-empty match set.
-Notes: Structured scope fields (workspaceId, userId, teamIds) are derived automatically from legacy category prefixes (scope:workspace:*, scope:user:*, scope:team:*). Those prefixed categories are stripped from categories to keep topical tags clean.
+Common read actions:
 
-### instructions/get
+| Action | Params (object) | Result (shape) | Notes |
+|--------|-----------------|----------------|-------|
+| list | { category? } | { hash, count, items } | Optional category filter |
+| listScoped | { userId?, workspaceId?, teamIds? } | { hash, count, scope, items } | Resolution order user > workspace > team > all |
+| get | { id } | { hash, item } or { notFound:true } | Single entry lookup |
+| diff | { clientHash?, known? } | { upToDate:true, hash } OR { hash, added, updated, removed } | Incremental sync |
+| export | { ids?, metaOnly? } | { hash, count, items } | metaOnly strips bodies |
+| search | { q } | { hash, count, items } | Simple case-insensitive substring (title + body) |
+| query | rich filter fields | { items, total, returned, nextCursor?, appliedFilters } | Advanced multi-filter (design / evolving) |
+| categories | none | { categories:[{ name, count }], totalDistinct } | Distinct category summary |
+| governanceHash | none | { count, governanceHash, items? } | Stable governance projection hash |
+| dir | none | { files:[...], count } | On-disk diagnostics (implementation specific) |
+| inspect | { id? } | diagnostics object | Deep raw + normalized view |
+| health | none | { stats... } | Catalog health snapshot |
+| capabilities | none | { version, supportedActions:[...], mutationEnabled } | Discovery for client gating |
+| batch | { operations:[ { action,... }, ... ] } | { results:[ ... ] } | Per-op isolation; continues after failures |
 
-Params: { id: string }
-Result (found): { hash, item: InstructionEntry }
-Result (missing): { notFound: true }
+Mutation actions (require MCP_ENABLE_MUTATION=1):
 
-### instructions/search
+| Action | Params | Result (primary fields) | Notes |
+|--------|--------|------------------------|-------|
+| add | { entry, overwrite?, lax? } | { id, hash, created, overwritten, skipped } | Lax fills defaults |
+| import | { entries, mode:"skip"\|"overwrite" } | { hash, imported, skipped, overwritten, total, errors } | Bulk add/update |
+| remove | { ids } | { removed, removedIds, missing, errorCount, errors } | Permanent delete |
+| reload | none | { reloaded:true, hash, count } | Clears and reloads |
+| groom | { mode? } | { previousHash, hash, scanned, repairedHashes, normalizedCategories, deprecatedRemoved, duplicatesMerged, usagePruned, filesRewritten, purgedScopes, dryRun, notes } | Normalization, duplicate merge |
+| repair | { clientHash?, known? } | diff-like OR { repaired, updated:[id] } | Fix stored sourceHash mismatches |
+| enrich | none | { enriched, updated } | Persist missing governance fields |
+| governanceUpdate | { id, patch, bump? } | { id, previousVersion, newVersion } | Controlled governance metadata edit |
 
-Params: { q: string }
-Case-insensitive substring over title + body.
-Result: { hash, count, items: [...] }
+Batch example:
 
-### instructions/diff
+```json
+{
+  "jsonrpc":"2.0","id":9,
+  "method":"instructions/dispatch",
+  "params":{
+    "action":"batch",
+    "operations":[
+      { "action":"get", "id":"alpha" },
+      { "action":"list" },
+      { "action":"add", "entry": { "id":"temp", "body":"x" }, "lax": true }
+    ]
+  }
+}
+```
 
-Params: { clientHash?: string, known?: [{ id, sourceHash }] }
-Result (up to date): { upToDate: true, hash }
-Result (incremental): { hash, added: [InstructionEntry], updated: [...], removed: [id] }
-Legacy fallback: { hash, changed: [InstructionEntry] }
+Capabilities example:
 
-### instructions/export
+```json
+{ "jsonrpc":"2.0","id":5,"method":"instructions/dispatch","params": { "action":"capabilities" } }
+```
 
-Params: { ids?: string[], metaOnly?: boolean }
-Result: { hash, count, items: [...] }
+Error semantics: Unknown `action` returns -32601 with `data.action` provided for diagnostics. Schema validation errors return -32602 with Ajv detail.
 
-### instructions/import (mutation)
-
-### instructions/add (mutation)
-
-Params: { entry: { id, body, title?, rationale?, priority?, audience?, requirement?, categories?, deprecatedBy?, riskScore? }, overwrite?: boolean, lax?: boolean }
-Result (created): { id, hash, skipped:false, created:true, overwritten:false }
-Result (overwritten): { id, hash, skipped:false, created:false, overwritten:true }
-Result (skipped existing without overwrite): { id, hash, skipped:true, created:false, overwritten:false }
-Result (error): { error, id }
-Notes: In lax mode missing optional fields are defaulted (title=id, priority=50, audience=all, requirement=optional, categories=[]). Without lax all core fields must be present.
+Legacy per-method names were removed; clients must call the dispatcher and supply `action`.
 
 
 Params: { entries: InstructionEntryInput[], mode: "skip" | "overwrite" }
@@ -372,18 +394,18 @@ Ensure an instructions/ directory exists before launch.
 
 Stability tags (stable | experimental) surfaced via meta/tools. Any change to a stable contract triggers a semver minor (additive) or major (breaking) bump and TOOLS.md update.
 
-Promotion roadmap (tentative):
+Promotion roadmap (tentative, dispatcher model):
 
-1. instructions/list|get|search
+1. instructions/dispatch core read actions (list, diff, export, categories, governanceHash)
 2. prompt/review (after adding remediation/category fields)
-3. diff / repair incremental contract
+3. Advanced query + batch stability + capabilities version negotiation
 
 ## Change Log
 
+- 0.9.0: BREAKING unify instruction catalog under `instructions/dispatch`; add actions batch, capabilities, governanceUpdate, enrich; remove legacy `instructions/*` read methods from registry; update docs & migration guidance.
 - 0.7.0: Added `instructions/governanceHash` stable tool, governance projection & deterministic hash, enrichment persistence pass, stabilization of usage tracking (atomic firstSeenTs + synchronous first flush), added governance lifecycle fields documentation, optional `GOV_HASH_TRAILING_NEWLINE` flag.
-
-- 0.5.1: Added instructions/remove mutation tool; updated schemas, registry, docs.
-- 0.6.0: Added structured scoping fields (workspaceId, userId, teamIds), new instructions/listScoped tool, groom purgeLegacyScopes + purgedScopes metric.
+- 0.6.0: Added structured scoping fields (workspaceId, userId, teamIds), new listScoped tool (now action), groom purgeLegacyScopes + purgedScopes metric.
+- 0.5.1: Added remove mutation tool (now action); updated schemas, registry, docs.
 - 0.5.0: Migrated to official @modelcontextprotocol/sdk; added ping, server/ready notification, initialize guidance, standardized error codes/data.
 - 0.4.0: Added lifecycle (initialize/shutdown/exit) handling + richer method-not-found diagnostics, consolidated docs, clarified mutation tool list, improved usage persistence & flush gating.
 - 0.3.0: Introduced environment gating (MCP_ENABLE_MUTATION), logging flags (MCP_LOG_VERBOSE, MCP_LOG_MUTATION), meta/tools mutation & disabled flags.
@@ -411,13 +433,13 @@ This section provides normative guidance for MCP clients integrating with the In
 4. If mutation operations are planned, verify `mutationEnabled` OR surface controlled UI to enable `MCP_ENABLE_MUTATION`.
 5. Fetch `instructions/governanceHash` (record `governanceHash`, `count`).
 6. (Optional) Fetch `metrics/snapshot` and `feature/status` to condition UI features.
-7. Perform targeted calls (`instructions/list` or `instructions/diff` with cached hash) rather than bulk re-download.
+7. Perform targeted dispatcher calls (`{ action:"list" }` or `{ action:"diff" }` with cached hash) rather than bulk re-download.
 
 ### B. Conditional Sync Strategy
  
-- Maintain last known `hash` from `instructions/list` (catalog hash) and `governanceHash` separately; only refetch full entries when either changes.
-- Use `instructions/diff` with `clientHash` to minimize payload for incremental updates.
-- If diff reports unknown ids or structural mismatch, fall back to a clean `instructions/list`.
+- Maintain last known `hash` from dispatcher `{ action:"list" }` (catalog hash) and `governanceHash` separately; only refetch full entries when either changes.
+- Use dispatcher diff `{ action:"diff", clientHash }` to minimize payload for incremental updates.
+- If diff reports unknown ids or structural mismatch, fall back to a clean `{ action:"list" }`.
 
 ### C. Tool Schema Validation
  
@@ -444,7 +466,7 @@ This section provides normative guidance for MCP clients integrating with the In
 ### G. Mutation Safety Controls
  
 - Before invoking any mutation tool, confirm environment gating: if `mutationEnabled` false, either disable mutation UI or prompt to restart with `MCP_ENABLE_MUTATION=1`.
-- After mutation, prefer `instructions/diff` rather than full reload unless you modified many entries (>5% of catalog).
+- After mutation, prefer dispatcher diff `{ action:"diff" }` rather than full reload unless you modified many entries (>5% of catalog).
 
 ### H. Resilience & Fallbacks
  

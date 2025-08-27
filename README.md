@@ -349,15 +349,19 @@ Some clients warn on `/` in JSON-RPC method names. Underscore aliases are now re
 
 ## Testing
 
-Comprehensive test coverage including:
+Comprehensive green test suite (no skipped tests) covering:
 
-- **MCP protocol compliance** tests (`mcpProtocol.spec.ts`)
-- **Input validation** and parameter checking
-- **Tool registry** and schema validation
-- **Contract testing** for API stability
-- **Security hardening** and edge cases
+- MCP protocol compliance & transport (initialize, tools/list, tools/call, ping, server/ready notification)
+- Dispatcher actions (list, listScoped, get, search, diff, export, query, batch, capabilities, governanceHash, grooming, enrichment, governanceUpdate)
+- Input validation & error paths (unknown action/method, malformed JSON-RPC envelope)
+- Governance hashing, integrity verification, and persistence/restart continuity
+- Usage tracking/rate limiting, feature gating, metrics snapshot
+- Enrichment / grooming behaviors & property-based idempotence (seeded for determinism)
+- Security hardening (prompt size limits, null byte sanitation) & prompt review criteria
 
-Run tests: `npm test` (28 tests across 14 files)
+Run tests: `npm test` (125 tests across 69 files at 0.9.1)
+
+Contract-only schema verification: `npm run test:contracts` (3 focused contract tests)
 
 ## Architecture
 

@@ -4,8 +4,10 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { waitFor } from './testUtils';
+import { waitForDist } from './distReady';
 
 const ISOLATED_DIR = fs.mkdtempSync(path.join(os.tmpdir(),'instr-persist-'));
+async function ensureDist(){ await waitForDist(); }
 function startServer(){
   return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', INSTRUCTIONS_DIR: ISOLATED_DIR } });
 }
@@ -33,7 +35,8 @@ describe('instructions/add persistence & governance coverage', () => {
   it('adds multiple unique instructions and retains all on list', async () => {
     // Create 5 fresh ids
     const ids = Array.from({ length:5 }, (_,i)=> `add_persist_${Date.now()}_${i}`);
-    const server = startServer();
+  await ensureDist();
+  const server = startServer();
     const out: string[] = []; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)));
     // initialize
     await new Promise(r=> setTimeout(r,120));
@@ -41,7 +44,7 @@ describe('instructions/add persistence & governance coverage', () => {
     await waitFor(()=> !!findResponse(out,1));
 
     // Baseline list count
-    send(server,{ jsonrpc:'2.0', id:2, method:'instructions/list', params:{} });
+  send(server,{ jsonrpc:'2.0', id:2, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(out,2));
   const baselineResp = findResponse(out,2);
   const baseline = isSuccess(baselineResp)? (baselineResp.result as { count?:number }).count ?? 0 : 0;
@@ -65,14 +68,14 @@ describe('instructions/add persistence & governance coverage', () => {
     }
 
     // List again and ensure at least baseline+5 items present (none silently dropped)
-    send(server,{ jsonrpc:'2.0', id:500, method:'instructions/list', params:{} });
+  send(server,{ jsonrpc:'2.0', id:500, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(out,500));
   const afterResp = findResponse(out,500);
   const after = isSuccess(afterResp)? (afterResp.result as { count?:number }).count ?? 0 : 0;
     expect(after).toBeGreaterThanOrEqual(baseline + ids.length);
 
     // Export just added ids to verify all retrievable
-    send(server,{ jsonrpc:'2.0', id:600, method:'instructions/export', params:{ ids } });
+  send(server,{ jsonrpc:'2.0', id:600, method:'instructions/dispatch', params:{ action:'export', ids } });
     await waitFor(()=> !!findResponse(out,600));
   const exportResp = findResponse(out,600) as RpcSuccess<{ count:number; items:{ id:string }[] }> | undefined;
   expect(exportResp && exportResp.result.count).toBe(ids.length);

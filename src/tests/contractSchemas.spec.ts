@@ -76,11 +76,11 @@ describe('contract schemas', () => {
     const pending: Array<{ id: number; method: string }> = [];
   const methods: Array<[string, Record<string, unknown>?]> = [
       ['health/check'],
-      ['instructions/list', {}],
-      ['instructions/get', { id: 'alpha' }],
-      ['instructions/search', { q: 'alpha' }],
-      ['instructions/diff', { clientHash: 'bogus' }],
-  ['instructions/export', {}],
+      ['instructions/dispatch', { action: 'list' }],
+      ['instructions/dispatch', { action: 'get', id: 'alpha' }],
+      ['instructions/dispatch', { action: 'search', q: 'alpha' }],
+      ['instructions/dispatch', { action: 'diff', clientHash: 'bogus' }],
+	['instructions/dispatch', { action: 'export' }],
       ['prompt/review', { prompt: 'simple test prompt' }],
       ['integrity/verify'],
   ['instructions/repair'],
@@ -110,7 +110,7 @@ describe('contract schemas', () => {
         expect(isGated, `unexpected error for ${p.method}`).toBe(true);
         continue; // skip schema validation when tool intentionally gated
       }
-      const validate = compiled[p.method];
+  const validate = compiled[p.method];
       expect(validate, `no schema for ${p.method}`).toBeTruthy();
       const ok = validate(obj.result);
       if(!ok){
@@ -122,10 +122,9 @@ describe('contract schemas', () => {
   }, 8000);
 
   it('detects contract drift (negative test)', async () => {
-    const validate = compiled['instructions/list'];
-    // Clone valid object and remove required hash
-    const sample = { hash: 'x', count: 0, items: [] };
-  delete (sample as { hash?: string }).hash;
+    // Use dispatcher capabilities shape (requires version,supportedActions,mutationEnabled)
+    const validate = compiled['instructions/dispatch'];
+    const sample = { supportedActions:[], mutationEnabled:true }; // missing version
     const ok = validate(sample);
     expect(ok).toBe(false);
   });

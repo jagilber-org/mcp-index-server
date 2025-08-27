@@ -40,7 +40,7 @@ describe('catalog version marker invalidation', () => {
     await waitFor(()=> !!findResponse(outB,1), 3000);
 
     // Prime B cache (empty list)
-    send(serverB,{ jsonrpc:'2.0', id:2, method:'instructions/list', params:{} });
+  send(serverB,{ jsonrpc:'2.0', id:2, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(outB,2), 3000);
 
     const beforeMtime = fs.existsSync(marker)? fs.statSync(marker).mtimeMs : 0;
@@ -55,7 +55,7 @@ describe('catalog version marker invalidation', () => {
     expect(afterMtime).toBeGreaterThan(beforeMtime);
 
     // B lists again and should see newId via version invalidation
-    send(serverB,{ jsonrpc:'2.0', id:3, method:'instructions/list', params:{} });
+  send(serverB,{ jsonrpc:'2.0', id:3, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(outB,3), 3000);
     const listB = findResponse(outB,3) as RpcSuccess<{ items:{ id:string }[] }> | undefined;
     expect(listB?.result.items.some(i=> i.id===newId)).toBe(true);

@@ -34,13 +34,13 @@ describe('CRUD matrix end-to-end', () => {
     expect(fs.existsSync(filePath)).toBe(true);
 
     // Get
-    send(server,{ jsonrpc:'2.0', id:3, method:'instructions/get', params:{ id } });
+  send(server,{ jsonrpc:'2.0', id:3, method:'instructions/dispatch', params:{ action:'get', id } });
     await waitFor(()=> !!findResponse(out1,3));
     const getResp = findResponse(out1,3) as RpcSuccess<{ item: { id:string; owner?:string; version?:string; priorityTier?:string } }> | undefined;
     expect(getResp?.result.item.id).toBe(id);
 
     // List presence
-    send(server,{ jsonrpc:'2.0', id:4, method:'instructions/list', params:{} });
+  send(server,{ jsonrpc:'2.0', id:4, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(out1,4));
     const listResp = findResponse(out1,4) as RpcSuccess<{ items:{ id:string }[] }> | undefined;
     expect(listResp && listResp.result.items.some(i=> i.id===id)).toBe(true);
@@ -48,7 +48,7 @@ describe('CRUD matrix end-to-end', () => {
     // Governance update (patch owner + patch bump none)
     send(server,{ jsonrpc:'2.0', id:5, method:'instructions/governanceUpdate', params:{ id, owner:'team:alpha', status:'approved', bump:'none' } });
     await waitFor(()=> !!findResponse(out1,5));
-    send(server,{ jsonrpc:'2.0', id:6, method:'instructions/get', params:{ id } });
+  send(server,{ jsonrpc:'2.0', id:6, method:'instructions/dispatch', params:{ action:'get', id } });
     await waitFor(()=> !!findResponse(out1,6));
     const afterGov = findResponse(out1,6) as RpcSuccess<{ item: { id:string; owner?:string; status?:string } }> | undefined;
     expect(afterGov?.result.item.owner).toBe('team:alpha');
@@ -60,7 +60,7 @@ describe('CRUD matrix end-to-end', () => {
     expect(fs.existsSync(filePath)).toBe(false);
 
     // List absence
-    send(server,{ jsonrpc:'2.0', id:8, method:'instructions/list', params:{} });
+  send(server,{ jsonrpc:'2.0', id:8, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(out1,8));
     const listAfterRemove = findResponse(out1,8) as RpcSuccess<{ items:{ id:string }[] }> | undefined;
     expect(listAfterRemove && listAfterRemove.result.items.some(i=> i.id===id)).toBe(false);
@@ -74,7 +74,7 @@ describe('CRUD matrix end-to-end', () => {
     send(server,{ jsonrpc:'2.0', id:20, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'crud-matrix-2', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> !!findResponse(out2,20));
 
-    send(server,{ jsonrpc:'2.0', id:21, method:'instructions/list', params:{} });
+  send(server,{ jsonrpc:'2.0', id:21, method:'instructions/dispatch', params:{ action:'list' } });
     await waitFor(()=> !!findResponse(out2,21));
     const listAfterRestart = findResponse(out2,21) as RpcSuccess<{ items:{ id:string }[] }> | undefined;
     expect(listAfterRestart && listAfterRestart.result.items.some(i=> i.id===id)).toBe(false);

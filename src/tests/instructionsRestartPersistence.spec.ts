@@ -35,7 +35,7 @@ describe('restart persistence - governance fields survive restart unchanged', ()
     await new Promise(r=> setTimeout(r,120));
     send(server,{ jsonrpc:'2.0', id:10, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'restart-test2', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> !!findResponse(out2,10));
-    send(server,{ jsonrpc:'2.0', id:11, method:'instructions/get', params:{ id } });
+  send(server,{ jsonrpc:'2.0', id:11, method:'instructions/dispatch', params:{ action:'get', id } });
     await waitFor(()=> !!findResponse(out2,11));
     const resp = findResponse(out2,11) as RpcSuccess<{ item: Record<string, unknown> }> | undefined;
     if(!resp) throw new Error('missing get resp');

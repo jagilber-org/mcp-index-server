@@ -20,33 +20,33 @@ function summarizeList(resp){ if(!resp || !resp.result) return { count:0, ids:[]
 (async ()=>{
   const summary = { baseline:null, afterAdds:null, getA:null, afterReload:null, afterRepair:null, afterImport:null, afterShortId:null, afterOverwrite:null, notes:[] };
   await rpc('initialize',{ protocolVersion:'2025-06-18', clientInfo:{ name:'crudProbe', version:'0' }, capabilities:{ tools:{} } });
-  const baseline = await rpc('instructions/list',{}); summary.baseline = summarizeList(baseline);
+  const baseline = await rpc('instructions/dispatch',{ action:'list' }); summary.baseline = summarizeList(baseline);
 
   // A & B: create two entries
   const addA = await rpc('instructions/add',{ entry:{ id:'crud-simple-a', title:'crud-simple-a', body:'A body', priority:10, audience:'all', requirement:'optional', categories:['probe'] }, overwrite:true });
   const addB = await rpc('instructions/add',{ entry:{ id:'crud-simple-b', title:'crud-simple-b', body:'B body', priority:11, audience:'all', requirement:'optional', categories:['probe'] }, overwrite:true });
   summary.notes.push({ addA, addB });
-  const listAfterAdds = await rpc('instructions/list',{}); summary.afterAdds = summarizeList(listAfterAdds);
+  const listAfterAdds = await rpc('instructions/dispatch',{ action:'list' }); summary.afterAdds = summarizeList(listAfterAdds);
 
   // Probe A: get by id
-  const getA = await rpc('instructions/get',{ id:'crud-simple-a' }); summary.getA = getA;
+  const getA = await rpc('instructions/dispatch',{ action:'get', id:'crud-simple-a' }); summary.getA = getA;
 
   // Probe B: reload then list
-  await rpc('instructions/reload',{}); const listAfterReload = await rpc('instructions/list',{}); summary.afterReload = summarizeList(listAfterReload);
+  await rpc('instructions/reload',{}); const listAfterReload = await rpc('instructions/dispatch',{ action:'list' }); summary.afterReload = summarizeList(listAfterReload);
 
   // Probe B continued: repair then list
-  await rpc('instructions/repair',{}); const listAfterRepair = await rpc('instructions/list',{}); summary.afterRepair = summarizeList(listAfterRepair);
+  await rpc('instructions/repair',{}); const listAfterRepair = await rpc('instructions/dispatch',{ action:'list' }); summary.afterRepair = summarizeList(listAfterRepair);
 
   // Probe C: import snapshot containing crud-simple-a (should be overwrite noop)
   const importResp = await rpc('instructions/import',{ entries:[{ id:'crud-simple-a', title:'crud-simple-a', body:'A body import', priority:10, audience:'all', requirement:'optional', categories:['probe','imported'] }], mode:'overwrite' }); summary.afterImport = importResp;
-  const listAfterImport = await rpc('instructions/list',{}); summary.afterImportList = summarizeList(listAfterImport);
+  const listAfterImport = await rpc('instructions/dispatch',{ action:'list' }); summary.afterImportList = summarizeList(listAfterImport);
 
   // Probe D: short id 't'
   await rpc('instructions/add',{ entry:{ id:'t', title:'t', body:'short id', priority:5, audience:'all', requirement:'optional', categories:['probe'] }, overwrite:true });
-  const listAfterShort = await rpc('instructions/list',{}); summary.afterShortId = summarizeList(listAfterShort);
+  const listAfterShort = await rpc('instructions/dispatch',{ action:'list' }); summary.afterShortId = summarizeList(listAfterShort);
 
   // Probe E: overwrite existing visible baseline entry if any
-  const baseIds = summary.baseline.ids; if(baseIds.length){ const target = baseIds[0]; await rpc('instructions/add',{ entry:{ id:target, title:target+' updated', body:'updated body', priority:1, audience:'all', requirement:'optional', categories:['probe','updated'] }, overwrite:true }); const listAfterOverwrite = await rpc('instructions/list',{}); summary.afterOverwrite = summarizeList(listAfterOverwrite); }
+  const baseIds = summary.baseline.ids; if(baseIds.length){ const target = baseIds[0]; await rpc('instructions/add',{ entry:{ id:target, title:target+' updated', body:'updated body', priority:1, audience:'all', requirement:'optional', categories:['probe','updated'] }, overwrite:true }); const listAfterOverwrite = await rpc('instructions/dispatch',{ action:'list' }); summary.afterOverwrite = summarizeList(listAfterOverwrite); }
 
   // Persist raw log for offline review
   const logPath = path.join(process.cwd(),'crudProbe.log.jsonl');

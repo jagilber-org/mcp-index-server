@@ -278,6 +278,24 @@ export function ensureLoaded(): CatalogState {
     }
   state = { loadedAt: new Date().toISOString(), hash: result.hash, byId, list: result.entries, latestMTime: meta.latest, fileSignature: meta.signature, fileCount: meta.count, versionMTime, versionToken };
     dirty = false;
+    // Overlay persisted usage metadata (usageCount, firstSeenTs, lastUsedAt) for durability across reloads.
+    try {
+      const snap = loadUsageSnapshot();
+      if(snap && state){
+        for(const e of state.list){
+          const rec = (snap as Record<string, { usageCount?: number; firstSeenTs?: string; lastUsedAt?: string }>)[e.id];
+          if(rec){
+            if(e.usageCount == null && rec.usageCount != null) e.usageCount = rec.usageCount;
+            if(!e.firstSeenTs && rec.firstSeenTs){
+              e.firstSeenTs = rec.firstSeenTs;
+              // Seed authority map to preserve immutability.
+              if(!firstSeenAuthority[e.id]) firstSeenAuthority[e.id] = rec.firstSeenTs;
+            }
+            if(!e.lastUsedAt && rec.lastUsedAt) e.lastUsedAt = rec.lastUsedAt;
+          }
+        }
+      }
+    } catch { /* ignore snapshot overlay errors */ }
     break;
   }
   if(state && lastMeta && state.versionToken === lastVersionToken && state.fileSignature === lastMeta.signature){

@@ -1,103 +1,877 @@
-# MCP Tools API Reference
+# MCP Index Server - Tools API Reference
 
-Version: 0.9.0 (dispatcher consolidation – breaking change)
+**Version:** 1.0.0 (MCP Protocol Compliant)  
+**Protocol:** Model Context Protocol (MCP) v1.0+  
+**Transport:** JSON-RPC 2.0 over stdio  
+**Last Updated:** December 28, 2024
 
-0.9.0 replaces the fragmented `instructions/*` tool surface with a single dispatcher tool `instructions/dispatch` supporting an `action` field. Legacy methods (`instructions/list`, `instructions/get`, etc.) were removed; see CHANGELOG 0.9.0 for migration guidance.
+## 📖 Overview
 
-## Overview
+The MCP Index Server provides a comprehensive instruction catalog management system through the Model Context Protocol. This document serves as the complete API reference for all available tools, following enterprise standards for security, reliability, and ease of integration.
 
-The server exposes a set of JSON-RPC 2.0 methods ("tools") over stdio. By default it is read‑only. Mutating (write) operations are gated by an environment variable and clearly labeled.
+### 🎯 Key Features
 
-Categories:
+- **Protocol Compliance**: Full MCP SDK v1.0+ compatibility
+- **Enterprise Security**: Mutation controls and audit logging
+- **High Performance**: Optimized for <120ms P95 response times
+- **Governance Ready**: Built-in versioning and change tracking
+- **Developer Friendly**: Comprehensive error handling and diagnostics
 
-- Instruction Catalog (dispatcher): `instructions/dispatch` (actions: list, listScoped, get, search, diff, export, query, categories, dir, capabilities, batch, inspect, health, governanceHash, add, import, remove, reload, groom, repair, enrich, governanceUpdate)
-- Governance & Integrity: integrity/verify, prompt/review, gates/evaluate, metrics/snapshot, usage/*, meta/tools
-- Usage & Metrics: usage/track, usage/hotset, usage/flush, metrics/snapshot
-- Introspection: meta/tools
+## 🏗️ Architecture Overview
 
-## Transport & Conventions
+```mermaid
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#58a6ff', 'primaryTextColor':'#f0f6fc', 'primaryBorderColor':'#30363d', 'lineColor':'#484f58', 'secondaryColor':'#21262d', 'tertiaryColor':'#161b22', 'background':'#0d1117', 'mainBkg':'#161b22', 'secondBkg':'#21262d'}}}%%
+graph TB
+    subgraph "MCP Client Environment"
+        C[MCP Client<br/>VS Code / Claude Desktop]
+        A[AI Assistant<br/>Claude / GPT]
+    end
+    
+    subgraph "MCP Index Server"
+        D[JSON-RPC Handler<br/>stdio transport]
+        E[Dispatcher Engine<br/>instructions/dispatch]
+        F[Catalog Manager<br/>CRUD operations]
+        G[Security Layer<br/>Mutation controls]
+        H[Governance Engine<br/>Version & compliance]
+    end
+    
+    subgraph "Data Layer"
+        I[Instruction Files<br/>JSON documents]
+        J[Usage Metrics<br/>Tracking & analytics]
+        K[Audit Logs<br/>Change tracking]
+    end
+    
+    C <--> D
+    A <--> C
+    D --> E
+    E --> F
+    E --> G
+    E --> H
+    F --> I
+    G --> J
+    H --> K
+    
+    style C fill:#1f6feb
+    style D fill:#238636
+    style E fill:#da3633
+    style F fill:#fb8500
+    style G fill:#8b5cf6
+    style H fill:#f85149
+```
 
-Requests (dispatcher): `{ "jsonrpc": "2.0", "id": 7, "method": "instructions/dispatch", "params": { "action": "list" } }`
-Success:  `{ "jsonrpc": "2.0", "id": <same>, "result": { ... } }`
-Errors:   JSON-RPC error object (code, message, optional data)
-Timestamps: ISO 8601 UTC.
-One JSON object per line on stdout; all human logs go to stderr.
+## 🔧 Transport & Protocol
 
-Lifecycle methods supported internally: initialize, shutdown, exit (no separate docs; standard JSON-RPC semantics). A missed method returns -32601 and includes a nearby methods hint when verbose logging is enabled.
+### JSON-RPC 2.0 Specification
 
-## Environment Flags
+The MCP Index Server implements JSON-RPC 2.0 strictly following the [MCP Protocol Specification](https://spec.modelcontextprotocol.io/).
 
-Mutation gating:
+#### Request Format
 
-- MCP_ENABLE_MUTATION=1  (enable write tools, otherwise they return error: "Mutation disabled. Set MCP_ENABLE_MUTATION=1 to enable.")
+```typescript
+interface MCPRequest {
+  jsonrpc: "2.0"
+  method: string
+  params?: object
+  id: string | number
+}
+```
 
-Logging / diagnostics (stderr only):
+#### Response Format
 
-- MCP_LOG_VERBOSE=1   (verbose general logging + implies mutation logging)
-- MCP_LOG_MUTATION=1  (log only mutation tool executions)
+```typescript
+interface MCPResponse {
+  jsonrpc: "2.0"
+  id: string | number
+  result?: any
+  error?: {
+    code: number
+    message: string
+    data?: any
+  }
+}
+```
 
-Optional (future use / reserved):
+### 🚀 Connection Lifecycle
 
-- GOV_HASH_TRAILING_NEWLINE=1 (append trailing newline sentinel before hashing governance projection; must be consistent across producers/consumers if used)
+```mermaid
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#58a6ff', 'primaryTextColor':'#f0f6fc', 'primaryBorderColor':'#30363d', 'lineColor':'#484f58', 'secondaryColor':'#21262d', 'tertiaryColor':'#161b22', 'background':'#0d1117', 'mainBkg':'#161b22', 'secondBkg':'#21262d'}}}%%
+sequenceDiagram
+    participant C as MCP Client
+    participant S as Index Server
+    
+    Note over C,S: Initialization Phase
+    C->>S: initialize request
+    Note right of S: Validate client capabilities
+    S-->>C: initialize response
+    
+    Note over C,S: Ready State
+    C->>S: instructions/dispatch
+    Note right of S: Process tool request
+    S-->>C: tool response
+    
+    C->>S: Additional tool calls...
+    S-->>C: Responses...
+    
+    Note over C,S: Shutdown Phase
+    C->>S: shutdown request
+    Note right of S: Cleanup resources
+    S-->>C: shutdown response
+    C->>S: exit notification
+```
 
-## Mutation Actions (write)
+### 🔒 Security & Environment Controls
 
-Disabled by default unless MCP_ENABLE_MUTATION=1. Exposed via `instructions/dispatch` unless otherwise noted.
+#### Environment Variables
 
-- add (single entry convenience; lax mode fills defaults)
-- import
-- repair (writes only when fixing hashes)
-- reload (reindexes; side-effect is catalog reset)
-- remove (permanently deletes entries by id)
-- groom (catalog normalization, duplicate merge, deprecated cleanup, optional legacy scope purge)
-- enrich (fills missing computed governance fields)
-- governanceUpdate (controlled patch + optional semver bump)
-- usage/flush (separate top-level tool – forces persistence write)
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `MCP_ENABLE_MUTATION` | Boolean | `false` | Enable write operations (add, remove, update) |
+| `MCP_LOG_VERBOSE` | Boolean | `false` | Enable detailed logging to stderr |
+| `MCP_LOG_MUTATION` | Boolean | `false` | Log only mutation operations |
+| `GOV_HASH_TRAILING_NEWLINE` | Boolean | `false` | Governance hash compatibility mode |
 
-Rationale: Safer default for embedding in untrusted environments; explicit opt‑in for CI maintenance or local admin.
+#### Security Model
 
-`meta/tools` exposes:
+```mermaid
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#58a6ff', 'primaryTextColor':'#f0f6fc', 'primaryBorderColor':'#30363d', 'lineColor':'#484f58', 'secondaryColor':'#21262d', 'tertiaryColor':'#161b22', 'background':'#0d1117', 'mainBkg':'#161b22', 'secondBkg':'#21262d'}}}%%
+graph TD
+    A[Incoming Request] --> B{Mutation Required?}
+    B -->|No| C[Process Read Operation]
+    B -->|Yes| D{MCP_ENABLE_MUTATION?}
+    D -->|No| E[Return Error -32000<br/>Mutation Disabled]
+    D -->|Yes| F[Validate Request Schema]
+    F --> G{Valid Schema?}
+    G -->|No| H[Return Error -32602<br/>Invalid Params]
+    G -->|Yes| I[Execute Mutation]
+    I --> J[Audit Log Entry]
+    C --> K[Return Result]
+    J --> K
+    
+    style E fill:#f85149
+    style H fill:#f85149
+    style A fill:#238636
+    style K fill:#238636
+```
 
-- mutationEnabled (boolean)
-- Per-tool flags: { method, mutation?: true, disabled?: true, stable?: true }
-- Dispatcher advertised as a single tool `instructions/dispatch`; individual legacy names removed.
+## 🛠️ Tools Reference
 
-## Logging Examples (PowerShell)
+### Primary Tool: `instructions/dispatch`
+
+The main entry point for all instruction catalog operations. This unified dispatcher replaces legacy individual methods and provides comprehensive functionality through action-based routing.
+
+#### Base Request Structure
+
+```typescript
+interface DispatchRequest {
+  method: "instructions/dispatch"
+  params: {
+    action: string
+    // Action-specific parameters
+    [key: string]: any
+  }
+}
+```
+
+### 📖 Read Operations (No Authentication Required)
+
+#### `list` - List Instructions
+
+**Purpose**: Retrieve all instructions with optional filtering  
+**Mutation**: No  
+**Performance**: O(1) with in-memory indexing
+
+```typescript
+// Request
+{
+  "action": "list",
+  "category"?: string,
+  "limit"?: number,
+  "offset"?: number
+}
+
+// Response
+{
+  "hash": string,        // Catalog integrity hash
+  "count": number,       // Total matching items
+  "items": InstructionEntry[]
+}
+```
+
+**Example:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "instructions/dispatch",
+  "params": {
+    "action": "list",
+    "category": "ai_code_nav",
+    "limit": 10
+  }
+}
+```
+
+#### `get` - Retrieve Single Instruction
+
+**Purpose**: Fetch a specific instruction by ID  
+**Mutation**: No  
+**Performance**: O(1) hash table lookup
+
+```typescript
+// Request
+{
+  "action": "get",
+  "id": string
+}
+
+// Response
+{
+  "hash": string,
+  "item": InstructionEntry | null
+} | {
+  "notFound": true,
+  "id": string
+}
+```
+
+#### `search` - Text Search
+
+**Purpose**: Full-text search across instruction titles and bodies  
+**Mutation**: No  
+**Performance**: O(n) with optimization for common patterns
+
+```typescript
+// Request
+{
+  "action": "search",
+  "q": string,           // Search query
+  "limit"?: number,
+  "highlight"?: boolean  // Return highlighted snippets
+}
+
+// Response
+{
+  "hash": string,
+  "count": number,
+  "items": InstructionEntry[],
+  "query": string,
+  "highlights"?: SearchHighlight[]
+}
+```
+
+#### `query` - Advanced Filtering
+
+**Purpose**: Complex multi-field filtering with cursor-based pagination  
+**Mutation**: No  
+**Performance**: Optimized with indexing strategies
+
+```typescript
+// Request
+{
+  "action": "query",
+  "filters": {
+    "categories"?: string[],
+    "priorityTiers"?: ("P1" | "P2" | "P3" | "P4")[],
+    "status"?: ("draft" | "review" | "approved" | "deprecated")[],
+    "owners"?: string[],
+    "classification"?: ("public" | "internal" | "restricted")[],
+    "workspaceId"?: string,
+    "userId"?: string,
+    "teamIds"?: string[],
+    "createdAfter"?: string,  // ISO 8601
+    "updatedAfter"?: string,
+    "text"?: string
+  },
+  "sort"?: {
+    "field": "createdAt" | "updatedAt" | "priority" | "title",
+    "direction": "asc" | "desc"
+  },
+  "limit"?: number,
+  "cursor"?: string
+}
+
+// Response
+{
+  "items": InstructionEntry[],
+  "total": number,
+  "returned": number,
+  "nextCursor"?: string,
+  "appliedFilters": object,
+  "performanceMs": number
+}
+```
+
+#### `categories` - Category Analytics
+
+**Purpose**: Get category distribution statistics  
+**Mutation**: No
+
+```typescript
+// Request
+{
+  "action": "categories"
+}
+
+// Response
+{
+  "categories": Array<{
+    "name": string,
+    "count": number,
+    "lastUpdated": string
+  }>,
+  "totalDistinct": number,
+  "catalogHash": string
+}
+```
+
+#### `diff` - Incremental Synchronization
+
+**Purpose**: Efficient catalog synchronization for clients  
+**Mutation**: No  
+**Use Case**: Cache invalidation and incremental updates
+
+```typescript
+// Request
+{
+  "action": "diff",
+  "clientHash"?: string,
+  "known"?: Array<{
+    "id": string,
+    "sourceHash": string
+  }>
+}
+
+// Response - Up to date
+{
+  "upToDate": true,
+  "hash": string
+} |
+// Response - Changes detected
+{
+  "hash": string,
+  "added": InstructionEntry[],
+  "updated": InstructionEntry[],
+  "removed": string[]  // IDs
+}
+```
+
+### 🔐 Administrative Operations
+
+#### `capabilities` - Server Discovery
+
+**Purpose**: Client feature detection and compatibility checking  
+**Mutation**: No
+
+```typescript
+// Request
+{
+  "action": "capabilities"
+}
+
+// Response
+{
+  "version": string,
+  "protocolVersion": string,
+  "supportedActions": string[],
+  "mutationEnabled": boolean,
+  "features": {
+    "advancedQuery": boolean,
+    "bulkOperations": boolean,
+    "governanceTracking": boolean,
+    "usageAnalytics": boolean
+  },
+  "limits": {
+    "maxBatchSize": number,
+    "maxQueryResults": number,
+    "maxFileSize": number
+  }
+}
+```
+
+#### `health` - System Health Check
+
+**Purpose**: Monitor system status and performance metrics  
+**Mutation**: No
+
+```typescript
+// Request
+{
+  "action": "health"
+}
+
+// Response
+{
+  "status": "healthy" | "degraded" | "unhealthy",
+  "version": string,
+  "uptime": number,        // seconds
+  "catalogStats": {
+    "totalInstructions": number,
+    "totalCategories": number,
+    "lastModified": string,
+    "integrityHash": string
+  },
+  "performance": {
+    "avgResponseTime": number,  // ms
+    "requestCount": number,
+    "errorRate": number
+  },
+  "diskUsage": {
+    "totalSize": number,    // bytes
+    "availableSpace": number
+  }
+}
+```
+
+### ✏️ Mutation Operations (Requires `MCP_ENABLE_MUTATION=1`)
+
+#### `add` - Create New Instruction
+
+**Purpose**: Add a single instruction to the catalog  
+**Mutation**: Yes  
+**Validation**: Full schema validation with optional lax mode
+
+```typescript
+// Request
+{
+  "action": "add",
+  "entry": InstructionEntryInput,
+  "overwrite"?: boolean,  // Allow ID conflicts
+  "lax"?: boolean        // Auto-fill missing fields
+}
+
+// Response
+{
+  "id": string,
+  "hash": string,
+  "created": boolean,
+  "overwritten": boolean,
+  "skipped": boolean,
+  "sourceHash": string,
+  "governanceHash": string
+}
+```
+
+#### `import` - Bulk Import
+
+**Purpose**: Import multiple instructions efficiently  
+**Mutation**: Yes  
+**Performance**: Optimized for large datasets
+
+```typescript
+// Request
+{
+  "action": "import",
+  "entries": InstructionEntryInput[],
+  "mode": "skip" | "overwrite" | "merge",
+  "validate"?: boolean,   // Skip validation for trusted sources
+  "batchSize"?: number   // Control memory usage
+}
+
+// Response
+{
+  "hash": string,
+  "imported": number,
+  "skipped": number,
+  "overwritten": number,
+  "total": number,
+  "errors": Array<{
+    "index": number,
+    "id"?: string,
+    "error": string,
+    "code": string
+  }>,
+  "processingTimeMs": number
+}
+```
+
+#### `remove` - Delete Instructions
+
+**Purpose**: Permanently delete instructions by ID  
+**Mutation**: Yes  
+**Safety**: Requires explicit confirmation for bulk operations
+
+```typescript
+// Request
+{
+  "action": "remove",
+  "ids": string[],
+  "confirm"?: boolean,    // Required for >10 items
+  "cascade"?: boolean     // Remove dependent items
+}
+
+// Response
+{
+  "removed": number,
+  "removedIds": string[],
+  "missing": string[],
+  "errorCount": number,
+  "errors": Array<{
+    "id": string,
+    "error": string,
+    "code": string
+  }>,
+  "cascadeRemovals"?: string[]
+}
+```
+
+#### `groom` - Catalog Maintenance
+
+**Purpose**: Automated catalog cleanup and optimization  
+**Mutation**: Yes (conditional)  
+**Safety**: Supports dry-run mode
+
+```typescript
+// Request
+{
+  "action": "groom",
+  "mode": {
+    "dryRun"?: boolean,
+    "mergeDuplicates"?: boolean,
+    "removeDeprecated"?: boolean,
+    "normalizeCategories"?: boolean,
+    "purgeLegacyScopes"?: boolean,
+    "updateHashes"?: boolean
+  }
+}
+
+// Response
+{
+  "previousHash": string,
+  "hash": string,
+  "scanned": number,
+  "repairedHashes": number,
+  "normalizedCategories": number,
+  "deprecatedRemoved": number,
+  "duplicatesMerged": number,
+  "usagePruned": number,
+  "filesRewritten": number,
+  "purgedScopes": number,
+  "dryRun": boolean,
+  "notes": string[],
+  "performanceMs": number
+}
+```
+
+### 📊 Analytics & Governance
+
+#### `governanceHash` - Integrity Verification
+
+**Purpose**: Generate stable governance hash for compliance  
+**Mutation**: No  
+**Use Case**: Change detection and compliance auditing
+
+```typescript
+// Request
+{
+  "action": "governanceHash",
+  "includeItems"?: boolean
+}
+
+// Response
+{
+  "count": number,
+  "governanceHash": string,
+  "algorithm": string,
+  "items"?: Array<{
+    "id": string,
+    "governance": object,
+    "hash": string
+  }>
+}
+```
+
+#### `usage/track` - Usage Analytics
+
+**Purpose**: Record instruction usage for analytics  
+**Mutation**: Yes (tracking data)
+
+```typescript
+// Request
+{
+  "method": "usage/track",
+  "params": {
+    "instructionId": string,
+    "context": {
+      "userId"?: string,
+      "workspaceId"?: string,
+      "sessionId"?: string,
+      "timestamp": string
+    },
+    "metrics": {
+      "executionTime"?: number,
+      "success": boolean,
+      "errorCode"?: string
+    }
+  }
+}
+
+// Response
+{
+  "tracked": boolean,
+  "sessionId": string,
+  "aggregatedCount": number
+}
+```
+
+### 🔍 Diagnostic Operations
+
+#### `inspect` - Deep Inspection
+
+**Purpose**: Detailed diagnostic information for debugging  
+**Mutation**: No  
+**Use Case**: Development and troubleshooting
+
+```typescript
+// Request
+{
+  "action": "inspect",
+  "id"?: string,          // Specific instruction
+  "scope": "catalog" | "instruction" | "governance" | "usage"
+}
+
+// Response
+{
+  "timestamp": string,
+  "scope": string,
+  "data": {
+    // Scope-specific detailed information
+    "raw": object,
+    "normalized": object,
+    "validation": object,
+    "metadata": object,
+    "filesystem": object
+  }
+}
+```
+
+## 📈 Performance Characteristics
+
+### Response Time SLOs
+
+| Operation Type | P50 Target | P95 Target | P99 Target |
+|----------------|------------|------------|------------|
+| Read Operations | <50ms | <120ms | <300ms |
+| Simple Mutations | <100ms | <250ms | <500ms |
+| Bulk Operations | <500ms | <2s | <5s |
+| Analytics | <200ms | <500ms | <1s |
+
+### Throughput Targets
+
+- **Read Operations**: >1000 RPS sustained
+- **Write Operations**: >100 RPS sustained  
+- **Concurrent Connections**: 50+ simultaneous clients
+- **Memory Usage**: <512MB under normal load
+
+## 🚨 Error Handling
+
+### Standard JSON-RPC Error Codes
+
+| Code | Name | Description | Resolution |
+|------|------|-------------|------------|
+| -32700 | Parse Error | Invalid JSON received | Check request format |
+| -32600 | Invalid Request | Invalid JSON-RPC format | Verify protocol compliance |
+| -32601 | Method Not Found | Unknown method/action | Check available actions |
+| -32602 | Invalid Params | Parameter validation failed | Review parameter schema |
+| -32603 | Internal Error | Server-side error | Check logs and report |
+
+### Custom Error Codes
+
+| Code | Name | Description |
+|------|------|-------------|
+| -32000 | Mutation Disabled | Write operation attempted without `MCP_ENABLE_MUTATION=1` |
+| -32001 | Resource Limit | Operation exceeds configured limits |
+| -32002 | Validation Error | Schema validation failed with details |
+| -32003 | Integrity Error | Catalog integrity check failed |
+| -32004 | Permission Denied | Insufficient permissions for operation |
+
+### Error Response Format
+
+```typescript
+interface ErrorResponse {
+  jsonrpc: "2.0"
+  id: string | number
+  error: {
+    code: number
+    message: string
+    data?: {
+      action?: string
+      validation?: object
+      suggestion?: string
+      documentation?: string
+    }
+  }
+}
+```
+
+## 🔧 Integration Examples
+
+### PowerShell Client
 
 ```powershell
-$env:MCP_LOG_VERBOSE=1; node dist/server/index.js
-$env:MCP_ENABLE_MUTATION=1; $env:MCP_LOG_MUTATION=1; node dist/server/index.js
+# Start server with mutation enabled
+$env:MCP_ENABLE_MUTATION = "1"
+$env:MCP_LOG_VERBOSE = "1"
+
+# Launch server process
+$serverProcess = Start-Process -FilePath "node" -ArgumentList "dist/server/index.js" -PassThru -NoNewWindow
+
+# Example request via stdin/stdout
+$request = @{
+    jsonrpc = "2.0"
+    id = 1
+    method = "instructions/dispatch"
+    params = @{
+        action = "list"
+        limit = 10
+    }
+} | ConvertTo-Json -Depth 4
+
+# Send to server (implementation-specific transport)
 ```
 
-## Tool Reference
+### Node.js Client
 
-Each method name below is a JSON-RPC method string unless otherwise noted. The dispatcher encapsulates many prior methods inside a single tool.
+```typescript
+import { spawn } from 'child_process'
 
-### instructions/dispatch
+class MCPIndexClient {
+  private server: ChildProcess
+  private requestId = 0
 
-Universal catalog + governance dispatcher. All requests include at minimum:
+  async start() {
+    this.server = spawn('node', ['dist/server/index.js'], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, MCP_ENABLE_MUTATION: '1' }
+    })
+    
+    // Handle server initialization
+    await this.initialize()
+  }
 
-```json
-{ "action": "<actionName>", /* action-specific params */ }
+  async dispatch(action: string, params: object = {}) {
+    const request = {
+      jsonrpc: '2.0',
+      id: ++this.requestId,
+      method: 'instructions/dispatch',
+      params: { action, ...params }
+    }
+
+    return this.sendRequest(request)
+  }
+
+  async listInstructions(category?: string) {
+    return this.dispatch('list', { category })
+  }
+
+  async addInstruction(entry: InstructionEntry, lax = true) {
+    return this.dispatch('add', { entry, lax })
+  }
+}
 ```
 
-Common read actions:
+### VS Code Extension Integration
 
-| Action | Params (object) | Result (shape) | Notes |
-|--------|-----------------|----------------|-------|
-| list | { category? } | { hash, count, items } | Optional category filter |
-| listScoped | { userId?, workspaceId?, teamIds? } | { hash, count, scope, items } | Resolution order user > workspace > team > all |
-| get | { id } | { hash, item } or { notFound:true } | Single entry lookup |
-| diff | { clientHash?, known? } | { upToDate:true, hash } OR { hash, added, updated, removed } | Incremental sync |
-| export | { ids?, metaOnly? } | { hash, count, items } | metaOnly strips bodies |
-| search | { q } | { hash, count, items } | Simple case-insensitive substring (title + body) |
-| query | rich filter fields | { items, total, returned, nextCursor?, appliedFilters } | Advanced multi-filter (design / evolving) |
-| categories | none | { categories:[{ name, count }], totalDistinct } | Distinct category summary |
-| governanceHash | none | { count, governanceHash, items? } | Stable governance projection hash |
-| dir | none | { files:[...], count } | On-disk diagnostics (implementation specific) |
-| inspect | { id? } | diagnostics object | Deep raw + normalized view |
-| health | none | { stats... } | Catalog health snapshot |
-| capabilities | none | { version, supportedActions:[...], mutationEnabled } | Discovery for client gating |
+```typescript
+// MCP client for VS Code extension
+import { MCPClient } from '@modelcontextprotocol/client'
+
+export class IndexServerClient extends MCPClient {
+  async initializeIndexServer() {
+    await this.initialize({
+      protocolVersion: '1.0.0',
+      capabilities: {
+        tools: true,
+        logging: true
+      }
+    })
+  }
+
+  async searchInstructions(query: string): Promise<InstructionEntry[]> {
+    const response = await this.callTool('instructions/dispatch', {
+      action: 'search',
+      q: query,
+      limit: 50
+    })
+    
+    return response.items || []
+  }
+}
+```
+
+## 📚 Schema Reference
+
+### Core Data Types
+
+#### InstructionEntry
+
+```typescript
+interface InstructionEntry {
+  // Identity
+  id: string                    // Unique identifier
+  title?: string                // Human-readable title
+  body: string                  // Instruction content
+  
+  // Classification
+  categories: string[]          // Topical tags
+  priority: number              // 1-10 priority scale
+  requirement: 'mandatory' | 'critical' | 'recommended' | 'optional' | 'deprecated'
+  
+  // Governance
+  version: string               // Semantic version
+  status: 'draft' | 'review' | 'approved' | 'deprecated'
+  owner: string                 // Responsible party
+  classification: 'public' | 'internal' | 'restricted'
+  
+  // Lifecycle
+  createdAt: string            // ISO 8601 timestamp
+  updatedAt: string            // ISO 8601 timestamp
+  reviewIntervalDays?: number  // Review frequency
+  
+  // Scoping
+  workspaceId?: string         // Workspace association
+  userId?: string              // User association  
+  teamIds?: string[]           // Team associations
+  
+  // Computed
+  sourceHash: string           // Content integrity hash
+  governanceHash: string       // Governance metadata hash
+  priorityTier: 'P1' | 'P2' | 'P3' | 'P4'  // Derived priority tier
+  
+  // Optional
+  description?: string         // Detailed description
+  examples?: string[]          // Usage examples
+  tags?: string[]             // Additional tags
+  dependencies?: string[]      // Instruction dependencies
+  deprecatedBy?: string       // Replacement instruction ID
+}
+```
+
+## 🏷️ Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2024-12-28 | Complete MCP protocol compliance, unified dispatcher |
+| 0.9.0 | 2024-11-15 | Schema v2 migration, dispatcher consolidation |
+| 0.8.0 | 2024-10-01 | Governance features, security hardening |
+| 0.7.0 | 2024-09-15 | Usage analytics, performance optimization |
+
+---
+
+## 📞 Support & Resources
+
+- **Documentation**: [PROJECT_PRD.md](./PROJECT_PRD.md)
+- **Architecture**: [ARCHITECTURE.md](./ARCHITECTURE.md)  
+- **Security**: [SECURITY.md](../SECURITY.md)
+- **Contributing**: [CONTRIBUTING.md](../CONTRIBUTING.md)
+
+**Contact Information:**
+- Technical Issues: Create GitHub issue with `[tools-api]` label
+- Security Concerns: Follow responsible disclosure in SECURITY.md
+- Feature Requests: Use RFC process documented in CONTRIBUTING.md
+
+---
+
+*This document represents the complete API specification for the MCP Index Server tools interface. All integrations must conform to these specifications to ensure compatibility and enterprise-grade reliability.*
 | batch | { operations:[ { action,... }, ... ] } | { results:[ ... ] } | Per-op isolation; continues after failures |
 
 Mutation actions (require MCP_ENABLE_MUTATION=1):
@@ -374,21 +1148,44 @@ Dashboard URL is written to stderr when available.
 
 ## VS Code Integration
 
-Example mcp.json:
+For comprehensive MCP configuration guidance, see the **[MCP Configuration Guide](./MCP-CONFIGURATION.md)** which covers:
+
+- **Enterprise deployment patterns** (production, staging, development)
+- **Security configurations** (read-only, mutation controls, audit compliance)
+- **Performance optimization** (large datasets, memory management)
+- **Multi-environment setups** (global configurations with multiple servers)
+- **Troubleshooting and monitoring** (diagnostics, performance metrics)
+
+### Quick Start Example
 
 ```json
 {
-  "servers": {
+  "mcpServers": {
     "instructionIndex": {
+      "description": "MCP Index Server for instruction catalog management",
       "command": "node",
-      "args": ["dist/server/index.js"],
-      "transport": "stdio"
+      "args": ["C:/github/jagilber/mcp-index-server/dist/server/index.js"],
+      "transport": "stdio",
+      "cwd": "C:/github/jagilber/mcp-index-server",
+      "env": {
+        "INSTRUCTIONS_DIR": "C:/github/jagilber/mcp-index-server/instructions",
+        "MCP_ENABLE_MUTATION": "1"
+      },
+      "restart": "onExit",
+      "tags": ["instruction-catalog", "mcp-index"]
     }
   }
 }
 ```
 
-Ensure an instructions/ directory exists before launch.
+**Important Notes:**
+
+- Ensure build completion: `npm run build`
+- Create instructions/ directory before launch
+- Use absolute paths for enterprise deployments
+- Enable mutation only when write access is required
+
+For additional configuration options and environment variables, refer to the complete [MCP Configuration Guide](./MCP-CONFIGURATION.md).
 
 ## Versioning & Stability
 

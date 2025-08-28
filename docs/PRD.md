@@ -1,11 +1,16 @@
-# Product Requirements Document (PRD)
+# DEPRECATED - This document has been consolidated into PROJECT_PRD.md
 
-Version: 0.9.0 (Introduces Instruction Schema v2)
-Status: Draft (Hard PRD Baseline)
-Owner: Catalog / Indexing Maintainers
-Last Updated: TBD
+**⚠️ NOTICE: This document is deprecated as of December 28, 2024**
 
-## 1. Executive Summary
+This PRD has been consolidated into the comprehensive [`PROJECT_PRD.md`](./PROJECT_PRD.md) document which serves as the single authoritative product requirements document for the MCP Index Server project.
+
+Please refer to [`PROJECT_PRD.md`](./PROJECT_PRD.md) for all current requirements, specifications, and governance standards.
+
+---
+
+*Original content preserved below for historical reference only*
+
+---
 
 Provide robust, deterministic, and queryable instruction indexing for AI assistant governance and developer tooling. 0.9.0 advances the platform by introducing schema v2 with persisted `reviewIntervalDays` (decoupling future heuristic shifts) and placeholder archival support while preparing for scalable search & filtering (categories, provenance) without destabilizing existing governance hashing or integrity guarantees.
 

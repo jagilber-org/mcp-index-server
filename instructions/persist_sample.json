@@ -8,25 +8,25 @@
   "categories": [
     "testing"
   ],
+  "sourceHash": "24bddc50d715f0ab5bd187177217e495d7ba43a49bdbc5d7f957209cf0067892",
+  "semanticSummary": "First line summary.",
+  "lastReviewedAt": "2025-08-28T14:44:11.683Z",
+  "nextReviewDue": "2025-09-27T14:44:11.683Z",
   "reviewIntervalDays": 30,
   "schemaVersion": "2",
-  "sourceHash": "24bddc50d715f0ab5bd187177217e495d7ba43a49bdbc5d7f957209cf0067892",
-  "createdAt": "2025-08-28T14:44:11.683Z",
-  "updatedAt": "2025-08-28T14:44:11.683Z",
+  "createdAt": "2025-08-28T14:46:43.337Z",
+  "updatedAt": "2025-08-28T14:46:43.337Z",
   "riskScore": 140,
   "version": "1.0.0",
   "status": "approved",
   "owner": "unowned",
   "priorityTier": "P1",
   "classification": "internal",
-  "lastReviewedAt": "2025-08-28T14:44:11.683Z",
-  "nextReviewDue": "2025-09-27T14:44:11.683Z",
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-08-28T14:44:11.683Z",
+      "changedAt": "2025-08-28T14:46:43.337Z",
       "summary": "initial import"
     }
-  ],
-  "semanticSummary": "First line summary."
+  ]
 }

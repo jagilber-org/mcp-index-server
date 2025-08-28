@@ -8,22 +8,22 @@
   "categories": [
     "testing"
   ],
-  "reviewIntervalDays": 120,
-  "schemaVersion": "2",
   "sourceHash": "43ba0aa0db281daa88b0d90341e0ef52e5d8105175357eb9a1ee57955f255b27",
   "semanticSummary": "Line1 summary",
   "lastReviewedAt": "2025-08-28T14:44:07.694Z",
   "nextReviewDue": "2025-12-26T14:44:07.694Z",
+  "reviewIntervalDays": 120,
+  "schemaVersion": "2",
+  "priorityTier": "P3",
   "owner": "team:alpha",
   "status": "approved",
   "version": "1.0.1",
   "changeLog": [
     {
       "version": "1.0.1",
-      "changedAt": "2025-08-28T14:44:08.717Z",
+      "changedAt": "2025-08-28T14:46:40.956Z",
       "summary": "manual patch bump via governanceUpdate"
     }
   ],
-  "updatedAt": "2025-08-28T14:44:08.717Z",
-  "priorityTier": "P3"
+  "updatedAt": "2025-08-28T14:46:40.956Z"
 }

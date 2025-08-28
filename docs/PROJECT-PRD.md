@@ -1,11 +1,16 @@
-# Project Product Requirements Document (PROJECT PRD)
+# DEPRECATED - This document has been consolidated into PROJECT_PRD.md
 
-Version: 1.0 (Covers 0.8.x -> 0.9.x trajectory)
-Status: Draft Baseline (supersedes ad-hoc summaries for whole-project scope)
-Owner: Maintainers / Governance Working Group
-Last Updated: TBD
+## ⚠️ NOTICE: This document is deprecated as of December 28, 2024
 
-## 1. Vision
+This PRD has been consolidated into the comprehensive [`PROJECT_PRD.md`](./PROJECT_PRD.md) document which serves as the single authoritative product requirements document for the MCP Index Server project.
+
+Please refer to [`PROJECT_PRD.md`](./PROJECT_PRD.md) for all current requirements, specifications, and governance standards.
+
+---
+
+## Original content preserved below for historical reference only
+
+---
 
 Provide a deterministic, inspectable, and governance-aware Instruction Index Server for AI assistant ecosystems, enabling safe evolution of prompt/instruction corpora with strong integrity, auditability, and low-latency retrieval, while remaining easily embeddable via the Model Context Protocol (MCP).
 

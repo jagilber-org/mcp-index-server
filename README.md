@@ -2,51 +2,34 @@
 
 Enterprise-grade local Model Context Protocol server providing a governed, classified, auditable instruction catalog with analytics and optional admin dashboard.
 
-## Transport Architecture
+## 📚 **Complete Documentation Suite**
 
-### MCP Protocol (Client Communication)
+This project provides comprehensive enterprise-grade documentation:
 
-Windows: `%APPDATA%/Code/User/mcp.json`  
-Example full path: `C:\\Users\\<you>\\AppData\\Roaming\\Code\\User\\mcp.json`
- 
-- **Security**: No network exposure, process-isolated communication
-- **Tools**: All 17+ instruction management tools available via MCP protocol
+- **[📋 Product Requirements (PROJECT_PRD.md)](./docs/PROJECT_PRD.md)** - Authoritative binding requirements and governance
+- **[🔧 API Reference (TOOLS.md)](./docs/TOOLS.md)** - Complete MCP protocol-compliant tool documentation  
+- **[⚙️ Configuration Guide (MCP-CONFIGURATION.md)](./docs/MCP-CONFIGURATION.md)** - Comprehensive MCP setup patterns for all environments
+- **[🧠 Prompt Optimization (PROMPT-OPTIMIZATION.md)](./docs/PROMPT-OPTIMIZATION.md)** - AI prompt handling and optimization guide
+- **[🏗️ Architecture (ARCHITECTURE.md)](./docs/ARCHITECTURE.md)** - System design and component overview
+- **[🔄 Schema Evolution (SCHEMA-V2-PLAN.md)](./docs/SCHEMA-V2-PLAN.md)** - Schema versioning and migration
+- **[🔒 Security (SECURITY.md)](./SECURITY.md)** - Security policies and compliance
 
-### Admin Dashboard (Optional)
+## 🚀 Quick Start
 
-- **Transport**: HTTP server on localhost (admin access only)
-- **Purpose**: Human-readable interface for administrators to monitor server status
-  "cwd": "C:/path/to/mcp-index-server", // adjust to your local clone path
-- **Access**: Local administrators only (not for end users or MCP clients)
+### 1. Installation & Build
 
-**Important**: MCP clients (like VS Code) connect via stdio transport only, not HTTP dashboard.
+```bash
+npm install
+npm run build
+```
 
-### SDK Implementation
+### 2. Configuration
 
-This server now runs exclusively on the official `@modelcontextprotocol/sdk` (no legacy transport). Benefits:
+**For comprehensive configuration guidance, see [MCP Configuration Guide](./docs/MCP-CONFIGURATION.md)**
 
-- Automatic capabilities advertisement (`capabilities.tools` with `listChanged`)
-- Consistent framing & future-proofing (resources, prompts, etc.)
-- Reduced maintenance surface (custom JSON-RPC loop removed)
+#### Basic Configuration (Development)
 
-All previous tool handlers are preserved through an internal registry consumed by the SDK server.
-
-## VS Code Integration
-
-This server is fully compatible with VS Code MCP clients and GitHub Copilot agent mode.
-
-### Configuration
-
-You can configure the server either per-workspace or (recommended) globally. To avoid conflicts, this project now expects ONLY a global MCP configuration.
-
-### Global Configuration (Recommended)
-
-  "cwd": "C:/path/to/mcp-index-server",
-
-Windows: `%APPDATA%/Code/User/mcp.json`  
-Example full path: `C:\\Users\\<you>\\AppData\\Roaming\\Code\\User\\mcp.json`
-
-Add (or merge) this entry:
+Create or update your MCP configuration:
 
 ```jsonc
 {

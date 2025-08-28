@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-08-28T14:46:40.407Z",
+  "generatedAt": "2025-08-28T15:14:43.482Z",
   "items": [
     {
       "id": "alpha",
@@ -22,9 +22,9 @@
       "version": "1.0.18"
     },
     {
-      "id": "crud-matrix-1756392399583",
-      "sourceHash": "6ccaa6415b5ee449e3c5c716f57b4608ebe3b780f5aa6b077bc5d8eee5d961f9",
-      "version": "1.0.0"
+      "id": "concurrent-1756392401020",
+      "sourceHash": "24340b114ecafe683d3a2cc0867e267aa147609eea6e9526ed94e948e4364612",
+      "version": "1.0.19"
     }
   ]
 }

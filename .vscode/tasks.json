@@ -233,6 +233,52 @@
 				"add",
 				"."
 			]
+		},
+		{
+			"label": "commit-enterprise-prd",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"commit",
+				"-m",
+				"docs: PRD enterprise-grade enhancements v1.1.0\n\n✨ Enhanced PROJECT_PRD.md to enterprise excellence:\n• Added business value proposition section\n• Comprehensive risk management and mitigation strategies\n• Improved executive summary with ROI focus\n• Enhanced architecture documentation structure\n\n📚 New comprehensive documentation suite:\n• MCP-CONFIGURATION.md - Complete setup guide (584 lines)\n• PROMPT-OPTIMIZATION.md - Technical prompt handling guide\n• Enhanced README.md with complete documentation matrix\n• Schema governance requirements in PRD\n\n🎯 Key improvements:\n• PRD versioned to 1.1.0 with proper governance\n• Separated technical prompt guidance from requirements\n• Enterprise-grade risk assessment and controls\n• Comprehensive security and compliance standards\n• Binding quality gates and acceptance criteria\n\n🔧 Documentation architecture optimization:\n• Clear separation of concerns (PRD vs technical guides)\n• Cross-referenced documentation suite\n• Enterprise standards compliance"
+			]
+		},
+		{
+			"label": "final-commit",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"commit",
+				"-m",
+				"docs: PRD enterprise-grade enhancements v1.1.0 with comprehensive documentation suite"
+			]
+		},
+		{
+			"label": "push-prd-enhancements",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"push"
+			]
+		},
+		{
+			"label": "git-add-content-guidance",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"add",
+				"."
+			]
+		},
+		{
+			"label": "git-add-content-guidance",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"add",
+				"docs/CONTENT-GUIDANCE.md"
+			]
 		}
 	]
 }

@@ -9,6 +9,7 @@ This project provides comprehensive enterprise-grade documentation:
 - **[📋 Product Requirements (PROJECT_PRD.md)](./docs/PROJECT_PRD.md)** - Authoritative binding requirements and governance
 - **[🔧 API Reference (TOOLS.md)](./docs/TOOLS.md)** - Complete MCP protocol-compliant tool documentation  
 - **[⚙️ Configuration Guide (MCP-CONFIGURATION.md)](./docs/MCP-CONFIGURATION.md)** - Comprehensive MCP setup patterns for all environments
+- **[📝 Content Guidance (CONTENT-GUIDANCE.md)](./docs/CONTENT-GUIDANCE.md)** - What to include in local vs. central instruction servers
 - **[🧠 Prompt Optimization (PROMPT-OPTIMIZATION.md)](./docs/PROMPT-OPTIMIZATION.md)** - AI prompt handling and optimization guide
 - **[🏗️ Architecture (ARCHITECTURE.md)](./docs/ARCHITECTURE.md)** - System design and component overview
 - **[🔄 Schema Evolution (SCHEMA-V2-PLAN.md)](./docs/SCHEMA-V2-PLAN.md)** - Schema versioning and migration

@@ -8,10 +8,10 @@
   "categories": [
     "a"
   ],
+  "reviewIntervalDays": 30,
+  "schemaVersion": "2",
   "sourceHash": "cd7caab615b4653f551b36f9e13c5fe5e0d5caa0b2622ff34c4549982f47b077",
   "semanticSummary": "Alpha body",
   "lastReviewedAt": "2025-08-28T14:44:11.101Z",
-  "nextReviewDue": "2025-09-27T14:44:11.101Z",
-  "reviewIntervalDays": 30,
-  "schemaVersion": "2"
+  "nextReviewDue": "2025-09-27T14:44:11.101Z"
 }

@@ -100,7 +100,7 @@ registerHandler('instructions/import', guard('instructions/import', (p:{entries:
   const newHash=newBodyHash; base.sourceHash = newHash; // if body changed without explicit version, we keep existing version
   const record=classifier.normalize(base);
   if(record.owner==='unowned'){ const auto=resolveOwner(record.id); if(auto){ record.owner=auto; record.updatedAt=new Date().toISOString(); } }
-  try { atomicWriteJson(file, record); } catch { errors.push({ id:e.id, error:'write-failed'}); }
+  try { atomicWriteJson(file, record); try { process.stderr.write(`[mutation] import write id=${e.id} file=${file} existsPreviously=${fileExists} mode=${mode}\n`); } catch { /* ignore logging errors */ } } catch { errors.push({ id:e.id, error:'write-failed'}); }
  }
  touchCatalogVersion(); invalidate(); const st=ensureLoaded(); return { hash: st.hash, imported, skipped, overwritten, total: entries.length, errors }; }));
 
@@ -117,7 +117,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:{ entry: Partia
   base.sourceHash = sourceHash; // ensure accurate to new body
   const record=classifier.normalize(base);
   if(record.owner==='unowned'){ const auto=resolveOwner(record.id); if(auto){ record.owner=auto; record.updatedAt=new Date().toISOString(); } }
-  try { atomicWriteJson(file, record); } catch(err){ return { id:e.id, error:(err as Error).message||'write-failed' }; }
+  try { atomicWriteJson(file, record); try { process.stderr.write(`[mutation] add write id=${e.id} file=${file} created=${!exists} overwrite=${overwrite}\n`); } catch { /* ignore logging errors */ } } catch(err){ return { id:e.id, error:(err as Error).message||'write-failed' }; }
   touchCatalogVersion(); invalidate(); const st=ensureLoaded(); return { id:e.id, created: !exists, overwritten: exists && overwrite, skipped:false, hash: st.hash }; }));
 
 registerHandler('instructions/remove', guard('instructions/remove', (p:{ ids:string[]; missingOk?: boolean })=>{ const ids=Array.isArray(p.ids)? Array.from(new Set(p.ids.filter(x=> typeof x==='string' && x.trim()))):[]; if(!ids.length) return { removed:0, missing:[], errors:['no ids supplied'] }; const base=getInstructionsDir(); const missing:string[]=[]; const removed:string[]=[]; const errors:{ id:string; error:string }[]=[]; for(const id of ids){ const file=path.join(base, `${id}.json`); try { if(!fs.existsSync(file)){ missing.push(id); continue; } fs.unlinkSync(file); removed.push(id); } catch(e){ errors.push({ id, error: e instanceof Error? e.message: 'delete-failed' }); } } if(removed.length){ touchCatalogVersion(); invalidate(); ensureLoaded(); } return { removed: removed.length, removedIds: removed, missing, errorCount: errors.length, errors }; }));

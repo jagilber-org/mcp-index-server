@@ -8,14 +8,14 @@
   "categories": [
     "testing"
   ],
-  "reviewIntervalDays": 30,
-  "schemaVersion": "2",
   "sourceHash": "24bddc50d715f0ab5bd187177217e495d7ba43a49bdbc5d7f957209cf0067892",
   "semanticSummary": "First line summary.",
   "lastReviewedAt": "2025-08-27T12:55:29.840Z",
   "nextReviewDue": "2025-09-26T12:55:29.840Z",
-  "createdAt": "2025-08-28T00:30:10.169Z",
-  "updatedAt": "2025-08-28T00:30:10.169Z",
+  "reviewIntervalDays": 30,
+  "schemaVersion": "2",
+  "createdAt": "2025-08-28T00:33:30.916Z",
+  "updatedAt": "2025-08-28T00:33:30.916Z",
   "riskScore": 140,
   "version": "1.0.0",
   "status": "approved",
@@ -25,7 +25,7 @@
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-08-28T00:30:10.169Z",
+      "changedAt": "2025-08-28T00:33:30.916Z",
       "summary": "initial import"
     }
   ]

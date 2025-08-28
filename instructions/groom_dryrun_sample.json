@@ -10,19 +10,19 @@
   ],
   "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
   "schemaVersion": "2",
-  "createdAt": "2025-08-28T00:30:05.018Z",
-  "updatedAt": "2025-08-28T00:30:09.568Z",
+  "createdAt": "2025-08-28T00:33:25.791Z",
+  "updatedAt": "2025-08-28T00:33:30.048Z",
   "version": "1.0.0",
   "status": "approved",
   "owner": "unowned",
   "priorityTier": "P3",
   "classification": "internal",
-  "lastReviewedAt": "2025-08-28T00:30:05.019Z",
-  "nextReviewDue": "2025-08-28T00:30:05.019Z",
+  "lastReviewedAt": "2025-08-28T00:33:25.791Z",
+  "nextReviewDue": "2025-08-28T00:33:25.791Z",
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-08-28T00:30:05.019Z",
+      "changedAt": "2025-08-28T00:33:25.791Z",
       "summary": "initial"
     }
   ],

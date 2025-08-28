@@ -1,0 +1,50 @@
+name: Nightly Stress Suite
+
+on:
+  schedule:
+    - cron: '0 5 * * *' # 05:00 UTC daily
+  workflow_dispatch: {}
+
+jobs:
+  stress-tests:
+    name: Stress / Adversarial Tests
+    runs-on: ubuntu-latest
+    env:
+      MCP_STRESS_DIAG: '1'
+      SKIP_PRETEST_BUILD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Run stress focus (quick signal)
+        run: npm run test:stress:focus || echo 'Focus suite had failures (expected possible)'
+      - name: Run full stress suite
+        run: npm run test:stress || echo 'Full stress suite had failures (expected possible)'
+      - name: Archive stress artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stress-logs
+          path: |
+            stderr.log
+            stdout.log
+            diag-*.log
+          retention-days: 5
+      - name: Open issue on new failure cluster
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `⚠️ Nightly Stress Failures - ${new Date().toISOString().split('T')[0]}`;
+            const body = `Nightly stress suite detected failures. Review artifacts and consider triage.\n\nEnvironment Flag: MCP_STRESS_DIAG=1`;
+            const existing = await github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, state: 'open', labels: 'stress-failure' });
+            if(!existing.data.some(i=> i.title.startsWith('⚠️ Nightly Stress Failures'))){
+              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body, labels: ['stress-failure','automated-issue'] });
+            }

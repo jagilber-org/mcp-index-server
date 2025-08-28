@@ -1,0 +1,32 @@
+{
+  "id": "defaults_fill_1756352123398",
+  "title": "defaults_fill_1756352123398",
+  "body": "Body defaults",
+  "priority": 85,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "defaults"
+  ],
+  "sourceHash": "6dc43ca5dfa7ee82a07999ef72a9a02e6cec87b201b0f2dbb716e8f9f33049d3",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-28T03:35:24.843Z",
+  "updatedAt": "2025-08-28T03:35:24.843Z",
+  "riskScore": 20,
+  "version": "1.2.3",
+  "owner": "defaults-owner",
+  "status": "approved",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-28T03:35:24.843Z",
+  "nextReviewDue": "2025-12-26T03:35:24.843Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.2.3",
+      "changedAt": "2025-08-28T03:35:24.843Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Body defaults"
+}

@@ -1,0 +1,17 @@
+{
+  "id": "gating_test_entry_enabled_1756352125180_ojh44o",
+  "title": "T",
+  "body": "B",
+  "priority": 10,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [],
+  "sourceHash": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c",
+  "schemaVersion": "2",
+  "createdAt": "",
+  "updatedAt": "",
+  "reviewIntervalDays": 30,
+  "semanticSummary": "B",
+  "lastReviewedAt": "2025-08-28T03:35:25.308Z",
+  "nextReviewDue": "2025-09-27T03:35:25.308Z"
+}

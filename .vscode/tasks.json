@@ -188,6 +188,17 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "retag-v1.0.2",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git tag -d v0.9.1 2>$null; git push origin :refs/tags/v0.9.1 2>$null; git tag v1.0.2 -f; git push --tags --force-with-lease"
+			],
+			"problemMatcher": []
+		},
+		{
 			"label": "git-commit-all-noquote",
 			"type": "shell",
 			"command": "git add .; git commit -m feat-add-handlers-tests",

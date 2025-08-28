@@ -14,8 +14,9 @@ function send(proc: ReturnType<typeof spawn>, msg: Record<string, unknown>){ pro
 
 describe('instructions/enrich tool', () => {
   it('rewrites placeholder governance fields on disk', async () => {
-    const tmpId = 'enrich_placeholder_sample';
-    const instrDir = path.join(process.cwd(),'instructions');
+  const tmpId = 'enrich_placeholder_sample';
+  // Use template as seed but write a fresh copy into instructions root (runtime area)
+  const instrDir = path.join(process.cwd(),'instructions');
     ensureDir(instrDir);
     const file = path.join(instrDir, tmpId + '.json');
     fs.writeFileSync(file, JSON.stringify({

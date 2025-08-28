@@ -160,6 +160,19 @@ graph TD
 
 > **Remember**: Focus on **HOW** to use MCP effectively, not **WHAT** tools exist (protocol handles discovery).
 
+### Templates & Non-Runtime Placeholders
+
+Instruction seed/templates (used for enrichment or scaffolding) must reside under `instructions/_templates/`.
+
+Rules:
+
+- Files in `_templates/` are ignored by the catalog loader (`ignored:template`).
+- Tests may copy a template into the root `instructions/` directory to exercise enrichment or migration logic.
+- Template files can contain blank governance fields (empty strings) that enrichment tools later populate.
+- Never keep persistent placeholder blanks in runtime-loaded files; promote only after enrichment.
+
+Rationale: Keeps catalog completeness metrics focused on actual deployable instructions and prevents placeholder artifacts from masking real validation issues.
+
 ### ❌ **Content to Avoid in Central Server**
 
 **MCP Protocol Infrastructure (CRITICAL):**

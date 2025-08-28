@@ -1,0 +1,27 @@
+{
+  "id": "enrich_placeholder_sample",
+  "title": "Enrich Placeholder (Template)",
+  "body": "Body",
+  "priority": 70,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": ["x"],
+  "sourceHash": "",
+  "schemaVersion": "2",
+  "createdAt": "",
+  "updatedAt": "",
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "",
+  "classification": "internal",
+  "lastReviewedAt": "",
+  "nextReviewDue": "",
+  "changeLog": [
+    { "version": "1.0.0", "changedAt": "", "summary": "initial" }
+  ],
+  "semanticSummary": "",
+  "reviewIntervalDays": 120,
+  "_template": true,
+  "_note": "Template excluded from catalog load; used by enrich tests."
+}

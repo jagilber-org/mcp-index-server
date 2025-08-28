@@ -19,7 +19,7 @@ describe('catalog completeness (red/green)', () => {
   const trace = res.debug?.trace || [];
   const skippedTrace = trace.filter(t => !t.accepted);
   // Allowed skip reasons (non-instruction configs) – do not count toward failure threshold
-  const allowed = new Set(['ignored:non-instruction-config']);
+  const allowed = new Set(['ignored:non-instruction-config','ignored:template']);
   const unexpected = skippedTrace.filter(t => !(t.reason && allowed.has(t.reason)));
   // eslint-disable-next-line no-console
   console.error('[catalogCompleteness][real]', { scanned, accepted, skipped: skippedTrace.length, unexpected });

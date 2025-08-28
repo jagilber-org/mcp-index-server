@@ -41,6 +41,11 @@ export class CatalogLoader {
   const trace: { file:string; accepted:boolean; reason?:string }[] | undefined = traceEnabled ? [] : undefined;
   for(const f of files){
       const full = path.join(dir, f);
+      // Exclude any files within a _templates directory (non-runtime placeholders)
+      if(full.includes(`${path.sep}_templates${path.sep}`)){
+        if(trace) trace.push({ file:f, accepted:false, reason:'ignored:template' });
+        continue;
+      }
       try {
         const rawAny = JSON.parse(fs.readFileSync(full,'utf8')) as Record<string, unknown>;
         // Ignore clearly non-instruction config files (no id/title/body/requirement) e.g. gates.json

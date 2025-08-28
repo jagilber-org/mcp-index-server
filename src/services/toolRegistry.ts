@@ -74,6 +74,44 @@ const INPUT_SCHEMAS: Record<string, object> = {
   'metrics/snapshot': { type: 'object', additionalProperties: true },
   'gates/evaluate': { type: 'object', additionalProperties: true },
   'meta/tools': { type: 'object', additionalProperties: true },
+  // feedback system tools
+  'feedback/submit': { type: 'object', additionalProperties: false, required: ['type', 'severity', 'title', 'description'], properties: {
+    type: { type: 'string', enum: ['issue', 'status', 'security', 'feature-request', 'bug-report', 'performance', 'usability', 'other'] },
+    severity: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
+    title: { type: 'string', maxLength: 200 },
+    description: { type: 'string', maxLength: 2000 },
+    context: { type: 'object', additionalProperties: true, properties: {
+      clientInfo: { type: 'object', properties: { name: { type: 'string' }, version: { type: 'string' } } },
+      serverVersion: { type: 'string' },
+      environment: { type: 'object', additionalProperties: true },
+      sessionId: { type: 'string' },
+      toolName: { type: 'string' },
+      requestId: { type: 'string' }
+    } },
+    metadata: { type: 'object', additionalProperties: true },
+    tags: { type: 'array', maxItems: 10, items: { type: 'string' } }
+  } },
+  'feedback/list': { type: 'object', additionalProperties: false, properties: {
+    type: { type: 'string', enum: ['issue', 'status', 'security', 'feature-request', 'bug-report', 'performance', 'usability', 'other'] },
+    severity: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
+    status: { type: 'string', enum: ['new', 'acknowledged', 'in-progress', 'resolved', 'closed'] },
+    limit: { type: 'number', minimum: 1, maximum: 200 },
+    offset: { type: 'number', minimum: 0 },
+    since: { type: 'string' },
+    tags: { type: 'array', items: { type: 'string' } }
+  } },
+  'feedback/get': { type: 'object', additionalProperties: false, required: ['id'], properties: {
+    id: { type: 'string' }
+  } },
+  'feedback/update': { type: 'object', additionalProperties: false, required: ['id'], properties: {
+    id: { type: 'string' },
+    status: { type: 'string', enum: ['new', 'acknowledged', 'in-progress', 'resolved', 'closed'] },
+    metadata: { type: 'object', additionalProperties: true }
+  } },
+  'feedback/stats': { type: 'object', additionalProperties: false, properties: {
+    since: { type: 'string' }
+  } },
+  'feedback/health': { type: 'object', additionalProperties: true },
   // diagnostics / test-only tools (not stable)
   'diagnostics/block': { type: 'object', additionalProperties: false, required: ['ms'], properties: { ms: { type: 'number', minimum: 0, maximum: 10000 } } },
   'diagnostics/microtaskFlood': { type: 'object', additionalProperties: false, properties: { count: { type: 'number', minimum: 0, maximum: 200000 } } },
@@ -81,8 +119,8 @@ const INPUT_SCHEMAS: Record<string, object> = {
 };
 
 // Stable & mutation classification lists (mirrors usage in toolHandlers; exported to remove duplication there).
-export const STABLE = new Set(['health/check','instructions/dispatch','instructions/governanceHash','instructions/query','instructions/categories','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools']);
-const MUTATION = new Set(['instructions/add','instructions/import','instructions/repair','instructions/reload','instructions/remove','instructions/groom','instructions/enrich','instructions/governanceUpdate','usage/flush']);
+export const STABLE = new Set(['health/check','instructions/dispatch','instructions/governanceHash','instructions/query','instructions/categories','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools','feedback/list','feedback/get','feedback/stats','feedback/health']);
+const MUTATION = new Set(['instructions/add','instructions/import','instructions/repair','instructions/reload','instructions/remove','instructions/groom','instructions/enrich','instructions/governanceUpdate','usage/flush','feedback/submit','feedback/update']);
 
 export function getToolRegistry(): ToolRegistryEntry[] {
   const entries: ToolRegistryEntry[] = [];
@@ -129,6 +167,14 @@ function describeTool(name: string): string {
   case 'instructions/health': return 'Compare live catalog to canonical snapshot for drift.';
     case 'gates/evaluate': return 'Evaluate configured gating criteria over current catalog.';
     case 'meta/tools': return 'Enumerate available tools & their metadata.';
+  // feedback system descriptions
+  case 'feedback/submit': return 'Submit feedback entry (issue, status report, security alert, feature request, etc.).';
+  case 'feedback/list': return 'List feedback entries with filtering options (type, severity, status, date range).';
+  case 'feedback/get': return 'Get specific feedback entry by ID with full details.';
+  case 'feedback/update': return 'Update feedback entry status and metadata (admin function).';
+  case 'feedback/stats': return 'Get feedback system statistics and metrics dashboard.';
+  case 'feedback/health': return 'Health check for feedback system storage and configuration.';
+  // diagnostics descriptions
   case 'diagnostics/block': return 'Intentionally CPU blocks the event loop for N ms (diagnostic stress).';
   case 'diagnostics/microtaskFlood': return 'Flood the microtask queue with many Promise resolutions to probe event loop starvation.';
   case 'diagnostics/memoryPressure': return 'Allocate & release transient memory to induce GC / memory pressure.';

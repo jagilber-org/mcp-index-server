@@ -23,6 +23,7 @@ import '../services/handlers.metrics';
 import '../services/handlers.gates';
 import '../services/handlers.testPrimitive';
 import '../services/handlers.diagnostics';
+import '../services/handlers.feedback';
 import { getCatalogState, diagnoseInstructionsDir } from '../services/catalogContext';
 import http from 'http';
 import fs from 'fs';

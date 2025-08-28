@@ -4,8 +4,16 @@ import path from 'path';
 import fs from 'fs';
 import { parseToolPayload, ensureDir, waitForServerReady, getResponse, ensureJsonReadable } from './testUtils';
 
+// NOTE: This test previously relied on the implicit default instructions directory (cwd/instructions).
+// If the outer test runner environment exports INSTRUCTIONS_DIR, the server would load a different
+// directory than the one this test mutates, causing the initial owner projection to reflect an
+// unexpected pre-existing file. We force INSTRUCTIONS_DIR here for deterministic isolation.
 function startServer(){
-  return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1' } });
+  const instrDir = path.join(process.cwd(),'instructions');
+  return spawn('node', [path.join(__dirname, '../../dist/server/index.js')], {
+    stdio:['pipe','pipe','pipe'],
+    env:{ ...process.env, MCP_ENABLE_MUTATION:'1', INSTRUCTIONS_DIR: instrDir }
+  });
 }
 function send(proc: ReturnType<typeof spawn>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
 const sleep = (ms:number)=> new Promise(r=>setTimeout(r,ms));

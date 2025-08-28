@@ -26,10 +26,14 @@
   Does not install devDependencies outside the build step. Runtime only needs the compiled dist.
 #>
 param(
+  [Alias('TargetDir')]
   [string]$Destination = 'C:\mcp\mcp-index-server',
   [switch]$Rebuild,
   [switch]$Overwrite,
-  [switch]$BundleDeps
+  [switch]$BundleDeps,
+  # When a rebuild is requested, allow continuing with an existing dist/ directory
+  # if npm ci / build fails (e.g. transient EPERM on Windows from locked executables)
+  [switch]$AllowStaleDistOnRebuildFailure
 )
 
 Set-StrictMode -Version Latest
@@ -38,8 +42,27 @@ $ErrorActionPreference = 'Stop'
 Write-Host "[deploy] Destination: $Destination" -ForegroundColor Cyan
 if($Rebuild){
   Write-Host '[deploy] Rebuilding project (npm ci && npm run build)...'
-  npm ci
-  npm run build
+  $rebuildSucceeded = $false
+  try {
+    npm ci
+    npm run build
+    $rebuildSucceeded = $true
+  } catch {
+    Write-Host ("[deploy] Rebuild failed: {0}" -f $_.Exception.Message) -ForegroundColor Red
+    if(-not (Test-Path 'dist')){
+      Write-Host '[deploy] No existing dist/ to fall back to. Aborting.' -ForegroundColor Red
+      exit 1
+    }
+    if($AllowStaleDistOnRebuildFailure){
+      Write-Host '[deploy] Proceeding with existing dist/ due to -AllowStaleDistOnRebuildFailure.' -ForegroundColor Yellow
+    } else {
+      Write-Host '[deploy] Re-run with -AllowStaleDistOnRebuildFailure to use existing dist/, or resolve the build issue (close processes locking node_modules).' -ForegroundColor Yellow
+      exit 1
+    }
+  }
+  if($rebuildSucceeded){
+    Write-Host '[deploy] Rebuild completed successfully.' -ForegroundColor Green
+  }
 }
 
 if(Test-Path $Destination){

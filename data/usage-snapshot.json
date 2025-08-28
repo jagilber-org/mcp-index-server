@@ -1,18 +1,18 @@
 {
   "ai_code_nav_baseline": {
-    "usageCount": 2,
+    "usageCount": 8,
     "firstSeenTs": "2025-08-27T23:04:57.418Z",
-    "lastUsedAt": "2025-08-27T23:07:47.752Z"
+    "lastUsedAt": "2025-08-28T00:30:13.257Z"
   },
   "ai_debug_triage_prompt": {
-    "usageCount": 2,
+    "usageCount": 8,
     "firstSeenTs": "2025-08-27T22:33:06.129Z",
-    "lastUsedAt": "2025-08-27T23:07:47.773Z"
+    "lastUsedAt": "2025-08-28T00:30:13.300Z"
   },
   "ai_diff_minimality_rule": {
-    "usageCount": 6,
+    "usageCount": 17,
     "firstSeenTs": "2025-08-27T22:33:06.401Z",
-    "lastUsedAt": "2025-08-27T23:46:19.336Z"
+    "lastUsedAt": "2025-08-28T00:30:13.330Z"
   },
   "rate-limit-test-entry": {
     "usageCount": 1,
@@ -20,13 +20,13 @@
     "lastUsedAt": "2025-08-27T23:04:57.868Z"
   },
   "rate-test-1": {
-    "usageCount": 8,
-    "firstSeenTs": "2025-08-27T23:46:21.217Z",
-    "lastUsedAt": "2025-08-27T23:46:22.055Z"
+    "usageCount": 10,
+    "firstSeenTs": "2025-08-28T00:30:16.484Z",
+    "lastUsedAt": "2025-08-28T00:30:16.576Z"
   },
   "rate-test-2": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-27T23:46:22.073Z",
-    "lastUsedAt": "2025-08-27T23:46:22.073Z"
+    "firstSeenTs": "2025-08-28T00:30:16.582Z",
+    "lastUsedAt": "2025-08-28T00:30:16.582Z"
   }
 }

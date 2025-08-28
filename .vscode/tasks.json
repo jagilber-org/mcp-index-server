@@ -231,7 +231,7 @@
 			]
 		},
 		{
-			"label": "deploy-local-prod",
+			"label": "deploy-prod",
 			"type": "shell",
 			"command": "pwsh",
 			"args": [
@@ -243,8 +243,9 @@
 				"scripts/deploy-local.ps1",
 				"-Rebuild",
 				"-Overwrite",
+				"-BundleDeps",
 				"-TargetDir",
-				"C:\\mcp\\mcp-index-server"
+				"C:\\mcp\\mcp-index-server-prod"
 			]
 		},
 		{
@@ -313,6 +314,36 @@
 				"commit",
 				"-m",
 				"chore(release): 1.0.1 semantic error hardening, stress tests, build lock improvements"
+			]
+		},
+		{
+			"label": "git-tag-v1.0.1",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"tag",
+				"-a",
+				"v1.0.1",
+				"-m",
+				"v1.0.1 release"
+			]
+		},
+		{
+			"label": "deploy-prod-now",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"scripts/deploy-local.ps1",
+				"-Rebuild",
+				"-Overwrite",
+				"-BundleDeps",
+				"-TargetDir",
+				"C:\\mcp\\mcp-index-server-prod"
 			]
 		}
 	]

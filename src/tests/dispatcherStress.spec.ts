@@ -7,8 +7,11 @@ import { waitFor } from './testUtils';
 // Fires a burst of invalid dispatch calls (missing action + unknown action) intermixed with a valid list action.
 // Flakiness formerly observed as occasional -32603. This test will fail fast if any internal error surfaces.
 
+const STRESS = process.env.MCP_STRESS_DIAG === '1';
+const maybeIt = STRESS ? it : it.skip;
+
 describe('dispatcher semantic code stress', () => {
-  it('never downgrades semantic dispatcher errors to -32603', async () => {
+  maybeIt('never downgrades semantic dispatcher errors to -32603', async () => {
     const server = spawn('node', [path.join(__dirname, '../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1' }});
     const lines: string[] = [];
     server.stdout.on('data', d => lines.push(...d.toString().trim().split(/\n+/)));

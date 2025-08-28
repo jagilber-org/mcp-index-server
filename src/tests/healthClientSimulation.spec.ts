@@ -125,6 +125,10 @@ describe('health/check hang reproduction attempts', () => {
   send(server,{ jsonrpc:'2.0', id:11, method:'health/check', params:{} });
   const env = await timedRequest(lines,11,3000);
   // Direct JSON-RPC method for health/check was removed (tools/call only); expect method not found (-32601)
+  if(env.result !== undefined || env.error?.code !== -32601){
+    // eslint-disable-next-line no-console
+    console.error('[healthSim][direct][diag] unexpected legacy direct response', JSON.stringify(env));
+  }
   expect(env.result).toBeUndefined();
   expect(env.error?.code).toBe(-32601);
   expect(env.__rt).toBeLessThan(1500);
@@ -155,6 +159,10 @@ describe('health/check hang reproduction attempts', () => {
     await timedRequest(lines,31,3000); // ensure initialize completes
   const env = await timedRequest(lines,30,3000); // prior request should now be answered
   // Expect method not found, matching removed direct handler behavior
+  if(env.result !== undefined || env.error?.code !== -32601){
+    // eslint-disable-next-line no-console
+    console.error('[healthSim][pre-init][diag] unexpected pre-init legacy direct response', JSON.stringify(env));
+  }
   expect(env.result).toBeUndefined();
   expect(env.error?.code).toBe(-32601);
     server.kill();

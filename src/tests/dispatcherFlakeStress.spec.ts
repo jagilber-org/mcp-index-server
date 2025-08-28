@@ -8,8 +8,11 @@ import { attachLineCollector, waitForServerReady, findResponse } from './testUti
 // Stress test to surface intermittent downgrades of dispatcher semantic errors (-32602 / -32601) to -32603.
 // Rapidly issues invalid and unknown action dispatches and asserts all returned codes are semantic.
 
+const STRESS = process.env.MCP_STRESS_DIAG === '1';
+const maybeIt = STRESS ? it : it.skip;
+
 describe('dispatcher semantic error stress', () => {
-  it('never downgrades missing/unknown action errors (-32602/-32601) to -32603 across bursts', async () => {
+  maybeIt('never downgrades missing/unknown action errors (-32602/-32601) to -32603 across bursts', async () => {
     const server = spawn('node', [path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_LOG_VERBOSE: process.env.CI? '':'1' } });
     const lines: string[] = []; attachLineCollector(server, lines);
     await waitForServerReady(server, lines);

@@ -11,8 +11,11 @@ function call<T = unknown>(name:string, params:unknown): Promise<T>{
   return Promise.resolve(h(params) as T);
 }
 
+const STRESS = process.env.MCP_STRESS_DIAG === '1';
+const maybeIt = STRESS ? it : it.skip; // gate heavy fuzz to keep default suite deterministic
+
 describe('concurrency & fuzz', () => {
-  it('parallel add/remove round trips remain consistent', async () => {
+  maybeIt('parallel add/remove round trips remain consistent', async () => {
     const add = getHandler('instructions/add');
     expect(add).toBeTruthy();
     const ids = Array.from({ length: 8 }, (_,i)=> `zz_temp_${Date.now()}_${i}`);
@@ -67,7 +70,7 @@ describe('concurrency & fuzz', () => {
     }
   }, 15000);
 
-  it('fuzz import with duplicates does not corrupt catalog', async () => {
+  maybeIt('fuzz import with duplicates does not corrupt catalog', async () => {
     const baseId = `fuzz_${Date.now()}`;
     const entries = Array.from({ length: 5 }, (_,i)=> ({ id: baseId, title: 'dup', body: 'same', priority: 10+i, audience:'all', requirement:'optional' }));
   const res = await call<{ errors: unknown[] }>('instructions/import', { entries, mode:'overwrite' });

@@ -73,7 +73,11 @@ const INPUT_SCHEMAS: Record<string, object> = {
   'usage/flush': { type: 'object', additionalProperties: true },
   'metrics/snapshot': { type: 'object', additionalProperties: true },
   'gates/evaluate': { type: 'object', additionalProperties: true },
-  'meta/tools': { type: 'object', additionalProperties: true }
+  'meta/tools': { type: 'object', additionalProperties: true },
+  // diagnostics / test-only tools (not stable)
+  'diagnostics/block': { type: 'object', additionalProperties: false, required: ['ms'], properties: { ms: { type: 'number', minimum: 0, maximum: 10000 } } },
+  'diagnostics/microtaskFlood': { type: 'object', additionalProperties: false, properties: { count: { type: 'number', minimum: 0, maximum: 200000 } } },
+  'diagnostics/memoryPressure': { type: 'object', additionalProperties: false, properties: { mb: { type: 'number', minimum: 1, maximum: 512 } } }
 };
 
 // Stable & mutation classification lists (mirrors usage in toolHandlers; exported to remove duplication there).
@@ -125,6 +129,9 @@ function describeTool(name: string): string {
   case 'instructions/health': return 'Compare live catalog to canonical snapshot for drift.';
     case 'gates/evaluate': return 'Evaluate configured gating criteria over current catalog.';
     case 'meta/tools': return 'Enumerate available tools & their metadata.';
+  case 'diagnostics/block': return 'Intentionally CPU blocks the event loop for N ms (diagnostic stress).';
+  case 'diagnostics/microtaskFlood': return 'Flood the microtask queue with many Promise resolutions to probe event loop starvation.';
+  case 'diagnostics/memoryPressure': return 'Allocate & release transient memory to induce GC / memory pressure.';
     default: return 'Tool description pending.';
   }
 }

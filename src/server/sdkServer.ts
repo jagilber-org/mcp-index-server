@@ -305,26 +305,223 @@ export async function startSdkServer() {
     try { StdioServerTransport = modStdio?.StdioServerTransport; } catch { /* ignore */ }
     let server: any;
     try { if(modServer?.Server) server = createSdkServer(modServer.Server); } catch(e){ try { process.stderr.write(`[startup] sdk_server_create_failed ${(e instanceof Error)? e.message: String(e)}\n`); } catch { /* ignore */ } }
+    // Optional deep diagnostics for intermittent mixed workload health starvation / backpressure.
+    // Enable with MCP_HEALTH_MIXED_DIAG=1 for verbose stderr telemetry (ignored otherwise for zero overhead).
+    const __diagEnabled = process.env.MCP_HEALTH_MIXED_DIAG === '1';
+    const __diag = (msg: string) => { if(__diagEnabled){ try { process.stderr.write(`[diag] ${Date.now()} ${msg}\n`); } catch { /* ignore */ } } };
+    // Emit a one-time version marker so tests can assert the newer diagnostic wrapper code is actually loaded.
+    if(__diagEnabled){
+      try {
+        const buildMarker = 'sdkServerDiagV1';
+        // Include a coarse content hash surrogate: file size + mtime if available to detect stale dist usage.
+        let fsMeta = '';
+        try {
+          // Use lazy import to avoid impacting startup when diagnostics disabled
+          const fsMod = await import('fs');
+          const stat = fsMod.statSync(__filename);
+          fsMeta = ` size=${stat.size} mtimeMs=${Math.trunc(stat.mtimeMs)}`;
+        } catch { /* ignore meta */ }
+        process.stderr.write(`[diag] ${Date.now()} diag_start marker=${buildMarker}${fsMeta}\n`);
+      } catch { /* ignore */ }
+    }
+    if(__diagEnabled){
+      try {
+        const origWrite = (process.stdout.write as any).bind(process.stdout);
+        let backpressureEvents = 0;
+        let bytesTotal = 0;
+        let lastReportAt = Date.now();
+        (process.stdout as any).on?.('drain', ()=>{ __diag('stdout_drain'); });
+        (process.stdout.write as any) = function(chunk: any, encoding?: any, cb?: any){
+          try {
+            const size = Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(String(chunk));
+            bytesTotal += size;
+            const ret = origWrite(chunk, encoding, cb);
+            if(!ret){
+              backpressureEvents++;
+              __diag(`stdout_backpressure size=${size} backpressureEvents=${backpressureEvents}`);
+            }
+            const now = Date.now();
+            if(now - lastReportAt > 2000){
+              __diag(`stdout_summary bytesTotal=${bytesTotal} backpressureEvents=${backpressureEvents}`);
+              lastReportAt = now;
+            }
+            return ret;
+          } catch(e){
+            try { __diag(`stdout_write_wrapper_error ${(e as Error)?.message||String(e)}`); } catch { /* ignore */ }
+            return origWrite(chunk, encoding, cb);
+          }
+        };
+      } catch { /* ignore */ }
+    }
     // Pre-connect stdin sniffer: if we observe an initialize request but downstream logic fails to emit server/ready,
     // schedule a guarded fallback emission (acts at framing layer, independent of SDK internals).
     try {
       if(server && !process.env.MCP_DISABLE_INIT_SNIFF){
+      const INIT_FALLBACK_ENABLED = process.env.MCP_INIT_FALLBACK_ALLOW === '1'; // debug-only gating (default off)
         let __sniffBuf = '';
+        // Optional fallback diagnostics: if dispatcher override fails (no rq_*), we sniff stdin to build
+        // minimal queue depth telemetry. Enabled only when MCP_HEALTH_MIXED_DIAG=1. Deactivated once
+        // dispatcher override sets __dispatcherOverrideActive.
+        if(process.env.MCP_HEALTH_MIXED_DIAG === '1'){
+          try {
+            if(!(server as any).__diagRQMap){
+              (server as any).__diagRQMap = new Map();
+              (server as any).__diagQueueDepthSniff = 0;
+            }
+          } catch { /* ignore */ }
+        }
         process.stdin.on('data', (chunk: Buffer) => {
           try {
-            __sniffBuf += chunk.toString();
-            // Fast substring search instead of full JSON parse (handles partial framing / headers)
-            if(!((server as any).__sniffedInit) && /"method"\s*:\s*"initialize"/.test(__sniffBuf)){
-              (server as any).__sniffedInit = true;
-              // Give primary initialize handlers a short window (ordering response -> ready). Then force if still missing.
-              setTimeout(()=>{
-                try {
-                  (server as any).__sawInitializeRequest = true;
-                  if((server as any).__initResponseSent && !(server as any).__readyNotified){
-                    emitReadyGlobal(server,'stdin-sniff-fallback');
+            // Log first chunk (sanitized) once for corruption triage
+            if(process.env.MCP_HEALTH_MIXED_DIAG === '1' && !(server as any).__diagFirstChunkLogged){
+              (server as any).__diagFirstChunkLogged = true;
+              const raw = chunk.toString('utf8');
+              const snippet = raw.replace(/\r/g,' ').replace(/\n/g,'\\n').slice(0,240);
+              process.stderr.write(`[diag] ${Date.now()} stdin_first_chunk size=${chunk.length} snippet="${snippet}"\n`);
+            }
+            __sniffBuf += chunk.toString('utf8');
+            // Fast substring / subsequence search instead of full JSON parse (handles partial framing / headers)
+            if(!((server as any).__sniffedInit)){
+              const bufForScan = __sniffBuf.slice(-8000); // bound work
+              const direct = /"method"\s*:\s*"initialize"/.test(bufForScan);
+              let fuzzy = false;
+              let subseq = false;
+              if(!direct){
+                // Fuzzy reconstruction (bounded gaps) scoped near a method sentinel if present
+                const target = 'initialize';
+                const methodIdx = bufForScan.indexOf('"method"');
+                const sliceA = methodIdx !== -1 ? bufForScan.slice(methodIdx, methodIdx + 1200) : '';
+                const trySlices: string[] = sliceA ? [sliceA] : [];
+                // If method sentinel missing (corruption), fall back to entire tail (diagnostic mode only)
+                if(!sliceA && process.env.MCP_HEALTH_MIXED_DIAG === '1') trySlices.push(bufForScan.slice(-2000));
+                for(const slice of trySlices){
+                  let ti = 0; let gaps = 0;
+                  for(let i=0;i<slice.length && ti < target.length;i++){
+                    const ch = slice[i];
+                    if(ch.toLowerCase?.() === target[ti]){ ti++; gaps = 0; continue; }
+                    if(gaps < 3){ gaps++; continue; }
+                    // restart subsequence attempt from this char (could be start of 'i')
+                    ti = 0; gaps = 0;
+                    if(ch.toLowerCase?.() === target[ti]){ ti++; }
                   }
-                } catch { /* ignore */ }
-              }, 60).unref?.();
+                  if(ti === target.length){ fuzzy = true; break; }
+                }
+                // Subsequence (very tolerant) – strip non-letters and search contiguous result for target letters order
+                if(!fuzzy){
+                  const letters = bufForScan.replace(/[^a-zA-Z]/g,'').toLowerCase();
+                  let ti = 0;
+                  for(let i=0;i<letters.length && ti < target.length;i++){
+                    if(letters[i] === target[ti]) ti++;
+                  }
+                  if(ti === target.length) subseq = true;
+                }
+              }
+              if(direct || fuzzy || subseq){
+                (server as any).__sniffedInit = true;
+                const mode = direct ? 'direct' : (fuzzy ? 'fuzzy' : 'subseq');
+                if(process.env.MCP_HEALTH_MIXED_DIAG === '1'){
+                  try {
+                    const norm = bufForScan.slice(0,400).replace(/\r/g,' ').replace(/\n/g,'\\n');
+                    process.stderr.write(`[diag] ${Date.now()} sniff_init_${mode}_detect buffer_bytes=${__sniffBuf.length} preview="${norm}"\n`);
+                  } catch { /* ignore */ }
+                }
+        // Schedule marking + optional synthetic dispatch if initialize not parsed normally (debug gated).
+                setTimeout(()=>{
+                  try {
+                    if(!(server as any).__sawInitializeRequest){
+                      (server as any).__sawInitializeRequest = true;
+                      if(process.env.MCP_HEALTH_MIXED_DIAG === '1'){
+                        try { process.stderr.write(`[diag] ${Date.now()} sniff_init_mark_sawInit mode=${mode}\n`); } catch { /* ignore */ }
+                      }
+                    }
+                    // If still no init response after a further short delay, synthesize a minimal initialize request.
+          if(INIT_FALLBACK_ENABLED && !(server as any).__initResponseSent){
+                      setTimeout(()=>{
+                        try {
+                          if((server as any).__initResponseSent || (server as any).__syntheticInitDispatched) return;
+                          // attempt to extract numeric id close to occurrence
+                          let id = 1;
+                          const idMatch = /"id"\s*:\s*(\d{1,6})/.exec(bufForScan);
+                          if(idMatch) id = parseInt(idMatch[1],10);
+                          const req = { jsonrpc:'2.0', id, method:'initialize', params:{} };
+                          (server as any).__syntheticInitDispatched = true;
+                          // Prefer dispatcher wrapper if present
+                          const dispatch = (server as any)._onRequest || (server as any)._onrequest;
+                          if(typeof dispatch === 'function'){
+                            if(process.env.MCP_HEALTH_MIXED_DIAG === '1'){
+                              try { process.stderr.write(`[diag] ${Date.now()} sniff_init_synthetic_dispatch id=${id}\n`); } catch { /* ignore */ }
+                            }
+                            try { dispatch.call(server, req); } catch { /* ignore */ }
+                          }
+                        } catch { /* ignore */ }
+                      }, 40).unref?.();
+                      if(INIT_FALLBACK_ENABLED){
+                        // Forced result fallback if still not sent after additional grace (guards against handler install failure)
+                        setTimeout(()=>{
+                          try {
+                            if((server as any).__initResponseSent) return; // real response arrived
+                            const tr = (server as any)._transport || (server as any).__transportRef; // attempt to locate transport
+                            if(tr && typeof tr.send === 'function'){
+                              let negotiated = '2024-11-05';
+                              try { negotiated = (typeof negotiateProtocolVersion === 'function' ? negotiateProtocolVersion('2024-11-05') : negotiated) || negotiated; } catch { /* ignore */ }
+                              const frame = { jsonrpc:'2.0', id:1, result:{ protocolVersion: negotiated, capabilities:{}, instructions:'Use initialize -> tools/list -> tools/call { name, arguments }. (forced-init-fallback)' } };
+                              (server as any).__initResponseSent = true;
+                              if(process.env.MCP_HEALTH_MIXED_DIAG === '1'){
+                                try { process.stderr.write(`[diag] ${Date.now()} sniff_init_forced_result_emit id=1 negotiated=${negotiated}\n`); } catch { /* ignore */ }
+                              }
+                              Promise.resolve(tr.send(frame)).then(()=>{
+                                if(!(server as any).__readyNotified){ emitReadyGlobal(server,'forced-init-fallback'); }
+                              }).catch(()=>{});
+                            }
+                          } catch { /* ignore */ }
+                        }, 140).unref?.();
+                      } else if(process.env.MCP_HEALTH_MIXED_DIAG === '1'){
+                        try { process.stderr.write(`[diag] ${Date.now()} sniff_init_forced_result_skip gating_off\n`); } catch { /* ignore */ }
+                      }
+                    }
+                    if((server as any).__initResponseSent && !(server as any).__readyNotified){
+                      emitReadyGlobal(server,'stdin-sniff-fallback');
+                    }
+                  } catch { /* ignore */ }
+                }, 60).unref?.();
+              }
+            }
+            // Fallback rq_* enqueue capture (only if diag flag set AND dispatcher override not active)
+            if(process.env.MCP_HEALTH_MIXED_DIAG === '1' && !(server as any).__dispatcherOverrideActive){
+              try {
+                let idx: number;
+                while((idx = __sniffBuf.indexOf('\n')) !== -1){
+                  const line = __sniffBuf.slice(0,idx).trim();
+                  __sniffBuf = __sniffBuf.slice(idx+1);
+                  if(!line) continue;
+                  let obj: any;
+                  try { obj = JSON.parse(line); } catch (e) {
+                    // Log suspicious malformed lines that look like JSON fragments including jsonrpc or method
+                    if(/jsonrpc|method/i.test(line)){
+                      const frag = line.replace(/\r/g,' ').replace(/\n/g,' ').slice(0,200);
+                      process.stderr.write(`[diag] ${Date.now()} malformed_json_line len=${line.length} frag="${frag}" err=${(e as Error).message||e}\n`);
+                    }
+                    continue;
+                  }
+                  if(obj && obj.jsonrpc === '2.0' && obj.method && Object.prototype.hasOwnProperty.call(obj,'id')){
+                    const metaName = obj.method === 'tools/call' ? obj?.params?.name : '';
+                    const category = (()=>{
+                      if(obj.method === 'initialize') return 'init';
+                      if(obj.method === 'health/check' || metaName === 'health/check') return 'health';
+                      if(obj.method === 'metrics/snapshot' || metaName === 'metrics/snapshot') return 'metrics';
+                      if(metaName === 'meta/tools') return 'meta';
+                      return 'other';
+                    })();
+                    if(category === 'health' || category === 'metrics' || category === 'meta' || category === 'init'){
+                      try {
+                        (server as any).__diagQueueDepthSniff++;
+                        (server as any).__diagRQMap.set(obj.id, { start: Date.now(), cat: category, method: obj.method });
+                        process.stderr.write(`[diag] ${Date.now()} rq_enqueue method=${obj.method} cat=${category} id=${obj.id} qdepth=${(server as any).__diagQueueDepthSniff} src=sniff\n`);
+                      } catch { /* ignore */ }
+                    }
+                  }
+                }
+              } catch { /* ignore */ }
             }
             // Truncate buffer to avoid unbounded growth; keep tail for partial tokens
             if(__sniffBuf.length > 10_000){
@@ -335,10 +532,50 @@ export async function startSdkServer() {
       }
     } catch { /* ignore */ }
   if(!StdioServerTransport || !server){ throw new Error('MCP SDK transport unavailable (removed fallback)'); }
-    // Instance-level override of _onrequest to retain error.data
-    const originalOnRequest = (server as any)._onrequest?.bind(server);
+    // Instance-level override of the internal request dispatcher to retain error.data & emit diagnostics.
+    // The upstream SDK has used both `_onRequest` (camel) and `_onrequest` (lower) across versions / builds;
+    // we defensively hook whichever exists (preferring camel) and assign our wrapper to BOTH names to ensure
+    // future internal refactors still trigger diagnostics. This explains prior absence of [diag] rq_* lines:
+    // we only patched `_onrequest` while the active symbol was `_onRequest`.
+    const existingLower = (server as any)._onrequest;
+    const existingCamel = (server as any)._onRequest;
+    const originalOnRequest = (existingCamel || existingLower) ? (existingCamel || existingLower).bind(server) : undefined;
+    // Diagnostic queue depth (only used when MCP_HEALTH_MIXED_DIAG=1)
+    let __diagQueueDepth = 0;
     if(originalOnRequest){
-      (server as any)._onrequest = function(request: any){
+      // Explicit this: any annotations to satisfy TS noImplicitThis checks in wrapped dispatcher
+      const wrapped = function(this: any, request: any): any {
+    const diagEnabled = process.env.MCP_HEALTH_MIXED_DIAG === '1';
+    let startedAt: number | undefined;
+    if(diagEnabled){
+      // Unified categorization covers both direct method calls and tool-wrapped invocations (tools/call with params.name)
+      const metaName = request.method === 'tools/call' ? request?.params?.name : '';
+      const category = (()=>{
+        if(request.method === 'initialize') return 'init';
+        if(request.method === 'health/check' || metaName === 'health/check') return 'health';
+        if(request.method === 'metrics/snapshot' || metaName === 'metrics/snapshot') return 'metrics';
+        if(metaName === 'meta/tools') return 'meta';
+        return 'other';
+      })();
+      if(category === 'health' || category === 'meta' || category === 'metrics' || category === 'init'){
+        startedAt = Date.now();
+        try {
+          __diagQueueDepth++;
+          process.stderr.write(`[diag] ${startedAt} rq_enqueue method=${request.method} cat=${category} id=${request.id} qdepth=${__diagQueueDepth}\n`);
+          // Track first health request enqueue time (idempotent) & active pending set for starvation analysis
+          if(category === 'health'){
+            if(!(server as any).__firstHealthEnqueueAt){ (server as any).__firstHealthEnqueueAt = startedAt; }
+            if(request.id === 1 && !(server as any).__healthId1EnqueueAt){ (server as any).__healthId1EnqueueAt = startedAt; }
+          }
+          if(!(server as any).__activeDiagRequests){ (server as any).__activeDiagRequests = new Map(); }
+          (server as any).__activeDiagRequests.set(request.id, { id: request.id, method: request.method, cat: category, start: startedAt });
+          // Mis-order detection: health/metrics/meta before initialize observed
+          if((category === 'health' || category === 'metrics' || category === 'meta') && !(server as any).__sawInitializeRequest){
+            try { process.stderr.write(`[diag] ${Date.now()} rq_misorder_before_init method=${request.method} id=${request.id} cat=${category} qdepth=${__diagQueueDepth}\n`); } catch { /* ignore */ }
+          }
+        } catch { /* ignore */ }
+      }
+    }
     const handler = (this as any)._requestHandlers.get(request.method) ?? (this as any).fallbackRequestHandler;
         if(handler === undefined){
           return (this as any)._transport?.send({ jsonrpc:'2.0', id: request.id, error:{ code: -32601, message:'Method not found', data:{ method: request.method } }}).catch(()=>{});
@@ -352,6 +589,24 @@ export async function startSdkServer() {
   Promise.resolve()
           .then(()=> handler(request, { signal: abortController.signal }))
           .then((result:any)=>{
+            if(startedAt !== undefined){
+              try {
+                const dur = Date.now() - startedAt;
+                const metaName = request.method === 'tools/call' ? request?.params?.name : '';
+                const category = ((): string => {
+                  if(request.method === 'initialize') return 'init';
+                  if(request.method === 'health/check' || metaName === 'health/check') return 'health';
+                  if(request.method === 'metrics/snapshot' || metaName === 'metrics/snapshot') return 'metrics';
+                  if(metaName === 'meta/tools') return 'meta';
+                  return 'other';
+                })();
+                if(category === 'health' || category === 'meta' || category === 'metrics' || category === 'init'){
+                  __diagQueueDepth = Math.max(0, __diagQueueDepth - 1);
+                  process.stderr.write(`[diag] ${Date.now()} rq_complete method=${request.method} cat=${category} id=${request.id} dur_ms=${dur} qdepth=${__diagQueueDepth}\n`);
+                  try { (server as any).__activeDiagRequests?.delete(request.id); } catch { /* ignore */ }
+                }
+              } catch { /* ignore */ }
+            }
             // Even if aborted, we now still attempt to send a terminal response to avoid silent drops (observed intermittent missing batch response id=3)
             if(abortController.signal.aborted){
               try { if(process.env.MCP_LOG_VERBOSE==='1') process.stderr.write(`[rpc] aborted-but-sending method=${request.method} id=${request.id}\n`); } catch { /* ignore */ }
@@ -366,6 +621,24 @@ export async function startSdkServer() {
             }
             return sendPromise;
           }, (error:any)=>{
+            if(startedAt !== undefined){
+              try {
+                const dur = Date.now() - startedAt;
+                const metaName = request.method === 'tools/call' ? request?.params?.name : '';
+                const category = ((): string => {
+                  if(request.method === 'initialize') return 'init';
+                  if(request.method === 'health/check' || metaName === 'health/check') return 'health';
+                  if(request.method === 'metrics/snapshot' || metaName === 'metrics/snapshot') return 'metrics';
+                  if(metaName === 'meta/tools') return 'meta';
+                  return 'other';
+                })();
+                if(category === 'health' || category === 'meta' || category === 'metrics' || category === 'init'){
+                  __diagQueueDepth = Math.max(0, __diagQueueDepth - 1);
+                  process.stderr.write(`[diag] ${Date.now()} rq_error method=${request.method} cat=${category} id=${request.id} dur_ms=${dur} qdepth=${__diagQueueDepth}\n`);
+                  try { (server as any).__activeDiagRequests?.delete(request.id); } catch { /* ignore */ }
+                }
+              } catch { /* ignore */ }
+            }
             // Always attempt to surface an error response; do not silently return on abort to prevent missing id responses under rare races
             if(abortController.signal.aborted){
               try { if(process.env.MCP_LOG_VERBOSE==='1') process.stderr.write(`[rpc] aborted-error-path method=${request.method} id=${request.id}\n`); } catch { /* ignore */ }
@@ -453,7 +726,47 @@ export async function startSdkServer() {
           .catch(()=>{})
           .finally(()=>{ (this as any)._requestHandlerAbortControllers.delete(request.id); });
       };
+      // Attach wrapper to BOTH potential internal symbols to guarantee interception.
+      (server as any)._onRequest = wrapped;
+      (server as any)._onrequest = wrapped;
+      (server as any).__dispatcherOverrideActive = true;
+      try { if(process.env.MCP_HEALTH_MIXED_DIAG==='1') process.stderr.write(`[diag] ${Date.now()} dispatcher_override applied props=${[existingCamel? '_onRequest(original)':'', existingLower? '_onrequest(original)':''].filter(Boolean).join(',')||'none'}\n`); } catch { /* ignore */ }
+      // Starvation watchdog: after first health enqueue, emit snapshots of pending requests until health id=1 completes or timeout
+      if(process.env.MCP_HEALTH_MIXED_DIAG==='1' && !(server as any).__starvationWatchdogStarted){
+        (server as any).__starvationWatchdogStarted = true;
+        let ticks = 0;
+        const iv = setInterval(()=>{
+          try {
+            ticks++;
+            const active: any = (server as any).__activeDiagRequests;
+            const firstH = (server as any).__healthId1EnqueueAt;
+            if(active && active.size){
+              const pending = Array.from(active.values()).map((r: any)=>({ id:r.id, cat:r.cat, age: Date.now()-r.start })).sort((a:any,b:any)=>a.id-b.id).slice(0,12);
+              const hasHealth1 = !!active.get?.(1);
+              if(hasHealth1 || (firstH && Date.now()-firstH > 40)){
+                process.stderr.write(`[diag] ${Date.now()} starvation_watchdog tick=${ticks} pending=${pending.length} details=${JSON.stringify(pending)} firstHealthAge=${firstH? Date.now()-firstH: -1} hasHealth1=${hasHealth1}\n`);
+              }
+              if(!hasHealth1 && firstH && Date.now()-firstH>400){
+                process.stderr.write(`[diag] ${Date.now()} starvation_watchdog_health1_missing age=${Date.now()-firstH}\n`);
+              }
+            }
+            if(ticks>40 || ((server as any).__activeDiagRequests && !(server as any).__activeDiagRequests.get(1))){
+              clearInterval(iv);
+            }
+          } catch { /* ignore */ }
+        }, 25);
+        iv.unref?.();
+      }
+    } else if(process.env.MCP_HEALTH_MIXED_DIAG==='1'){
+      try { process.stderr.write(`[diag] ${Date.now()} dispatcher_override_skipped no_original_handler_found`); } catch { /* ignore */ }
     }
+    // Enumerate server properties once for debugging missing override
+    try {
+      if(process.env.MCP_HEALTH_MIXED_DIAG==='1'){
+        const props = Object.getOwnPropertyNames(server).filter(p=>/_on|request|handler/i.test(p)).slice(0,60);
+        process.stderr.write(`[diag] ${Date.now()} server_props ${props.join(',')}\n`);
+      }
+    } catch { /* ignore */ }
   // Derive version again for notification (mirrors createSdkServer logic but without -sdk suffix)
   const transport = new StdioServerTransport();
   await server.connect(transport);
@@ -473,11 +786,48 @@ export async function startSdkServer() {
       }
     } catch { /* ignore */ }
   }, 100).unref?.();
+  // Unconditional DIAG fallback (gated): if no initialize request OR response observed very early, force a synthetic
+  // initialize/result frame (id=1) to unblock harness diagnostics. Restricted to diagnostic mode + explicit enable env.
+  setTimeout(()=>{
+    try {
+      const INIT_FALLBACK_ENABLED = process.env.MCP_INIT_FALLBACK_ALLOW === '1';
+      if(process.env.MCP_HEALTH_MIXED_DIAG==='1' && !(server as any).__initResponseSent){
+        if(!INIT_FALLBACK_ENABLED){
+          try { process.stderr.write(`[diag] ${Date.now()} init_unconditional_fallback_skip gating_off\n`); } catch { /* ignore */ }
+          return; // diagnostics only, do not emit synthetic frame
+        }
+        if(!(server as any).__sawInitializeRequest){
+          if(process.stderr && !(server as any).__diagForcedInitLogged){
+            (server as any).__diagForcedInitLogged = true;
+            try { process.stderr.write(`[diag] ${Date.now()} init_unconditional_fallback_emit id=1 reason=no_init_seen_150ms\n`); } catch { /* ignore */ }
+          }
+        } else {
+          try { process.stderr.write(`[diag] ${Date.now()} init_unconditional_fallback_emit id=1 reason=init_seen_no_response_150ms\n`); } catch { /* ignore */ }
+        }
+        const negotiated = '2024-11-05';
+        const frame = { jsonrpc:'2.0', id:1, result:{ protocolVersion: negotiated, capabilities:{}, instructions:'Use initialize -> tools/list -> tools/call { name, arguments }. (unconditional-init-fallback)' } };
+        // Attempt to send via transport if available else raw stdout
+        const tr = (server as any)._transport || (server as any).__transportRef;
+        (server as any).__initResponseSent = true;
+        if(tr && typeof tr.send==='function'){
+          Promise.resolve(tr.send(frame)).then(()=>{ if(!(server as any).__readyNotified) emitReadyGlobal(server,'unconditional-init-fallback'); }).catch(()=>{});
+        } else {
+          try { process.stdout.write(JSON.stringify(frame)+'\n'); } catch { /* ignore */ }
+          if(!(server as any).__readyNotified) emitReadyGlobal(server,'unconditional-init-fallback-direct');
+        }
+      }
+    } catch { /* ignore */ }
+  }, 150).unref?.();
     // Patch initialize result for instructions (SDK internal property _clientVersion signals completion soon after connect)
     const originalInit = (server as any)._oninitialize;
-    if(originalInit && !(server as any).__initPatched){
+  if(originalInit && !(server as any).__initPatched){
       (server as any).__initPatched = true;
-      (server as any)._oninitialize = async function(request: any){
+  (server as any)._oninitialize = async function(this: any, request: any){
+        // Mark saw initialize as early as possible (enter) to aid watchdog diagnostics
+        try {
+          (this as any).__sawInitializeRequest = true;
+          handshakeLog('oninitialize_enter', { sawInit:true, ready: !!(this as any).__readyNotified, initRespSent: !!(server as any).__initResponseSent });
+        } catch { /* ignore */ }
         const result = await originalInit.call(this, request);
         try {
           const negotiated = negotiateProtocolVersion(request?.params?.protocolVersion);
@@ -486,7 +836,6 @@ export async function startSdkServer() {
             (result as any).instructions = 'Use initialize -> tools/list -> tools/call { name, arguments }. Health: tools/call health/check. Metrics: tools/call metrics/snapshot. Ping: ping.';
           }
           // Ensure a single server/ready emission even if earlier createSdkServer patch did not execute
-          (this as any).__sawInitializeRequest = true;
           if(!(this as any).__readyNotified){ (server as any).__initResponseSent = true; emitReadyGlobal(server,'late-oninitialize-patch'); }
         } catch {/* ignore */}
         return result;
@@ -503,6 +852,20 @@ export async function startSdkServer() {
             isInitResult = !!(msg && typeof msg === 'object' && 'id' in msg && msg.result && msg.result.protocolVersion);
           } catch { /* ignore */ }
           const sendPromise = origSend(msg);
+          // Fallback completion / error logging if dispatcher override not active
+          try {
+            if(process.env.MCP_HEALTH_MIXED_DIAG === '1' && !(server as any).__dispatcherOverrideActive && msg && typeof msg === 'object' && Object.prototype.hasOwnProperty.call(msg,'id')){
+              const map = (server as any).__diagRQMap;
+              if(map && map.has(msg.id)){
+                const rec = map.get(msg.id);
+                map.delete(msg.id);
+                (server as any).__diagQueueDepthSniff = Math.max(0, (server as any).__diagQueueDepthSniff - 1);
+                const kind = (msg as any).error ? 'rq_error' : 'rq_complete';
+                const dur = Date.now() - rec.start;
+                process.stderr.write(`[diag] ${Date.now()} ${kind} method=${rec.method} cat=${rec.cat} id=${msg.id} dur_ms=${dur} qdepth=${(server as any).__diagQueueDepthSniff} src=sniff-send\n`);
+              }
+            }
+          } catch { /* ignore */ }
           if(isInitResult && !(server as any).__readyNotified){
             (server as any).__sawInitializeRequest = true;
             // Emit only after the initialize response has been flushed to preserve ordering.

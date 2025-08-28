@@ -1,9 +1,11 @@
 param()
-$skip = $env:SKIP_PRETEST_BUILD -eq '1'
+$force = $env:MCP_FORCE_REBUILD -eq '1'
+$skip = ($env:SKIP_PRETEST_BUILD -eq '1') -and -not $force
 if($skip){
   Write-Host "[pretest] Skipping build (SKIP_PRETEST_BUILD=1)" -ForegroundColor DarkGray
 } else {
-  Write-Host "[pretest] Performing build (no SKIP_PRETEST_BUILD flag)" -ForegroundColor DarkGray
+  if($force){ Write-Host "[pretest] Forcing rebuild due to MCP_FORCE_REBUILD=1" -ForegroundColor Yellow }
+  else { Write-Host "[pretest] Performing build (no SKIP_PRETEST_BUILD flag)" -ForegroundColor DarkGray }
   npm run build
 }
 

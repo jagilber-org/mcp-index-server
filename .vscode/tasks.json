@@ -345,6 +345,105 @@
 				"-TargetDir",
 				"C:\\mcp\\mcp-index-server-prod"
 			]
+		},
+		{
+			"label": "test-diag",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"test:diag"
+			]
+		},
+		{
+			"label": "test-diag-2",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"test:diag"
+			]
+		},
+		{
+			"label": "post-patch-build-verify",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build:verify"
+			]
+		},
+		{
+			"label": "post-fix-build-verify",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build:verify"
+			]
+		},
+		{
+			"label": "post-sniff-fallback-build-verify",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build:verify"
+			]
+		},
+		{
+			"label": "run-diag-after-env",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"test:diag"
+			]
+		},
+		{
+			"label": "force-build-verify",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-Command",
+				"$env:MCP_FORCE_REBUILD='1'; npm run build:verify"
+			]
+		},
+		{
+			"label": "rebuild-after-init-diag",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-Command",
+				"$env:MCP_FORCE_REBUILD='1'; npm run build:verify; npm run test:diag"
+			]
+		},
+		{
+			"label": "rebuild-with-malformed-logging",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-Command",
+				"$env:MCP_FORCE_REBUILD='1'; npm run build:verify; cross-env MCP_HEALTH_MIXED_DIAG=1 vitest run src/tests/handshakeFlakeRepro.spec.ts src/tests/healthMixedReproLoop.spec.ts --reporter=dot"
+			]
+		},
+		{
+			"label": "diag-handshake-tests",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-Command",
+				"$env:MCP_FORCE_REBUILD='1'; npm run build:verify; $env:MCP_HEALTH_MIXED_DIAG='1'; npx vitest run src/tests/handshakeFlakeRepro.spec.ts src/tests/healthMixedReproLoop.spec.ts --reporter=dot"
+			]
+		},
+		{
+			"label": "diag-handshake-after-patch",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-Command",
+				"$env:MCP_FORCE_REBUILD='1'; npm run build:verify; $env:MCP_HEALTH_MIXED_DIAG='1'; npx vitest run src/tests/handshakeFlakeRepro.spec.ts src/tests/healthMixedReproLoop.spec.ts --reporter=dot"
+			]
 		}
 	]
 }

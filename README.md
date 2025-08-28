@@ -407,6 +407,62 @@ Rationale: a single execution pathway (tools/call) eliminates duplicate validati
 - **Gated mutations**: Write operations require explicit environment flag
 - **Process isolation**: MCP clients communicate via stdio only (no network access)
 
+### Environment Flags
+
+| Flag | Default | Scope | Description |
+|------|---------|-------|-------------|
+| `MCP_LOG_VERBOSE` | off | runtime | Enables detailed diagnostic logging (handshake, tool dispatch timings). |
+| `MCP_ENABLE_MUTATION` | off | runtime | Allows mutating tools (add/import/remove/enrich/governanceUpdate/repair/reload/flush). Leave off in read-only production. |
+| `MCP_INIT_FALLBACK_ALLOW` | off | runtime (diagnostic) | Permits synthetic initialize fallback path used only for investigating lost/blocked initialize sequences. Keep off for protocol compliance; tests assert no synthetic markers when off. |
+| `MCP_STRESS_DIAG` | off | test harness | When set to `1`, activates heavy fuzz / fragmentation / multi-process saturation tests (handshake fragmentation, long reproduction loops, escalated health contention). Left off for normal CI or production validation to ensure deterministic green suite. |
+| `MCP_HANDSHAKE_TRACE` | off | runtime (diagnostic) | Extra trace around initialize & server/ready sequencing. |
+| `MCP_HEALTH_MIXED_DIAG` | off | runtime (diagnostic) | Adds additional mixed workload scheduling diagnostics during health/check stress exploration. |
+| `MCP_DISABLE_INIT_SNIFF` | off | runtime (diagnostic) | Disables stdin pre-read initialize sniffing logic (forces pure SDK handling). Useful to compare behavior with and without early fragmentation mitigation. |
+
+Operational guidance:
+
+- Keep all diagnostic flags OFF for production unless actively debugging an issue.
+- Enable `MCP_STRESS_DIAG=1` locally or in a dedicated CI job (e.g., nightly) to exercise adversarial workloads without destabilizing standard PR validations.
+- Never enable `MCP_INIT_FALLBACK_ALLOW` in production; it is purely for reproducing initialize starvation scenarios and is guarded by compliance tests.
+
+### Stress / Adversarial Test Suite
+
+The following spec files (and selective cases inside some files) are gated behind `MCP_STRESS_DIAG=1` to keep the default test run deterministic and fast:
+
+- `handshakeFlakeRepro.spec.ts`
+- `healthMixedReproLoop.spec.ts`
+- `healthHangExploration.spec.ts` (mixed workload + escalated scenarios only)
+- `healthMultiProcessStress.spec.ts`
+- `dispatcherStress.spec.ts`
+- `dispatcherFlakeStress.spec.ts`
+- `concurrencyFuzz.spec.ts`
+
+Run only the core deterministic suite (default):
+
+```pwsh
+npm test
+```
+
+Run all tests including stress (local or nightly CI):
+
+```pwsh
+npm run test:stress
+```
+
+Focus just on the gated stress specs:
+
+```pwsh
+npm run test:stress:focus
+```
+
+Minimal diagnostic reproduction (legacy specific pair):
+
+```pwsh
+npm run test:diag
+```
+
+Rationale: Segregating heavy concurrency / fragmentation tests avoids intermittent initialize starvation or off-by-one health count flakes from masking real regressions in routine PR validation while retaining full reproduction power on-demand.
+
 ## Testing
 
 Comprehensive green test suite (no skipped tests) covering:

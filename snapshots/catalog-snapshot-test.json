@@ -1,29 +1,29 @@
 {
-  "generatedAt": "2025-08-28T03:35:21.117Z",
+  "generatedAt": "2025-08-28T14:44:08.490Z",
   "items": [
     {
-      "id": "ai_code_nav_baseline",
-      "sourceHash": "deadbeefcb7165bdfeb0d254642e5a01ead061d055e8cc08e6357623631f7ecb",
+      "id": "alpha",
+      "sourceHash": "deadbeef15b4653f551b36f9e13c5fe5e0d5caa0b2622ff34c4549982f47b077",
       "version": "1.0.0"
     },
     {
-      "id": "ai_debug_triage_prompt",
-      "sourceHash": "9e37939130bca68ddaba260530233e5ed684a18ebc66b734286ed60b19302748",
+      "id": "batch-seed",
+      "sourceHash": "b6b3b2b1bdd1694f13e7cd554bd42badafa8db744e9094fd0e41afc79104fa77",
       "version": "1.0.0"
     },
     {
-      "id": "ai_diff_minimality_rule",
-      "sourceHash": "de9f28b204782d47ed9677775034ee3569f0573e85d96fc7ecf95472a42a6582",
+      "id": "beta",
+      "sourceHash": "d053694953b7f16c118e0f8c919f9c7c571a4cbbde9b4f10813eea97a930cf09",
       "version": "1.0.0"
     },
     {
-      "id": "ai_log_trace_analysis",
-      "sourceHash": "a44a3bf88c45995475a35d96099614a8ad225a11424f803085e9010c0fef3e8e",
+      "id": "crud-matrix-1756392247299",
+      "sourceHash": "6ccaa6415b5ee449e3c5c716f57b4608ebe3b780f5aa6b077bc5d8eee5d961f9",
       "version": "1.0.0"
     },
     {
-      "id": "ai_pattern_anomaly_spotter",
-      "sourceHash": "0f1c885e4cc469d7b65afc15777855dbc8b72d8d5ba2677a3261862f13a33416",
+      "id": "gov_hash_auto_invalidation",
+      "sourceHash": "5eba503ad0aecc563ec135f5c772a2ced93642512e9b39f44c35eb8f3d9528cf",
       "version": "1.0.0"
     }
   ]

@@ -53,4 +53,18 @@ registerHandler('diagnostics/memoryPressure', (p: { mb?: number }) => {
   return { requestedMB: mb, blocks: blocks.length, perBlockBytes: PER, allocMs };
 });
 
+/**
+ * diagnostics/handshake: Returns recent handshake events captured by sdkServer (if present).
+ * If instrumentation not present (older build), returns empty list with a warning flag.
+ */
+interface HandshakeEvt { seq: number; ts: string; stage: string; extra?: Record<string,unknown>; }
+// Augment global type locally (non-invasive)
+// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+const gRef = global as unknown as { HANDSHAKE_EVENTS_REF?: HandshakeEvt[] };
+registerHandler('diagnostics/handshake', () => {
+  const buf = gRef.HANDSHAKE_EVENTS_REF;
+  if(Array.isArray(buf)) return { events: buf.slice(-50) };
+  return { events: [], warning: 'handshake instrumentation unavailable in this build' };
+});
+
 export {}; // module scope

@@ -33,8 +33,26 @@ function handshakeLog(stage: string, data?: Record<string, unknown>){
   } catch { /* ignore */ }
 }
 
+// Central gating flag: by default we disable ALL non-primary ready fallbacks (watchdogs, safety timeouts,
+// stdin sniff synthetic initialize, unconditional init fallbacks, etc.). These historically attempted to
+// mask upstream ordering or initialization issues but introduce additional races observable in tests
+// (ready sometimes preceding initialize response). Setting MCP_HANDSHAKE_FALLBACKS=1 re-enables the legacy
+// safety nets for deep diagnostics. Primary path remains transport send hook emissions only.
+const HANDSHAKE_FALLBACKS_ENABLED = process.env.MCP_HANDSHAKE_FALLBACKS === '1';
+
 // Supported protocol versions (ordered descending preference – first is default)
 const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18'];
+
+// Lightweight in-memory handshake event ring buffer for diagnostics
+interface HandshakeEvent { seq: number; ts: string; stage: string; extra?: Record<string,unknown>; }
+const HANDSHAKE_EVENTS: HandshakeEvent[] = [];
+function record(stage: string, extra?: Record<string,unknown>){
+  const evt: HandshakeEvent = { seq: ++HANDSHAKE_SEQ, ts: new Date().toISOString(), stage, extra };
+  HANDSHAKE_EVENTS.push(evt); if(HANDSHAKE_EVENTS.length > 50) HANDSHAKE_EVENTS.shift();
+  if(HANDSHAKE_TRACE_ENABLED){ try { process.stderr.write(`[handshake] ${JSON.stringify(evt)}\n`); } catch { /* ignore */ } }
+}
+// Expose reference for diagnostics/handshake tool (read-only access)
+try { (global as unknown as { HANDSHAKE_EVENTS_REF?: HandshakeEvent[] }).HANDSHAKE_EVENTS_REF = HANDSHAKE_EVENTS; } catch { /* ignore */ }
 
 // Helper: negotiate a protocol version with graceful fallback
 function negotiateProtocolVersion(requested?: string){
@@ -54,10 +72,20 @@ function emitReadyGlobal(server: any, reason: string){
   try {
     if(!server) return;
     if((server as any).__readyNotified) return;
+    // Ordering gate: ONLY allow emission if initialize response actually flushed ( __initResponseSent )
+    // unless fallbacks are explicitly enabled. Even for fallback reasons we still require the flag.
+    if(!(server as any).__initResponseSent){
+      if(!HANDSHAKE_FALLBACKS_ENABLED){
+        return; // strict mode: never emit early
+      }
+      // In fallback-enabled mode allow certain synthetic init reasons to pass through.
+      const allowReasons = new Set(['unconditional-init-fallback','unconditional-init-fallback-direct','forced-init-fallback']);
+      if(!allowReasons.has(reason)) return;
+    }
     const v = (server as any).__declaredVersion || (server as any).version || '0.0.0';
     // Mark before sending to avoid re-entrancy; we still attempt best-effort delivery via fallbacks.
     (server as any).__readyNotified = true;
-    handshakeLog('ready_emitted', { reason, version: v });
+  record('ready_emitted', { reason, version: v });
     try { process.stderr.write(`[ready] emit reason=${reason} version=${v}\n`); } catch { /* ignore */ }
     const msg = { jsonrpc: '2.0', method: 'server/ready', params: { version: v } };
     let dispatched = false;
@@ -78,8 +106,8 @@ function emitReadyGlobal(server: any, reason: string){
       // Final fallback direct stdout (rare path; ensures test visibility even if SDK path failed)
       try { process.stdout.write(JSON.stringify(msg)+'\n'); dispatched = true; } catch { /* ignore */ }
     }
-    // Always follow with tools/list_changed so clients waiting on tool availability proceed.
-    try { if(typeof (server as any).sendToolListChanged === 'function') (server as any).sendToolListChanged(); } catch { /* ignore */ }
+  // Always follow with tools/list_changed AFTER ready to guarantee ordering.
+  try { if(typeof (server as any).sendToolListChanged === 'function'){ (server as any).sendToolListChanged(); record('list_changed_after_ready'); } } catch { /* ignore */ }
   } catch { /* ignore */ }
 }
 
@@ -96,56 +124,21 @@ export function createSdkServer(ServerClass: any) {
   // expose version for later patched initialize hook in startSdkServer
   (server as any).__declaredVersion = version;
 
-  // Patch sendToolListChanged early: if an early tools/list_changed would fire before server/ready
-  // (observed in tests where tools/list_changed arrives without prior server/ready), force an
-  // idempotent ready emission first to satisfy handshake ordering guarantees.
+  // Simplified: never emit tools/list_changed before ready. We wrap sendToolListChanged once to enforce ordering.
   try {
     const origSendToolListChanged = (server as any).sendToolListChanged?.bind(server);
     if(origSendToolListChanged && !(server as any).__listPatched){
       (server as any).__listPatched = true;
-      (server as any).sendToolListChanged = (...args: any[]) => {
-        try {
-          // If we already emitted ready, just flush any pending list_changed immediately
-          if((server as any).__readyNotified){
-            if((server as any).__pendingListChanged){ delete (server as any).__pendingListChanged; }
-            return origSendToolListChanged(...args);
-          }
-          // Not ready yet
-          const sawInit = !!(server as any).__sawInitializeRequest;
-          const initRespSent = !!(server as any).__initResponseSent;
-          if(!sawInit){
-            // Buffer until initialize observed; avoids emitting ready before initialize (ordering requirement)
-            (server as any).__pendingListChanged = true;
-            handshakeLog('buffer_list_changed_pre_init');
-            return; // drop for now – will be replayed by ready emission
-          }
-          if(sawInit && !initRespSent){
-            // Initialize request seen but response not yet flushed; schedule a microtask after we expect
-            // the initialize handler setImmediate to run so ready comes before list_changed.
-            if(!(server as any).__pendingListChanged){
-              (server as any).__pendingListChanged = true;
-              handshakeLog('buffer_list_changed_pre_init_response');
-            }
-            setTimeout(()=>{
-              try {
-                if((server as any).__sawInitializeRequest && !(server as any).__readyNotified){
-                  handshakeLog('pre_list_emit_ready_deferred');
-                  emitReadyGlobal(server,'pre-list-changed-after-init');
-                }
-              } catch { /* ignore */ }
-            },0);
-            return;
-          }
-          // Initialize response flushed but ready somehow not emitted; force it now before list_changed
-          handshakeLog('pre_list_ready_patch', { reason: 'sendToolListChanged-before-ready' });
-          emitReadyGlobal(server,'pre-list-changed-patch');
-          // emitReadyGlobal will recurse into this wrapper; second pass will hit the first branch (__readyNotified)
-          return;
-        } catch { /* ignore */ }
-        return origSendToolListChanged(...args);
+      (server as any).sendToolListChanged = (...a: any[]) => {
+        if(!(server as any).__readyNotified){
+          // Defer until after initialize response triggers ready.
+          (server as any).__pendingListChanged = true; record('buffer_list_changed_pre_ready');
+          return; // swallow for now
+        }
+        return origSendToolListChanged(...a);
       };
     }
-  } catch { /* ignore patch errors */ }
+  } catch { /* ignore */ }
 
   // Track ready notification + whether initialize was seen (ordering guarantee)
   (server as any).__readyNotified = false;
@@ -155,24 +148,17 @@ export function createSdkServer(ServerClass: any) {
 
   // (emitReady wrapper removed; ordering now enforced by delaying emission until transport send hook / watchdogs)
 
-  // Post-initialize watchdogs: if initialize observed but ready still not emitted, force an idempotent
-  // emission after short delays. We previously gated on __initResponseSent which could suppress all watchdogs
-  // if the transport send hook never fired (root cause of missing ready). Ordering risk is minimal since
-  // these fire >=120ms after initialize which is well after the tiny initialize handler completes & flushes.
-  const watchdogTry = (label: string)=>{
-    try {
-      if((server as any).__sawInitializeRequest && !(server as any).__readyNotified){
-        handshakeLog('watchdog_emit_attempt', { label, sawInit: true, initRespSent: !!(server as any).__initResponseSent });
-        emitReadyGlobal(server,label);
-      } else {
-        handshakeLog('watchdog_skip', { label, sawInit: !!(server as any).__sawInitializeRequest, initRespSent: !!(server as any).__initResponseSent, ready: !!(server as any).__readyNotified });
-      }
-    } catch { /* ignore */ }
-  };
-  setTimeout(()=> watchdogTry('init-watchdog-120ms'),120).unref?.();
-  setTimeout(()=> watchdogTry('init-watchdog-250ms'),250).unref?.();
-  // Long-tail safety
-  setTimeout(()=> watchdogTry('init-watchdog-500ms'),500).unref?.();
+  // Single fallback watchdog if ready somehow suppressed.
+  if(HANDSHAKE_FALLBACKS_ENABLED){
+    setTimeout(()=>{
+      try {
+        if((server as any).__sawInitializeRequest && !(server as any).__readyNotified){
+          record('watchdog_emit_ready');
+          emitReadyGlobal(server,'watchdog');
+        }
+      } catch { /* ignore */ }
+    },250).unref?.();
+  }
 
   // Helper to build a minimal zod schema for a JSON-RPC request with given method
   const requestSchema = (methodName: string) => z.object({
@@ -189,7 +175,7 @@ export function createSdkServer(ServerClass: any) {
   server.setRequestHandler(requestSchema('initialize'), async (req: { params?: any }) => {
     try {
   (server as any).__sawInitializeRequest = true;
-  handshakeLog('initialize_received', { requestedProtocol: req?.params?.protocolVersion });
+  record('initialize_received', { requestedProtocol: req?.params?.protocolVersion });
   const requested = req?.params?.protocolVersion as string | undefined;
       const negotiated = negotiateProtocolVersion(requested);
       const versionDeclared = (server as any).__declaredVersion || (server as any).version || '0.0.0';
@@ -199,19 +185,10 @@ export function createSdkServer(ServerClass: any) {
         capabilities: { tools: { listChanged: true } },
         instructions: 'Use initialize -> tools/list -> tools/call { name, arguments }. Health: tools/call health/check. Metrics: tools/call metrics/snapshot. Ping: ping.'
       };
-  // Schedule an immediate (next tick) ready emission to guarantee deterministic presence.
-  // setImmediate runs after I/O events, so the initialize response frame will have flushed first.
-  if(!(server as any).__readyNotified){
-    handshakeLog('initialize_defer_ready', { strategy:'initialize-handler-setImmediate' });
-    setImmediate(()=>{
-      try {
-        if(!(server as any).__readyNotified){
-          (server as any).__initResponseSent = true; // treat as flushed for ordering purposes
-          emitReadyGlobal(server,'initialize-handler-immediate');
-        }
-      } catch { /* ignore */ }
-    });
-  }
+  // NOTE: Do NOT emit ready here. We rely exclusively on the transport send hook
+  // (see dispatcher wrapper further below) which marks __initResponseSent only
+  // after the initialize response frame is flushed. This guarantees ordering:
+  // initialize result always precedes any server/ready notification in stdout.
       return result;
     } catch {
       // On unexpected error fall back to minimal shape so tests still proceed
@@ -239,7 +216,7 @@ export function createSdkServer(ServerClass: any) {
     };
   }
   server.setRequestHandler(requestSchema('tools/list'), async () => {
-  handshakeLog('tools_list_request', { afterReady: !!(server as any).__readyNotified, sawInit: !!(server as any).__sawInitializeRequest });
+  record('tools_list_request', { afterReady: !!(server as any).__readyNotified, sawInit: !!(server as any).__sawInitializeRequest });
     const registry = getToolRegistry();
     return { tools: registry.map(r => ({ name: r.name, description: r.description, inputSchema: r.inputSchema as Record<string,unknown> })) };
   });
@@ -249,7 +226,7 @@ export function createSdkServer(ServerClass: any) {
     const p = req?.params ?? {};
     const name = p.name ?? '';
     const args = p.arguments || {};
-  if(name === 'health/check') handshakeLog('tools_call_health');
+  if(name === 'health/check') record('tools_call_health');
     try {
       if(process.env.MCP_LOG_VERBOSE==='1') process.stderr.write(`[rpc] call method=tools/call tool=${name} id=${(req as any)?.id ?? 'n/a'}\n`);
     } catch { /* ignore */ }
@@ -281,8 +258,8 @@ export function createSdkServer(ServerClass: any) {
   // Lightweight ping handler (simple reachability / latency measurement)
   server.setRequestHandler(requestSchema('ping'), async () => {
     // If ready somehow not emitted yet (rare race), emit now (idempotent) to satisfy handshake expectations.
-    if((server as any).__sawInitializeRequest && !(server as any).__readyNotified){
-      emitReadyGlobal(server,'ping-trigger');
+    if((server as any).__sawInitializeRequest && (server as any).__initResponseSent && !(server as any).__readyNotified){
+      emitReadyGlobal(server,'ping-trigger'); // remains idempotent and ordering-safe
     }
     return { timestamp: new Date().toISOString(), uptimeMs: Math.round(process.uptime() * 1000) };
   });
@@ -291,6 +268,12 @@ export function createSdkServer(ServerClass: any) {
 
   return server;
 }
+
+// Diagnostic accessor tool registered via dynamic side-effect (safe: tiny + read-only)
+try {
+  // Marker only; ensures file executed. Additional diagnostics could hook here later.
+  (global as any).__MCP_HANDSHAKE_TRACE_TOOL__ = true; // marker
+} catch { /* ignore */ }
 
 export async function startSdkServer() {
   // Lazy dynamic import once
@@ -370,7 +353,7 @@ export async function startSdkServer() {
             }
           } catch { /* ignore */ }
         }
-        process.stdin.on('data', (chunk: Buffer) => {
+  process.stdin.on('data', (chunk: Buffer) => {
           try {
             // Log first chunk (sanitized) once for corruption triage
             if(process.env.MCP_HEALTH_MIXED_DIAG === '1' && !(server as any).__diagFirstChunkLogged){
@@ -479,8 +462,10 @@ export async function startSdkServer() {
                         try { process.stderr.write(`[diag] ${Date.now()} sniff_init_forced_result_skip gating_off\n`); } catch { /* ignore */ }
                       }
                     }
-                    if((server as any).__initResponseSent && !(server as any).__readyNotified){
-                      emitReadyGlobal(server,'stdin-sniff-fallback');
+                    if(HANDSHAKE_FALLBACKS_ENABLED){
+                      if((server as any).__initResponseSent && !(server as any).__readyNotified){
+                        emitReadyGlobal(server,'stdin-sniff-fallback');
+                      }
                     }
                   } catch { /* ignore */ }
                 }, 60).unref?.();
@@ -615,9 +600,15 @@ export async function startSdkServer() {
             }
             const sendPromise = (this as any)._transport?.send({ jsonrpc:'2.0', id: request.id, result });
             if(request.method === 'initialize'){
-              // After initialize response flush, mark sent and emit ready (deferred to macrotask for ordering).
-              (sendPromise?.then?.(()=> { (server as any).__initResponseSent = true; emitReadyGlobal(server,'transport-send-hook'); }))
-                ?.catch(()=>{});
+              // After initialize response send promise resolves, mark sent then defer ready emission to a
+              // subsequent macrotask. Empirically the underlying transport send() can resolve before the
+              // initialize result frame is fully flushed to the stdout reader in tests, producing occasional
+              // ordering inversions (ready appearing before result). Scheduling with setTimeout(0) yields a
+              // strict happens-after relationship relative to prior synchronous writes inside the transport.
+              (sendPromise?.then?.(()=> {
+                (server as any).__initResponseSent = true;
+                setTimeout(()=> emitReadyGlobal(server,'transport-send-hook'), 0);
+              }))?.catch(()=>{});
             }
             return sendPromise;
           }, (error:any)=>{
@@ -778,20 +769,24 @@ export async function startSdkServer() {
       const ka = setInterval(()=>{/* keepalive */}, 10_000); ka.unref?.();
     } catch { /* ignore */ }
     // Safety fallback: if server/ready not emitted within 100ms of start (e.g., patch failed), emit once.
-  setTimeout(()=>{
-    try {
-      if((server as any).__sawInitializeRequest && !(server as any).__readyNotified){
-        handshakeLog('safety_timeout_emit_attempt', { label:'safety-timeout-100ms', sawInit:true, initRespSent: !!(server as any).__initResponseSent });
-        emitReadyGlobal(server,'safety-timeout-100ms');
-      }
-    } catch { /* ignore */ }
-  }, 100).unref?.();
+  if(HANDSHAKE_FALLBACKS_ENABLED){
+    setTimeout(()=>{
+      try {
+        // Only emit via safety-timeout if initialize response was already sent (ordering guarantee)
+        if((server as any).__sawInitializeRequest && (server as any).__initResponseSent && !(server as any).__readyNotified){
+          handshakeLog('safety_timeout_emit_attempt', { label:'safety-timeout-100ms', sawInit:true, initRespSent: true });
+          emitReadyGlobal(server,'safety-timeout-100ms');
+        }
+      } catch { /* ignore */ }
+    }, 100).unref?.();
+  }
   // Unconditional DIAG fallback (gated): if no initialize request OR response observed very early, force a synthetic
   // initialize/result frame (id=1) to unblock harness diagnostics. Restricted to diagnostic mode + explicit enable env.
-  setTimeout(()=>{
-    try {
-      const INIT_FALLBACK_ENABLED = process.env.MCP_INIT_FALLBACK_ALLOW === '1';
-      if(process.env.MCP_HEALTH_MIXED_DIAG==='1' && !(server as any).__initResponseSent){
+  if(HANDSHAKE_FALLBACKS_ENABLED){
+    setTimeout(()=>{
+      try {
+        const INIT_FALLBACK_ENABLED = process.env.MCP_INIT_FALLBACK_ALLOW === '1';
+        if(process.env.MCP_HEALTH_MIXED_DIAG==='1' && !(server as any).__initResponseSent){
         if(!INIT_FALLBACK_ENABLED){
           try { process.stderr.write(`[diag] ${Date.now()} init_unconditional_fallback_skip gating_off\n`); } catch { /* ignore */ }
           return; // diagnostics only, do not emit synthetic frame
@@ -816,8 +811,9 @@ export async function startSdkServer() {
           if(!(server as any).__readyNotified) emitReadyGlobal(server,'unconditional-init-fallback-direct');
         }
       }
-    } catch { /* ignore */ }
-  }, 150).unref?.();
+      } catch { /* ignore */ }
+    }, 150).unref?.();
+  }
     // Patch initialize result for instructions (SDK internal property _clientVersion signals completion soon after connect)
     const originalInit = (server as any)._oninitialize;
   if(originalInit && !(server as any).__initPatched){
@@ -835,8 +831,7 @@ export async function startSdkServer() {
           if(result && typeof result === 'object' && !('instructions' in result)){
             (result as any).instructions = 'Use initialize -> tools/list -> tools/call { name, arguments }. Health: tools/call health/check. Metrics: tools/call metrics/snapshot. Ping: ping.';
           }
-          // Ensure a single server/ready emission even if earlier createSdkServer patch did not execute
-          if(!(this as any).__readyNotified){ (server as any).__initResponseSent = true; emitReadyGlobal(server,'late-oninitialize-patch'); }
+          // Do NOT emit server/ready here; ordering handled strictly by transport send hook.
         } catch {/* ignore */}
         return result;
       };
@@ -868,10 +863,11 @@ export async function startSdkServer() {
           } catch { /* ignore */ }
           if(isInitResult && !(server as any).__readyNotified){
             (server as any).__sawInitializeRequest = true;
-            // Emit only after the initialize response has been flushed to preserve ordering.
+            // Defer ready emission one macrotask after send resolves to reduce chance of interleaving
+            // ahead of the initialize result line under high I/O contention (observed flake).
             sendPromise?.then?.(()=>{
               (server as any).__initResponseSent = true;
-              emitReadyGlobal(server,'transport-send-hook-dynamic');
+              setTimeout(()=> emitReadyGlobal(server,'transport-send-hook-dynamic'), 0);
             })?.catch?.(()=>{});
           }
           return sendPromise;
@@ -891,12 +887,14 @@ export async function startSdkServer() {
     const ka = setInterval(()=>{/* keepalive */}, 10_000); ka.unref?.();
   } catch { /* ignore */ }
   // Safety fallback timer (mirrors dynamic path) for missed ready emission
-  setTimeout(()=>{
-    try {
-      if((server as any).__sawInitializeRequest && !(server as any).__readyNotified){
-        handshakeLog('safety_timeout_emit_attempt', { label:'safety-timeout-100ms-secondary', sawInit:true, initRespSent: !!(server as any).__initResponseSent });
-        emitReadyGlobal(server,'safety-timeout-100ms-secondary');
-      }
-    } catch { /* ignore */ }
-  }, 100).unref?.();
+  if(HANDSHAKE_FALLBACKS_ENABLED){
+    setTimeout(()=>{
+      try {
+        if((server as any).__sawInitializeRequest && !(server as any).__readyNotified){
+          handshakeLog('safety_timeout_emit_attempt', { label:'safety-timeout-100ms-secondary', sawInit:true, initRespSent: !!(server as any).__initResponseSent });
+          emitReadyGlobal(server,'safety-timeout-100ms-secondary');
+        }
+      } catch { /* ignore */ }
+    }, 100).unref?.();
+  }
 }

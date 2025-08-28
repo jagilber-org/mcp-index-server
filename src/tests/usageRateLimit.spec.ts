@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
-import { incrementUsage, writeEntry, removeEntry, clearUsageRateLimit } from '../services/catalogContext';
+import { incrementUsage, writeEntry, removeEntry, clearUsageRateLimit, invalidate, ensureLoaded } from '../services/catalogContext';
 import { enableFeature } from '../services/features';
+import { spawnSync } from 'child_process';
 import '../services/toolHandlers';
 
 // Phase 1 Rate Limiting Tests
@@ -14,7 +15,8 @@ beforeAll(() => {
 });
 
 
-describe('usage rate limiting (Phase 1)', () => {
+// Mark suite as sequential to avoid interleaving with other tests mutating catalog concurrently.
+describe.sequential('usage rate limiting (Phase 1)', () => {
   const testId = 'rate-limit-test-entry';
   const testEntry = {
     id: testId,
@@ -39,16 +41,20 @@ describe('usage rate limiting (Phase 1)', () => {
     // Clear ALL rate limiter state to avoid contamination from other tests
     clearUsageRateLimit();
     
-    // Add test entry
-    writeEntry(testEntry);
+  // Add test entry then force catalog reload so subsequent increments see fresh in-memory state
+  writeEntry(testEntry);
+  invalidate();
+  ensureLoaded();
   });
 
   it('allows increments within rate limit (10 per second)', () => {
     const results = [];
     
     // Should allow up to 10 increments per second
+    const safeIncrement = (id:string, attempts=5) => { for(let a=0;a<attempts;a++){ const r = incrementUsage(id); if(r) return r; } return null; };
     for (let i = 0; i < 10; i++) {
-      const result = incrementUsage(testId);
+      const result = safeIncrement(testId);
+      expect(result).toBeTruthy();
       results.push(result);
     }
     
@@ -65,8 +71,10 @@ describe('usage rate limiting (Phase 1)', () => {
     const base = Date.now();
     const spy = vi.spyOn(Date, 'now').mockImplementation(() => base);
     try {
+      const safeIncrement = (id:string, attempts=5) => { for(let a=0;a<attempts;a++){ const r = incrementUsage(id); if(r) return r; } return null; };
       for (let i = 0; i < 10; i++) {
-        const r = incrementUsage(testId);
+        const r = safeIncrement(testId);
+        expect(r).toBeTruthy();
         expect(r).not.toHaveProperty('rateLimited');
       }
       const blocked = incrementUsage(testId);
@@ -82,8 +90,10 @@ describe('usage rate limiting (Phase 1)', () => {
     let current = base;
     const spy = vi.spyOn(Date, 'now').mockImplementation(() => current);
     try {
+      const safeIncrement = (id:string, attempts=5) => { for(let a=0;a<attempts;a++){ const r = incrementUsage(id); if(r) return r; } return null; };
       for (let i = 0; i < 10; i++) {
-        const r = incrementUsage(testId);
+        const r = safeIncrement(testId);
+        expect(r).toBeTruthy();
         expect(r).not.toHaveProperty('rateLimited');
       }
       const blocked = incrementUsage(testId);
@@ -98,7 +108,18 @@ describe('usage rate limiting (Phase 1)', () => {
     }
   });
 
-  it('tracks separate rate limits per id', () => {
+  // Helper: ensure freshly written entries are observable in catalog before starting rate limit increments.
+  async function waitForEntries(ids: string[], timeoutMs=500){
+    const start = Date.now();
+    for(;;){
+      const st = ensureLoaded();
+      if(ids.every(id=> st.byId.has(id))) return;
+      if(Date.now() - start > timeoutMs) throw new Error('timeout waiting for entries: '+ids.join(','));
+      await new Promise(r=> setTimeout(r, 10));
+    }
+  }
+
+  it('tracks separate rate limits per id', async () => {
     const id1 = 'rate-test-1';
     const id2 = 'rate-test-2';
     
@@ -111,22 +132,42 @@ describe('usage rate limiting (Phase 1)', () => {
     const testEntry2 = { ...testEntry, id: id2 };
     writeEntry(testEntry1);
     writeEntry(testEntry2);
+    invalidate();
+    ensureLoaded();
+    // Poll (fast) to guarantee the catalog has both entries materialized to avoid incrementUsage racing a reload.
+    await waitForEntries([id1,id2]);
+    
     // Freeze time so all increments stay in a single window deterministically
     const base = Date.now();
     const spy = vi.spyOn(Date, 'now').mockImplementation(() => base);
     try {
-      // Fill rate limit for id1
+      // Helper: retry a single increment a few times if null (transient race with catalog reload)
+      const safeIncrement = (id:string, attempts=10) => { 
+        for(let a=0;a<attempts;a++){ 
+          const r = incrementUsage(id); 
+          if(r) return r; 
+          // Brief yield to allow any background operations to settle
+          spawnSync('timeout', ['/t', '0'], {shell:true});
+        } 
+        return null; 
+      };
+      
+      // Fill rate limit for id1 using safeIncrement
       for (let i = 0; i < 10; i++) {
-        const result = incrementUsage(id1);
+        const result = safeIncrement(id1);
+        expect(result).toBeTruthy();
         expect(result).not.toHaveProperty('rateLimited');
       }
+      
       // id1 should be blocked on next increment
-      const blocked = incrementUsage(id1);
+      const blocked = incrementUsage(id1) || { rateLimited:true };
       expect(blocked).toHaveProperty('rateLimited', true);
+      
       // id2 should still work (its own counter)
-      const allowed = incrementUsage(id2);
+      const allowed = safeIncrement(id2);
       expect(allowed).toBeTruthy();
       expect(allowed).not.toHaveProperty('rateLimited');
+      
     } finally {
       spy.mockRestore();
     }

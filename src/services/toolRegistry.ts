@@ -132,6 +132,7 @@ function describeTool(name: string): string {
   case 'diagnostics/block': return 'Intentionally CPU blocks the event loop for N ms (diagnostic stress).';
   case 'diagnostics/microtaskFlood': return 'Flood the microtask queue with many Promise resolutions to probe event loop starvation.';
   case 'diagnostics/memoryPressure': return 'Allocate & release transient memory to induce GC / memory pressure.';
+  case 'diagnostics/handshake': return 'Return recent handshake events (ordering/ready/list_changed trace).';
     default: return 'Tool description pending.';
   }
 }

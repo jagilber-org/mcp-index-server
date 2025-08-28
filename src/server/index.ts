@@ -168,6 +168,43 @@ async function startDashboard(cfg: CliConfig): Promise<{ url: string } | null> {
 }
 
 export async function main(){
+  // Ultra-minimal short-circuit mode: bypass full SDK stack to prove client handshake path.
+  // Enable with MCP_SHORTCIRCUIT=1. Responds ONLY to initialize (and emits server/ready) plus ping.
+  if(process.env.MCP_SHORTCIRCUIT === '1'){
+    const { createInterface } = await import('readline');
+    const fs = await import('fs');
+    const path = await import('path');
+    const version = (()=>{ try { const p = path.join(process.cwd(),'package.json'); return JSON.parse(fs.readFileSync(p,'utf8')).version || '0.0.0'; } catch { return '0.0.0'; } })();
+    try { process.stderr.write('[startup] shortcircuit mode enabled\n'); } catch { /* ignore */ }
+    const rl = createInterface({ input: process.stdin });
+    rl.on('line', line => {
+      let msg: unknown; const raw = line.trim(); if(!raw) return;
+      try { msg = JSON.parse(raw); } catch { return; }
+      if(typeof msg !== 'object' || msg === null) return;
+      interface RpcMsg { jsonrpc?: string; id?: number|string|null; method?: string; params?: Record<string,unknown>; }
+      const m = msg as RpcMsg;
+      if(m.jsonrpc !== '2.0') return;
+      if(m.method === 'initialize'){
+        const proto = (m.params && typeof m.params === 'object' && 'protocolVersion' in m.params) ? (m.params as Record<string,unknown>).protocolVersion as string : '2025-06-18';
+        const result = { jsonrpc:'2.0', id: (m.id ?? 1), result: { protocolVersion: proto, serverInfo:{ name:'mcp-index-server', version }, capabilities:{ tools:{ listChanged:true }}, instructions:'ShortCircuit mode. Minimal capabilities.' } };
+        process.stdout.write(JSON.stringify(result)+'\n');
+        // Emit ready AFTER initialize result
+        process.stdout.write(JSON.stringify({ jsonrpc:'2.0', method:'server/ready', params:{ version, reason:'shortcircuit' } })+'\n');
+        process.stdout.write(JSON.stringify({ jsonrpc:'2.0', method:'notifications/tools/list_changed', params:{} })+'\n');
+        return;
+      }
+      if(m.method === 'ping'){
+        process.stdout.write(JSON.stringify({ jsonrpc:'2.0', id: (m.id ?? null), result:{ timestamp: new Date().toISOString() } })+'\n');
+        return;
+      }
+      if(Object.prototype.hasOwnProperty.call(m,'id')){
+        process.stdout.write(JSON.stringify({ jsonrpc:'2.0', id: m.id, error:{ code:-32601, message:'Method not found', data:{ method: m.method } } })+'\n');
+      }
+    });
+    // Keep process alive
+    process.stdin.resume();
+    return; // skip normal path
+  }
   const cfg = parseArgs(process.argv);
   const dash = await startDashboard(cfg);
   if(dash){

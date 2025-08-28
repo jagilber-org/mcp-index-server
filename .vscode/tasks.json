@@ -2,20 +2,6 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Build Verify",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"build:verify"
-			],
-			"problemMatcher": [
-				"$tsc",
-				"$eslint-stylish"
-			],
-			"group": "build"
-		},
-		{
 			"label": "build-verify",
 			"type": "shell",
 			"command": "npm",
@@ -23,22 +9,6 @@
 				"run",
 				"build:verify"
 			],
-			"isBackground": false,
-			"problemMatcher": [
-				"$tsc",
-				"$eslint-stylish"
-			],
-			"group": "build"
-		},
-		{
-			"label": "build-verify-2",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"build:verify"
-			],
-			"isBackground": false,
 			"problemMatcher": [
 				"$tsc",
 				"$eslint-stylish"
@@ -53,62 +23,10 @@
 				"run",
 				"test:contracts"
 			],
-			"isBackground": false,
 			"problemMatcher": [
 				"$tsc"
 			],
 			"group": "build"
-		},
-		{
-			"label": "contracts-only-2",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"test:contracts"
-			],
-			"isBackground": false,
-			"problemMatcher": [
-				"$tsc"
-			],
-			"group": "build"
-		},
-		{
-			"label": "verify-after-meta-split",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"test:contracts"
-			],
-			"isBackground": false,
-			"problemMatcher": [
-				"$tsc"
-			],
-			"group": "build"
-		},
-		{
-			"label": "contracts-after-compat",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"test:contracts"
-			],
-			"isBackground": false,
-			"problemMatcher": [
-				"$tsc"
-			],
-			"group": "build"
-		},
-		{
-			"label": "npm-build",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"build"
-			]
 		},
 		{
 			"label": "npm-build",
@@ -136,56 +54,13 @@
 			]
 		},
 		{
-			"label": "npm-build",
+			"label": "npm-test",
 			"type": "shell",
 			"command": "npm",
 			"args": [
 				"run",
-				"build"
+				"test"
 			]
-		},
-		{
-			"label": "npm-build",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"build"
-			]
-		},
-		{
-			"label": "npm-build",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"build"
-			]
-		},
-		{
-			"label": "git-commit-all",
-			"type": "shell",
-			"command": "git add .; git commit -m \"feat: add integrity, metrics, usage, prompt review handlers, governance update & enrichment tools, and expanded test suite (drift, restart, concurrency, governance hash, persistence)\"",
-			"group": "build"
-		},
-		{
-			"label": "git-commit-all",
-			"type": "shell",
-			"command": "git add .; git commit -m 'feat: add integrity, metrics, usage, prompt review handlers, governance update & enrichment tools, and expanded test suite (drift, restart, concurrency, governance hash, persistence)'",
-			"group": "build"
-		},
-		{
-			"label": "git-commit-all",
-			"type": "shell",
-			"command": "git add .; git commit -m 'feat: add integrity metrics usage prompt review handlers governance update enrichment tools expanded test suite'",
-			"group": "build"
-		},
-		{
-			"label": "git-commit-all-simple",
-			"type": "shell",
-			"command": "git add .; git commit -m 'chore(release): 0.9.1 all tests green no skips + skip guard'; git tag v0.9.1 -f; git push --follow-tags || git push --tags --force-with-lease",
-			"group": "build",
-			"problemMatcher": []
 		},
 		{
 			"label": "retag-v1.0.2",
@@ -195,14 +70,7 @@
 				"-NoProfile",
 				"-Command",
 				"git tag -d v0.9.1 2>$null; git push origin :refs/tags/v0.9.1 2>$null; git tag v1.0.2 -f; git push --tags --force-with-lease"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "git-commit-all-noquote",
-			"type": "shell",
-			"command": "git add .; git commit -m feat-add-handlers-tests",
-			"group": "build"
+			]
 		},
 		{
 			"label": "git-status",
@@ -214,15 +82,51 @@
 			]
 		},
 		{
-			"label": "release-commit-tag-push",
+			"label": "cleanup-artifacts",
 			"type": "shell",
 			"command": "pwsh",
 			"args": [
 				"-NoProfile",
 				"-Command",
-				"git add .; git commit -m 'chore(release): 0.9.1 all tests green no skips + skip guard'; git tag v0.9.1 -f; git push --follow-tags || git push --tags --force-with-lease"
-			],
-			"problemMatcher": []
+				"Remove-Item -Force -ErrorAction SilentlyContinue .build.lock; Get-ChildItem tmp -Directory -Filter 'minimal-author-*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; Get-ChildItem instructions -Filter 'concurrent-*.json' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue; Get-ChildItem instructions -Filter 'fuzz_*.json' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue; Write-Host 'CLEANUP_DONE'"
+			]
+		},
+		{
+			"label": "cleanup-pre-release",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Remove-Item -Force -ErrorAction SilentlyContinue .build.lock; Get-ChildItem tmp -Directory -Filter 'minimal-author-*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'CLEANUP_STAGE_OK'"
+			]
+		},
+		{
+			"label": "force-build-verify",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-Command",
+				"$env:MCP_FORCE_REBUILD='1'; npm run build:verify"
+			]
+		},
+		{
+			"label": "rebuild-after-init-diag",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-Command",
+				"$env:MCP_FORCE_REBUILD='1'; npm run build:verify; npm run test:diag"
+			]
+		},
+		{
+			"label": "diag-handshake-tests",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-Command",
+				"$env:MCP_FORCE_REBUILD='1'; npm run build:verify; $env:MCP_HEALTH_MIXED_DIAG='1'; npx vitest run src/tests/handshakeFlakeRepro.spec.ts src/tests/healthMixedReproLoop.spec.ts --reporter=dot"
+			]
 		},
 		{
 			"label": "deploy-local-prod",
@@ -260,200 +164,47 @@
 			]
 		},
 		{
-			"label": "npm-test",
+			"label": "purge-instructions-preview",
 			"type": "shell",
-			"command": "npm",
+			"command": "pwsh",
 			"args": [
-				"run",
-				"test"
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"scripts/purge-instructions.ps1"
 			]
 		},
 		{
-			"label": "release-commit-1.0.1",
+			"label": "purge-instructions",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"scripts/purge-instructions.ps1",
+				"-Force"
+			]
+		},
+		{
+			"label": "cleanup-test-artifacts",
 			"type": "shell",
 			"command": "pwsh",
 			"args": [
 				"-NoProfile",
 				"-Command",
-				"git add .; git commit -m 'chore(release): 1.0.1 semantic error hardening & stress test'; git tag v1.0.1 -f; git push --follow-tags || git push --tags --force-with-lease"
+				"Get-ChildItem instructions -Filter '*_17*.json' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue; Get-ChildItem instructions -Filter 'gating_test_entry_*.json' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue; Get-ChildItem instructions -Filter 'defaults_fill_*.json' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue; Get-ChildItem instructions -Filter 'restart_persist_*.json' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue; Get-ChildItem instructions -Filter 'import_gov_*.json' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue; Write-Host 'TEST_ARTIFACTS_CLEANED'"
 			]
 		},
 		{
-			"label": "cleanup-artifacts",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-NoProfile",
-				"-Command",
-				"Remove-Item -Force -ErrorAction SilentlyContinue .build.lock; Get-ChildItem tmp -Directory -Filter 'minimal-author-*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; Get-ChildItem instructions -Filter 'concurrent-*.json' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue; Get-ChildItem instructions -Filter 'fuzz_*.json' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue; Write-Host 'CLEANUP_DONE'"
-			]
-		},
-		{
-			"label": "cleanup-pre-release",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-NoProfile",
-				"-Command",
-				"Remove-Item -Force -ErrorAction SilentlyContinue .build.lock; Get-ChildItem tmp -Directory -Filter 'minimal-author-*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'CLEANUP_STAGE_OK'"
-			]
-		},
-		{
-			"label": "build-override-lock",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-NoProfile",
-				"-Command",
-				"$env:ALLOW_STALE_BUILD_LOCK='1'; npm run build:verify"
-			]
-		},
-		{
-			"label": "git-commit-release-1.0.1",
+			"label": "git-commit-changes",
 			"type": "shell",
 			"command": "git",
 			"args": [
 				"add",
 				"."
-			]
-		},
-		{
-			"label": "git-commit-release-1.0.1-msg",
-			"type": "shell",
-			"command": "git",
-			"args": [
-				"commit",
-				"-m",
-				"chore(release): 1.0.1 semantic error hardening, stress tests, build lock improvements"
-			]
-		},
-		{
-			"label": "git-tag-v1.0.1",
-			"type": "shell",
-			"command": "git",
-			"args": [
-				"tag",
-				"-a",
-				"v1.0.1",
-				"-m",
-				"v1.0.1 release"
-			]
-		},
-		{
-			"label": "deploy-prod-now",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-NoLogo",
-				"-NoProfile",
-				"-ExecutionPolicy",
-				"Bypass",
-				"-File",
-				"scripts/deploy-local.ps1",
-				"-Rebuild",
-				"-Overwrite",
-				"-BundleDeps",
-				"-TargetDir",
-				"C:\\mcp\\mcp-index-server-prod"
-			]
-		},
-		{
-			"label": "test-diag",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"test:diag"
-			]
-		},
-		{
-			"label": "test-diag-2",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"test:diag"
-			]
-		},
-		{
-			"label": "post-patch-build-verify",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"build:verify"
-			]
-		},
-		{
-			"label": "post-fix-build-verify",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"build:verify"
-			]
-		},
-		{
-			"label": "post-sniff-fallback-build-verify",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"build:verify"
-			]
-		},
-		{
-			"label": "run-diag-after-env",
-			"type": "shell",
-			"command": "npm",
-			"args": [
-				"run",
-				"test:diag"
-			]
-		},
-		{
-			"label": "force-build-verify",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-Command",
-				"$env:MCP_FORCE_REBUILD='1'; npm run build:verify"
-			]
-		},
-		{
-			"label": "rebuild-after-init-diag",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-Command",
-				"$env:MCP_FORCE_REBUILD='1'; npm run build:verify; npm run test:diag"
-			]
-		},
-		{
-			"label": "rebuild-with-malformed-logging",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-Command",
-				"$env:MCP_FORCE_REBUILD='1'; npm run build:verify; cross-env MCP_HEALTH_MIXED_DIAG=1 vitest run src/tests/handshakeFlakeRepro.spec.ts src/tests/healthMixedReproLoop.spec.ts --reporter=dot"
-			]
-		},
-		{
-			"label": "diag-handshake-tests",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-Command",
-				"$env:MCP_FORCE_REBUILD='1'; npm run build:verify; $env:MCP_HEALTH_MIXED_DIAG='1'; npx vitest run src/tests/handshakeFlakeRepro.spec.ts src/tests/healthMixedReproLoop.spec.ts --reporter=dot"
-			]
-		},
-		{
-			"label": "diag-handshake-after-patch",
-			"type": "shell",
-			"command": "pwsh",
-			"args": [
-				"-Command",
-				"$env:MCP_FORCE_REBUILD='1'; npm run build:verify; $env:MCP_HEALTH_MIXED_DIAG='1'; npx vitest run src/tests/handshakeFlakeRepro.spec.ts src/tests/healthMixedReproLoop.spec.ts --reporter=dot"
 			]
 		}
 	]

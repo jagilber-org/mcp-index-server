@@ -1,37 +1,22 @@
 {
-  "ai_code_nav_baseline": {
-    "usageCount": 19,
-    "firstSeenTs": "2025-08-27T23:04:57.418Z",
-    "lastUsedAt": "2025-08-28T03:35:26.708Z"
+  "alpha": {
+    "usageCount": 3,
+    "firstSeenTs": "2025-08-28T14:44:11.788Z",
+    "lastUsedAt": "2025-08-28T14:44:11.819Z"
   },
-  "ai_debug_triage_prompt": {
-    "usageCount": 22,
-    "firstSeenTs": "2025-08-27T22:33:06.129Z",
-    "lastUsedAt": "2025-08-28T03:35:26.723Z"
-  },
-  "ai_diff_minimality_rule": {
-    "usageCount": 44,
-    "firstSeenTs": "2025-08-27T22:33:06.401Z",
-    "lastUsedAt": "2025-08-28T03:35:26.738Z"
-  },
-  "gating_test_entry_enabled_1756352125180_ojh44o": {
+  "batch-seed": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-28T03:35:25.784Z",
-    "lastUsedAt": "2025-08-28T03:35:25.784Z"
+    "firstSeenTs": "2025-08-28T14:44:11.825Z",
+    "lastUsedAt": "2025-08-28T14:44:11.825Z"
   },
-  "rate-limit-test-entry": {
+  "beta": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-27T22:32:59.959Z",
-    "lastUsedAt": "2025-08-28T01:41:05.210Z"
+    "firstSeenTs": "2025-08-28T14:44:11.838Z",
+    "lastUsedAt": "2025-08-28T14:44:11.838Z"
   },
-  "rate-test-1": {
-    "usageCount": 4,
-    "firstSeenTs": "2025-08-28T03:35:29.343Z",
-    "lastUsedAt": "2025-08-28T03:35:30.176Z"
-  },
-  "rate-test-2": {
+  "gating_test_entry_enabled_1756392251141_oizfnp": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-28T03:35:30.192Z",
-    "lastUsedAt": "2025-08-28T03:35:30.192Z"
+    "firstSeenTs": "2025-08-28T14:44:11.201Z",
+    "lastUsedAt": "2025-08-28T14:44:11.201Z"
   }
 }

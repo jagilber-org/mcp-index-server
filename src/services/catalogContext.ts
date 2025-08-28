@@ -292,11 +292,26 @@ export function incrementUsage(id:string){
   let e = st.byId.get(id);
   if(!e){
     // Possible race: caller invalidated then immediately incremented before file write completed on disk.
-    // Perform a single forced reload to self-heal (cheap because metadata hash will differ or file now present).
+    // Perform a forced reload; if still absent but file exists on disk, late-materialize directly to avoid returning null.
     invalidate();
     st = ensureLoaded();
     e = st.byId.get(id);
-    if(!e) return null; // genuinely absent
+    if(!e){
+      const filePath = path.join(getInstructionsDir(), `${id}.json`);
+      if(fs.existsSync(filePath)){
+        try {
+          const raw = JSON.parse(fs.readFileSync(filePath,'utf8')) as InstructionEntry;
+          // Minimal normalization: ensure required identifier fields exist.
+          if(raw && raw.id === id){
+            st.list.push(raw);
+            st.byId.set(id, raw);
+            e = raw;
+            try { incrementCounter('usage:lateMaterialize'); } catch { /* ignore */ }
+          }
+        } catch { /* ignore parse */ }
+      }
+    }
+    if(!e) return null; // genuinely absent after recovery attempts
   }
   // Defensive: ensure we never operate on an entry that lost its firstSeenTs unexpectedly.
   restoreFirstSeenInvariant(e);

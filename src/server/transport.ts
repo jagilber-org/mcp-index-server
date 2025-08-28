@@ -120,20 +120,28 @@ export function startTransport(opts: TransportOptions = {}){
     log('error', 'unhandledRejection', { reason: msg });
   });
 
-  // Core protocol lifecycle handlers (initialized flag helps detect improper sequencing)
+  // Handshake state & helpers (deterministic: initialize result flushes, then server/ready)
   let initialized = false;
+  let readyEmitted = false;
+  function emitReady(reason: string){
+    if(readyEmitted) return;
+    readyEmitted = true;
+    try {
+      (opts.output || process.stdout).write(JSON.stringify({ jsonrpc:'2.0', method:'server/ready', params:{ version: VERSION, reason } })+'\n');
+      (opts.output || process.stdout).write(JSON.stringify({ jsonrpc:'2.0', method:'notifications/tools/list_changed', params:{} })+'\n');
+    } catch { /* ignore */ }
+  }
+  // Replace initialize handler with direct interception below to control write callback ordering.
   registerHandler('initialize', (params: unknown) => {
+    // This body will be bypassed by explicit fast-path in line reader (kept for compatibility if called indirectly)
     const p = params as { protocolVersion?: string } | undefined;
-    initialized = true;
     return {
       protocolVersion: p?.protocolVersion || '2025-06-18',
       serverInfo: { name: 'mcp-index-server', version: VERSION },
       capabilities: { roots: { listChanged: true }, tools: { listChanged: true } }
     };
   });
-  // Accept notification some clients send post-initialize; respond benignly
-  registerHandler('notifications/initialized', () => ({ acknowledged: true }));
-  // Some clients send a follow-up notification after successful initialize; treat as no-op ack
+  // Accept notification some clients send post-initialize; respond benignly (single registration)
   registerHandler('notifications/initialized', () => ({ acknowledged: true }));
   registerHandler('shutdown', () => ({ shuttingDown: true }));
   registerHandler('exit', () => { setTimeout(() => process.exit(0), 0); return { exiting: true }; });
@@ -150,10 +158,8 @@ export function startTransport(opts: TransportOptions = {}){
     }
     (opts.output || process.stdout).write(JSON.stringify(obj) + '\n');
   };
-  // Emit ready notification (MCP-style event semantics placeholder)
-  (opts.output || process.stdout).write(JSON.stringify({ jsonrpc: '2.0', method: 'server/ready', params: { version: VERSION } }) + '\n');
-  // Proactively emit tools list changed so clients query tools immediately
-  (opts.output || process.stdout).write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/tools/list_changed', params: {} }) + '\n');
+  // NOTE: Unlike earlier versions we DO NOT emit server/ready until after initialize response.
+  // This matches stricter clients (and reference PowerShell server) that expect handshake ordering.
   rl.on('line', (line: string) => {
     const trimmed = line.trim();
     if(!trimmed) return;
@@ -171,6 +177,50 @@ export function startTransport(opts: TransportOptions = {}){
     }
     if(req.jsonrpc !== '2.0' || !req.method){
       respondFn(makeError(req.id ?? null, -32600, 'Invalid Request'));
+      return;
+    }
+    // Fast-path initialize for deterministic ordering: respond immediately with write callback then schedule ready.
+    if(req.method === 'initialize'){
+      const p = (req.params as { protocolVersion?: string } | undefined);
+      if(initialized){
+        respondFn(makeError(req.id ?? null, -32600, 'Already initialized'));
+        return;
+      }
+      initialized = true;
+      // Reuse registered initialize handler so future shared logic (capability changes, root listing, etc.) stays centralized.
+      const initHandler = handlers['initialize'];
+      const start = Date.now();
+      let resultPayload: unknown;
+      try {
+        resultPayload = initHandler ? initHandler(req.params) : {
+          protocolVersion: p?.protocolVersion || '2025-06-18',
+          serverInfo: { name: 'mcp-index-server', version: VERSION },
+          capabilities: { roots: { listChanged: true }, tools: { listChanged: true } }
+        };
+      } catch(e){
+        respondFn(makeError(req.id ?? null, -32603, 'Initialize handler failure', { message: (e as Error)?.message }));
+        return;
+      }
+      // Support promise return from handler
+      Promise.resolve(resultPayload).then(resolved => {
+        const dur = Date.now() - start;
+        const rec = metrics['initialize'] || (metrics['initialize'] = { count:0,totalMs:0,maxMs:0 });
+        rec.count++; rec.totalMs += dur; if(dur > rec.maxMs) rec.maxMs = dur;
+        const initResult = { jsonrpc:'2.0', id: req.id ?? 1, result: resolved };
+        try {
+          if(protocolLog){
+            log('debug','respond_success', { id: req.id ?? 1, method: 'initialize' });
+          }
+          (opts.output || process.stdout).write(JSON.stringify(initResult)+'\n', () => {
+            // Primary ready emission via macrotask after write flush
+            setTimeout(() => emitReady('post-initialize'), 0);
+            // Microtask fallback (parity with minimal server) for extreme scheduler edge cases
+            queueMicrotask(() => { if(!readyEmitted) emitReady('post-initialize-microtask'); });
+          });
+        } catch {
+          respondFn(makeError(req.id ?? null, -32603, 'Failed to write initialize result'));
+        }
+      });
       return;
     }
     const handler = handlers[req.method];
@@ -193,7 +243,7 @@ export function startTransport(opts: TransportOptions = {}){
     Promise.resolve()
       .then(() => handler(req.params))
       .then(result => {
-        if(!initialized && req.method !== 'initialize'){
+  if(!initialized){
           log('debug', 'call_before_initialize', { method: req.method });
         }
         const dur = Date.now() - start;

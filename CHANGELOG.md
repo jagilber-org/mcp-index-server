@@ -87,7 +87,7 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 - Groom tool now supports `purgeLegacyScopes` mode flag removing legacy scope:* category tokens and reports `purgedScopes` metric
 
-### Notes
+### Notes (1.0.3)
 
 - Backward compatibility: existing category-based scope prefixes still recognized; groom tool can later remove them
 
@@ -198,6 +198,26 @@ No action required for clients already on 0.9.0. Optional: pull to benefit from 
 ### Added / Changed
 
 - Simplified handshake: deterministic ordering `initialize` response -> single `server/ready` -> optional `tools/list_changed` (idempotent ready emitter with trace logging via `MCP_HANDSHAKE_TRACE=1`).
+
+## [1.0.3] - 2025-08-28
+
+### Fixed (handshake determinism & flake elimination)
+
+- Resolved intermittent minimal handshake test flake where `initialize` result line was occasionally not captured before `server/ready` notification. Root cause: race between stdout write callback scheduling and line buffering in tight spawn harness.
+- Emit minimal server initialize response synchronously via `fs.writeSync(1, ...)` ensuring flush ordering; schedule `server/ready` via `setImmediate` for strict sequencing.
+- Hardened `minimalHandshake.spec.ts` with diagnostic dump and stricter pattern.
+
+### Added (minimal reference server)
+
+- Introduced `src/minimal/` lightweight reference implementation exercising only `initialize`, `server/ready`, `tools/list_changed`, `ping/health` pathways for rapid protocol regression detection.
+
+### Deployment
+
+- Deployment script now succeeds with added minimal server artifacts; production bundle verified post-change. Addressed earlier invalid script key by using dash form `start-minimal` (avoid colon which is invalid in npm script names on some environments).
+
+### Notes
+
+- All core handshake, latency, governance, and dispatcher suites pass consistently post-fix (multiple consecutive full runs, zero handshake ordering failures after synchronous emission patch).
 - Added structured handshake trace events (`initialize_received`, `ready_emitted`, watchdog diagnostics) for observability.
 - Hardened tool list change ordering: prevents premature `tools/list_changed` before `server/ready`.
 - Updated tests to exclusively exercise `tools/call` path (`transport.spec.ts`, `responseEnvelope.spec.ts`, latency & coverage suites).

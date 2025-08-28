@@ -29,6 +29,15 @@ Thumbs.db
 instructions/concurrent-*.json
 instructions/fuzz_*.json
 
+# Test-generated instruction entries (timestamp-based and prefixed test files)
+instructions/*_17*.json
+instructions/gating_test_entry_*.json
+instructions/defaults_fill_*.json
+instructions/restart_persist_*.json
+instructions/import_gov_*.json
+instructions/contract_update_*.json
+instructions/enrich_placeholder_*.json
+
 # Build lock (transient)
 .build.lock
 

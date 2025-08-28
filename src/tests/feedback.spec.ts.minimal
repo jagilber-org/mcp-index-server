@@ -1,0 +1,2 @@
+// Moved to feedbackCore.spec.ts and feedbackSimple.spec.ts
+export {};

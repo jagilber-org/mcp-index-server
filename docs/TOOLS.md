@@ -1309,7 +1309,217 @@ This section provides normative guidance for MCP clients integrating with the In
 - Display summarized counts in UI; link to detailed issues panel.
 
 ---
-Clients adopting these practices achieve deterministic sync, minimized bandwidth, and robust governance drift detection while avoiding accidental mutation in read-only contexts.
 
-All experimental contracts may evolve; pin a version and validate with contract tests (npm run test:contracts) before upgrading.
+## 📢 **Feedback/Emit System**
+
+The server provides a comprehensive feedback system enabling clients to submit structured feedback, status reports, security issues, and feature requests to server administrators or monitoring systems.
+
+### Available Feedback Tools
+
+#### `feedback/submit`
+
+Submit structured feedback entries with rich metadata and context.
+
+**Input Schema:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["issue", "bug-report", "feature-request", "security", "documentation", "performance", "usability", "other"]
+    },
+    "severity": {
+      "type": "string", 
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 5000
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "clientInfo": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "version": {"type": "string"}
+          }
+        },
+        "serverVersion": {"type": "string"},
+        "environment": {"type": "object"},
+        "sessionId": {"type": "string"},
+        "toolName": {"type": "string"},
+        "requestId": {"type": "string"}
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {"type": "string"},
+      "maxItems": 10
+    }
+  },
+  "required": ["type", "severity", "title", "description"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "feedbackId": "string",
+  "status": "submitted",
+  "timestamp": "ISO8601 timestamp"
+}
+```
+
+#### `feedback/list`
+
+Retrieve feedback entries with filtering and pagination support.
+
+**Input Schema:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "type": {"type": "string"},
+    "severity": {"type": "string"},
+    "status": {"type": "string"},
+    "since": {"type": "string", "format": "date-time"},
+    "until": {"type": "string", "format": "date-time"},
+    "tags": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "limit": {"type": "number", "minimum": 1, "maximum": 200, "default": 50},
+    "offset": {"type": "number", "minimum": 0, "default": 0}
+  }
+}
+```
+
+#### `feedback/get`
+
+Retrieve a specific feedback entry by ID.
+
+**Input:** `{"id": "string"}`
+
+#### `feedback/update`
+
+Update feedback entry status (admin function).
+
+**Input Schema:**
+
+```json
+{
+  "type": "object", 
+  "properties": {
+    "id": {"type": "string"},
+    "status": {
+      "type": "string",
+      "enum": ["new", "acknowledged", "in-progress", "resolved", "closed"]
+    },
+    "adminNotes": {"type": "string", "maxLength": 1000}
+  },
+  "required": ["id", "status"]
+}
+```
+
+#### `feedback/stats`
+
+Get feedback statistics and summaries.
+
+**Input:** `{"since": "optional ISO8601 date"}`
+
+**Response:**
+
+```json
+{
+  "stats": {
+    "total": "number",
+    "byType": {"issue": 5, "security": 2, "...": "..."},
+    "bySeverity": {"critical": 1, "high": 3, "...": "..."},
+    "byStatus": {"new": 8, "resolved": 2, "...": "..."}
+  },
+  "recentActivity": "array of recent entries"
+}
+```
+
+#### `feedback/health`
+
+Get feedback system health and operational status.
+
+**Response:**
+
+```json
+{
+  "status": "operational",
+  "storageInfo": {
+    "totalEntries": "number",
+    "lastUpdated": "ISO8601 timestamp",
+    "diskUsage": "string"
+  },
+  "config": {
+    "maxEntries": "number",
+    "feedbackDir": "string"
+  }
+}
+```
+
+### Usage Patterns
+
+**Basic Issue Submission:**
+
+```javascript
+// Submit a bug report
+await client.callTool("feedback/submit", {
+  type: "bug-report",
+  severity: "medium", 
+  title: "Search function not working",
+  description: "The search tool returns empty results even with valid queries",
+  context: {
+    clientInfo: {name: "VS Code", version: "1.85.0"},
+    toolName: "instructions/search"
+  },
+  tags: ["search", "ui"]
+});
+```
+
+**Security Issue Reporting:**
+
+```javascript
+// Submit critical security issue (automatically logged)
+await client.callTool("feedback/submit", {
+  type: "security",
+  severity: "critical",
+  title: "Potential data exposure",
+  description: "Sensitive data may be logged in debug mode",
+  context: {sessionId: "sess_123"},
+  tags: ["security", "logging", "privacy"]
+});
+```
+
+### Enterprise Features
+
+- **Audit Trail**: All submissions logged with timestamps and context
+- **Security Alerting**: Critical/security items trigger special logging
+- **Persistence**: Feedback stored in `feedback/feedback-entries.json`
+- **Data Rotation**: Automatic cleanup when exceeding configurable limits
+- **Status Workflow**: Full lifecycle from submission to resolution
+- **Rich Filtering**: Query by type, severity, status, date ranges, tags
+
+### Configuration
+
+Set environment variables to customize:
+
+- `FEEDBACK_DIR`: Storage directory (default: `./feedback`)
+- `FEEDBACK_MAX_ENTRIES`: Maximum entries before rotation (default: 1000)
 

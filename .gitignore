@@ -76,6 +76,10 @@ instructions/.*.json.*
 # Build and processing locks
 .build.lock
 
+# Feedback system data (exclude user-generated feedback entries)
+feedback/feedback-entries.json
+feedback/*.json
+
 # Temporary directories and scratch space
 tmp/minimal-author-*/
 tmp/upd-spec-*/

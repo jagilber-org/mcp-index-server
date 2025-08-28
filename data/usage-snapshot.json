@@ -1,22 +1,22 @@
 {
   "alpha": {
-    "usageCount": 1,
-    "firstSeenTs": "2025-08-28T15:14:46.180Z",
-    "lastUsedAt": "2025-08-28T15:14:46.180Z"
+    "usageCount": 3,
+    "firstSeenTs": "2025-08-28T16:33:49.556Z",
+    "lastUsedAt": "2025-08-28T16:33:49.609Z"
   },
   "batch-seed": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-28T15:14:46.433Z",
-    "lastUsedAt": "2025-08-28T15:14:46.433Z"
+    "firstSeenTs": "2025-08-28T16:33:49.620Z",
+    "lastUsedAt": "2025-08-28T16:33:49.620Z"
   },
   "beta": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-28T15:14:46.444Z",
-    "lastUsedAt": "2025-08-28T15:14:46.444Z"
+    "firstSeenTs": "2025-08-28T16:33:49.632Z",
+    "lastUsedAt": "2025-08-28T16:33:49.632Z"
   },
-  "gating_test_entry_enabled_1756394085930_mxyv5k": {
+  "gating_test_entry_enabled_1756398829194_n23a21": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-28T15:14:46.046Z",
-    "lastUsedAt": "2025-08-28T15:14:46.046Z"
+    "firstSeenTs": "2025-08-28T16:33:49.300Z",
+    "lastUsedAt": "2025-08-28T16:33:49.300Z"
   }
 }

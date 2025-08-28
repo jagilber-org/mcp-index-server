@@ -48,27 +48,35 @@ interface FeedbackStorage {
   version: string;
 }
 
-// Environment-configurable feedback directory
-const FEEDBACK_DIR = process.env.FEEDBACK_DIR || path.join(process.cwd(), 'feedback');
-const FEEDBACK_FILE = path.join(FEEDBACK_DIR, 'feedback-entries.json');
+// Max entry count (static) but directory is resolved dynamically so tests can override via env per test case
 const MAX_ENTRIES = parseInt(process.env.FEEDBACK_MAX_ENTRIES || '1000', 10);
 
-// Ensure feedback directory exists
-if (!fs.existsSync(FEEDBACK_DIR)) {
-  try {
-    fs.mkdirSync(FEEDBACK_DIR, { recursive: true });
-  } catch (error) {
-    logError('Failed to create feedback directory', { error, dir: FEEDBACK_DIR });
+function getFeedbackDir(){
+  return process.env.FEEDBACK_DIR || path.join(process.cwd(), 'feedback');
+}
+
+function getFeedbackFile(){
+  return path.join(getFeedbackDir(), 'feedback-entries.json');
+}
+
+function ensureFeedbackDir(){
+  const dir = getFeedbackDir();
+  if(!fs.existsSync(dir)){
+    try { fs.mkdirSync(dir, { recursive: true }); }
+    catch(error){ logError('Failed to create feedback directory', { error, dir }); }
   }
+  return dir;
 }
 
 /**
  * Load feedback entries from storage
  */
 function loadFeedbackStorage(): FeedbackStorage {
+  const file = getFeedbackFile();
+  ensureFeedbackDir();
   try {
-    if (fs.existsSync(FEEDBACK_FILE)) {
-      const content = fs.readFileSync(FEEDBACK_FILE, 'utf8');
+    if (fs.existsSync(file)) {
+      const content = fs.readFileSync(file, 'utf8');
       const parsed = JSON.parse(content) as FeedbackStorage;
       
       // Validate structure
@@ -93,6 +101,8 @@ function loadFeedbackStorage(): FeedbackStorage {
  * Save feedback entries to storage
  */
 function saveFeedbackStorage(storage: FeedbackStorage): void {
+  const file = getFeedbackFile();
+  ensureFeedbackDir();
   try {
     // Limit storage size
     if (storage.entries.length > MAX_ENTRIES) {
@@ -104,8 +114,8 @@ function saveFeedbackStorage(storage: FeedbackStorage): void {
     
     storage.lastUpdated = new Date().toISOString();
     
-    const content = JSON.stringify(storage, null, 2);
-    fs.writeFileSync(FEEDBACK_FILE, content, 'utf8');
+  const content = JSON.stringify(storage, null, 2);
+  fs.writeFileSync(file, content, 'utf8');
   } catch (error) {
     logError('Failed to save feedback storage', { error });
     throw error;
@@ -222,8 +232,9 @@ registerHandler('feedback/list', (params: {
     entries = entries.filter(e => e.status === params.status);
   }
   
-  if (params.since) {
-    entries = entries.filter(e => e.timestamp >= params.since!);
+  if (typeof params.since === 'string' && params.since) {
+    const sinceVal = params.since;
+    entries = entries.filter(e => e.timestamp >= sinceVal);
   }
   
   if (params.tags && params.tags.length > 0) {
@@ -390,33 +401,36 @@ registerHandler('feedback/stats', (params: { since?: string }) => {
  * feedback/health - Health check for feedback system
  */
 registerHandler('feedback/health', () => {
+  const dir = getFeedbackDir();
+  const file = getFeedbackFile();
   const health = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     storage: {
       accessible: false,
       writable: false,
-      directory: FEEDBACK_DIR,
-      file: FEEDBACK_FILE
+      directory: dir,
+      file
     },
     config: {
       maxEntries: MAX_ENTRIES,
-      feedbackDir: FEEDBACK_DIR
+      feedbackDir: dir
     }
   };
 
   try {
     // Check if storage is accessible
-    if (fs.existsSync(FEEDBACK_FILE)) {
-      fs.accessSync(FEEDBACK_FILE, fs.constants.R_OK);
+    if (fs.existsSync(file)) {
+      fs.accessSync(file, fs.constants.R_OK);
       health.storage.accessible = true;
     } else {
       // File doesn't exist but directory should be writable
-      health.storage.accessible = fs.existsSync(FEEDBACK_DIR);
+      health.storage.accessible = fs.existsSync(dir);
     }
 
     // Check if writable
-    fs.accessSync(FEEDBACK_DIR, fs.constants.W_OK);
+    ensureFeedbackDir();
+    fs.accessSync(dir, fs.constants.W_OK);
     health.storage.writable = true;
 
   } catch (error) {

@@ -1,0 +1,19 @@
+// Disabled test file with broken testHandlerCall references
+// Moving original content here to preserve for reference
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { getHandler } from '../server/registry';
+import fs from 'fs';
+import path from 'path';
+
+// Import the feedback handlers to register them
+import '../services/handlers.feedback';
+
+// Helper function to call handlers during testing
+async function callHandler(method: string, params: unknown): Promise<unknown> {
+  const handler = getHandler(method);
+  if (!handler) {
+    throw new Error(`Handler not found: ${method}`);
+  }
+  return await handler(params);
+}

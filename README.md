@@ -479,8 +479,19 @@ Contract-only schema verification: `npm run test:contracts` (3 focused contract 
 - Core JSON-RPC 2.0 transport over stdio
 - Standard MCP protocol handlers (`initialize`, `tools/list`, `tools/call`)
 - Tool registry with input/output schemas for client validation
-- Comprehensive test suite (28 tests, 14 test files)
+- **Feedback/Emit System**: Enterprise-grade client communication system (6 tools)
+- Comprehensive test suite (181+ tests, 93+ test files)
 - Optional admin dashboard with read-only interface
+
+### 📢 **Feedback System Features**
+
+The server includes a comprehensive feedback/emit system for client-server communication:
+
+- **6 MCP Tools**: `feedback/submit`, `feedback/list`, `feedback/get`, `feedback/update`, `feedback/stats`, `feedback/health`
+- **Rich Feedback Types**: Issues, bug reports, feature requests, security reports, performance feedback
+- **Status Workflow**: new → acknowledged → in-progress → resolved → closed
+- **Enterprise Features**: Audit logging, persistence, filtering, pagination (up to 200 entries)
+- **Security**: Critical/security items logged separately with alerts
 
 Hooks: Pre-commit runs typecheck, lint, tests, and security scan. Manual scan: `npm run scan:security`.
 

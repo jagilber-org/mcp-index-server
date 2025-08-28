@@ -37,6 +37,16 @@ async function waitForResponse(out: string[], id: number, timeoutMs: number){
 
 const instructionsDir = path.join(process.cwd(),'instructions');
 
+async function safeWrite(file:string, content:string, attempts=5){
+  let lastErr: unknown;
+  for(let i=0;i<attempts;i++){
+    try { fs.writeFileSync(file, content); return; }
+    catch(err){ lastErr = err; await wait(25 * (i+1)); }
+  }
+  // rethrow last error
+  throw lastErr;
+}
+
 describe('instructions/groom tool', () => {
   beforeAll(()=>{ if(!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir); });
 
@@ -53,7 +63,7 @@ describe('instructions/groom tool', () => {
   it('dryRun reports without modifying files', async () => {
     const id = 'groom_dryrun_sample';
     const file = path.join(instructionsDir, id + '.json');
-  fs.writeFileSync(file, JSON.stringify({ id, title:id, body:'body', priority:50, audience:'all', requirement:'optional', categories:['Tag','tag'], sourceHash:'WRONG', schemaVersion:'1', createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), version:'1.0.0', status:'approved', owner:'unowned', priorityTier:'P3', classification:'internal', lastReviewedAt:new Date().toISOString(), nextReviewDue:new Date().toISOString(), changeLog:[{version:'1.0.0', changedAt:new Date().toISOString(), summary:'initial'}], semanticSummary:'body' },null,2));
+  await safeWrite(file, JSON.stringify({ id, title:id, body:'body', priority:50, audience:'all', requirement:'optional', categories:['Tag','tag'], sourceHash:'WRONG', schemaVersion:'1', createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), version:'1.0.0', status:'approved', owner:'unowned', priorityTier:'P3', classification:'internal', lastReviewedAt:new Date().toISOString(), nextReviewDue:new Date().toISOString(), changeLog:[{version:'1.0.0', changedAt:new Date().toISOString(), summary:'initial'}], semanticSummary:'body' },null,2));
     const server = startServer(true);
     const out:string[]=[];
     // Robust line buffering to avoid splitting JSON objects across data events
@@ -88,7 +98,7 @@ describe('instructions/groom tool', () => {
     const id = 'groom_repair_sample';
     const file = path.join(instructionsDir, id + '.json');
   // Use non-empty placeholder so schema (minLength 1) accepts it and groom can repair hash
-  fs.writeFileSync(file, JSON.stringify({ id, title:id, body:'repair body', priority:40, audience:'all', requirement:'optional', categories:['A','a'], sourceHash:'PLACEHOLDER', schemaVersion:'1', createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), version:'1.0.0', status:'approved', owner:'unowned', priorityTier:'P3', classification:'internal', lastReviewedAt:new Date().toISOString(), nextReviewDue:new Date().toISOString(), changeLog:[{version:'1.0.0', changedAt:new Date().toISOString(), summary:'initial'}], semanticSummary:'repair body' },null,2));
+  await safeWrite(file, JSON.stringify({ id, title:id, body:'repair body', priority:40, audience:'all', requirement:'optional', categories:['A','a'], sourceHash:'PLACEHOLDER', schemaVersion:'1', createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), version:'1.0.0', status:'approved', owner:'unowned', priorityTier:'P3', classification:'internal', lastReviewedAt:new Date().toISOString(), nextReviewDue:new Date().toISOString(), changeLog:[{version:'1.0.0', changedAt:new Date().toISOString(), summary:'initial'}], semanticSummary:'repair body' },null,2));
     const server = startServer(true);
     const out:string[]=[];
     let buffer = '';
@@ -121,8 +131,8 @@ describe('instructions/groom tool', () => {
     const a = path.join(instructionsDir, 'groom_dup_a.json');
     const b = path.join(instructionsDir, 'groom_dup_b.json');
   // Non-empty placeholder hashes so schema validation passes; groom will unify via actual body hash
-  fs.writeFileSync(a, JSON.stringify({ id:'groom_dup_a', title:'A', body, priority:60, audience:'all', requirement:'optional', categories:['x'], sourceHash:'X', schemaVersion:'1', createdAt:'2025-01-01T00:00:00.000Z', updatedAt:'2025-01-01T00:00:00.000Z', version:'1.0.0', status:'approved', owner:'unowned', priorityTier:'P3', classification:'internal', lastReviewedAt:'2025-01-01T00:00:00.000Z', nextReviewDue:'2025-01-01T00:00:00.000Z', changeLog:[{version:'1.0.0', changedAt:'2025-01-01T00:00:00.000Z', summary:'initial'}], semanticSummary:'dup body unify' },null,2));
-  fs.writeFileSync(b, JSON.stringify({ id:'groom_dup_b', title:'B', body, priority:70, audience:'all', requirement:'optional', categories:['y'], sourceHash:'Y', schemaVersion:'1', createdAt:'2025-02-01T00:00:00.000Z', updatedAt:'2025-02-01T00:00:00.000Z', version:'1.0.0', status:'approved', owner:'unowned', priorityTier:'P3', classification:'internal', lastReviewedAt:'2025-02-01T00:00:00.000Z', nextReviewDue:'2025-02-01T00:00:00.000Z', changeLog:[{version:'1.0.0', changedAt:'2025-02-01T00:00:00.000Z', summary:'initial'}], semanticSummary:'dup body unify' },null,2));
+  await safeWrite(a, JSON.stringify({ id:'groom_dup_a', title:'A', body, priority:60, audience:'all', requirement:'optional', categories:['x'], sourceHash:'X', schemaVersion:'1', createdAt:'2025-01-01T00:00:00.000Z', updatedAt:'2025-01-01T00:00:00.000Z', version:'1.0.0', status:'approved', owner:'unowned', priorityTier:'P3', classification:'internal', lastReviewedAt:'2025-01-01T00:00:00.000Z', nextReviewDue:'2025-01-01T00:00:00.000Z', changeLog:[{version:'1.0.0', changedAt:'2025-01-01T00:00:00.000Z', summary:'initial'}], semanticSummary:'dup body unify' },null,2));
+  await safeWrite(b, JSON.stringify({ id:'groom_dup_b', title:'B', body, priority:70, audience:'all', requirement:'optional', categories:['y'], sourceHash:'Y', schemaVersion:'1', createdAt:'2025-02-01T00:00:00.000Z', updatedAt:'2025-02-01T00:00:00.000Z', version:'1.0.0', status:'approved', owner:'unowned', priorityTier:'P3', classification:'internal', lastReviewedAt:'2025-02-01T00:00:00.000Z', nextReviewDue:'2025-02-01T00:00:00.000Z', changeLog:[{version:'1.0.0', changedAt:'2025-02-01T00:00:00.000Z', summary:'initial'}], semanticSummary:'dup body unify' },null,2));
     const server = startServer(true);
     const out:string[]=[];
     let buffer = '';

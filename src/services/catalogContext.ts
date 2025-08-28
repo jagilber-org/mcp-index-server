@@ -283,11 +283,6 @@ export function scheduleUsagePersist(){ scheduleUsageFlush(); }
 export function incrementUsage(id:string){
   if(!hasFeature('usage')){ incrementCounter('usage:gated'); return { featureDisabled:true }; }
   
-  // Phase 1 rate limiting: prevent runaway from tight loops
-  if (!checkUsageRateLimit(id)) {
-    return { id, rateLimited: true, usageCount: 0 };
-  }
-  
   let st = ensureLoaded();
   let e = st.byId.get(id);
   if(!e){
@@ -301,7 +296,6 @@ export function incrementUsage(id:string){
       if(fs.existsSync(filePath)){
         try {
           const raw = JSON.parse(fs.readFileSync(filePath,'utf8')) as InstructionEntry;
-          // Minimal normalization: ensure required identifier fields exist.
           if(raw && raw.id === id){
             st.list.push(raw);
             st.byId.set(id, raw);
@@ -313,6 +307,12 @@ export function incrementUsage(id:string){
     }
     if(!e) return null; // genuinely absent after recovery attempts
   }
+
+  // Phase 1 rate limiting: prevent runaway from tight loops (only applies once entry exists)
+  if (!checkUsageRateLimit(id)) {
+    return { id, rateLimited: true, usageCount: e.usageCount ?? 0 };
+  }
+  
   // Defensive: ensure we never operate on an entry that lost its firstSeenTs unexpectedly.
   restoreFirstSeenInvariant(e);
   const nowIso = new Date().toISOString();

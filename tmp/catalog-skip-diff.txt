@@ -1,0 +1,26 @@
+Skipped File Diff Analysis
+==========================
+
+1. enrich_placeholder_sample.json
+---------------------------------
+Reason (Ajv): schema: No errors (generic) — implies schema validation failed but errorsText() returned empty or classification validation failed after normalization step.
+Raw content excerpt:
+{
+  "id": "enrich_placeholder_sample",
+  "priorityTier": "" (empty), many governance placeholders empty strings
+}
+Likely Causes:
+- Empty strings for required date/time fields (`createdAt`, `updatedAt`, `lastReviewedAt`, `nextReviewDue`).
+- Empty `priorityTier` while schema v2 may expect a non-empty enum.
+- `sourceHash"": ""` empty before normalization; loader attempts to fill but may be blocked by schema failure first.
+
+2. gates.json
+-------------
+This is not an instruction entry (no `id`, `title`, `body`, `audience`, `requirement`). It's a governance gates config and should be excluded, not treated as an instruction.
+Likely Causes:
+- Fails schema because instruction-required fields are missing entirely.
+
+Recommended Actions:
+- Exclude pattern `gates.json` (and possibly any non-instruction governance config) from instruction scan OR move to separate directory.
+- Allow enrich-placeholder pattern: Accept records with schemaVersion 2 where required governance fields are blank placeholders and delegate filling to enrich step (similar logic already in enrich tool). Option: preprocess placeholder fields before schema validation.
+- Alternatively, keep test asserting zero skipped but add explicit ignore list (e.g., files named `gates.json`) and treat enrich placeholder as accepted after minimal normalization.

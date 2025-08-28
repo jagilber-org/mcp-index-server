@@ -15,6 +15,7 @@ export interface CatalogLoadResult {
   entries: InstructionEntry[];
   errors: { file: string; error: string }[];
   hash: string; // combined catalog hash
+  debug?: { scanned: number; accepted: number; skipped: number; trace?: { file:string; accepted:boolean; reason?:string }[] };
 }
 
 export class CatalogLoader {
@@ -33,13 +34,23 @@ export class CatalogLoader {
     }
   } catch { /* ignore */ }
   const validate = ajv.compile(schema as unknown as object) as (data: unknown) => boolean;
-    const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
-    const entries: InstructionEntry[] = [];
-    const errors: { file: string; error: string }[] = [];
-    for(const f of files){
+  const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
+  const entries: InstructionEntry[] = [];
+  const errors: { file: string; error: string }[] = [];
+  const traceEnabled = process.env.MCP_CATALOG_FILE_TRACE === '1';
+  const trace: { file:string; accepted:boolean; reason?:string }[] | undefined = traceEnabled ? [] : undefined;
+  for(const f of files){
       const full = path.join(dir, f);
       try {
-        const raw = JSON.parse(fs.readFileSync(full,'utf8')) as InstructionEntry;
+        const rawAny = JSON.parse(fs.readFileSync(full,'utf8')) as Record<string, unknown>;
+        // Ignore clearly non-instruction config files (no id/title/body/requirement) e.g. gates.json
+        const looksInstruction = typeof rawAny.id === 'string' && typeof rawAny.title === 'string' && typeof rawAny.body === 'string';
+        if(!looksInstruction){
+          if(trace) trace.push({ file:f, accepted:false, reason:'ignored:non-instruction-config' });
+          continue;
+        }
+        // Clone to typed object after basic shape check
+  const raw = rawAny as unknown as InstructionEntry; // validated progressively below
         
         // Check schema version and migrate if needed
         let needsRewrite = false;
@@ -60,22 +71,36 @@ export class CatalogLoader {
   if(typeof mutRaw.sourceHash !== 'string' || !mutRaw.sourceHash.length){ try { mutRaw.sourceHash = crypto.createHash('sha256').update(mutRaw.body||'', 'utf8').digest('hex'); } catch { /* ignore */ } }
   if(typeof mutRaw.createdAt !== 'string' || !mutRaw.createdAt.length) mutRaw.createdAt = nowIso;
   if(typeof mutRaw.updatedAt !== 'string' || !mutRaw.updatedAt.length) mutRaw.updatedAt = nowIso;
-  if(!validate(mutRaw)){
-          errors.push({ file: f, error: 'schema: ' + ajv.errorsText() });
+        // Preprocess placeholder governance fields: convert empty strings to undefined so schema doesn't reject
+        const placeholderKeys: (keyof InstructionEntry)[] = ['createdAt','updatedAt','lastReviewedAt','nextReviewDue','priorityTier','semanticSummary'];
+        for(const k of placeholderKeys){
+          const v = (mutRaw as unknown as Record<string, unknown>)[k];
+          if(v === ''){ delete (mutRaw as unknown as Record<string, unknown>)[k]; }
+        }
+        if(!validate(mutRaw)){
+          const reason = 'schema: ' + ajv.errorsText();
+          errors.push({ file: f, error: reason });
+          if(trace) trace.push({ file:f, accepted:false, reason });
           continue;
         }
-        const issues = this.classifier.validate(mutRaw);
+  const issues = this.classifier.validate(mutRaw);
         if(issues.length){
-          errors.push({ file: f, error: issues.join(', ') });
+          const reason = issues.join(', ');
+          errors.push({ file: f, error: reason });
+          if(trace) trace.push({ file:f, accepted:false, reason });
           continue;
         }
-        entries.push(this.classifier.normalize(mutRaw));
+        const normalized = this.classifier.normalize(mutRaw);
+        entries.push(normalized);
+        if(trace) trace.push({ file:f, accepted:true });
       } catch(e: unknown){
-        errors.push({ file: f, error: e instanceof Error ? e.message : 'unknown error' });
+        const reason = e instanceof Error ? e.message : 'unknown error';
+        errors.push({ file: f, error: reason });
+        if(trace) trace.push({ file:f, accepted:false, reason });
       }
     }
     const hash = this.computeCatalogHash(entries);
-    return { entries, errors, hash };
+    return { entries, errors, hash, debug: { scanned: files.length, accepted: entries.length, skipped: files.length - entries.length, trace } };
   }
 
   private computeCatalogHash(entries: InstructionEntry[]): string {

@@ -9,8 +9,10 @@ import { ClassificationService } from './classificationService';
 import { SCHEMA_VERSION, migrateInstructionRecord } from '../versioning/schemaVersion';
 import { resolveOwner } from './ownershipService';
 
-export interface CatalogState { loadedAt: string; hash: string; byId: Map<string, InstructionEntry>; list: InstructionEntry[]; latestMTime: number; fileSignature: string; fileCount: number; versionMTime: number }
+export interface CatalogState { loadedAt: string; hash: string; byId: Map<string, InstructionEntry>; list: InstructionEntry[]; latestMTime: number; fileSignature: string; fileCount: number; versionMTime: number; versionToken: string }
 let state: CatalogState | null = null;
+// Simple reliable invalidation: any mutation sets dirty=true; next ensureLoaded() performs full rescan.
+let dirty = false;
 
 // Usage snapshot persistence (shared)
 const usageSnapshotPath = path.join(process.cwd(),'data','usage-snapshot.json');
@@ -154,97 +156,141 @@ export function diagnoseInstructionsDir(){
   } catch(e){ error = (e as Error).message; }
   return { dir, exists, writable, error };
 }
-interface DirMeta { latest:number; signature:string; count:number }
+interface DirMeta { latest:number; signature:string; count:number; fileMap: Record<string,string> }
 function computeDirMeta(dir: string): DirMeta {
+  // Incorporate fast content hashes to detect metadata-only edits that keep size & coarse mtime identical.
   const parts: string[] = [];
+  const fileMap: Record<string,string> = {};
   let latest = 0; let count = 0; const now = Date.now();
   try {
     for(const f of fs.readdirSync(dir)){
       if(!f.endsWith('.json')) continue;
       const fp = path.join(dir,f);
-      try { const st = fs.statSync(fp); if(!st.isFile()) continue; count++; const effMtime = Math.min(st.mtimeMs, now); latest = Math.max(latest, effMtime); parts.push(`${f}:${st.mtimeMs}:${st.size}`); } catch { /* ignore */ }
+      try {
+        const st = fs.statSync(fp);
+        if(!st.isFile()) continue;
+        count++;
+        const effMtime = Math.min(st.mtimeMs, now);
+        latest = Math.max(latest, effMtime);
+        let contentHash = '';
+        try {
+          // Small files: hash full content; larger files: hash first & last 4KB segments to bound cost.
+          const buf = fs.readFileSync(fp);
+          if(buf.length <= 64 * 1024){
+            contentHash = crypto.createHash('sha256').update(buf).digest('hex');
+          } else {
+            const start = buf.subarray(0, 4096);
+            const end = buf.subarray(buf.length-4096);
+            contentHash = crypto.createHash('sha256').update(start).update(end).update(String(buf.length)).digest('hex');
+          }
+        } catch { /* ignore content hash failure */ }
+        const record = `${st.mtimeMs}:${st.size}:${contentHash}`;
+        parts.push(`${f}:${record}`);
+        fileMap[f] = record;
+      } catch { /* ignore stat */ }
     }
-  } catch { /* ignore */ }
-  parts.sort(); const h = crypto.createHash('sha256'); h.update(parts.join('|'),'utf8');
+  } catch { /* ignore readdir */ }
+  parts.sort();
+  const h = crypto.createHash('sha256');
+  h.update(parts.join('|'),'utf8');
   const signature = h.digest('hex');
-  return { latest, signature, count };
+  return { latest, signature, count, fileMap };
 }
 
 // Simple explicit version marker file touched on every mutation for robust cross-process cache invalidation.
 function getVersionFile(){ return path.join(getInstructionsDir(), '.catalog-version'); }
-export function touchCatalogVersion(){ try { fs.writeFileSync(getVersionFile(), Date.now().toString()); } catch { /* ignore */ } }
-function readVersionMTime(): number { try { const vf=getVersionFile(); if(fs.existsSync(vf)){ return fs.statSync(vf).mtimeMs; } } catch { /* ignore */ } return 0; }
+export function touchCatalogVersion(){
+  try {
+    const vf = getVersionFile();
+    // Write a monotonically increasing token (time + random) to avoid same-millisecond mtime coalescing on some filesystems
+    const token = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+    fs.writeFileSync(vf, token);
+  } catch { /* ignore */ }
+}
+function readVersionMTime(): number { try { const vf=getVersionFile(); if(fs.existsSync(vf)){ const st = fs.statSync(vf); return st.mtimeMs || 0; } } catch { /* ignore */ } return 0; }
+function readVersionToken(): string { try { const vf=getVersionFile(); if(fs.existsSync(vf)){ return fs.readFileSync(vf,'utf8').trim(); } } catch { /* ignore */ } return ''; }
+export function markCatalogDirty(){ dirty = true; }
 export function ensureLoaded(): CatalogState {
   const baseDir = getInstructionsDir();
-  // Optional escape hatch: disable caching completely for deterministic multi-process CRUD (tests / debug)
-  if(process.env.INSTRUCTIONS_ALWAYS_RELOAD === '1') state = null;
-  if(state){
-    const meta = computeDirMeta(baseDir);
-    const verM = readVersionMTime();
-    if(verM > state.versionMTime || meta.latest > state.latestMTime || meta.signature !== state.fileSignature || meta.count !== state.fileCount){ state = null; }
+  // Force reload if state missing or marked dirty or ALWAYS_RELOAD enabled
+  if(process.env.INSTRUCTIONS_ALWAYS_RELOAD === '1') dirty = true;
+  if(state && !dirty){
+    // External change detection: compare version marker mtime & directory signature
+    try {
+      const currentVersionMTime = readVersionMTime();
+      const currentVersionToken = readVersionToken();
+      const metaNow = computeDirMeta(baseDir);
+      // Any version token change becomes an unconditional reload trigger (even if signature has not yet diverged)
+      if(currentVersionToken && currentVersionToken !== state.versionToken){
+        dirty = true;
+      } else if(
+        (currentVersionMTime && currentVersionMTime !== state.versionMTime) ||
+        metaNow.signature !== state.fileSignature ||
+        metaNow.latest > state.latestMTime ||
+        metaNow.count !== state.fileCount
+      ){
+        dirty = true;
+      }
+      // Opportunistic micro‑race guard: a file write that lands immediately AFTER the first meta snapshot.
+      // We spin a few very fast rechecks (no timers, purely synchronous) to catch a just-written file whose
+      // metadata visibility lags by a couple of milliseconds on some filesystems (especially Windows / CI).
+      if(!dirty){
+        const start = Date.now();
+        for(let spin=0; spin<3; spin++){
+          const meta2 = computeDirMeta(baseDir);
+          const vt2 = readVersionToken();
+          const vm2 = readVersionMTime();
+          if(
+            (vt2 && vt2 !== state.versionToken) ||
+            (vm2 && vm2 !== state.versionMTime) ||
+            meta2.signature !== state.fileSignature ||
+            meta2.count !== state.fileCount ||
+            meta2.latest > state.latestMTime
+          ){
+            dirty = true; break;
+          }
+          // Break early if we've already spent >15ms (avoid pathological synchronous loop)
+          if(Date.now() - start > 15) break;
+        }
+      }
+    } catch { /* ignore detection errors */ }
+    if(!dirty){
+      if(process.env.MCP_CATALOG_DIAG==='1'){
+        // eslint-disable-next-line no-console
+        console.error('[catalogContext.ensureLoaded] cache-hit dirty=false entries=', state.list.length, 'hash=', state.hash);
+      }
+      return state;
+    }
   }
-  if(state) return state;
-  const loader = new CatalogLoader(baseDir);
-  const result = loader.load();
-  const byId = new Map<string, InstructionEntry>(); result.entries.forEach(e=>byId.set(e.id,e));
+  // Load (with a tiny resilience loop for very narrow cross-process rename visibility races)
+  let attempts = 0; const maxAttempts = 2; let lastMeta: DirMeta | null = null; let lastVersionToken = '';
+  while(attempts <= maxAttempts){
+    const loader = new CatalogLoader(baseDir);
+    const result = loader.load();
+    const byId = new Map<string, InstructionEntry>(); result.entries.forEach(e=>byId.set(e.id,e));
   const meta = computeDirMeta(baseDir);
-  const versionMTime = readVersionMTime();
-  state = { loadedAt: new Date().toISOString(), hash: result.hash, byId, list: result.entries, latestMTime: meta.latest, fileSignature: meta.signature, fileCount: meta.count, versionMTime };
-  // Automatic enrichment persistence pass (startup). If a file contains placeholder governance fields that were
-  // normalized in-memory (e.g. empty sourceHash, createdAt/updatedAt timestamps, owner auto-resolution, semanticSummary hash)
-  // we rewrite that file once so subsequent processes / drift checks see consistent data on disk.
-  try {
-    for(const entry of state.list){
-  const file = path.join(baseDir, `${entry.id}.json`);
-      if(!fs.existsSync(file)) continue;
-      try {
-        const raw = JSON.parse(fs.readFileSync(file,'utf8')) as Record<string, unknown>;
-        let needsRewrite = false;
-        // Fields to project & compare (only treat placeholder → enriched transitions)
-        const placeholders: [key: string, isPlaceholder: (v: unknown)=>boolean, value: unknown][] = [
-          ['sourceHash', v => !(typeof v === 'string' && v.length>0), entry.sourceHash],
-          ['owner', v => v === 'unowned' && !!(entry.owner && entry.owner !== 'unowned'), entry.owner],
-          ['semanticSummary', v => (!(typeof v === 'string' && v.length>0)) && !!entry.semanticSummary, entry.semanticSummary],
-          // Stabilize governance projection fields across restarts by persisting once materialized
-          ['lastReviewedAt', v => !(typeof v === 'string' && v.length>0) && !!entry.lastReviewedAt, entry.lastReviewedAt],
-          ['nextReviewDue', v => !(typeof v === 'string' && v.length>0) && !!entry.nextReviewDue, entry.nextReviewDue]
-        ];
-        for(const [k,isPh,val] of placeholders){ if(isPh(raw[k])){ raw[k]=val; needsRewrite = true; } }
-        // Normalize changeLog changedAt placeholders if present
-  // changeLog placeholder normalization no longer needed (optional fields)
-        
-        // Check schema version and migrate if needed
-        if(!raw.schemaVersion || raw.schemaVersion !== SCHEMA_VERSION){
-          const mig = migrateInstructionRecord(raw);
-          if(mig.changed) needsRewrite = true;
-        }
-        
-        if(needsRewrite){
-          fs.writeFileSync(file, JSON.stringify(raw,null,2));
-        }
-      } catch { /* ignore individual file errors */ }
+    const versionMTime = readVersionMTime();
+    const versionToken = readVersionToken();
+    // If we previously had a state and saw a version token change but file count/signature identical to prior state
+    // (possible extremely tight race where the new file wasn't yet visible), retry once.
+  if(state && attempts < maxAttempts && versionToken && versionToken !== state.versionToken && meta.signature === state.fileSignature && meta.count === state.fileCount){
+      attempts++; lastMeta = meta; lastVersionToken = versionToken; continue; // retry immediately
     }
-  } catch { /* ignore global enrichment errors */ }
-  const usage = loadUsageSnapshot();
-  for(const e of state.list){
-    const u = (usage as Record<string, UsagePersistRecord>)[e.id];
-    if(u){
-      // Only assign firstSeenTs if defined – never overwrite an in-memory / restored value with undefined
-      e.usageCount = u.usageCount; if(u.firstSeenTs) e.firstSeenTs = u.firstSeenTs; e.lastUsedAt = u.lastUsedAt;
-    }
-  // Centralized invariant repair (authority -> ephemeral -> lastGood)
-  if(!e.firstSeenTs) restoreFirstSeenInvariant(e);
-  // Record authority if newly observed (after potential repair)
-  if(e.firstSeenTs && !firstSeenAuthority[e.id]){ firstSeenAuthority[e.id] = e.firstSeenTs; incrementCounter('usage:firstSeenAuthoritySet'); }
+  state = { loadedAt: new Date().toISOString(), hash: result.hash, byId, list: result.entries, latestMTime: meta.latest, fileSignature: meta.signature, fileCount: meta.count, versionMTime, versionToken };
+    dirty = false;
+    break;
   }
-  // After initial load, project any authoritative firstSeen values that may not have appeared in snapshot (e.g. parse race)
-  for(const [id, ts] of Object.entries(firstSeenAuthority)){
-    const e = state.byId.get(id);
-    if(e && !e.firstSeenTs){ e.firstSeenTs = ts; incrementCounter('usage:firstSeenAuthorityProject'); }
+  if(state && lastMeta && state.versionToken === lastVersionToken && state.fileSignature === lastMeta.signature){
+    // No change after retry; proceed with whatever we have.
   }
-  return state;
+  if(process.env.MCP_CATALOG_DIAG==='1' && state){
+    // eslint-disable-next-line no-console
+    console.error('[catalogContext.ensureLoaded] reload complete entries=', state.list.length, 'hash=', state.hash, 'fileCount=', state.fileCount);
+  }
+  // state is always set here
+  return state!;
 }
-export function invalidate(){ state = null; }
+export function invalidate(){ state = null; dirty = true; }
 export function getCatalogState(){
   // Always enforce invariant on access in case an entry transiently lost firstSeenTs
   const st = ensureLoaded();
@@ -252,6 +298,29 @@ export function getCatalogState(){
     if(!e.firstSeenTs){ restoreFirstSeenInvariant(e); }
   }
   return st;
+}
+
+// Lightweight debug snapshot WITHOUT forcing a reload (observes current in-memory view vs disk)
+export function getDebugCatalogSnapshot(){
+  const dir = getInstructionsDir();
+  let files:string[] = [];
+  try { files = fs.readdirSync(dir).filter(f=> f.endsWith('.json')).sort(); } catch { /* ignore */ }
+  const current = state; // do not trigger ensureLoaded here
+  const loadedIds = current ? new Set(current.list.map(e=> e.id)) : new Set<string>();
+  const missingIds = current ? files.map(f=> f.replace(/\.json$/,'')).filter(id=> !loadedIds.has(id)) : [];
+  const extraLoaded = current ? current.list.filter(e=> !files.includes(e.id + '.json')).map(e=> e.id) : [];
+  return {
+    dir,
+    fileCountOnDisk: files.length,
+    fileNames: files,
+    catalogLoaded: !!current,
+    catalogCount: current? current.list.length: 0,
+    dirtyFlag: dirty,
+    missingIds,
+    extraLoaded,
+    loadedAt: current?.loadedAt,
+    versionMTime: current?.versionMTime
+  };
 }
 
 // Governance projection & hash
@@ -274,10 +343,12 @@ export function writeEntry(entry: InstructionEntry){
   const record = classifier.normalize(entry);
   if(record.owner === 'unowned'){ const auto = resolveOwner(record.id); if(auto){ record.owner = auto; record.updatedAt = new Date().toISOString(); } }
   atomicWriteJson(file, record);
+  markCatalogDirty();
 }
 export function removeEntry(id:string){
   const file = path.join(getInstructionsDir(), `${id}.json`);
   if(fs.existsSync(file)) fs.unlinkSync(file);
+  markCatalogDirty();
 }
 export function scheduleUsagePersist(){ scheduleUsageFlush(); }
 export function incrementUsage(id:string){
@@ -322,9 +393,18 @@ export function incrementUsage(id:string){
 
   // Atomically establish firstSeenTs if missing (avoid any window where undefined persists after increment)
   if(!e.firstSeenTs){
+    // First establishment path
     e.firstSeenTs = nowIso;
     ephemeralFirstSeen[e.id] = e.firstSeenTs; // track immediately for reload resilience
-  firstSeenAuthority[e.id] = e.firstSeenTs; incrementCounter('usage:firstSeenAuthoritySet');
+    firstSeenAuthority[e.id] = e.firstSeenTs; incrementCounter('usage:firstSeenAuthoritySet');
+  } else {
+    // Immutability enforcement: if a later increment observes a different firstSeenTs than authoritative
+    // (which can happen only through a rare cross-test/global reset interaction), restore the original.
+    const auth = firstSeenAuthority[e.id];
+    if(auth && auth !== e.firstSeenTs){
+      e.firstSeenTs = auth; // repair silently
+      incrementCounter('usage:firstSeenAuthorityRestore');
+    }
   }
   e.lastUsedAt = nowIso; // always advance lastUsedAt on any increment
 

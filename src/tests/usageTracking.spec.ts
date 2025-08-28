@@ -27,9 +27,11 @@ describe('usage tracking', () => {
     track(first.id);
     // second increment to exercise non-first flush path
     track(first.id);
-  const refreshed = getCatalogState().byId.get(first.id)!; // immediate read acceptable: first increment forces flush
-  // relaxed lower bound (>=1) because second increment may batch flush (rate limiting may suppress burst)
-  expect((refreshed.usageCount ?? 0)).toBeGreaterThanOrEqual(1);
+    // Allow a short microtask + timer cycle for any deferred snapshot/repair to materialize
+    await new Promise(r=> setTimeout(r, 25));
+    const refreshed = getCatalogState().byId.get(first.id)!; // first increment forces synchronous flush of snapshot
+    // relaxed lower bound (>=1) because second increment may batch flush (rate limiting may suppress burst)
+    expect((refreshed.usageCount ?? 0)).toBeGreaterThanOrEqual(1);
   });
 
   it('provides hotset ordering by usage then recency', async () => {

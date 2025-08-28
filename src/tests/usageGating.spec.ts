@@ -1,13 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { incrementUsage, ensureLoaded, invalidate, __testResetUsageState } from '../services/catalogContext';
+import { incrementUsage, ensureLoaded, invalidate } from '../services/catalogContext';
 import { writeFileSync, mkdirSync } from 'fs';
 import path from 'path';
 import { enableFeature, hasFeature } from '../services/features';
 
 // Unified test covering both disabled and enabled states without skipping.
 describe('usage gating behaviour', () => {
-  // Hard reset any persisted usage state between repeated full-suite runs to eliminate leakage.
-  __testResetUsageState();
+  // NOTE: Avoid invoking global state reset here. A previous version called __testResetUsageState() which
+  // cleared firstSeenTs/usageCount for ALL catalog entries. When Vitest executed usage-related spec files
+  // in parallel, that global reset caused other tests (usageFirstSeen / usageTracking) to observe a second
+  // establishment of firstSeenTs, producing flakiness. Each test in this file uses unique, freshly created
+  // IDs so global reset is unnecessary and harmful for concurrency.
   // Use unique IDs per run to avoid leaking persisted usageCount from previous test cycles (usage snapshot).
   function uniqueId(base: string){ return `${base}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`; }
   const dir = path.join(process.cwd(),'instructions');

@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
 
-// Feedback system tests have been moved to dedicated test files for better organization:
-// - feedbackCore.spec.ts: Comprehensive functionality tests
-// - feedbackSimple.spec.ts: Basic integration tests
-// This placeholder avoids Vitest failing the suite due to zero tests in this legacy file path.
+// Legacy feedback test entry point
+// Real tests now live in:
+//   - feedbackCore.spec.ts (comprehensive)
+//   - feedbackSimple.spec.ts (basic smoke)
+// This file remains so historical references / tooling pointing at feedback.spec.ts still resolve.
+// Do NOT add functional tests here; keep redirection minimal.
 
 describe('feedback legacy placeholder', () => {
 	it('redirects to dedicated feedback test suites', () => {

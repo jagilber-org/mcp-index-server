@@ -164,14 +164,8 @@ describe.sequential('usage rate limiting (Phase 1)', () => {
       expect(blocked).toHaveProperty('rateLimited', true);
       
       // id2 should still work (its own counter)
-      let allowed = safeIncrement(id2);
-      if(!allowed){
-        // Rare race: catalog may have invalidated between ensureLoaded() and increment loop. Force reload once.
-        invalidate();
-        ensureLoaded();
-        allowed = safeIncrement(id2);
-      }
-      expect(allowed, 'id2 increment unexpectedly null after rate limiting id1').toBeTruthy();
+      const allowed = safeIncrement(id2);
+      expect(allowed).toBeTruthy();
       expect(allowed).not.toHaveProperty('rateLimited');
       
     } finally {

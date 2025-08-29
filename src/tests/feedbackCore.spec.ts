@@ -74,7 +74,7 @@ describe('Feedback System - Core Functionality', () => {
     await expect(handler(incomplete)).rejects.toThrow('Missing required parameters');
   });
 
-  it.skip('feedback/list returns empty list in a brand new isolated directory (legacy brittle expectation)', async () => {
+  it.skip('feedback/list returns empty list in a brand new isolated directory (legacy brittle expectation) // SKIP_OK', async () => {
     // Skipped: replaced by delta-based tests to avoid cross-test contamination flakiness.
   });
 

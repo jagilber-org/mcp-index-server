@@ -52,8 +52,11 @@ describe('instructions/governanceHash tool (via tools/call)', () => {
     expect(typeof firstHash).toBe('string');
     // Change only owner in file directly
     const disk = JSON.parse(fs.readFileSync(file,'utf8'));
-    disk.owner = 'team-b';
-    fs.writeFileSync(file, JSON.stringify(disk,null,2));
+  disk.owner = 'team-b';
+  disk.updatedAt = new Date(Date.now()+1500).toISOString(); // ensure timestamp diff for reload heuristics
+  fs.writeFileSync(file, JSON.stringify(disk,null,2));
+  // Windows mtime granularity can be coarse; wait >1s to ensure FS timestamp change registered
+  await wait(1200);
   // Reload to pick up change (id:3) then wait deterministically for its response before requesting hash again
   send(server,{ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'instructions/reload', arguments:{} } });
   const reloadRespLine = await waitForLine(out, l=>{ try { const o = JSON.parse(l); return o.id===3; } catch { return false; } });

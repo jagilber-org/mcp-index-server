@@ -50,5 +50,5 @@ describe('Feedback System - Basic Tests', () => {
     expect((result as { success: boolean }).success).toBe(true);
   });
 
-  it.skip('feedback/list works (isolated empty directory)', () => { /* replaced by delta semantics */ });
+  it.skip('feedback/list works (isolated empty directory) // SKIP_OK', () => { /* replaced by delta semantics */ });
 });

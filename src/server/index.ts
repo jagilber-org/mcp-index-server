@@ -39,8 +39,14 @@ if(!process.listeners('uncaughtException').some(l => (l as unknown as { name?:st
   });
 }
 
-// NOTE: Verbose ingress tracing deferred until AFTER initialize to avoid any possibility of
-// impacting early handshake timing or buffering. (Attached in post-init block.)
+// Low-level ingress tracing: echo raw stdin frames when verbose enabled (diagnostic only)
+try {
+  if(process.env.MCP_LOG_VERBOSE === '1' && !process.stdin.listenerCount('data')){
+    process.stdin.on('data', chunk => {
+      try { process.stderr.write(`[in] ${chunk.toString().replace(/\n/g,'\\n')}\n`); } catch { /* ignore */ }
+    });
+  }
+} catch { /* ignore */ }
 
 interface CliConfig {
   dashboard: boolean;
@@ -205,44 +211,21 @@ export async function main(){
   if(dash){
     process.stderr.write(`Dashboard available at ${dash.url}\n`);
   }
-  // PRE-INITIALIZE light diagnostics (debug) - only when explicit diagnostic flag set.
-  // Intentionally exclude verbose flag here to prevent blocking the initialize handshake.
-  let _preDiagRan = false;
-  if(process.env.MCP_LOG_DIAG === '1'){
+  // Extended startup diagnostics (does not emit on stdout)
+  if(process.env.MCP_LOG_VERBOSE === '1' || process.env.MCP_LOG_DIAG === '1'){
     try {
-      const methods = listRegisteredMethods();
-      const catalog = getCatalogState(); // may be moderately expensive; user opted-in via DIAG
+  const methods = listRegisteredMethods();
+      // Force catalog load to report initial count/hash
+      const catalog = getCatalogState();
       const mutation = process.env.MCP_ENABLE_MUTATION === '1';
-      const dirDiag = diagnoseInstructionsDir();
-      process.stderr.write(`[startup][pre-init] toolsRegistered=${methods.length} mutationEnabled=${mutation} catalogCount=${catalog.list.length} catalogHash=${catalog.hash} instructionsDir="${dirDiag.dir}" exists=${dirDiag.exists} writable=${dirDiag.writable}${dirDiag.error?` dirError=${dirDiag.error.replace(/\s+/g,' ')}`:''}\n`);
-      _preDiagRan = true;
+  const dirDiag = diagnoseInstructionsDir();
+  process.stderr.write(`[startup] toolsRegistered=${methods.length} mutationEnabled=${mutation} catalogCount=${catalog.list.length} catalogHash=${catalog.hash} instructionsDir="${dirDiag.dir}" exists=${dirDiag.exists} writable=${dirDiag.writable}${dirDiag.error?` dirError=${dirDiag.error.replace(/\s+/g,' ')}`:''}\n`);
     } catch(e){
-      process.stderr.write(`[startup][pre-init] diagnostics_error ${(e instanceof Error)? e.message: String(e)}\n`);
+      process.stderr.write(`[startup] diagnostics_error ${(e instanceof Error)? e.message: String(e)}\n`);
     }
   }
   await startSdkServer();
   process.stderr.write('[startup] SDK server started (stdio only)\n');
-  // POST-INITIALIZE verbose diagnostics (heavy) deferred so initialize can complete quickly.
-  if(process.env.MCP_LOG_VERBOSE === '1'){
-    setImmediate(() => {
-      try {
-        // Attach verbose ingress tracing now (post-initialize) so early handshake is untouched.
-        if(!process.stdin.listenerCount('data')){
-          process.stdin.on('data', chunk => {
-            try { process.stderr.write(`[in] ${chunk.toString().replace(/\n/g,'\\n')}\n`); } catch { /* ignore */ }
-          });
-        }
-        const methods = listRegisteredMethods();
-        // Force catalog load (again) only if it did not run pre-init; otherwise reuse for status.
-        const catalog = _preDiagRan ? getCatalogState() : getCatalogState();
-        const mutation = process.env.MCP_ENABLE_MUTATION === '1';
-        const dirDiag = diagnoseInstructionsDir();
-        process.stderr.write(`[startup][post-init-verbose] toolsRegistered=${methods.length} mutationEnabled=${mutation} catalogCount=${catalog.list.length} catalogHash=${catalog.hash} instructionsDir="${dirDiag.dir}" exists=${dirDiag.exists} writable=${dirDiag.writable}${dirDiag.error?` dirError=${dirDiag.error.replace(/\s+/g,' ')}`:''}\n`);
-      } catch(e){
-        try { process.stderr.write(`[startup][post-init-verbose] diagnostics_error ${(e instanceof Error)? e.message: String(e)}\n`); } catch { /* ignore */ }
-      }
-    });
-  }
 }
 
 if(require.main === module){

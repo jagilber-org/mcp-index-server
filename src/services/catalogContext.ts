@@ -411,18 +411,9 @@ export function incrementUsage(id:string){
 
   // Atomically establish firstSeenTs if missing (avoid any window where undefined persists after increment)
   if(!e.firstSeenTs){
-    // First establishment path
     e.firstSeenTs = nowIso;
     ephemeralFirstSeen[e.id] = e.firstSeenTs; // track immediately for reload resilience
-    firstSeenAuthority[e.id] = e.firstSeenTs; incrementCounter('usage:firstSeenAuthoritySet');
-  } else {
-    // Immutability enforcement: if a later increment observes a different firstSeenTs than authoritative
-    // (which can happen only through a rare cross-test/global reset interaction), restore the original.
-    const auth = firstSeenAuthority[e.id];
-    if(auth && auth !== e.firstSeenTs){
-      e.firstSeenTs = auth; // repair silently
-      incrementCounter('usage:firstSeenAuthorityRestore');
-    }
+  firstSeenAuthority[e.id] = e.firstSeenTs; incrementCounter('usage:firstSeenAuthoritySet');
   }
   e.lastUsedAt = nowIso; // always advance lastUsedAt on any increment
 

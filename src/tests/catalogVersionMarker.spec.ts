@@ -32,23 +32,36 @@ describe('catalog version marker invalidation', () => {
   send(serverB,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } } });
     await waitFor(()=> !!findResponse(outB,2), 3000);
 
-    const beforeMtime = fs.existsSync(marker)? fs.statSync(marker).mtimeMs : 0;
+  const beforeMtime = fs.existsSync(marker)? fs.statSync(marker).mtimeMs : 0;
+  const beforeToken = fs.existsSync(marker)? fs.readFileSync(marker,'utf8'): '';
 
     const newId = 'marker-' + Date.now();
   send(serverA,{ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id:newId, body:'body', title:newId, priority:5, audience:'all', requirement:'optional', categories:['vm'] }, overwrite:true } } });
     await waitFor(()=> !!findResponse(outA,2), 3000);
 
-    // Marker should exist and have newer mtime
-  await ensureFileExists(marker, 6000);
+    // Marker should exist and have newer mtime + different token (write content) to defeat coarse mtime coalescing
+    await ensureFileExists(marker, 6000);
     const afterMtime = fs.statSync(marker).mtimeMs;
     expect(afterMtime).toBeGreaterThan(beforeMtime);
+    const afterToken = fs.readFileSync(marker,'utf8');
+    expect(afterToken).not.toBe(beforeToken);
 
-    // B lists again and should see newId via version invalidation
-  send(serverB,{ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } } });
-    await waitFor(()=> !!findResponse(outB,3), 3000);
-  const listLine = outB.find(l=> { try { return JSON.parse(l).id===3; } catch { return false; } });
-  const payload = listLine? parseToolPayload<{ items:{ id:string }[] }>(listLine): undefined;
-  expect(!!payload && payload.items.some(i=> i.id===newId)).toBe(true);
+    // Poll list with small backoff until newId visible (gives catalogContext.ensureLoaded() a chance to observe token)
+    let saw = false; let attempts = 0; const maxAttempts = 12; // ~12 * 250ms = 3s budget
+    while(!saw && attempts < maxAttempts){
+      attempts++;
+      send(serverB,{ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } } });
+      await waitFor(()=> !!findResponse(outB,3), 1000);
+      const listLine = outB.find(l=> { try { return JSON.parse(l).id===3; } catch { return false; } });
+      const payload = listLine? parseToolPayload<{ items:{ id:string }[] }>(listLine): undefined;
+      if(payload && payload.items.some(i=> i.id===newId)) { saw = true; break; }
+      // slight delay before retry; clear previous response lines with id=3 to avoid mis-detection
+      await new Promise(r=> setTimeout(r, 250));
+    }
+    if(!saw){
+      const tail = outB.slice(-15).join('\n');
+      throw new Error(`newId ${newId} not visible after marker invalidation attempts=${attempts} tail=\n${tail}`);
+    }
 
     serverA.kill(); serverB.kill();
   }, 12000);

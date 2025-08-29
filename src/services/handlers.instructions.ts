@@ -88,23 +88,38 @@ registerHandler('instructions/inspect', (p:{id:string})=>{
 });
 // NOTE: downstream mutation handlers retained; dispatcher will invoke via existing registered method names for those.
 
-registerHandler('instructions/import', guard('instructions/import', (p:{entries:ImportEntry[]; mode?:'skip'|'overwrite'})=>{ const entries=p.entries||[]; const mode=p.mode||'skip'; if(!Array.isArray(entries)||!entries.length) return { error:'no entries' }; const dir=getInstructionsDir(); if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true}); let imported=0, skipped=0, overwritten=0; const errors: { id:string; error:string }[]=[]; const classifier=new ClassificationService(); for(const e of entries){ if(!e || !e.id || !e.title || !e.body){ const id=(e as Partial<ImportEntry>)?.id||'unknown'; errors.push({ id, error:'missing required fields'}); continue; } // Normalize body early so leading/trailing whitespace does not influence sourceHash
- const bodyTrimmed = typeof e.body === 'string' ? e.body.trim() : e.body as unknown as string; const file=path.join(dir, `${e.id}.json`); const fileExists=fs.existsSync(file); if(fileExists && mode==='skip'){ skipped++; continue; } if(fileExists && mode==='overwrite') overwritten++; else if(!fileExists) imported++; const now=new Date().toISOString(); const categories=Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c):c is string => typeof c==='string').map(c=>c.toLowerCase()))).sort(); const newBodyHash=crypto.createHash('sha256').update(bodyTrimmed,'utf8').digest('hex'); let existing:InstructionEntry|null=null; if(fileExists){ try { existing=JSON.parse(fs.readFileSync(file,'utf8')); } catch { existing=null; } }
-  // Governance prerequisite rules (simple inline version): P1 requires at least one category & owner; mandatory/critical require owner
-  if(e.priorityTier==='P1' && (!categories.length || !e.owner)) { errors.push({ id:e.id, error:'P1 requires category & owner'}); continue; }
-  if((e.requirement==='mandatory' || e.requirement==='critical') && !e.owner){ errors.push({ id:e.id, error:'mandatory/critical require owner'}); continue; }
-  // Preserve existing version/changeLog unless caller explicitly supplies new version/changeLog
-  const base: InstructionEntry = existing ? { ...existing, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, updatedAt: now } as InstructionEntry : { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash:newBodyHash, schemaVersion:SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt:now, updatedAt:now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
-  // Pass through governance fields if supplied (alpha: no opinionated overrides)
-  const govKeys: (keyof ImportEntry)[] = ['version','owner','status','priorityTier','classification','lastReviewedAt','nextReviewDue','changeLog','semanticSummary'];
-  for(const k of govKeys){ const v = e[k]; if(v!==undefined){ (base as unknown as Record<string, unknown>)[k]=v as unknown; } }
-  // Always recompute sourceHash from body, but do NOT auto bump version.
-  const newHash=newBodyHash; base.sourceHash = newHash; // if body changed without explicit version, we keep existing version
-  const record=classifier.normalize(base);
-  if(record.owner==='unowned'){ const auto=resolveOwner(record.id); if(auto){ record.owner=auto; record.updatedAt=new Date().toISOString(); } }
-  try { atomicWriteJson(file, record); } catch { errors.push({ id:e.id, error:'write-failed'}); }
- }
- touchCatalogVersion(); invalidate(); const st=ensureLoaded(); const summary = { hash: st.hash, imported, skipped, overwritten, total: entries.length, errors }; logAudit('import', entries.map(e=> e.id), { imported, skipped, overwritten, errors: errors.length }); return summary; }));
+registerHandler('instructions/import', guard('instructions/import', (p:{entries:ImportEntry[]; mode?:'skip'|'overwrite'})=>{
+  const entries=p.entries||[]; const mode=p.mode||'skip';
+  if(!Array.isArray(entries)||!entries.length) return { error:'no entries' };
+  const dir=getInstructionsDir(); if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true});
+  let imported=0, skipped=0, overwritten=0; const errors: { id:string; error:string }[]=[]; const classifier=new ClassificationService();
+  for(const e of entries){
+    if(!e || !e.id || !e.title || !e.body){ const id=(e as Partial<ImportEntry>)?.id||'unknown'; errors.push({ id, error:'missing required fields'}); continue; }
+    const bodyTrimmed = typeof e.body === 'string' ? e.body.trim() : String(e.body);
+    const file=path.join(dir, `${e.id}.json`); const fileExists=fs.existsSync(file);
+    const now=new Date().toISOString();
+    const categories=Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c):c is string => typeof c==='string').map(c=>c.toLowerCase()))).sort();
+    const newBodyHash=crypto.createHash('sha256').update(bodyTrimmed,'utf8').digest('hex');
+    let existing:InstructionEntry|null=null; if(fileExists){ try { existing=JSON.parse(fs.readFileSync(file,'utf8')); } catch { existing=null; } }
+    // Governance prerequisite rules BEFORE adjusting counters so failures are excluded from imported/overwritten/skipped
+    if(e.priorityTier==='P1' && (!categories.length || !e.owner)) { errors.push({ id:e.id, error:'P1 requires category & owner'}); continue; }
+    if((e.requirement==='mandatory' || e.requirement==='critical') && !e.owner){ errors.push({ id:e.id, error:'mandatory/critical require owner'}); continue; }
+    // Skip/overwrite semantics now that governance validation passed
+    if(fileExists && mode==='skip'){ skipped++; continue; }
+    if(fileExists && mode==='overwrite') overwritten++; else if(!fileExists) imported++;
+    const base: InstructionEntry = existing ? { ...existing, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, updatedAt: now } as InstructionEntry : { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash:newBodyHash, schemaVersion:SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt:now, updatedAt:now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
+    const govKeys: (keyof ImportEntry)[] = ['version','owner','status','priorityTier','classification','lastReviewedAt','nextReviewDue','changeLog','semanticSummary'];
+    for(const k of govKeys){ const v = e[k]; if(v!==undefined){ (base as unknown as Record<string, unknown>)[k]=v as unknown; } }
+    base.sourceHash = newBodyHash;
+    const record=classifier.normalize(base);
+    if(record.owner==='unowned'){ const auto=resolveOwner(record.id); if(auto){ record.owner=auto; record.updatedAt=new Date().toISOString(); } }
+    try { atomicWriteJson(file, record); } catch { errors.push({ id:e.id, error:'write-failed'}); }
+  }
+  touchCatalogVersion(); invalidate(); const st=ensureLoaded();
+  const summary = { hash: st.hash, imported, skipped, overwritten, total: entries.length, errors };
+  logAudit('import', entries.map(e=> e.id), { imported, skipped, overwritten, errors: errors.length });
+  return summary;
+}));
 // Add (create/update) single instruction. Maintains backward compatibility with dispatcher mapping 'add' -> 'instructions/add'.
 interface AddParams { entry: ImportEntry & { lax?: boolean }; overwrite?: boolean; lax?: boolean }
 registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{

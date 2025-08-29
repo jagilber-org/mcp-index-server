@@ -23,7 +23,7 @@ function track(id: string){
 describe('usage tracking', () => {
   it('increments usage count deterministically on a fresh entry (tight)', async () => {
     // Create a unique instruction entry to avoid prior usage contamination
-    const id = 'usage-track-' + Date.now();
+    const id = 'usage-track-' + Date.now() + '-' + Math.random().toString(36).substring(7);
     const now = new Date().toISOString();
     writeEntry({
       id,
@@ -47,9 +47,14 @@ describe('usage tracking', () => {
       changeLog:[{ version:'1.0.0', changedAt: now, summary:'init'}],
       semanticSummary:'usage tracking test'
     });
+    
     // First increment -> count should be 1
     const r1 = track(id);
     expect(r1.usageCount).toBe(1);
+    
+    // Wait 1.1 seconds to avoid rate limiting (10 per second limit)
+    await new Promise(resolve => setTimeout(resolve, 1100));
+    
     // Second increment -> count should be 2
     const r2 = track(id);
     expect(r2.usageCount).toBe(2);

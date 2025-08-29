@@ -85,8 +85,9 @@ if(Test-Path $Destination){
         while(Test-Path $backupDir){ $backupDir = Join-Path $backupRoot ("instructions-$stamp-" + ($i++)) }
         Write-Host "[deploy] Backing up instructions to $backupDir" -ForegroundColor Cyan
         New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
-        foreach($f in $jsonFiles){ Copy-Item $f.FullName (Join-Path $backupDir $f.Name) }
-        Write-Host "[deploy] Backup completed (${($jsonFiles|Measure-Object).Count} files)." -ForegroundColor Green
+  foreach($f in $jsonFiles){ Copy-Item $f.FullName (Join-Path $backupDir $f.Name) }
+  $backupCount = ($jsonFiles | Measure-Object).Count
+  Write-Host "[deploy] Backup completed ($backupCount files)." -ForegroundColor Green
         if($BackupRetention -gt 0){
           $existing = Get-ChildItem -Path $backupRoot -Directory -Filter 'instructions-*' | Sort-Object Name -Descending
           if($existing.Count -gt $BackupRetention){
@@ -148,8 +149,33 @@ if(Test-Path 'schemas'){
     Write-Host '[deploy] ERROR: instruction.schema.json missing after schemas copy.' -ForegroundColor Red
     exit 1
   }
+  # If a legacy build layout (dist/src/...) exists we also place schemas under dist/ for backward compatibility
+  $legacyServices = Join-Path $Destination 'dist/src/services/catalogLoader.js'
+  if(Test-Path $legacyServices){
+    Write-Host '[deploy] Detected legacy dist/src/* layout -> adding dist/schemas for backward compatibility.' -ForegroundColor Yellow
+    if(-not (Test-Path (Join-Path $Destination 'dist/schemas'))){ New-Item -ItemType Directory -Force -Path (Join-Path $Destination 'dist/schemas') | Out-Null }
+    Copy-Item -Recurse -Force 'schemas/*' (Join-Path $Destination 'dist/schemas')
+  }
 } else {
   Write-Host '[deploy] WARNING: schemas directory not found in source; runtime schema validation may fail.' -ForegroundColor Yellow
+}
+
+# Detect and warn about mixed new/legacy build artifacts. Offer auto-clean of legacy tree when safe.
+$newServer = Join-Path $Destination 'dist/server/index.js'
+$legacyServer = Join-Path $Destination 'dist/src/server/index.js'
+if((Test-Path $newServer) -and (Test-Path $legacyServer)){
+  Write-Host '[deploy] WARNING: Both new layout (dist/server) and legacy layout (dist/src/server) detected. Runtime may load stale files.' -ForegroundColor Yellow
+  try {
+    # If Overwrite was specified we can safely prune legacy tree
+    if($Overwrite){
+      Write-Host '[deploy] Pruning legacy dist/src/* tree due to -Overwrite and presence of new layout...' -ForegroundColor Cyan
+      Remove-Item -Recurse -Force (Join-Path $Destination 'dist/src')
+    } else {
+      Write-Host '[deploy] Suggestion: re-run with -Overwrite to remove legacy dist/src tree or manually delete dist/src before deploy.' -ForegroundColor DarkYellow
+    }
+  } catch {
+    Write-Host "[deploy] Warning: failed to prune legacy dist/src: $($_.Exception.Message)" -ForegroundColor Yellow
+  }
 }
 
 # Minimal runtime package file: strip dev deps to reduce noise

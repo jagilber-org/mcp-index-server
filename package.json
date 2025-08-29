@@ -7,7 +7,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server/index.js",
     "start:short": "cross-env MCP_SHORTCIRCUIT=1 node dist/server/index.js",
-  "start-minimal": "node dist/src/minimal/index.js",
+    "start-minimal": "node dist/src/minimal/index.js",
     "prestart": "npm run build",
     "pretest": "pwsh scripts/pretest-build-or-skip.ps1",
     "dev": "node --watch dist/server/index.js",
@@ -45,14 +45,14 @@
     "@types/node": "^20.11.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
-    "@vitest/coverage-v8": "^1.6.1",
+    "@vitest/coverage-v8": "^3.2.4",
     "cross-env": "^7.0.3",
     "eslint": "^8.57.0",
     "fast-check": "^3.17.0",
     "prettier": "^3.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.0",
-    "vitest": "^1.6.0"
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.6.0",

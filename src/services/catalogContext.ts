@@ -6,7 +6,6 @@ import { InstructionEntry } from '../models/instruction';
 import { hasFeature, incrementCounter } from './features';
 import { atomicWriteJson } from './atomicFs';
 import { ClassificationService } from './classificationService';
-import { SCHEMA_VERSION, migrateInstructionRecord } from '../versioning/schemaVersion';
 import { resolveOwner } from './ownershipService';
 
 export interface CatalogState { loadedAt: string; hash: string; byId: Map<string, InstructionEntry>; list: InstructionEntry[]; latestMTime: number; fileSignature: string; fileCount: number; versionMTime: number; versionToken: string }

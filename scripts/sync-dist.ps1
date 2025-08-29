@@ -12,7 +12,9 @@
 #>
 param(
   [string]$Destination = 'C:\mcp\mcp-index-server',
-  [switch]$UpdatePackage
+  [switch]$UpdatePackage,
+  # Fail if dist/server/index.js missing after copy
+  [switch]$Verify
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -27,8 +29,28 @@ Copy-Item -Recurse -Force dist/* $destDist
 if($UpdatePackage){
   $pkgPath = Join-Path $PWD 'package.json'
   $pkg = Get-Content $pkgPath -Raw | ConvertFrom-Json
-  $runtime = [ordered]@{ name = $pkg.name; version = $pkg.version; type='commonjs'; license=$pkg.license; description=$pkg.description; repository=$pkg.repository; author=$pkg.author; dependencies=$pkg.dependencies; engines = $pkg.engines; scripts = @{ start = 'node dist/server/index.js' } }
+  function Get-PkgProp($obj,$name,$default){ if($null -ne $obj -and ($obj.PSObject.Properties.Name -contains $name)){ return $obj.$name } return $default }
+  $runtime = [ordered]@{
+    name = Get-PkgProp $pkg 'name' 'mcp-index-server'
+    version = Get-PkgProp $pkg 'version' '0.0.0'
+    type = 'commonjs'
+    license = Get-PkgProp $pkg 'license' 'MIT'
+    description = Get-PkgProp $pkg 'description' ''
+    repository = Get-PkgProp $pkg 'repository' @{ type='git'; url='' }
+    author = Get-PkgProp $pkg 'author' 'Unknown'
+    dependencies = Get-PkgProp $pkg 'dependencies' @{}
+    engines = Get-PkgProp $pkg 'engines' @{ node = '>=20 <21' }
+    scripts = @{ start = 'node dist/server/index.js' }
+  }
   $runtime | ConvertTo-Json -Depth 10 | Out-File (Join-Path $Destination 'package.json') -Encoding UTF8
   Write-Host '[sync] Updated runtime package.json' -ForegroundColor Green
+}
+if($Verify){
+  if(-not (Test-Path (Join-Path $destDist 'server/index.js'))){
+    Write-Host '[sync] ERROR: dist/server/index.js missing after sync.' -ForegroundColor Red
+    exit 1
+  } else {
+    Write-Host '[sync] Verified dist/server/index.js present.' -ForegroundColor Green
+  }
 }
 Write-Host '[sync] Done.' -ForegroundColor Green

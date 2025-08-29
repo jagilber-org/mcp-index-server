@@ -1,0 +1,30 @@
+{
+  "id": "usage-track-1756437800848-ewj98",
+  "title": "usage-track-1756437800848-ewj98",
+  "body": "usage tracking test body",
+  "priority": 10,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "c53c7a9e3b762cc2d5d3f93265f1ac732f9bbf4eba1acbe6096e6f71e8f9f854",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-29T03:23:20.848Z",
+  "updatedAt": "2025-08-29T03:23:20.848Z",
+  "owner": "unowned",
+  "version": "1.0.0",
+  "priorityTier": "P3",
+  "status": "approved",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-29T03:23:20.848Z",
+  "nextReviewDue": "2025-08-29T03:23:20.848Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-29T03:23:20.848Z",
+      "summary": "init"
+    }
+  ],
+  "semanticSummary": "usage tracking test",
+  "riskScore": 95,
+  "reviewIntervalDays": 90
+}

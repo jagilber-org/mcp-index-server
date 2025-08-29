@@ -1,0 +1,16 @@
+{
+  "name": "portable-mcp-test",
+  "version": "1.0.0",
+  "description": "Self-contained MCP compliant test server and smoke test client.",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=18.0.0" },
+  "scripts": {
+    "start:server": "node server.mjs",
+    "smoke": "node smoke-client.mjs",
+    "smoke:json": "node smoke-client.mjs --json"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.4"
+  }
+}

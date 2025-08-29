@@ -53,13 +53,18 @@ describe('concurrency: add same id concurrently', () => {
 
     // Fallback: list and locate if direct get did not surface
     if(!item){
-      send(server,{ jsonrpc:'2.0', id:500, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } } });
-      await waitFor(()=> haveId(out,500));
-      const line = findLine(out,500);
-      const payload = line ? parseToolPayload<{ items: InstructionItem[] }>(line) : undefined;
-      const found = payload?.items.find(i=> i.id===baseId);
-      expect(found, 'Entry should appear in list after concurrent adds').toBeTruthy();
-      item = found;
+      // Fallback: perform several list attempts with small delay to accommodate any late invalidation reload
+      for(let attempt=0; attempt<5 && !item; attempt++){
+        const listId = 500+attempt;
+        send(server,{ jsonrpc:'2.0', id:listId, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } } });
+        await waitFor(()=> haveId(out,listId));
+        const line = findLine(out,listId);
+        const payload = line ? parseToolPayload<{ items: InstructionItem[] }>(line) : undefined;
+        const found = payload?.items.find(i=> i.id===baseId);
+        if(found){ item = found; break; }
+        await new Promise(r=> setTimeout(r,150));
+      }
+      expect(item, 'Entry should appear in list after concurrent adds').toBeTruthy();
     }
 
     expect(item, 'Expected to retrieve entry after concurrent adds').toBeTruthy();

@@ -1,0 +1,33 @@
+{
+  "id": "crud-test-medium-002",
+  "title": "Medium CRUD Test Entry 002",
+  "body": "Second medium test entry to validate batch operations",
+  "priority": 30,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "batch",
+    "testing"
+  ],
+  "sourceHash": "fcf02b0d173da1d3fd03a80551e0d26936e428f36f10cdb3d596c46a55794461",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-29T17:21:32.688Z",
+  "updatedAt": "2025-08-29T17:21:32.688Z",
+  "riskScore": 75,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-29T17:21:32.688Z",
+  "nextReviewDue": "2025-10-28T17:21:32.688Z",
+  "reviewIntervalDays": 60,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-29T17:21:32.688Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Second medium test entry to validate batch operations"
+}

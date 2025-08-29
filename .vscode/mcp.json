@@ -23,6 +23,14 @@
 				// "INDEX_AUTOSAVE_INTERVAL_MS": "3000",
 				// "MCP_LOG_VERBOSE": "1"
 			}
+		},
+		"powershell-mcp-server": {
+			"command": "node",
+			"args": [
+				"dist/server.js"
+			],
+			"cwd": "c:\\mcp\\powershell-mcp-server",
+			"type": "stdio"
 		}
 	},
 	"inputs": []

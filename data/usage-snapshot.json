@@ -1,35 +1,37 @@
 {
   "alpha": {
-    "usageCount": 3,
-    "firstSeenTs": "2025-08-28T22:00:25.791Z",
-    "lastUsedAt": "2025-08-29T04:17:32.362Z"
+    "usageCount": 1,
+    "firstSeenTs": "2025-08-29T16:41:48.385Z",
+    "lastUsedAt": "2025-08-29T23:10:48.775Z"
   },
   "batch-seed": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-28T22:00:26.002Z",
-    "lastUsedAt": "2025-08-29T04:16:50.482Z"
+    "firstSeenTs": "2025-08-29T16:41:50.431Z",
+    "lastUsedAt": "2025-08-29T23:10:50.319Z"
   },
   "beta": {
-    "usageCount": 3,
-    "firstSeenTs": "2025-08-28T22:00:26.039Z",
-    "lastUsedAt": "2025-08-29T04:33:44.628Z"
-  },
-  "gating_test_entry_enabled_1756442026846_q3brp5": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-29T04:33:47.048Z",
-    "lastUsedAt": "2025-08-29T04:33:47.048Z"
+    "firstSeenTs": "2025-08-29T16:41:50.635Z",
+    "lastUsedAt": "2025-08-29T23:10:50.806Z"
+  },
+  "gating_test_entry_enabled_1756509047871_ube0j6": {
+    "usageCount": 1,
+    "firstSeenTs": "2025-08-29T23:10:48.106Z",
+    "lastUsedAt": "2025-08-29T23:10:48.106Z"
   },
   "rate-limit-test-entry": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-28T21:59:38.076Z",
-    "lastUsedAt": "2025-08-29T04:13:39.543Z"
+    "firstSeenTs": "2025-08-29T16:41:43.303Z",
+    "lastUsedAt": "2025-08-29T23:10:45.036Z"
   },
-  "usage-track-1756436089621-l0p2ik": {
-    "firstSeenTs": "2025-08-29T02:54:49.743Z"
-  },
-  "usage-track-1756442060781-d69yyt": {
+  "usage-track-1756509046379-67vf6r": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-29T04:34:20.868Z",
-    "lastUsedAt": "2025-08-29T04:34:20.868Z"
+    "firstSeenTs": "2025-08-29T23:10:46.789Z",
+    "lastUsedAt": "2025-08-29T23:10:46.789Z"
+  },
+  "usage-track-1756509241790-32yfme": {
+    "usageCount": 1,
+    "firstSeenTs": "2025-08-29T23:14:01.943Z",
+    "lastUsedAt": "2025-08-29T23:14:01.943Z"
   }
 }

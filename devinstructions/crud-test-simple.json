@@ -1,0 +1,33 @@
+{
+  "id": "crud-test-simple",
+  "title": "Simple CRUD Test Entry",
+  "body": "This is a simple test instruction for CRUD validation",
+  "priority": 10,
+  "audience": "developers",
+  "requirement": "optional",
+  "categories": [
+    "crud",
+    "testing"
+  ],
+  "sourceHash": "2fb2afe468c0dd633c810cd57c33e13a79dc49473a11f3d081afb8bb7f60f022",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-29T17:21:14.440Z",
+  "updatedAt": "2025-08-29T17:21:14.440Z",
+  "riskScore": 95,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-29T17:21:14.441Z",
+  "nextReviewDue": "2025-09-28T17:21:14.441Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-29T17:21:14.440Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "This is a simple test instruction for CRUD validation"
+}

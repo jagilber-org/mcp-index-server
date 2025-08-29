@@ -9,8 +9,5 @@
     "b"
   ],
   "reviewIntervalDays": 120,
-  "schemaVersion": "2",
-  "sourceHash": "d053694953b7f16c118e0f8c919f9c7c571a4cbbde9b4f10813eea97a930cf09",
-  "priorityTier": "P2",
-  "semanticSummary": "Beta body"
+  "schemaVersion": "2"
 }

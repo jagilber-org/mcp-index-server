@@ -11,6 +11,7 @@ This project provides comprehensive enterprise-grade documentation:
 - **[⚙️ Configuration Guide (MCP-CONFIGURATION.md)](./docs/MCP-CONFIGURATION.md)** - Comprehensive MCP setup patterns for all environments
 - **[📝 Content Guidance (CONTENT-GUIDANCE.md)](./docs/CONTENT-GUIDANCE.md)** - What to include in local vs. central instruction servers
 - **[🧠 Prompt Optimization (PROMPT-OPTIMIZATION.md)](./docs/PROMPT-OPTIMIZATION.md)** - AI prompt handling and optimization guide
+- **[🔍 Portable Test Client (PORTABLE-MCP-TEST-CLIENT.md)](./docs/PORTABLE-MCP-TEST-CLIENT.md)** - Critical testing tool for MCP troubleshooting
 - **[🏗️ Architecture (ARCHITECTURE.md)](./docs/ARCHITECTURE.md)** - System design and component overview
 - **[🔄 Schema Evolution (SCHEMA-V2-PLAN.md)](./docs/SCHEMA-V2-PLAN.md)** - Schema versioning and migration
 - **[🔒 Security (SECURITY.md)](./SECURITY.md)** - Security policies and compliance

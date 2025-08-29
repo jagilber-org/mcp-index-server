@@ -20,7 +20,7 @@ interface QueryResponse { count:number; items: Array<{ id:string }>; }
 interface CategoriesResponse { count:number; categories: Array<{ name:string; count:number }>; }
 interface AddResponse { error?: string }
 
-describe('instructions/query & categories', () => {
+describe('instructions/dispatch query & categories actions', () => {
   const baseEntries: Partial<InstructionEntry & { priorityTier?: 'P1'|'P2'|'P3'|'P4'; owner?: string }>[] = [
     { id:'q-alpha', title:'Alpha Security Guide', body:'Alpha body about auth', priority:10, audience:'all', requirement:'mandatory', categories:['security','auth'], owner:'team-sec', priorityTier:'P1' },
     { id:'q-beta', title:'Beta Performance', body:'Beta body latency', priority:40, audience:'all', requirement:'optional', categories:['performance'], owner:'team-perf', priorityTier:'P2' },
@@ -61,9 +61,9 @@ describe('instructions/query & categories', () => {
     if(prevMutationFlag === undefined) delete process.env.MCP_ENABLE_MUTATION; else process.env.MCP_ENABLE_MUTATION = prevMutationFlag;
   });
 
-  it('filters by categoriesAll and requirement', async () => {
+  it('filters by categoriesAll and requirement (dispatcher action=query)', async () => {
     ensureLoaded();
-    const res = await call<QueryResponse>('instructions/query', { categoriesAll:['security','auth'], requirements:['mandatory'] });
+    const res = await call<QueryResponse>('instructions/dispatch', { action:'query', categoriesAll:['security','auth'], requirements:['mandatory'] });
     // Avoid brittle exact cardinality; ensure at least 1 and target present
     // IMPORTANT: Do NOT assert exact res.count===1 here. Multiple seeded or future entries could legitimately match.
     if((res as unknown as { count?:number }).count === 1){
@@ -73,8 +73,8 @@ describe('instructions/query & categories', () => {
     expect(res.items.some(i=> i.id==='q-alpha')).toBe(true);
   });
 
-  it('returns category taxonomy', async () => {
-  const res = await call<CategoriesResponse>('instructions/categories', {});
+  it('returns category taxonomy (dispatcher action=categories)', async () => {
+  const res = await call<CategoriesResponse>('instructions/dispatch', { action:'categories' });
     const names = res.categories.map((c: {name:string})=>c.name).sort();
     expect(names).toContain('security');
     expect(names).toContain('performance');

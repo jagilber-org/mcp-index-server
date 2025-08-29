@@ -52,7 +52,7 @@ function buildIncremental(known: { id: string; sourceHash: string }[]){
   return { added, updated, removed, hash: st.hash };
 }
 
-describe('instructions/diff incremental logic', () => {
+describe('incremental diff logic (legacy instructions/diff removed)', () => {
   it('returns added for empty known list', () => {
     const result = buildIncremental([]);
     expect(result.added.length).toBeGreaterThan(0);

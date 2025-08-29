@@ -1,0 +1,12 @@
+{
+  "id": "green_valid_8",
+  "title": "Title 8",
+  "body": "Body 8",
+  "priority": 10,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [],
+  "sourceHash": "",
+  "schemaVersion": "2",
+  "reviewIntervalDays": 30
+}

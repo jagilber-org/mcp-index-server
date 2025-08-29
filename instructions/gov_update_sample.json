@@ -10,18 +10,18 @@
   ],
   "reviewIntervalDays": 120,
   "schemaVersion": "2",
-  "sourceHash": "43ba0aa0db281daa88b0d90341e0ef52e5d8105175357eb9a1ee57955f255b27",
-  "priorityTier": "P3",
-  "semanticSummary": "Line1 summary",
   "owner": "team:alpha",
   "status": "approved",
   "version": "1.0.1",
   "changeLog": [
     {
       "version": "1.0.1",
-      "changedAt": "2025-08-29T03:37:03.277Z",
+      "changedAt": "2025-08-29T04:13:37.124Z",
       "summary": "manual patch bump via governanceUpdate"
     }
   ],
-  "updatedAt": "2025-08-29T03:37:03.277Z"
+  "updatedAt": "2025-08-29T04:13:37.124Z",
+  "sourceHash": "43ba0aa0db281daa88b0d90341e0ef52e5d8105175357eb9a1ee57955f255b27",
+  "priorityTier": "P3",
+  "semanticSummary": "Line1 summary"
 }

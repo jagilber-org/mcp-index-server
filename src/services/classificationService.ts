@@ -39,7 +39,7 @@ export class ClassificationService {
       categories: Array.from(new Set(otherCats.map(c => c.toLowerCase()))).sort(),
       updatedAt: entry.updatedAt || now,
       createdAt: entry.createdAt || now,
-  // Guarantee schemaVersion presence (tests assert instructions/list items include this field)
+  // Guarantee schemaVersion presence (tests/assertions now rely on dispatcher list action output)
   schemaVersion: entry.schemaVersion || SCHEMA_VERSION,
   // Compute hash from canonical (trimmed) body to ensure stability across innocuous whitespace differences
   sourceHash: entry.sourceHash && entry.sourceHash.length === 64 ? entry.sourceHash : this.computeHash(trimmedBody),

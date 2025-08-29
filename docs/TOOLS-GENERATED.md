@@ -7,7 +7,7 @@ This file summarizes the current tool registry after 0.9.x dispatcher consolidat
 | Method | Stable | Mutation | Description |
 |--------|--------|----------|-------------|
 | health/check | yes |  | Returns server health status & version. |
-| instructions/dispatch | yes |  | Unified dispatcher for instruction catalog actions (list,listScoped,get,search,diff,export,query,categories,dir,capabilities,batch,inspect,health,governanceHash + mutations). |
+| instructions/dispatch | yes |  | Unified dispatcher for instruction catalog actions (list,listScoped,get,search,diff,export,query,categories,dir,capabilities,batch,inspect,governanceHash + mutations). |
 | instructions/governanceHash | yes |  | Return governance projection & deterministic governance hash. |
 | instructions/add |  | yes | Add a single instruction (lax mode fills defaults; overwrite optional). |
 | instructions/import |  | yes | Import (create/overwrite) instruction entries from provided objects. |
@@ -24,7 +24,6 @@ This file summarizes the current tool registry after 0.9.x dispatcher consolidat
 | usage/hotset | yes |  | Return the most-used instruction entries (hot set). |
 | usage/flush |  | yes | Flush usage snapshot to persistent storage. |
 | metrics/snapshot | yes |  | Performance metrics summary for handled methods. |
-| feature/status |  |  | Report active index feature flags and counters. |
 | meta/tools | yes |  | Enumerate available tools & their metadata. |
 
 ## Dispatcher Schema (Aggregate)

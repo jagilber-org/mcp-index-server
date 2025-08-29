@@ -1,47 +1,35 @@
 {
   "alpha": {
-    "usageCount": 29,
+    "usageCount": 1,
     "firstSeenTs": "2025-08-28T22:00:25.791Z",
-    "lastUsedAt": "2025-08-29T03:37:07.149Z"
+    "lastUsedAt": "2025-08-29T04:16:50.432Z"
   },
   "batch-seed": {
-    "usageCount": 27,
+    "usageCount": 1,
     "firstSeenTs": "2025-08-28T22:00:26.002Z",
-    "lastUsedAt": "2025-08-29T03:37:07.800Z"
+    "lastUsedAt": "2025-08-29T04:16:50.482Z"
   },
   "beta": {
-    "usageCount": 33,
-    "firstSeenTs": "2025-08-28T22:00:26.039Z",
-    "lastUsedAt": "2025-08-29T03:37:07.895Z"
-  },
-  "gating_test_entry_enabled_1756438625773_7tvaxv": {
     "usageCount": 1,
-    "firstSeenTs": "2025-08-29T03:37:05.968Z",
-    "lastUsedAt": "2025-08-29T03:37:05.968Z"
+    "firstSeenTs": "2025-08-28T22:00:26.039Z",
+    "lastUsedAt": "2025-08-29T04:16:50.524Z"
+  },
+  "gating_test_entry_enabled_1756440819315_enc3x0": {
+    "usageCount": 1,
+    "firstSeenTs": "2025-08-29T04:13:39.445Z",
+    "lastUsedAt": "2025-08-29T04:13:39.445Z"
   },
   "rate-limit-test-entry": {
     "usageCount": 1,
     "firstSeenTs": "2025-08-28T21:59:38.076Z",
-    "lastUsedAt": "2025-08-29T02:31:09.247Z"
-  },
-  "rate-test-1": {
-    "usageCount": 10,
-    "firstSeenTs": "2025-08-29T03:37:09.275Z",
-    "lastUsedAt": "2025-08-29T03:37:10.099Z"
-  },
-  "rate-test-2": {
-    "usageCount": 1,
-    "firstSeenTs": "2025-08-29T03:37:10.295Z",
-    "lastUsedAt": "2025-08-29T03:37:10.295Z"
+    "lastUsedAt": "2025-08-29T04:13:39.543Z"
   },
   "usage-track-1756436089621-l0p2ik": {
-    "usageCount": 1,
-    "firstSeenTs": "2025-08-29T02:54:49.743Z",
-    "lastUsedAt": "2025-08-29T02:54:49.743Z"
+    "firstSeenTs": "2025-08-29T02:54:49.743Z"
   },
-  "usage-track-1756438625071-06hqys": {
-    "usageCount": 1,
-    "firstSeenTs": "2025-08-29T03:37:05.317Z",
-    "lastUsedAt": "2025-08-29T03:37:05.317Z"
+  "usage-track-1756441009051-wfx5t8": {
+    "usageCount": 2,
+    "firstSeenTs": "2025-08-29T04:16:49.138Z",
+    "lastUsedAt": "2025-08-29T04:16:50.295Z"
   }
 }

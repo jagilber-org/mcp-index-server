@@ -21,10 +21,10 @@ async function waitForId(lines: string[], id: number, timeout=4000){
 
 // Keep in sync with toolRegistry.STABLE set
 const STABLE_TOOLS = [
-  'health/check','instructions/dispatch','instructions/governanceHash','instructions/query','instructions/categories','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools'
+  'health/check','instructions/dispatch','instructions/governanceHash','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools'
 ];
 
-describe('stable tools coverage smoke', () => {
+describe('stable tools coverage smoke (post-dispatcher consolidation)', () => {
   it('invokes each stable tool at least once (ensures no hang & basic success)', async () => {
     const server = startServer();
     const lines: string[] = [];

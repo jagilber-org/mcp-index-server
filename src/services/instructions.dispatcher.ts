@@ -66,7 +66,7 @@ registerHandler('instructions/dispatch', async (params: DispatchParams) => {
   }
   if(mutationMethods.has(target) && !isMutationEnabled()) {
     try { if(process.env.MCP_LOG_VERBOSE==='1') process.stderr.write(`[dispatcher] semantic_error code=-32601 reason=mutation_disabled action=${action} target=${target}\n`); } catch { /* ignore */ }
-    semanticError(-32601,'Mutation disabled',{ action, method: target, reason:'mutation_disabled' });
+    semanticError(-32601,`Mutation disabled for action '${action}'. Direct mutation tools are disabled - this dispatcher method should work. Set MCP_ENABLE_MUTATION=1 to enable all mutations.`,{ action, method: target, reason:'mutation_disabled', dispatcher: true });
   }
   const handler = getHandler(target);
   if(!handler) {

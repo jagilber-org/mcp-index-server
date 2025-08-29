@@ -30,20 +30,8 @@ const INPUT_SCHEMAS: Record<string, object> = {
     nextReviewDue: { type: 'string' },
     bump: { type: 'string', enum: ['patch','minor','major','none'] }
   } },
-  // Re-expose legacy read-only query endpoints for direct invocation paths still in tests
-  'instructions/query': { type: 'object', additionalProperties: true, properties: {
-    categoriesAll: { type: 'array', items: { type: 'string' } },
-    categoriesAny: { type: 'array', items: { type: 'string' } },
-    excludeCategories: { type: 'array', items: { type: 'string' } },
-    priorityMin: { type: 'number' },
-    priorityMax: { type: 'number' },
-    priorityTiers: { type: 'array', items: { type: 'string', enum: ['P1','P2','P3','P4'] } },
-    requirements: { type: 'array', items: { type: 'string', enum: ['mandatory','critical','recommended','optional','deprecated'] } },
-    text: { type: 'string' },
-    limit: { type: 'number', minimum:1, maximum:1000 },
-    offset: { type: 'number', minimum:0 }
-  } },
-  'instructions/categories': { type: 'object', additionalProperties: true },
+  // NOTE: instructions/query & instructions/categories removed as standalone tools.
+  // They are now exclusively accessed via instructions/dispatch with actions 'query' and 'categories'.
   // legacy read-only instruction method schemas removed in favor of dispatcher
   'instructions/import': { type: 'object', additionalProperties: false, required: ['entries'], properties: {
     entries: { type: 'array', minItems: 1, items: { type: 'object', required: ['id','title','body','priority','audience','requirement'], additionalProperties: true, properties: {
@@ -119,7 +107,7 @@ const INPUT_SCHEMAS: Record<string, object> = {
 };
 
 // Stable & mutation classification lists (mirrors usage in toolHandlers; exported to remove duplication there).
-export const STABLE = new Set(['health/check','instructions/dispatch','instructions/governanceHash','instructions/query','instructions/categories','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools','feedback/list','feedback/get','feedback/stats','feedback/health']);
+export const STABLE = new Set(['health/check','instructions/dispatch','instructions/governanceHash','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools','feedback/list','feedback/get','feedback/stats','feedback/health']);
 const MUTATION = new Set(['instructions/add','instructions/import','instructions/repair','instructions/reload','instructions/remove','instructions/groom','instructions/enrich','instructions/governanceUpdate','usage/flush','feedback/submit','feedback/update']);
 
 export function getToolRegistry(): ToolRegistryEntry[] {
@@ -146,8 +134,7 @@ function describeTool(name: string): string {
     case 'health/check': return 'Returns server health status & version.';
   case 'instructions/dispatch': return 'Unified dispatcher for instruction catalog actions (list,get,search,diff,export,query,categories,dir & mutations).';
   case 'instructions/governanceHash': return 'Return governance projection & deterministic governance hash.';
-  case 'instructions/query': return 'Filter instruction catalog by categories, priorities, tiers, requirements, and text search.';
-  case 'instructions/categories': return 'Return category taxonomy with occurrence counts.';
+  // query & categories now accessed via dispatcher actions.
   // legacy read-only instruction descriptions removed (handled via dispatcher)
     case 'instructions/import': return 'Import (create/overwrite) instruction entries from provided objects.';
   case 'instructions/add': return 'Add a single instruction (lax mode fills defaults; overwrite optional).';

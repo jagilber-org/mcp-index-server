@@ -7,6 +7,7 @@ import { hasFeature, incrementCounter } from './features';
 import { atomicWriteJson } from './atomicFs';
 import { ClassificationService } from './classificationService';
 import { resolveOwner } from './ownershipService';
+import { getUsageBucketsService } from './usageBuckets';
 
 export interface CatalogState { loadedAt: string; hash: string; byId: Map<string, InstructionEntry>; list: InstructionEntry[]; latestMTime: number; fileSignature: string; fileCount: number; versionMTime: number; versionToken: string }
 let state: CatalogState | null = null;
@@ -47,6 +48,8 @@ function restoreFirstSeenInvariant(e: InstructionEntry){
 const USAGE_RATE_LIMIT_PER_SECOND = 10; // max increments per id per second
 const usageRateLimiter = new Map<string, { count: number; windowStart: number }>();
 function checkUsageRateLimit(id: string): boolean {
+  // Test/diagnostic override: allow disabling rate limiting entirely for deterministic tests.
+  if(process.env.MCP_DISABLE_USAGE_RATE_LIMIT === '1') return true;
   const now = Date.now();
   const windowStart = Math.floor(now / 1000) * 1000; // 1-second windows
   
@@ -277,6 +280,32 @@ export function ensureLoaded(): CatalogState {
     }
   state = { loadedAt: new Date().toISOString(), hash: result.hash, byId, list: result.entries, latestMTime: meta.latest, fileSignature: meta.signature, fileCount: meta.count, versionMTime, versionToken };
     dirty = false;
+    // NEW: Post-load visibility stabilization spin (initial load or freshly invalidated) to mitigate rare
+    // rename visibility lag causing a just-written instruction file to be missed on first pass (observed
+    // as silent add/import success with missing list entry until a later mutation forced reload).
+    // We synchronously rescan a few times (very low cost with small catalogs) if directory signature
+    // changes almost immediately after first load. Guarded by tight time budget (<20ms) and spin cap.
+    if(result.entries.length > 0){
+      const spinStart = Date.now();
+      for(let spin=0; spin<3; spin++){
+        const meta2 = computeDirMeta(baseDir);
+        if(meta2.signature !== state.fileSignature || meta2.count !== state.fileCount || meta2.latest > state.latestMTime){
+          // Directory changed between load and immediate re-check; perform a fast second load to capture new file(s).
+          const loader2 = new CatalogLoader(baseDir);
+          const result2 = loader2.load();
+          const byId2 = new Map<string, InstructionEntry>(); result2.entries.forEach(e=>byId2.set(e.id,e));
+          state = { loadedAt: new Date().toISOString(), hash: result2.hash, byId: byId2, list: result2.entries, latestMTime: meta2.latest, fileSignature: meta2.signature, fileCount: meta2.count, versionMTime: readVersionMTime(), versionToken: readVersionToken() };
+          if(process.env.MCP_CATALOG_DIAG==='1'){
+            // eslint-disable-next-line no-console
+            console.error('[catalogContext.ensureLoaded] post-load spin reload applied', { spin, fileCount: state.fileCount });
+          }
+          // Continue loop to see if further immediate churn occurs, else exit next iteration.
+        } else {
+          break; // stable
+        }
+        if(Date.now() - spinStart > 20) break; // time budget exceeded
+      }
+    }
     // Overlay persisted usage metadata (usageCount, firstSeenTs, lastUsedAt) for durability across reloads.
     try {
       const snap = loadUsageSnapshot();
@@ -295,6 +324,20 @@ export function ensureLoaded(): CatalogState {
         }
       }
     } catch { /* ignore snapshot overlay errors */ }
+    
+    // Initialize usage buckets service if enabled
+    if (hasFeature('usage') || hasFeature('window')) {
+      try {
+        const bucketService = getUsageBucketsService(getInstructionsDir());
+        bucketService.initialize().catch(err => {
+          // Non-fatal: log and continue
+          console.error('[catalogContext] UsageBuckets initialization failed:', err);
+        });
+      } catch (err) {
+        console.error('[catalogContext] UsageBuckets service creation failed:', err);
+      }
+    }
+    
     break;
   }
   if(state && lastMeta && state.versionToken === lastVersionToken && state.fileSignature === lastMeta.signature){
@@ -426,13 +469,17 @@ export function incrementUsage(id:string){
   // Diagnostic: if this call established usageCount > 1 while previous value was undefined (indicating a
   // potential double increment or unexpected pre-load), emit a one-time console error for analysis.
   if(prev === undefined && e.usageCount > 1){
-    // eslint-disable-next-line no-console
-  console.error('[incrementUsage] anomalous initial usageCount', e.usageCount, 'id', id);
-  // Clamp to 1 to enforce deterministic semantics for first observed increment. We intentionally
-  // retain lastUsedAt/firstSeenTs. This guards rare race producing flaky test expectations while
-  // preserving forward progress for subsequent increments (next call will yield 2).
-  e.usageCount = 1;
-  try { incrementCounter('usage:anomalousClamp'); } catch { /* ignore */ }
+    // Allow tests (or advanced operators) to disable the protective clamp logic for deterministic expectations.
+    // Setting MCP_DISABLE_USAGE_CLAMP=1 will let the anomalous >1 initial count pass through for diagnostic visibility.
+    if(process.env.MCP_DISABLE_USAGE_CLAMP !== '1'){
+      // eslint-disable-next-line no-console
+      console.error('[incrementUsage] anomalous initial usageCount', e.usageCount, 'id', id);
+      // Clamp to 1 to enforce deterministic semantics for first observed increment. We intentionally
+      // retain lastUsedAt/firstSeenTs. This guards rare race producing flaky test expectations while
+      // preserving forward progress for subsequent increments (next call will yield 2).
+      e.usageCount = 1;
+      try { incrementCounter('usage:anomalousClamp'); } catch { /* ignore */ }
+    }
   }
   return { id:e.id, usageCount:e.usageCount, firstSeenTs: e.firstSeenTs, lastUsedAt:e.lastUsedAt };
 }

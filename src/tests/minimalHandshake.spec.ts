@@ -5,7 +5,7 @@ import path from 'path';
 function run(init: string): Promise<string[]> {
   return new Promise((resolve, reject) => {
     const lines: string[] = [];
-    const proc = spawn(process.execPath, [path.join(process.cwd(), 'dist', 'src', 'minimal', 'index.js')], {
+    const proc = spawn(process.execPath, [path.join(process.cwd(), 'dist', 'minimal', 'index.js')], {
       env: { ...process.env, MCP_MINIMAL_DEBUG: '1' }
     });
     let done = false;

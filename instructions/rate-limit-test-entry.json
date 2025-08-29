@@ -8,21 +8,21 @@
   "categories": [],
   "sourceHash": "6dae55c1d8bcff8a99d5bdbee0263fb0258feee9e9438561990a053b2d920891",
   "schemaVersion": "2",
-  "createdAt": "2025-08-29T03:23:17.140Z",
-  "updatedAt": "2025-08-29T03:23:17.143Z",
+  "createdAt": "2025-08-29T03:37:00.816Z",
+  "updatedAt": "2025-08-29T03:37:00.818Z",
   "riskScore": 104,
   "version": "1.0.0",
   "status": "approved",
   "owner": "unowned",
   "priorityTier": "P1",
   "classification": "internal",
-  "lastReviewedAt": "2025-08-29T03:23:24.853Z",
-  "nextReviewDue": "2025-09-28T03:23:24.853Z",
+  "lastReviewedAt": "2025-08-29T03:37:09.014Z",
+  "nextReviewDue": "2025-09-28T03:37:09.014Z",
   "reviewIntervalDays": 30,
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-08-29T03:23:17.140Z",
+      "changedAt": "2025-08-29T03:37:00.816Z",
       "summary": "initial import"
     }
   ],

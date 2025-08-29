@@ -14,7 +14,7 @@ interface UsageResult { id?:string; usageCount?:number; firstSeenTs?:string; las
 function usageSnapshotPath(){ return path.join(process.cwd(),'data','usage-snapshot.json'); }
 
 describe('firstSeenTs persistence', () => {
-  it('sets firstSeenTs and preserves it across increments & flush (relaxed, with polling)', async () => {
+  it('sets firstSeenTs and preserves it across increments & flush (tight)', async () => {
     // Enable feature before touching catalog to avoid race with initial load
     enableFeature('usage');
     const st = getCatalogState();
@@ -31,21 +31,14 @@ describe('firstSeenTs persistence', () => {
       await new Promise(r=> setTimeout(r, 50));
     } while(++attempts < 5);
 
-    // Poll if firstSeenTs not immediately present (should normally be immediate)
-    let firstSeen: string | undefined = r1?.firstSeenTs;
-    if(!firstSeen){
-      await waitFor(()=> !!getCatalogState().byId.get(entry.id)?.firstSeenTs, 2000, 50).catch(()=>{});
-      firstSeen = getCatalogState().byId.get(entry.id)?.firstSeenTs;
-    }
-    expect(firstSeen, 'firstSeenTs not established after retries/polling').toBeTruthy();
-    const first = firstSeen!;
+  // Require immediate establishment; fail fast if missing
+  const first = r1?.firstSeenTs;
+  expect(first, 'firstSeenTs missing after initial increment').toBeTruthy();
 
     // Second increment - should not change firstSeenTs
   const r2 = incrementUsage(entry.id) as UsageResult | null;
-    if(r2?.firstSeenTs && r2.firstSeenTs !== first){
-      await waitFor(()=> getCatalogState().byId.get(entry.id)?.firstSeenTs === first, 1000, 40).catch(()=>{});
-    }
-    expect(getCatalogState().byId.get(entry.id)?.firstSeenTs).toBe(first);
+  expect(r2?.firstSeenTs).toBe(first);
+  expect(getCatalogState().byId.get(entry.id)?.firstSeenTs).toBe(first);
 
     // Wait for snapshot file creation & content
     await waitFor(()=> fs.existsSync(snap), 4000, 60);
@@ -58,8 +51,6 @@ describe('firstSeenTs persistence', () => {
 
   const snapshot = JSON.parse(fs.readFileSync(snap,'utf8')) as Record<string, { usageCount?: number; firstSeenTs?: string; lastUsedAt?: string }>;
   expect(snapshot[entry.id].firstSeenTs).toBe(first);
-  // Intentionally do NOT assert on lastUsedAt presence due to rare timing where a subsequent increment/flush race
-  // (or test runner IO ordering) could momentarily yield a snapshot missing it even though firstSeenTs is stable.
-  // Stability concern we actually care about is immutability of firstSeenTs across increments.
+  expect(snapshot[entry.id].lastUsedAt).toBeTruthy();
   }, 10000);
 });

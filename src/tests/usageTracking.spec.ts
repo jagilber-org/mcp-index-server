@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { getCatalogState } from '../services/toolHandlers';
-import { incrementUsage } from '../services/catalogContext';
+import { incrementUsage, writeEntry } from '../services/catalogContext';
 import { enableFeature } from '../services/features';
 import '../services/toolHandlers';
 
@@ -21,17 +21,41 @@ function track(id: string){
 }
 
 describe('usage tracking', () => {
-  it('increments usage count (gated path, eventual consistency)', async () => {
-    const st = getCatalogState();
-    const first = st.list[0];
-    track(first.id);
-    // second increment to exercise non-first flush path
-    track(first.id);
-    // Allow a short microtask + timer cycle for any deferred snapshot/repair to materialize
-    await new Promise(r=> setTimeout(r, 25));
-    const refreshed = getCatalogState().byId.get(first.id)!; // first increment forces synchronous flush of snapshot
-    // relaxed lower bound (>=1) because second increment may batch flush (rate limiting may suppress burst)
-    expect((refreshed.usageCount ?? 0)).toBeGreaterThanOrEqual(1);
+  it('increments usage count deterministically on a fresh entry (tight)', async () => {
+    // Create a unique instruction entry to avoid prior usage contamination
+    const id = 'usage-track-' + Date.now();
+    const now = new Date().toISOString();
+    writeEntry({
+      id,
+      title:id,
+      body:'usage tracking test body',
+      priority:10,
+      audience:'all',
+      requirement:'optional',
+      categories:[],
+      sourceHash:'',
+      schemaVersion:'1',
+      createdAt: now,
+      updatedAt: now,
+      owner:'unowned',
+      version:'1.0.0',
+      priorityTier:'P3',
+      status:'approved',
+      classification:'internal',
+      lastReviewedAt: now,
+      nextReviewDue: now,
+      changeLog:[{ version:'1.0.0', changedAt: now, summary:'init'}],
+      semanticSummary:'usage tracking test'
+    });
+    // First increment -> count should be 1
+    const r1 = track(id);
+    expect(r1.usageCount).toBe(1);
+    // Second increment -> count should be 2
+    const r2 = track(id);
+    expect(r2.usageCount).toBe(2);
+    // State snapshot agrees
+    const snap = getCatalogState().byId.get(id)!;
+    expect(snap.usageCount).toBe(2);
   });
 
   it('provides hotset ordering by usage then recency', async () => {

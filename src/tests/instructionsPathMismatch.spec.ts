@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
-import { waitFor, findResponse } from './testUtils';
+import { waitFor, findResponse, parseToolPayload } from './testUtils';
 
 // Reproduction test: when starting the server from a different cwd (dist/server)
 // additions should still appear in list immediately. Current bug: loader baseDir resolves
@@ -22,7 +22,7 @@ interface RpcSuccess<T=unknown> { id:number; result:T }
 // should be immediately visible in list results.
 describe('repro: path mismatch add invisibility', () => {
   // TODO(#path-mismatch-cache): unify base directory resolution so adds from dist cwd appear immediately.
-  it.skip('add should appear in list even when cwd differs (currently fails)', async () => { // SKIP_OK
+    it('add should appear in list even when cwd differs (tight)', async () => {
       // This test is expected to fail due to path mismatch issues.
       // The server is started in a different working directory, which causes
       // the newly added instructions to be invisible in the list.
@@ -45,14 +45,12 @@ describe('repro: path mismatch add invisibility', () => {
     // Immediately list again
   send(server,{ jsonrpc:'2.0', id:11, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } }});
     await waitFor(()=> !!findResponse(out,11));
-    const listAfter = findResponse(out,11) as RpcSuccess<{ items:{ id:string }[]; count:number }> | undefined;
-    if(!listAfter) throw new Error('missing listAfter');
-
-    // Failing expectation today: new id should be present and count incremented
-  const ids = new Set(listAfter.result.items.map(i=> i.id));
-  // Expectation skipped pending directory resolution unification fix
+  const listAfterEnv = findResponse(out,11);
+  const listAfterPayload = listAfterEnv ? parseToolPayload<{ items:{ id:string }[]; count:number }>(JSON.stringify(listAfterEnv)) : undefined;
+  if(!listAfterPayload) throw new Error('missing listAfter payload');
+  const ids = new Set(listAfterPayload.items.map(i=> i.id));
   expect(ids.has(id), 'NEW ID NOT VISIBLE DUE TO PATH MISMATCH').toBe(true);
-  expect(listAfter.result.count).toBeGreaterThanOrEqual(baselineCount + 1);
+  expect(listAfterPayload.count).toBeGreaterThanOrEqual(baselineCount + 1);
 
     server.kill();
     }, 8000);

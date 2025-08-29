@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { parseToolPayload } from './testUtils';
 import { spawn } from 'child_process';
 import fs from 'fs';
 import os from 'os';
@@ -21,7 +22,7 @@ function findResponse(lines: string[], id:number): RpcResponse | undefined { for
 
 describe('cross-process visibility (expected to FAIL until cache invalidation improved)', () => {
   // TODO(#cross-process-cache): add directory watcher or periodic hash invalidation to refresh second process cache.
-  it.skip('newly added instruction by serverA is immediately visible to serverB list', async () => { // SKIP_OK
+    it('newly added instruction by serverA is visible to serverB after reload cycle (tight)', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'instr-xproc-'));
     // Create sentinel file with NON-placeholder governance fields so enrichment does not rewrite (preserving future mtime)
     const sentinelId = 'zzz-sentinel';
@@ -65,8 +66,9 @@ describe('cross-process visibility (expected to FAIL until cache invalidation im
     // Sanity: Server A sees it in list
   send(serverA,{ jsonrpc:'2.0', id:4, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } } });
     await waitFor(()=> !!findResponse(outA,4), 3000);
-    const listA = findResponse(outA,4) as RpcSuccess<{ items:{ id:string }[] }> | undefined;
-    expect(listA?.result.items.some(i=> i.id===newId)).toBe(true); // sanity
+  const listAenv = findResponse(outA,4);
+  const listApayload = listAenv ? parseToolPayload<{ items:{ id:string }[] }>(JSON.stringify(listAenv)) : undefined;
+  expect(listApayload?.items.some(i=> i.id===newId)).toBe(true); // sanity
 
     // Server B lists AFTER add. Due to bug, stale cache likely omits newId. We assert presence (so current code FAILS).
     // Gather diagnostic directory view from serverB before polling
@@ -78,8 +80,9 @@ describe('cross-process visibility (expected to FAIL until cache invalidation im
     for(let attempt=0; attempt<maxAttempts && !saw; attempt++){
   send(serverB,{ jsonrpc:'2.0', id:10+attempt, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'list' } } });
       await waitFor(()=> !!findResponse(outB,10+attempt), 1200);
-      const listBresp = findResponse(outB,10+attempt) as RpcSuccess<{ items:{ id:string }[] }> | undefined;
-      saw = !!listBresp?.result.items.some(i=> i.id===newId);
+  const listBenv = findResponse(outB,10+attempt);
+  const listBpayload = listBenv ? parseToolPayload<{ items:{ id:string }[] }>(JSON.stringify(listBenv)) : undefined;
+  saw = !!listBpayload?.items.some(i=> i.id===newId);
       if(!saw) await new Promise(r=> setTimeout(r,120));
     }
     if(!saw){

@@ -128,6 +128,7 @@ sequenceDiagram
 | `MCP_ENABLE_MUTATION` | Boolean | `false` | Enable write operations (add, remove, update) |
 | `MCP_LOG_VERBOSE` | Boolean | `false` | Enable detailed logging to stderr |
 | `MCP_LOG_MUTATION` | Boolean | `false` | Log only mutation operations |
+| `MCP_LOG_FILE` | Path | - | Enable file logging to specified path (dual stderr/file output) |
 | `GOV_HASH_TRAILING_NEWLINE` | Boolean | `false` | Governance hash compatibility mode |
 
 #### Security Model

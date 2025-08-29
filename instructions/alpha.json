@@ -9,5 +9,8 @@
     "a"
   ],
   "reviewIntervalDays": 30,
-  "schemaVersion": "2"
+  "schemaVersion": "2",
+  "sourceHash": "cd7caab615b4653f551b36f9e13c5fe5e0d5caa0b2622ff34c4549982f47b077",
+  "priorityTier": "P1",
+  "semanticSummary": "Alpha body"
 }

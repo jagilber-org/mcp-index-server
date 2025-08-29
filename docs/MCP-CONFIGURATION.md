@@ -149,6 +149,8 @@ graph TD
 | `MCP_LOG_VERBOSE` | Boolean | `false` | Enable detailed logging to stderr | Low |
 | `MCP_LOG_MUTATION` | Boolean | `false` | Log only mutation operations | Low |
 | `MCP_LOG_DIAG` | Boolean | `false` | Enable diagnostic startup logging | None |
+| `MCP_LOG_JSON` | Boolean | `false` | Output structured JSON logs instead of text | None |
+| `MCP_LOG_FILE` | Path | - | Enable file logging to specified path (also logs to stderr) | Low |
 
 ### Performance & Behavior
 
@@ -287,6 +289,7 @@ graph TD
         "MCP_LOG_VERBOSE": "1",
         "MCP_LOG_MUTATION": "1",
         "MCP_LOG_DIAG": "1",
+        "MCP_LOG_FILE": "./logs/mcp-server.log",
         "INSTRUCTIONS_ALWAYS_RELOAD": "1"
       },
       "restart": "onExit",
@@ -294,6 +297,7 @@ graph TD
       "notes": [
         "Dashboard available at http://localhost:9000",
         "All logging enabled",
+        "Logs to both stderr and ./logs/mcp-server.log",
         "Cache disabled for testing",
         "Relative paths for local development"
       ]

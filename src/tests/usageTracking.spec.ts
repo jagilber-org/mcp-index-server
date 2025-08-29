@@ -34,7 +34,7 @@ describe('usage tracking', () => {
       requirement:'optional',
       categories:[],
       sourceHash:'',
-      schemaVersion:'1',
+      schemaVersion:'2',
       createdAt: now,
       updatedAt: now,
       owner:'unowned',
@@ -44,6 +44,7 @@ describe('usage tracking', () => {
       classification:'internal',
       lastReviewedAt: now,
       nextReviewDue: now,
+      reviewIntervalDays:30,
       changeLog:[{ version:'1.0.0', changedAt: now, summary:'init'}],
       semanticSummary:'usage tracking test'
     });

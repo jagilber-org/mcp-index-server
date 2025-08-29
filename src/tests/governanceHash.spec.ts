@@ -71,6 +71,20 @@ describe('instructions/governanceHash tool (via tools/call)', () => {
   let secondPayload = parseToolPayload<{ governanceHash:string; items:GovProjection[] }>(secondRespLine!);
   expect(secondPayload).toBeTruthy();
   let secondProj = (secondPayload!.items as GovProjection[]).find(x=> x.id===id)!;
+  if(!secondProj){
+    // Force a reload cycle before proceeding if projection not yet materialized
+    for(let bootstrap=0; bootstrap<2 && !secondProj; bootstrap++){
+      send(server,{ jsonrpc:'2.0', id: 300+bootstrap, method:'tools/call', params:{ name:'instructions/reload', arguments:{} } });
+      await waitForLine(out, l=> { try { const o=JSON.parse(l); return o.id===300+bootstrap; } catch { return false; } });
+      send(server,{ jsonrpc:'2.0', id: 320+bootstrap, method:'tools/call', params:{ name:'instructions/governanceHash', arguments:{} } });
+      const line = await waitForLine(out, l=> { try { const o=JSON.parse(l); return o.id===320+bootstrap; } catch { return false; } });
+      if(line){
+        const pl = parseToolPayload<{ governanceHash:string; items:GovProjection[] }>(line)!;
+        secondProj = (pl.items as GovProjection[]).find(x=> x.id===id)!;
+      }
+    }
+  }
+  expect(secondProj, 'expected projection after reload bootstrap').toBeTruthy();
   const firstProj = (firstPayload!.items as GovProjection[]).find(x=> x.id===id)!;
   expect(firstProj.owner).toBe('team-a');
   // Retry up to 3 times if owner hasn't reflected on first pass (FS timestamp / cache latency)

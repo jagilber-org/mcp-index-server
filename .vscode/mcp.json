@@ -1,5 +1,29 @@
 {
 	"servers": {
-
+		"mcp-index-server": {
+			"type": "stdio",
+			// "cwd": "C:/mcp/mcp-index-server-prod",
+			"cwd": "C:/github/jagilber/mcp-index-server",
+			"command": "node",
+			"args": [
+				"dist/server/index.js"
+			],
+			"env": {
+				// "INSTRUCTIONS_DIR": "C:/mcp/mcp-index-server-prod/instructions",
+				"INSTRUCTIONS_DIR": "C:/github/jagilber/mcp-index-server/devinstructions",
+				"MCP_ENABLE_MUTATION": "1",
+				"FEEDBACK_DIR": "./feedback",
+				// Enable file logging (logs to both stderr and file)
+				// "MCP_LOG_FILE": "./logs/mcp-server.log",
+				// "INSTRUCTIONS_ALWAYS_RELOAD": "1",
+				// "MCP_LOG_DIAG": "1",
+				// "MCP_HANDSHAKE_TRACE":1,
+				// "MCP_DEBUG":1,
+				// Optional persistence tuning (uncomment if needed)
+				// "INDEX_AUTOSAVE_INTERVAL_MS": "3000",
+				// "MCP_LOG_VERBOSE": "1"
+			}
+		}
+	},
 	"inputs": []
 }

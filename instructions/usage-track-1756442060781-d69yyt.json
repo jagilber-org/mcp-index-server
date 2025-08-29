@@ -1,6 +1,6 @@
 {
-  "id": "usage-track-1756441009051-wfx5t8",
-  "title": "usage-track-1756441009051-wfx5t8",
+  "id": "usage-track-1756442060781-d69yyt",
+  "title": "usage-track-1756442060781-d69yyt",
   "body": "usage tracking test body",
   "priority": 10,
   "audience": "all",
@@ -8,23 +8,23 @@
   "categories": [],
   "sourceHash": "c53c7a9e3b762cc2d5d3f93265f1ac732f9bbf4eba1acbe6096e6f71e8f9f854",
   "schemaVersion": "2",
-  "createdAt": "2025-08-29T04:16:49.051Z",
-  "updatedAt": "2025-08-29T04:16:49.051Z",
+  "createdAt": "2025-08-29T04:34:20.781Z",
+  "updatedAt": "2025-08-29T04:34:20.781Z",
   "owner": "unowned",
   "version": "1.0.0",
   "priorityTier": "P3",
   "status": "approved",
   "classification": "internal",
-  "lastReviewedAt": "2025-08-29T04:16:49.051Z",
-  "nextReviewDue": "2025-08-29T04:16:49.051Z",
+  "lastReviewedAt": "2025-08-29T04:34:20.781Z",
+  "nextReviewDue": "2025-08-29T04:34:20.781Z",
+  "reviewIntervalDays": 30,
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-08-29T04:16:49.051Z",
+      "changedAt": "2025-08-29T04:34:20.781Z",
       "summary": "init"
     }
   ],
   "semanticSummary": "usage tracking test",
-  "riskScore": 95,
-  "reviewIntervalDays": 90
+  "riskScore": 95
 }

@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { waitFor, ensureDir, ensureFileExists, ensureJsonReadable } from './testUtils';
+import { waitFor, ensureDir, ensureFileExists, ensureJsonReadable, parseToolPayload } from './testUtils';
 import { waitForDist } from './distReady';
 
 // Per-spec isolated instructions directory to avoid cross-test interference
@@ -37,17 +37,14 @@ describe('instructions/add tool', () => {
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===1; } catch { return false; } }), 1500);
   callTool(server,2,'instructions/add',{ entry:{ id, body:'Body only' }, lax:true });
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===2; } catch { return false; } }), 2000);
-    const line = out.filter(l=> { try { const o=JSON.parse(l); return o.id===2; } catch { return false; } }).pop();
-    expect(line).toBeTruthy();
-    const obj = JSON.parse(line!);
-    const text = obj.result?.content?.[0]?.text; expect(text).toBeTruthy();
-    if(text){
-      const inner = JSON.parse(text);
-      expect(inner.id).toBe(id);
-      if('created' in inner) expect(inner.created).toBe(true);
-      if('skipped' in inner) expect(inner.skipped).toBe(false);
-      expect(inner.hash).toBeTypeOf('string');
-    }
+  const line = out.filter(l=> { try { const o=JSON.parse(l); return o.id===2; } catch { return false; } }).pop();
+  expect(line).toBeTruthy();
+  const inner = line ? parseToolPayload<{ id:string; created?:boolean; skipped?:boolean; overwritten?:boolean; hash?:string }>(line) : undefined;
+  expect(inner).toBeTruthy();
+  expect(inner!.id).toBe(id);
+  if('created' in (inner as Record<string,unknown>)) expect(inner!.created).toBe(true);
+  if('skipped' in (inner as Record<string,unknown>)) expect(inner!.skipped).toBe(false);
+  expect(inner!.hash).toBeTypeOf('string');
   await ensureFileExists(file, 4000);
   await ensureJsonReadable(file, 4000);
     server.kill();
@@ -65,17 +62,14 @@ describe('instructions/add tool', () => {
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===10; } catch { return false; } }));
   callTool(server,11,'instructions/add',{ entry:{ id, body:'new body attempt' }, lax:true });
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===11; } catch { return false; } }));
-    const line = out.filter(l=> { try { const o=JSON.parse(l); return o.id===11; } catch { return false; } }).pop();
-    expect(line).toBeTruthy();
-    const obj = JSON.parse(line!);
-    const text = obj.result?.content?.[0]?.text; expect(text).toBeTruthy();
-    if(text){
-      const inner = JSON.parse(text);
-      expect(inner.id).toBe(id);
-      if('skipped' in inner) expect(inner.skipped).toBe(true);
-      if('created' in inner) expect(inner.created).toBe(false);
-      if('overwritten' in inner) expect(inner.overwritten).toBe(false);
-    }
+  const line = out.filter(l=> { try { const o=JSON.parse(l); return o.id===11; } catch { return false; } }).pop();
+  expect(line).toBeTruthy();
+  const inner = line ? parseToolPayload<{ id:string; created?:boolean; skipped?:boolean; overwritten?:boolean }>(line) : undefined;
+  expect(inner).toBeTruthy();
+  expect(inner!.id).toBe(id);
+  if('skipped' in (inner as Record<string,unknown>)) expect(inner!.skipped).toBe(true);
+  if('created' in (inner as Record<string,unknown>)) expect(inner!.created).toBe(false);
+  if('overwritten' in (inner as Record<string,unknown>)) expect(inner!.overwritten).toBe(false);
     server.kill();
   },6000);
 
@@ -91,15 +85,12 @@ describe('instructions/add tool', () => {
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===20; } catch { return false; } }));
   callTool(server,21,'instructions/add',{ entry:{ id, body:'overwrite body' }, lax:true, overwrite:true });
     await waitFor(()=> out.some(l=> { try { const o=JSON.parse(l); return o.id===21; } catch { return false; } }));
-    const line = out.filter(l=> { try { const o=JSON.parse(l); return o.id===21; } catch { return false; } }).pop();
-    expect(line).toBeTruthy();
-    const obj = JSON.parse(line!);
-    const text = obj.result?.content?.[0]?.text; expect(text).toBeTruthy();
-    if(text){
-      const inner = JSON.parse(text);
-      expect(inner.id).toBe(id);
-      if('overwritten' in inner) expect(inner.overwritten).toBe(true);
-    }
+  const line = out.filter(l=> { try { const o=JSON.parse(l); return o.id===21; } catch { return false; } }).pop();
+  expect(line).toBeTruthy();
+  const inner = line ? parseToolPayload<{ id:string; overwritten?:boolean }>(line) : undefined;
+  expect(inner).toBeTruthy();
+  expect(inner!.id).toBe(id);
+  if('overwritten' in (inner as Record<string,unknown>)) expect(inner!.overwritten).toBe(true);
   const disk = JSON.parse(fs.readFileSync(file,'utf8'));
     expect(disk.body).toBe('overwrite body');
     server.kill();

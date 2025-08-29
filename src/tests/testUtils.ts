@@ -13,7 +13,18 @@ export function parseToolPayload<T=unknown>(line: string): T | undefined {
     const outer = JSON.parse(line);
     const text = outer.result?.content?.[0]?.text;
     if (typeof text === 'string') {
-      try { return JSON.parse(text) as T; } catch { /* ignore */ }
+      try {
+        const parsed = JSON.parse(text) as unknown;
+        // Type guard for envelope shape
+        interface Envelope { version: number; serverVersion: string; data: unknown }
+        const isEnvelope = (v: unknown): v is Envelope => {
+          if(!v || typeof v !== 'object') return false;
+          const o = v as Record<string, unknown>;
+          return typeof o.version === 'number' && o.version === 1 && typeof o.serverVersion === 'string' && Object.prototype.hasOwnProperty.call(o,'data') && typeof o.data === 'object' && o.data !== null;
+        };
+        if(isEnvelope(parsed)) return parsed.data as T;
+        return parsed as T;
+      } catch { /* ignore */ }
     }
   } catch { /* ignore */ }
   return undefined;

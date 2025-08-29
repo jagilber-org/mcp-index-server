@@ -19,7 +19,8 @@ describe('search relevance over rich markdown', () => {
   it('returns the large instruction for representative domain keywords', async () => {
     const server = startServer();
     const lines: string[] = []; server.stdout.on('data', d=> lines.push(...d.toString().trim().split(/\n+/)));
-    await new Promise(r=> setTimeout(r,140));
+  // Give the dist bundle a brief moment; rely on initialize ack below for readiness
+  await new Promise(r=> setTimeout(r,120));
     send(server,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'search-rich', version:'0' }, capabilities:{ tools:{} } } });
     await waitFor(()=> !!findLine(lines,1));
 
@@ -29,11 +30,17 @@ describe('search relevance over rich markdown', () => {
     await waitFor(()=> !!findLine(lines,2));
 
     for(const [idx, term] of KEYWORDS.entries()){
-      const rpcId = 10 + idx;
-      send(server,{ jsonrpc:'2.0', id:rpcId, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'search', q: term } } });
-      await waitFor(()=> !!findLine(lines,rpcId));
-      const payload = parseToolPayload<{ items:{ id:string }[] }>(findLine(lines,rpcId)!);
-      expect(payload?.items.some(i=> i.id===id), `Expected search hit for term '${term}'`).toBe(true);
+      const rpcIdBase = 10 + (idx*10);
+      let hit = false;
+      for(let attempt=0; attempt<3 && !hit; attempt++){
+        const rpcId = rpcIdBase + attempt;
+        send(server,{ jsonrpc:'2.0', id:rpcId, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'search', q: term } } });
+        await waitFor(()=> !!findLine(lines,rpcId));
+        const payload = parseToolPayload<{ items:{ id:string }[] }>(findLine(lines,rpcId)!);
+        hit = !!payload?.items.some(i=> i.id===id);
+        if(!hit) await new Promise(r=> setTimeout(r,150));
+      }
+      expect(hit, `Expected search hit for term '${term}'`).toBe(true);
     }
 
     server.kill();

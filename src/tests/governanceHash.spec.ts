@@ -37,7 +37,8 @@ describe('instructions/governanceHash tool (via tools/call)', () => {
   const id = `gov_hash_sample_${Date.now()}`;
     const file = path.join(instructionsDir, id + '.json');
     const now = new Date().toISOString();
-    fs.writeFileSync(file, JSON.stringify({ id, title:'Gov Hash Sample', body:'Body Stable', priority:10, audience:'all', requirement:'mandatory', categories:['x'], sourceHash:'', schemaVersion:'1', createdAt:now, updatedAt:now, version:'1.0.0', status:'approved', owner:'team-a', priorityTier:'P1', classification:'internal', lastReviewedAt:now, nextReviewDue:now, changeLog:[{version:'1.0.0', changedAt:now, summary:'initial'}], semanticSummary:'Body Stable' },null,2));
+  // Use schemaVersion 2 (current catalog) to ensure loader includes it; include minimal governance fields
+  fs.writeFileSync(file, JSON.stringify({ id, title:'Gov Hash Sample', body:'Body Stable', priority:10, audience:'all', requirement:'mandatory', categories:['x'], sourceHash:'', schemaVersion:'2', createdAt:now, updatedAt:now, version:'1.0.0', status:'approved', owner:'team-a', priorityTier:'P1', classification:'internal', lastReviewedAt:now, nextReviewDue:now, reviewIntervalDays:30, changeLog:[{version:'1.0.0', changedAt:now, summary:'initial'}], semanticSummary:'Body Stable' },null,2));
     const server = startServer();
     const out:string[]=[]; server.stdout.on('data', d=> out.push(...d.toString().trim().split(/\n+/)) );
   await waitForDist();

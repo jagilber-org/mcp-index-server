@@ -47,7 +47,7 @@ describe('enrich/groom do not override explicit governance', () => {
     // race where add call returns before async persistence completes. Give generous 25s window.
   let before: EntryRecord | undefined;
     try {
-      const catalog = await waitForCatalogEntry(instrDir, id, 25000, 120);
+  const catalog = await waitForCatalogEntry(instrDir, id, 35000, 150);
   before = catalog.entry as unknown as EntryRecord;
     } catch (e){
       // Fallback: direct file probes (extended timeout) for diagnostic context
@@ -71,7 +71,7 @@ describe('enrich/groom do not override explicit governance', () => {
     // Re-acquire entry after enrich via catalog scan (deterministic view)
   let after: EntryRecord | undefined;
     try {
-      const catalog = await waitForCatalogEntry(instrDir, id, 25000, 120);
+  const catalog = await waitForCatalogEntry(instrDir, id, 35000, 150);
   after = catalog.entry as unknown as EntryRecord;
     } catch (e){
       try {

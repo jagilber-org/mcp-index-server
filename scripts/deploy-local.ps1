@@ -137,6 +137,21 @@ if(-not (Test-Path (Join-Path $Destination 'dist/server/index.js'))){
   exit 1
 }
 
+# Copy schema assets required at runtime. The compiled catalogLoader.js references ../../schemas/instruction.schema.json
+# relative to its own location (dist/services -> dist -> project root -> schemas). In the development workspace that
+# resolves to <repo>/schemas, but in the production deployment we previously did not copy the top-level schemas folder,
+# leading to MODULE_NOT_FOUND at startup. We replicate the same layout here by copying the schemas directory.
+if(Test-Path 'schemas'){
+  Write-Host '[deploy] Copying schemas/ (runtime JSON schema assets)...'
+  Copy-Item -Recurse -Force 'schemas' (Join-Path $Destination 'schemas')
+  if(-not (Test-Path (Join-Path $Destination 'schemas/instruction.schema.json'))){
+    Write-Host '[deploy] ERROR: instruction.schema.json missing after schemas copy.' -ForegroundColor Red
+    exit 1
+  }
+} else {
+  Write-Host '[deploy] WARNING: schemas directory not found in source; runtime schema validation may fail.' -ForegroundColor Yellow
+}
+
 # Minimal runtime package file: strip dev deps to reduce noise
 $pkgPath = Join-Path $PWD 'package.json'
 $pkg = Get-Content $pkgPath -Raw | ConvertFrom-Json

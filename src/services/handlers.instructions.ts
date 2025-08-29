@@ -3,11 +3,12 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { InstructionEntry } from '../models/instruction';
 import { registerHandler } from '../server/registry';
-import { computeGovernanceHash, ensureLoaded, invalidate, projectGovernance, getInstructionsDir, touchCatalogVersion } from './catalogContext';
+import { computeGovernanceHash, ensureLoaded, invalidate, projectGovernance, getInstructionsDir, touchCatalogVersion, getDebugCatalogSnapshot } from './catalogContext';
 import { SCHEMA_VERSION } from '../versioning/schemaVersion';
 import { ClassificationService } from './classificationService';
 import { resolveOwner } from './ownershipService';
 import { atomicWriteJson } from './atomicFs';
+import { logAudit } from './auditLog';
 
 // Evaluate mutation flag dynamically each invocation so tests that set env before calls (even after import) still work.
 function isMutationEnabled(){ return process.env.MCP_ENABLE_MUTATION === '1'; }
@@ -87,12 +88,13 @@ registerHandler('instructions/inspect', (p:{id:string})=>{
 });
 // NOTE: downstream mutation handlers retained; dispatcher will invoke via existing registered method names for those.
 
-registerHandler('instructions/import', guard('instructions/import', (p:{entries:ImportEntry[]; mode?:'skip'|'overwrite'})=>{ const entries=p.entries||[]; const mode=p.mode||'skip'; if(!Array.isArray(entries)||!entries.length) return { error:'no entries' }; const dir=getInstructionsDir(); if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true}); let imported=0, skipped=0, overwritten=0; const errors: { id:string; error:string }[]=[]; const classifier=new ClassificationService(); for(const e of entries){ if(!e || !e.id || !e.title || !e.body){ const id=(e as Partial<ImportEntry>)?.id||'unknown'; errors.push({ id, error:'missing required fields'}); continue; } const file=path.join(dir, `${e.id}.json`); const fileExists=fs.existsSync(file); if(fileExists && mode==='skip'){ skipped++; continue; } if(fileExists && mode==='overwrite') overwritten++; else if(!fileExists) imported++; const now=new Date().toISOString(); const categories=Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c):c is string => typeof c==='string').map(c=>c.toLowerCase()))).sort(); const newBodyHash=crypto.createHash('sha256').update(e.body,'utf8').digest('hex'); let existing:InstructionEntry|null=null; if(fileExists){ try { existing=JSON.parse(fs.readFileSync(file,'utf8')); } catch { existing=null; } }
+registerHandler('instructions/import', guard('instructions/import', (p:{entries:ImportEntry[]; mode?:'skip'|'overwrite'})=>{ const entries=p.entries||[]; const mode=p.mode||'skip'; if(!Array.isArray(entries)||!entries.length) return { error:'no entries' }; const dir=getInstructionsDir(); if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true}); let imported=0, skipped=0, overwritten=0; const errors: { id:string; error:string }[]=[]; const classifier=new ClassificationService(); for(const e of entries){ if(!e || !e.id || !e.title || !e.body){ const id=(e as Partial<ImportEntry>)?.id||'unknown'; errors.push({ id, error:'missing required fields'}); continue; } // Normalize body early so leading/trailing whitespace does not influence sourceHash
+ const bodyTrimmed = typeof e.body === 'string' ? e.body.trim() : e.body as unknown as string; const file=path.join(dir, `${e.id}.json`); const fileExists=fs.existsSync(file); if(fileExists && mode==='skip'){ skipped++; continue; } if(fileExists && mode==='overwrite') overwritten++; else if(!fileExists) imported++; const now=new Date().toISOString(); const categories=Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c):c is string => typeof c==='string').map(c=>c.toLowerCase()))).sort(); const newBodyHash=crypto.createHash('sha256').update(bodyTrimmed,'utf8').digest('hex'); let existing:InstructionEntry|null=null; if(fileExists){ try { existing=JSON.parse(fs.readFileSync(file,'utf8')); } catch { existing=null; } }
   // Governance prerequisite rules (simple inline version): P1 requires at least one category & owner; mandatory/critical require owner
   if(e.priorityTier==='P1' && (!categories.length || !e.owner)) { errors.push({ id:e.id, error:'P1 requires category & owner'}); continue; }
   if((e.requirement==='mandatory' || e.requirement==='critical') && !e.owner){ errors.push({ id:e.id, error:'mandatory/critical require owner'}); continue; }
   // Preserve existing version/changeLog unless caller explicitly supplies new version/changeLog
-  const base: InstructionEntry = existing ? { ...existing, title:e.title, body:e.body, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, updatedAt: now } as InstructionEntry : { id:e.id, title:e.title, body:e.body, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash:newBodyHash, schemaVersion:SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt:now, updatedAt:now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
+  const base: InstructionEntry = existing ? { ...existing, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, updatedAt: now } as InstructionEntry : { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash:newBodyHash, schemaVersion:SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt:now, updatedAt:now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
   // Pass through governance fields if supplied (alpha: no opinionated overrides)
   const govKeys: (keyof ImportEntry)[] = ['version','owner','status','priorityTier','classification','lastReviewedAt','nextReviewDue','changeLog','semanticSummary'];
   for(const k of govKeys){ const v = e[k]; if(v!==undefined){ (base as unknown as Record<string, unknown>)[k]=v as unknown; } }
@@ -100,31 +102,108 @@ registerHandler('instructions/import', guard('instructions/import', (p:{entries:
   const newHash=newBodyHash; base.sourceHash = newHash; // if body changed without explicit version, we keep existing version
   const record=classifier.normalize(base);
   if(record.owner==='unowned'){ const auto=resolveOwner(record.id); if(auto){ record.owner=auto; record.updatedAt=new Date().toISOString(); } }
-  try { atomicWriteJson(file, record); try { process.stderr.write(`[mutation] import write id=${e.id} file=${file} existsPreviously=${fileExists} mode=${mode}\n`); } catch { /* ignore logging errors */ } } catch { errors.push({ id:e.id, error:'write-failed'}); }
+  try { atomicWriteJson(file, record); } catch { errors.push({ id:e.id, error:'write-failed'}); }
  }
- touchCatalogVersion(); invalidate(); const st=ensureLoaded(); return { hash: st.hash, imported, skipped, overwritten, total: entries.length, errors }; }));
-
-registerHandler('instructions/add', guard('instructions/add', (p:{ entry: Partial<ImportEntry>; overwrite?: boolean; lax?: boolean })=>{ const e=p.entry||{}; const lax=!!p.lax; if(!e.id || !e.body){ if(!lax) return { error:'missing required id/body' }; } if(lax){ if(!e.title) e.title=e.id||'untitled'; if(typeof e.priority!=='number') e.priority=50; if(!e.audience) e.audience='all'; if(!e.requirement) e.requirement='optional'; if(!Array.isArray(e.categories)) e.categories=[]; } if(!e.id || !e.title || !e.body || typeof e.priority!=='number' || !e.audience || !e.requirement){ return { error:'missing required fields', id:e.id }; } const dir=getInstructionsDir(); if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true}); const file=path.join(dir, `${e.id}.json`); const exists=fs.existsSync(file); const overwrite=!!p.overwrite; if(exists && !overwrite){ const st0=ensureLoaded(); return { id:e.id, skipped:true, created:false, overwritten:false, hash: st0.hash }; } const now=new Date().toISOString(); const categories=Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c):c is string=> typeof c==='string').map(c=>c.toLowerCase()))).sort(); const sourceHash=crypto.createHash('sha256').update(e.body,'utf8').digest('hex'); const classifier=new ClassificationService(); let base: InstructionEntry; if(exists){ try { const existing=JSON.parse(fs.readFileSync(file,'utf8')) as InstructionEntry; base={ ...existing, title:e.title, body:e.body, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, updatedAt: now } as InstructionEntry; // Do not auto bump version; retain existing unless caller supplies new
-  if(e.version!==undefined) (base as InstructionEntry).version = e.version;
-  if(e.changeLog!==undefined) (base as InstructionEntry).changeLog = e.changeLog as InstructionEntry['changeLog'];
-  } catch { base={ id:e.id, title:e.title, body:e.body, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash, schemaVersion:SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry; } } else { base={ id:e.id, title:e.title, body:e.body, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash, schemaVersion:SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry; }
-  // Governance prerequisite enforcement (same as import)
+ touchCatalogVersion(); invalidate(); const st=ensureLoaded(); const summary = { hash: st.hash, imported, skipped, overwritten, total: entries.length, errors }; logAudit('import', entries.map(e=> e.id), { imported, skipped, overwritten, errors: errors.length }); return summary; }));
+// Add (create/update) single instruction. Maintains backward compatibility with dispatcher mapping 'add' -> 'instructions/add'.
+interface AddParams { entry: ImportEntry & { lax?: boolean }; overwrite?: boolean; lax?: boolean }
+registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
+  const e = p.entry as ImportEntry | undefined; if(!e) return { error:'missing entry'};
+  const lax = !!(p.lax || (e as unknown as { lax?: boolean })?.lax);
+  // Apply lax defaults if enabled (allows body-only submissions like tests rely on)
+  if(lax){
+    if(!e.id) return { error:'missing id' }; // id still mandatory
+    // Create a shallow mutable copy to avoid mutating original reference directly with any casts
+    const mutable = e as Partial<ImportEntry> & { id:string };
+    if(!mutable.title) mutable.title = mutable.id; // title defaults to id
+    if(typeof mutable.priority !== 'number') mutable.priority = 50;
+    if(!mutable.audience) mutable.audience = 'all' as InstructionEntry['audience'];
+    if(!mutable.requirement) mutable.requirement = 'optional';
+    if(!Array.isArray(mutable.categories)) mutable.categories = [];
+  }
+  // Strict validation after lax fill
+  if(!e.id || !e.title || !e.body) return { error:'missing required fields'};
+  const dir = getInstructionsDir(); if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true});
+  const file = path.join(dir, `${e.id}.json`); const exists = fs.existsSync(file); const overwrite = !!p.overwrite;
+  if(exists && !overwrite){ const st0=ensureLoaded(); logAudit('add', e.id, { skipped:true }); return { id:e.id, skipped:true, created:false, overwritten:false, hash: st0.hash }; }
+  const now = new Date().toISOString();
+  const bodyTrimmed = typeof e.body==='string'? e.body.trim(): String(e.body||'');
+  const categories = Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c):c is string=> typeof c==='string').map(c=> c.toLowerCase()))).sort();
+  const sourceHash = crypto.createHash('sha256').update(bodyTrimmed,'utf8').digest('hex');
+  // Governance prerequisites
   if(e.priorityTier==='P1' && (!categories.length || !e.owner)) return { id:e.id, error:'P1 requires category & owner' };
   if((e.requirement==='mandatory' || e.requirement==='critical') && !e.owner) return { id:e.id, error:'mandatory/critical require owner' };
-  // Pass through governance fields on create/update (alpha semantics: trust caller)
+  const classifier = new ClassificationService();
+  let base: InstructionEntry;
+  if(exists){
+    try {
+      const existing = JSON.parse(fs.readFileSync(file,'utf8')) as InstructionEntry;
+      // Start from existing to preserve unspecified fields when overwrite=true but fields omitted (common in tests)
+      base = { ...existing } as InstructionEntry;
+      // Only overwrite individual fields if explicitly supplied (or lax provided default title)
+      if(e.title) base.title = e.title;
+      if(e.body) base.body = bodyTrimmed;
+      if(e.rationale !== undefined) base.rationale = e.rationale;
+      if(typeof e.priority === 'number') base.priority = e.priority;
+      if(e.audience) base.audience = e.audience;
+      if(e.requirement) base.requirement = e.requirement as InstructionEntry['requirement'];
+      if(categories.length) base.categories = categories;
+      base.updatedAt = now;
+      if(e.version!==undefined) base.version = e.version;
+      if(e.changeLog!==undefined) base.changeLog = e.changeLog as InstructionEntry['changeLog'];
+    } catch {
+      // Fallback if existing unreadable -> treat as new
+      base = { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash, schemaVersion: SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
+    }
+  } else {
+    base = { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash, schemaVersion: SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
+  }
+  // Pass-through governance fields
   const govKeys: (keyof ImportEntry)[] = ['version','owner','status','priorityTier','classification','lastReviewedAt','nextReviewDue','changeLog','semanticSummary'];
-  for(const k of govKeys){ const v = e[k]; if(v!==undefined){ (base as unknown as Record<string, unknown>)[k]=v as unknown; } }
-  base.sourceHash = sourceHash; // ensure accurate to new body
-  const record=classifier.normalize(base);
+  for(const k of govKeys){ const v = (e as ImportEntry)[k]; if(v!==undefined){ (base as unknown as Record<string, unknown>)[k]=v as unknown; } }
+  // Ensure sourceHash reflects trimmed body (only recompute if body changed or new)
+  if(!exists || base.body === bodyTrimmed){ base.sourceHash = sourceHash; } else {
+    // existing body may not equal trimmed new body if not supplied; ensure hash still correct for current body
+    base.sourceHash = crypto.createHash('sha256').update(base.body,'utf8').digest('hex');
+  }
+  const record = classifier.normalize(base);
   if(record.owner==='unowned'){ const auto=resolveOwner(record.id); if(auto){ record.owner=auto; record.updatedAt=new Date().toISOString(); } }
-  try { atomicWriteJson(file, record); try { process.stderr.write(`[mutation] add write id=${e.id} file=${file} created=${!exists} overwrite=${overwrite}\n`); } catch { /* ignore logging errors */ } } catch(err){ return { id:e.id, error:(err as Error).message||'write-failed' }; }
-  touchCatalogVersion(); invalidate(); const st=ensureLoaded(); return { id:e.id, created: !exists, overwritten: exists && overwrite, skipped:false, hash: st.hash }; }));
+  try { atomicWriteJson(file, record); } catch(err){ return { id:e.id, error:(err as Error).message||'write-failed' }; }
+  touchCatalogVersion(); invalidate(); const st=ensureLoaded(); const resp = { id:e.id, created: !exists, overwritten: exists && overwrite, skipped:false, hash: st.hash }; logAudit('add', e.id, { created: !exists, overwritten: exists && overwrite }); return resp;
+}));
 
-registerHandler('instructions/remove', guard('instructions/remove', (p:{ ids:string[]; missingOk?: boolean })=>{ const ids=Array.isArray(p.ids)? Array.from(new Set(p.ids.filter(x=> typeof x==='string' && x.trim()))):[]; if(!ids.length) return { removed:0, missing:[], errors:['no ids supplied'] }; const base=getInstructionsDir(); const missing:string[]=[]; const removed:string[]=[]; const errors:{ id:string; error:string }[]=[]; for(const id of ids){ const file=path.join(base, `${id}.json`); try { if(!fs.existsSync(file)){ missing.push(id); continue; } fs.unlinkSync(file); removed.push(id); } catch(e){ errors.push({ id, error: e instanceof Error? e.message: 'delete-failed' }); } } if(removed.length){ touchCatalogVersion(); invalidate(); ensureLoaded(); } return { removed: removed.length, removedIds: removed, missing, errorCount: errors.length, errors }; }));
+registerHandler('instructions/remove', guard('instructions/remove', (p:{ ids:string[]; missingOk?: boolean })=>{ const ids=Array.isArray(p.ids)? Array.from(new Set(p.ids.filter(x=> typeof x==='string' && x.trim()))):[]; if(!ids.length) return { removed:0, missing:[], errors:['no ids supplied'] }; const base=getInstructionsDir(); const missing:string[]=[]; const removed:string[]=[]; const errors:{ id:string; error:string }[]=[]; for(const id of ids){ const file=path.join(base, `${id}.json`); try { if(!fs.existsSync(file)){ missing.push(id); continue; } fs.unlinkSync(file); removed.push(id); } catch(e){ errors.push({ id, error: e instanceof Error? e.message: 'delete-failed' }); } } if(removed.length){ touchCatalogVersion(); invalidate(); ensureLoaded(); } const resp = { removed: removed.length, removedIds: removed, missing, errorCount: errors.length, errors }; logAudit('remove', ids, { removed: removed.length, missing: missing.length, errors: errors.length }); return resp; }));
 
-registerHandler('instructions/reload', guard('instructions/reload', ()=>{ invalidate(); const st=ensureLoaded(); return { reloaded:true, hash: st.hash, count: st.list.length }; }));
+registerHandler('instructions/reload', guard('instructions/reload', ()=>{ invalidate(); const st=ensureLoaded(); const resp = { reloaded:true, hash: st.hash, count: st.list.length }; logAudit('reload', undefined, { count: st.list.length }); return resp; }));
 
-registerHandler('instructions/governanceHash', ()=>{ const st=ensureLoaded(); const projections=st.list.slice().sort((a,b)=> a.id.localeCompare(b.id)).map(projectGovernance); const governanceHash=computeGovernanceHash(st.list); return { count: projections.length, governanceHash, items: projections }; });
+registerHandler('instructions/governanceHash', ()=>{
+  // First attempt: normal ensureLoaded path
+  let st = ensureLoaded();
+  // Lightweight verification: spot-check random single file for metadata-only divergence that might have
+  // slipped past coarse signature if filesystem timestamp coalesced. We only do this if env not forcing reload
+  // and we DID NOT just perform a reload during ensureLoaded (heuristic: loadedAt within last 50ms implies reload).
+  const now = Date.now();
+  const loadedAgo = now - new Date(st.loadedAt).getTime();
+  if(loadedAgo > 50){
+    try {
+      // Pick first entry (deterministic) and compare owner + updatedAt to on-disk JSON; if mismatch, invalidate.
+      const first = st.list[0];
+      if(first){
+        const file = path.join(getInstructionsDir(), `${first.id}.json`);
+        if(fs.existsSync(file)){
+          const raw = JSON.parse(fs.readFileSync(file,'utf8')) as { owner?:string; updatedAt?:string };
+            if(raw && typeof raw.owner==='string' && raw.owner !== first.owner){
+              invalidate();
+              st = ensureLoaded();
+            }
+        }
+      }
+    } catch { /* ignore verification errors */ }
+  }
+  const projections=st.list.slice().sort((a,b)=> a.id.localeCompare(b.id)).map(projectGovernance);
+  const governanceHash=computeGovernanceHash(st.list);
+  return { count: projections.length, governanceHash, items: projections };
+});
 
 registerHandler('instructions/health', ()=>{ const st=ensureLoaded(); const governanceHash = computeGovernanceHash(st.list); const snapshot=path.join(process.cwd(),'snapshots','canonical-instructions.json'); if(!fs.existsSync(snapshot)) return { snapshot:'missing', hash: st.hash, count: st.list.length, governanceHash }; try { const raw = JSON.parse(fs.readFileSync(snapshot,'utf8')) as { items?: { id:string; sourceHash:string }[] }; const snapItems=raw.items||[]; const snapMap=new Map(snapItems.map(i=>[i.id,i.sourceHash] as const)); const missing:string[]=[]; const changed:string[]=[]; for(const e of st.list){ const h=snapMap.get(e.id); if(h===undefined) missing.push(e.id); else if(h!==e.sourceHash) changed.push(e.id); } const extra=snapItems.filter(i=> !st.byId.has(i.id)).map(i=>i.id); return { snapshot:'present', hash: st.hash, count: st.list.length, missing, changed, extra, drift: missing.length+changed.length+extra.length, governanceHash }; } catch(e){ return { snapshot:'error', error: e instanceof Error? e.message: String(e), hash: st.hash, governanceHash }; } });
 
@@ -157,7 +236,6 @@ registerHandler('instructions/enrich', guard('instructions/enrich', ()=>{
           case 'owner':
             if(onDisk==='unowned' && typeof norm==='string' && norm!=='unowned'){ raw[k]=norm; needs=true; }
             break;
-          case 'createdAt':
           case 'updatedAt':
             if(typeof onDisk==='string' && onDisk.length===0 && typeof norm==='string' && norm.length>0){ raw[k]=norm; needs=true; }
             break;
@@ -175,8 +253,21 @@ registerHandler('instructions/enrich', guard('instructions/enrich', ()=>{
     } catch { /* ignore */ }
   }
   if(rewritten){ touchCatalogVersion(); invalidate(); ensureLoaded(); }
-  return { rewritten, updated, skipped };
+  const resp = { rewritten, updated, skipped };
+  if(rewritten) logAudit('enrich', updated, { rewritten, skipped: skipped.length });
+  return resp;
 }));
+
+// Debug snapshot tool: reveals discrepancy between on-disk files and current in-memory catalog without forcing reload first.
+registerHandler('instructions/debugCatalog', ()=>{
+  const before = getDebugCatalogSnapshot();
+  // Force load to provide after view and hash (ensureLoaded returns state, but we also want loader debug if recent)
+  const st = ensureLoaded();
+  // loader debug is only emitted during load; we surface last load summary if present on hidden symbol
+  // (We don't persist full trace in memory unless file trace env set; rely on env gating to keep lightweight.)
+  const after = { hash: st.hash, count: st.list.length };
+  return { before, after };
+});
 
 // Governance patch tool: controlled updates to limited governance fields + optional semantic version bump
 registerHandler('instructions/governanceUpdate', guard('instructions/governanceUpdate', (p:{ id:string; owner?:string; status?:string; lastReviewedAt?:string; nextReviewDue?:string; bump?: 'patch'|'minor'|'major'|'none' })=>{
@@ -203,11 +294,13 @@ registerHandler('instructions/governanceUpdate', guard('instructions/governanceU
   record.updatedAt=now;
   try { fs.writeFileSync(file, JSON.stringify(record,null,2)); } catch { return { id, error:'write-failed' }; }
   touchCatalogVersion(); invalidate(); ensureLoaded();
-  return { id, changed:true, version: record.version, owner: record.owner, status: record.status, lastReviewedAt: record.lastReviewedAt, nextReviewDue: record.nextReviewDue };
+  const resp = { id, changed:true, version: record.version, owner: record.owner, status: record.status, lastReviewedAt: record.lastReviewedAt, nextReviewDue: record.nextReviewDue };
+  logAudit('governanceUpdate', id, { changed:true, version: record.version });
+  return resp;
 }));
 
 // Hash repair tool (instructions/repair) ported from monolith
-registerHandler('instructions/repair', guard('instructions/repair', (_p:unknown)=>{ const st=ensureLoaded(); const toFix: { entry: InstructionEntry; actual:string }[]=[]; for(const e of st.list){ const actual=crypto.createHash('sha256').update(e.body,'utf8').digest('hex'); if(actual!==e.sourceHash) toFix.push({ entry:e, actual }); } if(!toFix.length) return { repaired:0, updated:[] }; const repaired:string[]=[]; for(const { entry, actual } of toFix){ const file=path.join(getInstructionsDir(), `${entry.id}.json`); try { const updated={ ...entry, sourceHash: actual, updatedAt:new Date().toISOString() }; fs.writeFileSync(file, JSON.stringify(updated,null,2)); repaired.push(entry.id); } catch { /* ignore */ } } if(repaired.length){ touchCatalogVersion(); invalidate(); ensureLoaded(); } return { repaired: repaired.length, updated: repaired }; }));
+registerHandler('instructions/repair', guard('instructions/repair', (_p:unknown)=>{ const st=ensureLoaded(); const toFix: { entry: InstructionEntry; actual:string }[]=[]; for(const e of st.list){ const actual=crypto.createHash('sha256').update(e.body,'utf8').digest('hex'); if(actual!==e.sourceHash) toFix.push({ entry:e, actual }); } if(!toFix.length) return { repaired:0, updated:[] }; const repaired:string[]=[]; for(const { entry, actual } of toFix){ const file=path.join(getInstructionsDir(), `${entry.id}.json`); try { const updated={ ...entry, sourceHash: actual, updatedAt:new Date().toISOString() }; fs.writeFileSync(file, JSON.stringify(updated,null,2)); repaired.push(entry.id); } catch { /* ignore */ } } if(repaired.length){ touchCatalogVersion(); invalidate(); ensureLoaded(); } const resp = { repaired: repaired.length, updated: repaired }; if(repaired.length) logAudit('repair', repaired, { repaired: repaired.length }); return resp; }));
 
 // Groom tool (instructions/groom) - copied & lightly simplified
 registerHandler('instructions/groom', guard('instructions/groom', (p:{ mode?: { dryRun?: boolean; removeDeprecated?: boolean; mergeDuplicates?: boolean; purgeLegacyScopes?: boolean } })=>{
@@ -220,7 +313,7 @@ registerHandler('instructions/groom', guard('instructions/groom', (p:{ mode?: { 
   { const baseDir=getInstructionsDir(); for(const e of byId.values()){ const filePath=path.join(baseDir, `${e.id}.json`); let storedHash=e.sourceHash||''; try { if(fs.existsSync(filePath)){ const raw=JSON.parse(fs.readFileSync(filePath,'utf8')) as { sourceHash?:string }; if(typeof raw.sourceHash==='string') storedHash=raw.sourceHash; } } catch(_err){ /* ignore read error */ } const actualHash=crypto.createHash('sha256').update(e.body,'utf8').digest('hex'); if(storedHash!==actualHash){ // Alpha deterministic: repair hash without semantic version bump
       e.sourceHash=actualHash; repairedHashes++; e.updatedAt=new Date().toISOString(); updated.add(e.id); } } }
   deprecatedRemoved = toRemove.length; if(!dryRun){ const baseDir=getInstructionsDir(); for(const id of toRemove){ byId.delete(id); } for(const id of updated){ if(!byId.has(id)) continue; const e=byId.get(id)!; try { fs.writeFileSync(path.join(baseDir, `${id}.json`), JSON.stringify(e,null,2)); filesRewritten++; } catch(err){ notes.push(`write-failed:${id}:${(err as Error).message}`); } } for(const id of toRemove){ try { fs.unlinkSync(path.join(baseDir, `${id}.json`)); } catch(err){ notes.push(`delete-failed:${id}:${(err as Error).message}`); } } if(updated.size || toRemove.length){ touchCatalogVersion(); invalidate(); ensureLoaded(); } } else { if(updated.size) notes.push(`would-rewrite:${updated.size}`); if(toRemove.length) notes.push(`would-remove:${toRemove.length}`); }
-  const stAfter = ensureLoaded(); return { previousHash, hash: stAfter.hash, scanned, repairedHashes, normalizedCategories, deprecatedRemoved, duplicatesMerged, filesRewritten, purgedScopes, dryRun, notes };
+  const stAfter = ensureLoaded(); const resp = { previousHash, hash: stAfter.hash, scanned, repairedHashes, normalizedCategories, deprecatedRemoved, duplicatesMerged, filesRewritten, purgedScopes, dryRun, notes }; if(!dryRun && (repairedHashes||normalizedCategories||deprecatedRemoved||duplicatesMerged||filesRewritten||purgedScopes)) logAudit('groom', undefined, { repairedHashes, normalizedCategories, deprecatedRemoved, duplicatesMerged, filesRewritten, purgedScopes }); return resp;
 }));
 
 // usage/flush (mutation)

@@ -1,0 +1,34 @@
+{
+  "id": "complex-crud-test-002",
+  "title": "Complex CRUD Test Entry 002",
+  "body": "Second complex test entry with different metadata patterns, including markdown formatting and special characters: @#$%^&*().",
+  "priority": 15,
+  "audience": "individual",
+  "requirement": "recommended",
+  "categories": [
+    "edge-cases",
+    "special-chars",
+    "testing"
+  ],
+  "sourceHash": "13979c7251188678023c2c5f80ae8b59a1f460e1f8cd3ea879ecf7694f3c9405",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-29T02:05:11.211Z",
+  "updatedAt": "2025-08-29T02:05:11.211Z",
+  "riskScore": 105,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-29T02:05:11.211Z",
+  "nextReviewDue": "2025-09-28T02:05:11.211Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-29T02:05:11.211Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Second complex test entry with different metadata patterns, including markdown formatting and special characters: @#$%^&*()."
+}

@@ -1,16 +1,5 @@
 {
 	"servers": {
-		"powershell-mcp-server": {
-			"cwd": "c:\\github\\jagilber\\powershell-mcp-server",
-			"args": [
-				"dist/server.js",
-				"--disable-self-destruct",
-				"--mcp-init-debug",
-				"1"
-			],
-			"type": "stdio",
-			"command": "node"
-		}
-	},
+
 	"inputs": []
 }

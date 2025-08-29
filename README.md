@@ -248,6 +248,7 @@ node dist/server/index.js
 ## Local Production Deployment (c:\mcp)
 
 Quick script creates a trimmed runtime copy (dist + minimal package.json + seed instructions) at `C:\mcp\mcp-index-server`.
+Existing runtime instructions are now ALWAYS preserved; before any overwrite a timestamped backup is created under `backups/` (unless `-NoBackup`).
 
 Steps:
 
@@ -257,7 +258,7 @@ Steps:
   npm run build
   ```
 
-1. Deploy:
+1. Deploy (creates backup of existing instructions when present):
 
   ```powershell
   pwsh scripts/deploy-local.ps1 -Destination C:\mcp\mcp-index-server -Rebuild -Overwrite
@@ -287,8 +288,27 @@ Steps:
 Notes:
 
 - The deploy script skips copying transient or fuzz / concurrent temp instruction files.
-- Re-run the deploy with `-Overwrite` to refresh everything (will replace runtime copy).
-- Governance & usage data live inside the instruction JSON files; a simple file backup is your persistence strategy.
+- Re-run the deploy with `-Overwrite` to refresh dist/runtime files (instructions never deleted).
+- Automatic backup: `backups/instructions-YYYYMMDD-HHMMSS/` (retention default 10; configure with `-BackupRetention N` or disable via `-NoBackup`).
+- Restore latest backup:
+
+  ```powershell
+  pwsh scripts/restore-instructions.ps1 -Destination C:\mcp\mcp-index-server
+  ```
+  
+- Restore specific backup (overwriting existing):
+
+  ```powershell
+  pwsh scripts/restore-instructions.ps1 -Destination C:\mcp\mcp-index-server -BackupName instructions-20250828-153011 -Force
+  ```
+  
+- Fast code-only sync (no rebuild/tests, assumes local dist is current):
+
+  ```powershell
+  pwsh scripts/sync-dist.ps1 -Destination C:\mcp\mcp-index-server -UpdatePackage
+  ```
+  
+- Governance & usage data live inside the instruction JSON files; keeping backups provides full recoverability.
 
 Optional: Create a scheduled task or Windows Service wrapper invoking `pwsh -File C:\mcp\mcp-index-server\start.ps1 -EnableMutation` for auto-start.
 

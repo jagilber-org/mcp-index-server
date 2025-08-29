@@ -13,7 +13,7 @@
   When specified, runs `npm ci && npm run build` before copying.
 
 .PARAMETER Overwrite
-  When specified, existing destination content is removed first.
+  When specified, existing destination content (except an existing instructions folder) is removed first.
 
 .PARAMETER BundleDeps
   When specified, runs 'npm install --production' inside the destination so runtime dependencies are
@@ -31,6 +31,10 @@ param(
   [switch]$Rebuild,
   [switch]$Overwrite,
   [switch]$BundleDeps,
+  # Disable automatic backup of existing destination instructions directory
+  [switch]$NoBackup,
+  # Maximum number of instruction backups to retain (0 = unlimited)
+  [int]$BackupRetention = 10,
   # When a rebuild is requested, allow continuing with an existing dist/ directory
   # if npm ci / build fails (e.g. transient EPERM on Windows from locked executables)
   [switch]$AllowStaleDistOnRebuildFailure
@@ -66,15 +70,60 @@ if($Rebuild){
 }
 
 if(Test-Path $Destination){
-  if($Overwrite){
-    Write-Host '[deploy] Removing existing destination (overwrite requested)...'
-    Remove-Item -Recurse -Force $Destination
-  } else {
-    Write-Host '[deploy] Destination exists (will update in place). Use -Overwrite to clean.' -ForegroundColor Yellow
+  $destInstructionsPath = Join-Path $Destination 'instructions'
+  $shouldBackup = -not $NoBackup -and (Test-Path $destInstructionsPath)
+  if($shouldBackup){
+  try {
+      $jsonFiles = Get-ChildItem -Path $destInstructionsPath -Filter *.json -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\_templates\\" }
+      if($jsonFiles){
+        $backupRoot = Join-Path $Destination 'backups'
+        if(-not (Test-Path $backupRoot)){ New-Item -ItemType Directory -Force -Path $backupRoot | Out-Null }
+        $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+        $backupDir = Join-Path $backupRoot "instructions-$stamp"
+        # Avoid collisions (rare); append incremental suffix if exists
+        $i = 1
+        while(Test-Path $backupDir){ $backupDir = Join-Path $backupRoot ("instructions-$stamp-" + ($i++)) }
+        Write-Host "[deploy] Backing up instructions to $backupDir" -ForegroundColor Cyan
+        New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+        foreach($f in $jsonFiles){ Copy-Item $f.FullName (Join-Path $backupDir $f.Name) }
+        Write-Host "[deploy] Backup completed (${($jsonFiles|Measure-Object).Count} files)." -ForegroundColor Green
+        if($BackupRetention -gt 0){
+          $existing = Get-ChildItem -Path $backupRoot -Directory -Filter 'instructions-*' | Sort-Object Name -Descending
+          if($existing.Count -gt $BackupRetention){
+            $toPrune = $existing | Select-Object -Skip $BackupRetention
+            foreach($p in $toPrune){
+              try { Remove-Item -Recurse -Force $p.FullName } catch { Write-Host "[deploy] Warning: failed pruning old backup $($p.Name): $($_.Exception.Message)" -ForegroundColor Yellow }
+            }
+            Write-Host "[deploy] Pruned $($toPrune.Count) old backup(s) (retention $BackupRetention)." -ForegroundColor DarkGray
+          }
+        }
+      } else {
+        Write-Host '[deploy] No runtime instruction JSON files to backup (only templates or empty).' -ForegroundColor DarkGray
+      }
+    } catch {
+      Write-Host "[deploy] Warning: backup attempt failed: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+  } elseif(-not $NoBackup) {
+    Write-Host '[deploy] No existing instructions directory to backup.' -ForegroundColor DarkGray
   }
+
+  if($Overwrite){
+    Write-Host '[deploy] Overwrite requested. Preserving existing instructions folder if present...' -ForegroundColor Cyan
+    $preserveInstructions = $destInstructionsPath
+    $hadInstructions = Test-Path $preserveInstructions
+    if($hadInstructions){ Write-Host '[deploy] Preserving instructions folder.' -ForegroundColor Green }
+    Get-ChildItem -Force $Destination | ForEach-Object {
+      if($hadInstructions -and $_.FullName -eq $preserveInstructions){ return }
+      try { Remove-Item -Recurse -Force $_.FullName } catch { Write-Host "[deploy] Warning: failed to remove $($_.FullName): $($_.Exception.Message)" -ForegroundColor Yellow }
+    }
+    if(-not (Test-Path $Destination)) { New-Item -ItemType Directory -Force -Path $Destination | Out-Null }
+  } else {
+    Write-Host '[deploy] Destination exists (will update in place). Use -Overwrite to clean (instructions always preserved).' -ForegroundColor Yellow
+  }
+} else {
+  New-Item -ItemType Directory -Force -Path $Destination | Out-Null
 }
 
-New-Item -ItemType Directory -Force -Path $Destination | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $Destination 'dist') | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $Destination 'instructions') | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $Destination 'logs') | Out-Null
@@ -82,6 +131,11 @@ New-Item -ItemType Directory -Force -Path (Join-Path $Destination 'logs') | Out-
 # Copy compiled output
 Write-Host '[deploy] Copying dist/...'
 Copy-Item -Recurse -Force dist/* (Join-Path $Destination 'dist')
+if(-not (Test-Path (Join-Path $Destination 'dist/server/index.js'))){
+  Write-Host '[deploy] ERROR: dist/server/index.js missing after copy. Possible locked destination or partial copy.' -ForegroundColor Red
+  Write-Host '[deploy] Suggestion: ensure no running process is locking the destination (stop running server) then re-run deploy, or run scripts/sync-dist.ps1.' -ForegroundColor Yellow
+  exit 1
+}
 
 # Minimal runtime package file: strip dev deps to reduce noise
 $pkgPath = Join-Path $PWD 'package.json'
@@ -112,13 +166,19 @@ $runtime | ConvertTo-Json -Depth 10 | Out-File (Join-Path $Destination 'package.
 # Copy license
 Copy-Item -Force LICENSE (Join-Path $Destination 'LICENSE')
 
-# Seed instructions (only non-secret baseline). Avoid copying large temp or test artifacts.
-Write-Host '[deploy] Seeding instructions (existing files are preserved)...'
-Get-ChildItem instructions -Filter *.json | Where-Object { -not ($_.Name -match 'concurrent-|fuzz_|crud.cycle|temp') } | ForEach-Object {
-  $target = Join-Path (Join-Path $Destination 'instructions') $_.Name
-  if(-not (Test-Path $target)){
-    Copy-Item $_.FullName $target
+# Seed instructions only if destination has none (to avoid overwriting user-managed runtime catalog).
+$destInstructions = Join-Path $Destination 'instructions'
+$hasExistingRuntime = Get-ChildItem -Path $destInstructions -Filter *.json -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\_templates\\" } | Select-Object -First 1
+if(-not $hasExistingRuntime){
+  Write-Host '[deploy] Destination instructions empty -> seeding baseline (non-secret) files...' -ForegroundColor Cyan
+  Get-ChildItem instructions -Filter *.json | Where-Object { -not ($_.Name -match 'concurrent-|fuzz_|crud.cycle|temp') } | ForEach-Object {
+    $target = Join-Path $destInstructions $_.Name
+    if(-not (Test-Path $target)){
+      Copy-Item $_.FullName $target
+    }
   }
+} else {
+  Write-Host '[deploy] Skipping instruction seeding (existing runtime instructions preserved).' -ForegroundColor Green
 }
 
 # Create launch scripts

@@ -8,10 +8,6 @@
   "categories": [
     "b"
   ],
-  "sourceHash": "d053694953b7f16c118e0f8c919f9c7c571a4cbbde9b4f10813eea97a930cf09",
-  "semanticSummary": "Beta body",
-  "lastReviewedAt": "2025-08-28T16:25:08.297Z",
-  "nextReviewDue": "2025-12-26T16:25:08.297Z",
   "reviewIntervalDays": 120,
   "schemaVersion": "2"
 }

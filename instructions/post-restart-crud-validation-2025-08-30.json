@@ -1,0 +1,36 @@
+{
+  "id": "post-restart-crud-validation-2025-08-30",
+  "title": "Post-Restart CRUD Validation Test - Server Functionality Check",
+  "body": "# Post-Restart CRUD Validation Test\n\n## Test Execution Context\n- **Server Version**: 1.0.7\n- **Test Time**: August 30, 2025 - 10:14 UTC\n- **Environment**: Production MCP Index Server (restarted)\n- **Configuration**: Standard production settings\n\n## Test Objectives\n1. Validate CREATE operation persistence after server restart\n2. Confirm filesystem write capabilities\n3. Verify catalog integrity and hash consistency\n4. Test complete CRUD operation pipeline\n\n## Test Data Characteristics\n- **Complex JSON Structure**: Nested metadata, arrays, governance fields\n- **Rich Text Content**: Markdown formatting, code blocks, lists\n- **Multi-Category Classification**: Testing array handling\n- **Performance Baseline**: Measuring operation latency\n\n## Expected Results\n- CREATE: Entry should persist to filesystem immediately\n- READ: Should retrieve complete entry with all metadata\n- UPDATE: Should modify existing entries successfully\n- DELETE: Should remove entries and update catalog\n\n## Technical Validation Points\n- Hash generation and verification\n- Timestamp accuracy and consistency\n- Governance metadata handling\n- Search index synchronization\n- File system permissions and access\n\n## Success Criteria\nThis test passes if:\n1. CREATE operation returns success AND entry is retrievable\n2. Catalog count increments correctly\n3. Hash values match between operations\n4. All CRUD operations complete within performance thresholds\n\nThis validation confirms the MCP Index Server CREATE operation functionality after restart.",
+  "priority": 92,
+  "audience": "developers",
+  "requirement": "mandatory",
+  "categories": [
+    "crud-validation",
+    "persistence-testing",
+    "post-restart-testing",
+    "quality-assurance",
+    "server-health"
+  ],
+  "sourceHash": "5efbe1e603c5e25bfb4c2a3e3609dba4a6596120648a81c6715dc4792ee3e52a",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T10:29:35.100Z",
+  "updatedAt": "2025-08-30T13:06:37.281Z",
+  "riskScore": 58,
+  "owner": "server-validation-team",
+  "version": "1.0.0",
+  "status": "approved",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T10:29:35.100Z",
+  "nextReviewDue": "2025-09-29T10:29:35.100Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T10:29:35.100Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "# Post-Restart CRUD Validation Test"
+}

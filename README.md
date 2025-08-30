@@ -16,6 +16,36 @@ This project provides comprehensive enterprise-grade documentation:
 - **[🔄 Schema Evolution (SCHEMA-V2-PLAN.md)](./docs/SCHEMA-V2-PLAN.md)** - Schema versioning and migration
 - **[🔒 Security (SECURITY.md)](./SECURITY.md)** - Security policies and compliance
 
+### 🔐 Baseline Restoration & Guardrails
+
+This repository operates under an authoritative baseline recovery plan defined in `INTERNAL-BASELINE.md`.
+
+Key guarantees:
+
+1. Minimal invariant suite only (atomic CRUD + persistence) during restoration.
+2. No additional tests accepted without a formal CHANGE REQUEST (see section 14 of baseline doc).
+3. Automated guard: `npm run guard:baseline` enforces presence of the baseline file and restricts unauthorized test expansion when `BASELINE_ENFORCE=1`.
+4. Agent Execution Directive: All automated maintenance, build, test, guard, and baseline operations MUST be executed via the MCP PowerShell server (`powershell-mcp-server`) using protocol tool `run-powershell` with explicit `timeout` (or `aiAgentTimeoutSec`) and, where supported, `workingdirectory`. Direct ad-hoc VSCode terminals by an AI agent are prohibited (signals knowledge regression). Commit hooks + tests enforce this directive.
+
+Run guard manually:
+
+```bash
+BASELINE_ENFORCE=1 npm run guard:baseline
+```
+
+If this guard fails, do not add or modify tests—submit a change request instead.
+
+Agent Execution Quick Reference:
+
+| Action | MCP Command Pattern |
+|--------|---------------------|
+| Typecheck | `run-powershell { command: "npm run typecheck" }` |
+| Guard (enforced) | `run-powershell { command: "$env:BASELINE_ENFORCE='1'; node scripts/guard-baseline.mjs" }` |
+| Sentinel verify | `run-powershell { command: "node scripts/baseline-sentinel.mjs verify" }` |
+| Minimal directive test | `run-powershell { command: "npx vitest run src/tests/mcpConfigImperativeDirective.spec.ts --reporter=dot" }` |
+
+Any AI-initiated request for a raw terminal prompt is treated as policy violation.
+
 ## 🚀 Quick Start
 
 ### 1. Installation & Build

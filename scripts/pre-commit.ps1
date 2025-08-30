@@ -32,6 +32,20 @@ foreach($file in $staged){
   }
 }
 
+# 5. Baseline enforcement (only if baseline file exists)
+if(Test-Path 'INTERNAL-BASELINE.md'){
+  Info 'Baseline guard'
+  $env:BASELINE_ENFORCE = '1'
+  try { npm run guard:baseline --silent | Out-Null } catch { Fail 'Baseline guard failed' }
+  Remove-Item Env:BASELINE_ENFORCE -ErrorAction SilentlyContinue
+  if(Test-Path '.baseline.sentinel'){
+    Info 'Baseline sentinel verify'
+    try { npm run baseline:sentinel:verify --silent | Out-Null } catch { Fail 'Baseline sentinel mismatch' }
+  } else {
+    Fail 'Missing .baseline.sentinel file (run npm run baseline:sentinel:update after approved change)'
+  }
+}
+
 if($errors -gt 0){
   Write-Host "Pre-commit failed with $errors issue(s)." -ForegroundColor Red
   exit 1

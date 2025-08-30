@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+
+- Authoritative baseline recovery plan (`INTERNAL-BASELINE.md`) with execution log.
+- Baseline guard script `scripts/guard-baseline.mjs` and npm script `guard:baseline`.
+- README Baseline Restoration section and enforced minimal invariant suite policy.
+
+### Governance
+
+- Formal change control required (see baseline plan section 14) for any test expansion.
+
+
 ## [0.1.0] - 2025-08-24
 
 ### Added (initial)

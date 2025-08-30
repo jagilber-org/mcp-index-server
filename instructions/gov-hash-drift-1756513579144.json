@@ -1,0 +1,38 @@
+{
+  "id": "gov-hash-drift-1756513579144",
+  "title": "Gov Hash Drift",
+  "body": "Stable Body",
+  "priority": 5,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "auto",
+    "ghash"
+  ],
+  "sourceHash": "5eba503ad0aecc563ec135f5c772a2ced93642512e9b39f44c35eb8f3d9528cf",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T00:26:19.146Z",
+  "updatedAt": "2025-08-30T00:26:20.694Z",
+  "riskScore": 145,
+  "owner": "team-b",
+  "version": "1.0.1",
+  "status": "approved",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T00:26:19.147Z",
+  "nextReviewDue": "2025-09-29T00:26:19.147Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T00:26:19.146Z",
+      "summary": "initial import"
+    },
+    {
+      "version": "1.0.1",
+      "changedAt": "2025-08-30T00:26:20.694Z",
+      "summary": "manual patch bump via governanceUpdate"
+    }
+  ],
+  "semanticSummary": "Stable Body"
+}

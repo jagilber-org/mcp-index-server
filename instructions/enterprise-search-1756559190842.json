@@ -1,0 +1,33 @@
+{
+  "id": "enterprise-search-1756559190842",
+  "title": "Search Fixture",
+  "body": "# Service Fabric Resources\n- Link about Service Fabric https://example.com/service-fabric\n\n# Well-Architected Resources\n- Link about Well-Architected https://example.com/well-architected\n\n# Semantic Kernel Resources\n- Link about Semantic Kernel https://example.com/semantic-kernel\n\n# PowerShell Resources\n- Link about PowerShell https://example.com/powershell\n\nGeneral notes about Azure Well-Architected and Service Fabric synergy.",
+  "priority": 30,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "development-tools",
+    "search"
+  ],
+  "sourceHash": "75e4b8b3217ff8fae2adb255fed7136e11ecb4372ebe1cca556677c1872a04bd",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T13:06:30.847Z",
+  "updatedAt": "2025-08-30T13:06:30.847Z",
+  "riskScore": 75,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T13:06:30.848Z",
+  "nextReviewDue": "2025-10-29T13:06:30.848Z",
+  "reviewIntervalDays": 60,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T13:06:30.847Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "# Service Fabric Resources"
+}

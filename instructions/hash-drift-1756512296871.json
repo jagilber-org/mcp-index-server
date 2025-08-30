@@ -1,0 +1,32 @@
+{
+  "id": "hash-drift-1756512296871",
+  "title": "Drift",
+  "body": "# Drift Test\nLinks:\n\n- https://github.com/microsoft/service-fabric\n- https://github.com/Azure/bicep\n- https://github.com/microsoft/semantic-kernel\n\nEOF",
+  "priority": 35,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "governance"
+  ],
+  "sourceHash": "ffc5b82e9922548e0f3d25d7441b58e51bb7e90bcad687c32509d99d9d8dcd31",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T00:04:56.874Z",
+  "updatedAt": "2025-08-30T00:04:56.874Z",
+  "riskScore": 70,
+  "owner": "hash-owner",
+  "version": "1.0.0",
+  "status": "approved",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T00:04:56.875Z",
+  "nextReviewDue": "2025-10-29T00:04:56.875Z",
+  "reviewIntervalDays": 60,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T00:04:56.874Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "# Drift Test"
+}

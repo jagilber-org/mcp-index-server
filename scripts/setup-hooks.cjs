@@ -10,6 +10,12 @@ function main(){
   const content = `#!/usr/bin/env bash\n# Auto-generated hook installs PowerShell pre-commit\nif command -v pwsh >/dev/null 2>&1; then pwsh ./scripts/pre-commit.ps1; else powershell -ExecutionPolicy Bypass -File ./scripts/pre-commit.ps1; fi`;
   require('fs').writeFileSync(hookPath, content, { encoding:'utf8' });
   chmodSync(hookPath, 0o755);
+
+  // Commit-msg hook to enforce baseline change request marker
+  const commitMsgPath = join(hooksDir, 'commit-msg');
+  const commitMsgContent = `#!/usr/bin/env bash\n# Auto-generated commit-msg hook for baseline change control\nif command -v pwsh >/dev/null 2>&1; then pwsh ./scripts/commit-msg-baseline.ps1 "$1"; else powershell -ExecutionPolicy Bypass -File ./scripts/commit-msg-baseline.ps1 "$1"; fi`;
+  require('fs').writeFileSync(commitMsgPath, commitMsgContent, { encoding:'utf8' });
+  chmodSync(commitMsgPath, 0o755);
 }
 
 main();

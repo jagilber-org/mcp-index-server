@@ -1,0 +1,12 @@
+{
+  "id": "green_valid_0",
+  "title": "Title 0",
+  "body": "Body 0",
+  "priority": 10,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [],
+  "sourceHash": "",
+  "schemaVersion": "2",
+  "reviewIntervalDays": 30
+}

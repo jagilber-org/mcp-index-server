@@ -43,24 +43,17 @@ describe('Portable CRUD Harness (client-lib)', () => {
 
 		expect(seq.failures, 'Sequence reported failures').toEqual([]);
 		const createdAny = seq.created as Record<string, unknown> | undefined;
-		function pick(obj: Record<string, unknown> | undefined, path: string[]): unknown {
-			let cur: unknown = obj;
-			for (const segment of path) {
-				if (cur && typeof cur === 'object' && segment in (cur as Record<string, unknown>)) {
-					cur = (cur as Record<string, unknown>)[segment];
-				} else return undefined;
-			}
-			return cur;
-		}
+		// Reuse shared pick util (avoid duplicated traversal logic)
+		const { pick, normalizeBody } = await import('./testUtils.js');
 		const createdId = pick(createdAny, ['id']) || pick(createdAny, ['item','id']);
 		expect(createdId).toBe(id);
 		// First read body matches initial
 		const read1Any = seq.read1 as Record<string, unknown> | undefined;
-		const read1Body = pick(read1Any, ['item','body']) || pick(read1Any, ['body']);
+		const read1Body = normalizeBody(read1Any);
 		expect(read1Body).toContain(initialBody);
 		// Updated body present
 		const read2Any = seq.read2 as Record<string, unknown> | undefined;
-		const read2Body = pick(read2Any, ['item','body']) || pick(read2Any, ['body']);
+		const read2Body = normalizeBody(read2Any);
 		expect(read2Body).toContain('UPDATED');
 
 		// Additional explicit deletion validation using discrete client ops (reuse abstraction)
@@ -77,6 +70,9 @@ describe('Portable CRUD Harness (client-lib)', () => {
 		// Emit concise JSON summary for external harnesses.
 		// eslint-disable-next-line no-console
 		console.log('[portable-crud-harness][summary]', JSON.stringify({ id, ok: seq.ok, failures: seq.failures, dir: instructionsDir }));
+		// Permanent helper message requested by user (raw JSON-RPC lines captured in parameterized test variant).
+		// eslint-disable-next-line no-console
+		console.log('If you need the full JSON-RPC raw lines from the parameterized test (out array) I can instrument or echo them next.');
 	}, 20000);
 });
 

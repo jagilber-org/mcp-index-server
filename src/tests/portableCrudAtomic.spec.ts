@@ -89,5 +89,8 @@ describe('Portable CRUD Atomicity (portable client)', () => {
     } finally {
       await client.close();
     }
+  // Permanent helper message requested by user (even though this test does not capture raw JSON-RPC frames directly).
+  // eslint-disable-next-line no-console
+  console.log('If you need the full JSON-RPC raw lines from the parameterized test (out array) I can instrument or echo them next.');
   }, 15000);
 });

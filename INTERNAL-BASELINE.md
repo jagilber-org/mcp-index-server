@@ -240,6 +240,7 @@ No execution until explicitly approved.
 | Timestamp (UTC) | Phase | Action | Result | Hash / Notes |
 |-----------------|-------|--------|--------|--------------|
 | PENDING | 0 | Snapshot branch + archive | PENDING | Will record HASH_HEAD |
+| 2025-08-30 09:58:15Z | 0 | Snapshot commit + archive | CREATED | 89b6938f16ef03923b4cea2f4272d589a9748bb5 snapshot-20250830-095815-89b6938f16ef03923b4cea2f4272d589a9748bb5.zip |
 
 Logging Rules:
 

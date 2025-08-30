@@ -97,6 +97,10 @@ describe('Portable CRUD Integration', () => {
     // CREATE
     send(server, { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'add', entry: { id, title: 'Portable CRUD Validation', body: LARGE_BODY, priority, audience: 'all', requirement: 'optional', categories, owner }, overwrite: true, lax: true } } });
     await waitFor(() => !!findLine(out, 3));
+  const addResp = parsePayload<{ id:string; verified?:boolean; error?:string }>(findLine(out,3));
+  expect(addResp.id).toBe(id);
+  expect(addResp.error).toBeUndefined();
+  expect(addResp.verified).toBe(true); // atomic create guarantee
 
     // LIST (query via dispatcher list action)
     send(server, { jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'list' } } });
@@ -131,48 +135,24 @@ describe('Portable CRUD Integration', () => {
     }
     expect(inSearch).toBe(true);
 
-    // UPDATE (metadata modification: owner & priority)
-    const newOwner = 'portable-owner-updated';
-    const newPriority = 55;
-    send(server, { jsonrpc: '2.0', id: 8, method: 'tools/call', params: { name: 'instructions/governanceUpdate', arguments: { id, owner: newOwner, status: 'active' } } });
-    await waitFor(() => !!findLine(out, 8));
-    // Overwrite with body tweak to force content hash change
-    const updatedBody = LARGE_BODY + '\nUpdated Timestamp:' + Date.now();
-    send(server, { jsonrpc: '2.0', id: 9, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'add', entry: { id, title: 'Portable CRUD Validation', body: updatedBody, priority: newPriority, audience: 'all', requirement: 'optional', categories, owner: newOwner }, overwrite: true, lax: true } } });
-    await waitFor(() => !!findLine(out, 9));
-
-    // Stabilized GET after update: allow for brief catalog reload latency.
-    let afterUpdate: { item?: { owner?: string; priority: number; body: string } } | undefined;
-    for (let attempt = 0; attempt < 6; attempt++) {
-      const rid = 100 + attempt; // use high range to avoid collisions with later RPC ids
-      send(server, { jsonrpc: '2.0', id: rid, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'get', id } } });
-      try {
-        await waitFor(() => !!findLine(out, rid), 4000);
-        const rawLine = findLine(out, rid);
-        // eslint-disable-next-line no-console
-        console.log('[portable-crud][raw]', { attempt, rid, raw: rawLine?.slice(0, 160) });
-        const parsed = parsePayload<{ item?: { owner?: string; priority: number; body: string } }>(rawLine);
-  // Diagnostic: surface observed owner/priority per attempt to aid server propagation debugging
-  // eslint-disable-next-line no-console
-  console.log('[portable-crud][attempt]', { attempt, observedOwner: parsed.item?.owner, observedPriority: parsed.item?.priority });
-        if (parsed.item && parsed.item.owner === newOwner && parsed.item.priority === newPriority) {
-          afterUpdate = parsed;
-          break;
-        }
-        // If item present but not yet updated, brief delay before retry
-        await new Promise(r => setTimeout(r, 120 + attempt * 80));
-      } catch {
-        /* retry */
-      }
-    }
-    if (!afterUpdate || !afterUpdate.item) {
-      // eslint-disable-next-line no-console
-      console.log('[portable-crud][diag] post-update get stabilization failed', { attempts: 'exhausted' });
-      throw new Error('Post-update GET did not yield updated item');
-    }
-    expect(afterUpdate.item.owner).toBe(newOwner);
-    expect(afterUpdate.item.priority).toBe(newPriority);
-    expect(afterUpdate.item.body).not.toBe(getResp.item.body); // body changed
+  // UPDATE (metadata modification: owner & priority) – now enforced to be immediate via atomic overwrite path
+  const newOwner = 'portable-owner-updated';
+  const newPriority = 55;
+  send(server, { jsonrpc: '2.0', id: 8, method: 'tools/call', params: { name: 'instructions/governanceUpdate', arguments: { id, owner: newOwner, status: 'active' } } });
+  await waitFor(() => !!findLine(out, 8));
+  const updatedBody = LARGE_BODY + '\nUpdated Timestamp:' + Date.now();
+  send(server, { jsonrpc: '2.0', id: 9, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'add', entry: { id, title: 'Portable CRUD Validation', body: updatedBody, priority: newPriority, audience: 'all', requirement: 'optional', categories, owner: newOwner }, overwrite: true, lax: true } } });
+  await waitFor(() => !!findLine(out, 9));
+  const updResp = parsePayload<{ id:string; verified?:boolean; error?:string }>(findLine(out,9));
+  expect(updResp.error).toBeUndefined();
+  expect(updResp.verified).toBe(true); // atomic overwrite visibility
+  // Immediate GET after update (no stabilization loop permitted)
+  send(server, { jsonrpc: '2.0', id: 100, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'get', id } } });
+  await waitFor(() => !!findLine(out, 100));
+  const afterUpdate = parsePayload<{ item?: { owner?: string; priority: number; body: string } }>(findLine(out,100));
+  expect(afterUpdate.item?.owner).toBe(newOwner);
+  expect(afterUpdate.item?.priority).toBe(newPriority);
+  expect(afterUpdate.item?.body).not.toBe(getResp.item.body); // body changed
 
     // DELETE (remove)
   send(server, { jsonrpc: '2.0', id: 11, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'remove', id } } });

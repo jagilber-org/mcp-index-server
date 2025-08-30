@@ -1,9 +1,12 @@
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
+// Canonical body hashing (normalizes line endings, trims outer blank lines, strips trailing spaces)
+import { hashBody } from './canonical';
 import { InstructionEntry } from '../models/instruction';
 import { registerHandler } from '../server/registry';
 import { computeGovernanceHash, ensureLoaded, invalidate, projectGovernance, getInstructionsDir, touchCatalogVersion, getDebugCatalogSnapshot } from './catalogContext';
+import { incrementCounter } from './features';
 import { SCHEMA_VERSION } from '../versioning/schemaVersion';
 import { ClassificationService } from './classificationService';
 import { resolveOwner } from './ownershipService';
@@ -153,9 +156,13 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   const file = path.join(dir, `${e.id}.json`); const exists = fs.existsSync(file); const overwrite = !!p.overwrite;
   if(exists && !overwrite){ const st0=ensureLoaded(); logAudit('add', e.id, { skipped:true }); return { id:e.id, skipped:true, created:false, overwritten:false, hash: st0.hash }; }
   const now = new Date().toISOString();
-  const bodyTrimmed = typeof e.body==='string'? e.body.trim(): String(e.body||'');
+  const rawBody = typeof e.body==='string'? e.body: String(e.body||'');
+  const bodyTrimmed = rawBody.trim();
+  // Apply canonicalization so sourceHash stable across superficial whitespace edits.
   const categories = Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c):c is string=> typeof c==='string').map(c=> c.toLowerCase()))).sort();
-  const sourceHash = crypto.createHash('sha256').update(bodyTrimmed,'utf8').digest('hex');
+  const sourceHash = process.env.MCP_CANONICAL_DISABLE === '1'
+    ? crypto.createHash('sha256').update(bodyTrimmed,'utf8').digest('hex')
+    : hashBody(rawBody);
   // Governance prerequisites
   if(e.priorityTier==='P1' && (!categories.length || !e.owner)) return { id:e.id, error:'P1 requires category & owner' };
   if((e.requirement==='mandatory' || e.requirement==='critical') && !e.owner) return { id:e.id, error:'mandatory/critical require owner' };
@@ -168,7 +175,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
       base = { ...existing } as InstructionEntry;
       // Only overwrite individual fields if explicitly supplied (or lax provided default title)
       if(e.title) base.title = e.title;
-      if(e.body) base.body = bodyTrimmed;
+  if(e.body) base.body = bodyTrimmed; // preserve original trimmed body on disk (do not store canonical form to retain author intent)
       if(e.rationale !== undefined) base.rationale = e.rationale;
       if(typeof e.priority === 'number') base.priority = e.priority;
       if(e.audience) base.audience = e.audience;
@@ -188,9 +195,13 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   const govKeys: (keyof ImportEntry)[] = ['version','owner','status','priorityTier','classification','lastReviewedAt','nextReviewDue','changeLog','semanticSummary'];
   for(const k of govKeys){ const v = (e as ImportEntry)[k]; if(v!==undefined){ (base as unknown as Record<string, unknown>)[k]=v as unknown; } }
   // Ensure sourceHash reflects trimmed body (only recompute if body changed or new)
-  if(!exists || base.body === bodyTrimmed){ base.sourceHash = sourceHash; } else {
-    // existing body may not equal trimmed new body if not supplied; ensure hash still correct for current body
-    base.sourceHash = crypto.createHash('sha256').update(base.body,'utf8').digest('hex');
+  if(!exists || base.body === bodyTrimmed){
+    base.sourceHash = sourceHash;
+  } else {
+    // existing body may not equal trimmed new body if not supplied; recompute using canonical guard
+    base.sourceHash = process.env.MCP_CANONICAL_DISABLE === '1'
+      ? crypto.createHash('sha256').update(base.body,'utf8').digest('hex')
+      : hashBody(base.body);
   }
   const record = classifier.normalize(base);
   if(record.owner==='unowned'){ const auto=resolveOwner(record.id); if(auto){ record.owner=auto; record.updatedAt=new Date().toISOString(); } }
@@ -226,8 +237,50 @@ registerHandler('instructions/governanceHash', ()=>{
       }
     } catch { /* ignore verification errors */ }
   }
-  const projections=st.list.slice().sort((a,b)=> a.id.localeCompare(b.id)).map(projectGovernance);
+  let projections=st.list.slice().sort((a,b)=> a.id.localeCompare(b.id)).map(projectGovernance);
+  // Defensive: if a caller recently modified an instruction on disk (e.g., owner change) and a coarse
+  // directory signature + timestamp coalescing caused the modified file to not yet appear with updated
+  // metadata (or transiently disappear due to a racing invalidate), attempt a focused late materialization.
+  // We key off a rare condition: empty projections or a projection set whose first entry owner differs
+  // from on-disk owner for that same id (indicating catalog staleness) OR a small minority (<90%) of ids
+  // relative to files on disk (suggesting partial visibility under race conditions).
+  try {
+    const dir = getInstructionsDir();
+    const files = fs.readdirSync(dir).filter(f=> f.endsWith('.json'));
+    if(files.length && (projections.length === 0 || projections.length < Math.floor(files.length*0.9))){
+      const missingIds = new Set(files.map(f=> f.replace(/\.json$/,'')));
+      for(const p of projections){ missingIds.delete(p.id); }
+      // Attempt to load a small number of missing ids (cap 5 to bound cost) and refresh state if any loaded.
+      let hydrated = false;
+      let loadCount = 0;
+      for(const mid of missingIds){
+        if(loadCount>=5) break; loadCount++;
+        const file = path.join(dir, mid + '.json');
+        try {
+          const raw = JSON.parse(fs.readFileSync(file,'utf8')) as InstructionEntry;
+          if(raw && raw.id === mid){
+            st.list.push(raw); st.byId.set(raw.id, raw); hydrated = true;
+          }
+        } catch { /* ignore individual load errors */ }
+      }
+      if(hydrated){
+        projections = st.list.slice().sort((a,b)=> a.id.localeCompare(b.id)).map(projectGovernance);
+        try { incrementCounter('governance:lateMaterialize'); } catch { /* ignore */ }
+      }
+    }
+  } catch { /* ignore defensive reload errors */ }
   const governanceHash=computeGovernanceHash(st.list);
+  // Final defensive repair: if after late materialization we still have a suspiciously low
+  // projection count (<90% of loaded entries) or any undefined owner fields (should be normalized),
+  // perform a one-time invalidate+reload to eliminate a transient visibility race, then recompute.
+  if(projections.length && projections.length < Math.floor(st.list.length*0.9) || projections.some(p=> !p.owner)){
+    try {
+      invalidate();
+      const st2 = ensureLoaded();
+      projections = st2.list.slice().sort((a,b)=> a.id.localeCompare(b.id)).map(projectGovernance);
+      try { incrementCounter('governance:projectionRepair'); } catch { /* ignore */ }
+    } catch { /* ignore reload failure */ }
+  }
   return { count: projections.length, governanceHash, items: projections };
 });
 

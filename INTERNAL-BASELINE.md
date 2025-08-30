@@ -248,6 +248,7 @@ No execution until explicitly approved.
 | 2025-08-30 14:32:05Z | 3 | dependency install + build | OK | 7721136 dist/server/index.js present |
 | 2025-08-30 14:37:20Z | 4 | minimal suite isolation prep | OK | tsconfig excludes tests._park + vitest config |
 | 2025-08-30 10:49:55Z | 4 | isolation hardened (runner filtered) | OK | vitest include src/tests only; dist & node_modules excluded; minimal trio pass |
+| 2025-08-30 11:04:55Z | 5 | deterministic validation cycles (3x) | OK | 9/9 repro + 9/9 tests pass (0 failures) |
 
 Logging Rules:
 

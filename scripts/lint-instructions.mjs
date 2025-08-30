@@ -2,6 +2,20 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { fileURLToPath } from 'url';
+import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
+// Load schema and prepare validator (warn-only for new constraints)
+let schemaValidator = null;
+try {
+  const schemaPath = path.join(process.cwd(),'schemas','instruction.schema.json');
+  if(fs.existsSync(schemaPath)){
+    const schemaRaw = JSON.parse(fs.readFileSync(schemaPath,'utf8'));
+    const ajv = new Ajv({ allErrors:true, strict:false });
+    addFormats(ajv);
+    schemaValidator = ajv.compile(schemaRaw);
+  }
+} catch { /* ignore schema load issues */ }
 
 const base = path.join(process.cwd(), 'instructions');
 let errors = 0; let warnings = 0;
@@ -40,6 +54,16 @@ for(const file of (fs.existsSync(base)? fs.readdirSync(base): [])){
   if(typeof raw.body === 'string' && raw.sourceHash){
     const hash = crypto.createHash('sha256').update(raw.body,'utf8').digest('hex');
     if(hash !== raw.sourceHash) log('ERROR', id, 'sourceHash mismatch');
+  }
+  // schema validation (warn mode for new tightened constraints)
+  if(schemaValidator){
+    const ok = schemaValidator(raw);
+    if(!ok && Array.isArray(schemaValidator.errors)){
+      for(const e of schemaValidator.errors){
+        // Downgrade to WARN to avoid brittle failures during adoption of stricter schema
+        log('WARN', id, `schema ${e.instancePath||'/'} ${e.message}`);
+      }
+    }
   }
 }
 if(errors){ console.error(`Failed with ${errors} errors, ${warnings} warnings.`); process.exit(1); }

@@ -76,7 +76,10 @@ export class CatalogLoader {
   if(typeof mutRaw.sourceHash !== 'string' || !mutRaw.sourceHash.length){ try { mutRaw.sourceHash = crypto.createHash('sha256').update(mutRaw.body||'', 'utf8').digest('hex'); } catch { /* ignore */ } }
   if(typeof mutRaw.createdAt !== 'string' || !mutRaw.createdAt.length) mutRaw.createdAt = nowIso;
   if(typeof mutRaw.updatedAt !== 'string' || !mutRaw.updatedAt.length) mutRaw.updatedAt = nowIso;
-        // Preprocess placeholder governance fields: convert empty strings to undefined so schema doesn't reject
+  // Normalize legacy / pre-spec governance variants BEFORE schema validation
+  // Type guard: raw.status may contain legacy value 'active'; treat as alias for 'approved'
+  if((raw as unknown as { status?: string }).status === 'active'){ (raw as unknown as { status?: string }).status = 'approved'; }
+  // Preprocess placeholder governance fields: convert empty strings to undefined so schema doesn't reject
         const placeholderKeys: (keyof InstructionEntry)[] = ['createdAt','updatedAt','lastReviewedAt','nextReviewDue','priorityTier','semanticSummary'];
         for(const k of placeholderKeys){
           const v = (mutRaw as unknown as Record<string, unknown>)[k];

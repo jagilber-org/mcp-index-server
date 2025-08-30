@@ -361,7 +361,18 @@ registerHandler('instructions/governanceUpdate', guard('instructions/governanceU
   let changed=false; const now=new Date().toISOString();
   const bump=p.bump||'none';
   if(p.owner && p.owner!==record.owner){ record.owner=p.owner; changed=true; }
-  if(p.status && p.status!==record.status){ record.status=p.status as InstructionEntry['status']; changed=true; }
+  if(p.status){
+    // Accept legacy alias 'active' -> 'approved' (previous bug accepted invalid status causing schema rejection on reload)
+    const allowed: InstructionEntry['status'][] = ['draft','review','approved','deprecated'];
+  const desired = p.status === 'active' ? 'approved' : p.status;
+    if(!allowed.includes(desired as InstructionEntry['status'])){
+      return { id, error:'invalid status', provided: p.status };
+    }
+    if(desired !== record.status){
+      record.status = desired as InstructionEntry['status'];
+      changed=true;
+    }
+  }
   if(p.lastReviewedAt){ record.lastReviewedAt=p.lastReviewedAt; changed=true; }
   if(p.nextReviewDue){ record.nextReviewDue=p.nextReviewDue; changed=true; }
   if(bump && bump!=='none'){

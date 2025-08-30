@@ -75,6 +75,11 @@ registerHandler('instructions/dispatch', async (params: DispatchParams) => {
   }
   // Strip action key for downstream handler params
   const { action: _ignoredAction, ...rest } = params as Record<string, unknown>;
+  // Backward-compatible convenience: allow single 'id' for remove instead of 'ids' array
+  if(action==='remove' && typeof (rest as Record<string, unknown>).id === 'string' && !(rest as Record<string, unknown>).ids){
+    (rest as Record<string, unknown>).ids = [ (rest as Record<string, unknown>).id as string ];
+    delete (rest as Record<string, unknown>).id;
+  }
   void _ignoredAction; // explicitly ignore for lint
   return handler(rest);
 });

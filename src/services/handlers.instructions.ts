@@ -12,6 +12,7 @@ import { ClassificationService } from './classificationService';
 import { resolveOwner } from './ownershipService';
 import { atomicWriteJson } from './atomicFs';
 import { logAudit } from './auditLog';
+import { getToolRegistry } from './toolRegistry';
 
 // Evaluate mutation flag dynamically each invocation so tests that set env before calls (even after import) still work.
 function isMutationEnabled(){ return process.env.MCP_ENABLE_MUTATION === '1'; }
@@ -137,11 +138,48 @@ registerHandler('instructions/import', guard('instructions/import', (p:{entries:
 // Add (create/update) single instruction. Maintains backward compatibility with dispatcher mapping 'add' -> 'instructions/add'.
 interface AddParams { entry: ImportEntry & { lax?: boolean }; overwrite?: boolean; lax?: boolean }
 registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
-  const e = p.entry as ImportEntry | undefined; if(!e) return { error:'missing entry'};
+  const e = p.entry as ImportEntry | undefined;
+  // Unified failure helper adds feedback reporting guidance + sanitized repro details
+  // Resolve (once) the published input schema so we can attach it for client self-correction on shape errors
+  const ADD_INPUT_SCHEMA = getToolRegistry().find(t=> t.name==='instructions/add')?.inputSchema;
+  const fail = (error:string, opts?:{ id?:string; hash?:string }) => {
+    const id = opts?.id || (e && e.id) || 'unknown';
+    const rawBody = e && typeof e.body === 'string' ? e.body : (e && e.body ? String(e.body) : '');
+    const bodyPreview = rawBody.trim().slice(0,200);
+    const reproEntry = e ? {
+      id,
+      title: (e as Partial<ImportEntry>).title || id,
+      requirement: (e as Partial<ImportEntry>).requirement,
+      priorityTier: (e as Partial<ImportEntry>).priorityTier,
+      owner: (e as Partial<ImportEntry>).owner,
+      bodyPreview
+    } : { id };
+    const base:any = {
+      id,
+      created:false,
+      overwritten:false,
+      skipped:false,
+      error,
+      hash: opts?.hash,
+      feedbackHint: 'Creation failed. If unexpected, call feedback/submit with reproEntry.',
+      reproEntry
+    };
+    // If this is a schema / shape guidance error, attach the published input schema + reference so clients can self-heal.
+    if(/^missing (entry|id|required fields)/.test(error) || error === 'missing required fields'){
+      if(ADD_INPUT_SCHEMA){
+        base.schemaRef = "meta/tools[name='instructions/add'].inputSchema";
+        base.inputSchema = ADD_INPUT_SCHEMA; // Provided inline for immediate corrective UX.
+      } else {
+        base.schemaRef = 'meta/tools (lookup instructions/add)';
+      }
+    }
+    return base as typeof base;
+  };
+  if(!e) return fail('missing entry');
   const lax = !!(p.lax || (e as unknown as { lax?: boolean })?.lax);
   // Apply lax defaults if enabled (allows body-only submissions like tests rely on)
   if(lax){
-    if(!e.id) return { error:'missing id' }; // id still mandatory
+    if(!e.id) return fail('missing id'); // id still mandatory
     // Create a shallow mutable copy to avoid mutating original reference directly with any casts
     const mutable = e as Partial<ImportEntry> & { id:string };
     if(!mutable.title) mutable.title = mutable.id; // title defaults to id
@@ -151,7 +189,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
     if(!Array.isArray(mutable.categories)) mutable.categories = [];
   }
   // Strict validation after lax fill
-  if(!e.id || !e.title || !e.body) return { error:'missing required fields'};
+  if(!e.id || !e.title || !e.body) return fail('missing required fields');
   const dir = getInstructionsDir(); if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true});
   const file = path.join(dir, `${e.id}.json`); const exists = fs.existsSync(file); const overwrite = !!p.overwrite;
   if(exists && !overwrite){ const st0=ensureLoaded(); logAudit('add', e.id, { skipped:true }); return { id:e.id, skipped:true, created:false, overwritten:false, hash: st0.hash }; }
@@ -164,8 +202,8 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
     ? crypto.createHash('sha256').update(bodyTrimmed,'utf8').digest('hex')
     : hashBody(rawBody);
   // Governance prerequisites
-  if(e.priorityTier==='P1' && (!categories.length || !e.owner)) return { id:e.id, error:'P1 requires category & owner' };
-  if((e.requirement==='mandatory' || e.requirement==='critical') && !e.owner) return { id:e.id, error:'mandatory/critical require owner' };
+  if(e.priorityTier==='P1' && (!categories.length || !e.owner)) return fail('P1 requires category & owner', { id:e.id });
+  if((e.requirement==='mandatory' || e.requirement==='critical') && !e.owner) return fail('mandatory/critical require owner', { id:e.id });
   const classifier = new ClassificationService();
   let base: InstructionEntry;
   if(exists){
@@ -205,7 +243,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   }
   const record = classifier.normalize(base);
   if(record.owner==='unowned'){ const auto=resolveOwner(record.id); if(auto){ record.owner=auto; record.updatedAt=new Date().toISOString(); } }
-  try { atomicWriteJson(file, record); } catch(err){ return { id:e.id, error:(err as Error).message||'write-failed' }; }
+  try { atomicWriteJson(file, record); } catch(err){ return fail((err as Error).message||'write-failed', { id:e.id }); }
   touchCatalogVersion(); invalidate(); let st=ensureLoaded();
   // Atomic read-back verification: ensure newly written/overwritten entry is *immediately* visible
   // in the in-memory catalog before declaring success. If not, attempt one forced reload; if still
@@ -249,9 +287,25 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
     } catch { /* ignore outer fallback errors */ }
   }
   if(!atomicVisible){
-    const failResp = { id: e.id, created: false, overwritten: false, skipped: false, hash: st.hash, error: 'atomic_readback_failed' } as const;
     logAudit('add', e.id, { created: false, overwritten: false, atomic_readback_failed: true });
-    return failResp;
+    return fail('atomic_readback_failed', { id:e.id, hash: st.hash });
+  }
+  // Final shape/readability validation: ensure catalog entry is structurally sound before
+  // declaring success. Prevents false positives where an incomplete or partially written
+  // record became visible (edge cases: truncated write recovered via late materialization
+  // but missing required fields). If this check fails we surface a distinct error so tests
+  // and monitoring can differentiate from pure visibility failures.
+  let readable = false;
+  try {
+    const rec = st.byId.get(e.id) as Partial<InstructionEntry> | undefined;
+    if(rec && rec.id === e.id && typeof rec.body === 'string' && typeof rec.title === 'string'){
+      // Require non-empty (after trim) body & title for readability confirmation
+      if(rec.body.trim() && rec.title.trim()) readable = true;
+    }
+  } catch { /* ignore */ }
+  if(!readable){
+    logAudit('add', e.id, { created: false, overwritten: false, readback_invalid_shape: true });
+    return fail('readback_invalid_shape', { id:e.id, hash: st.hash });
   }
   const resp = { id:e.id, created: !exists, overwritten: exists && overwrite, skipped:false, hash: st.hash, verified:true };
   logAudit('add', e.id, { created: !exists, overwritten: exists && overwrite, verified:true });

@@ -131,7 +131,8 @@ if(Test-Path $Destination){
           Remove-Item -Recurse -Force $item.FullName -ErrorAction Stop
         }
       } catch {
-        Write-Host "[deploy] Warning: failed to remove $($item | ForEach-Object { try { $_.FullName } catch { '<?>" } }): $($_.Exception.Message)" -ForegroundColor Yellow
+  # Best-effort warning (avoid terminating if pipeline object is odd / lacks FullName)
+  Write-Host "[deploy] Warning: failed to remove $($item | ForEach-Object { try { $_.FullName } catch { '<?>' } }): $($_.Exception.Message)" -ForegroundColor Yellow
       }
     }
     if(-not (Test-Path $Destination)) { New-Item -ItemType Directory -Force -Path $Destination | Out-Null }

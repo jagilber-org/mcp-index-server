@@ -247,6 +247,7 @@ No execution until explicitly approved.
 | 2025-08-30 14:31:10Z | 3 | build retry | FAIL | exit 2 |
 | 2025-08-30 14:32:05Z | 3 | dependency install + build | OK | 7721136 dist/server/index.js present |
 | 2025-08-30 14:37:20Z | 4 | minimal suite isolation prep | OK | tsconfig excludes tests._park + vitest config |
+| 2025-08-30 10:49:55Z | 4 | isolation hardened (runner filtered) | OK | vitest include src/tests only; dist & node_modules excluded; minimal trio pass |
 
 Logging Rules:
 

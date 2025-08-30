@@ -83,7 +83,8 @@ Create or update your MCP configuration:
       ],
       "env": {
         "MCP_LOG_VERBOSE": "1",
-        "MCP_ENABLE_MUTATION": "1"
+        "MCP_ENABLE_MUTATION": "1",
+        "MCP_INSTRUCTIONS_DIR": "C:/github/jagilber/mcp-index-server/instructions"
       }
     }
   }
@@ -93,6 +94,7 @@ Create or update your MCP configuration:
 Notes:
 
 - Ensure the `dist/server/index.js` file exists (run `npm run build` first).
+- Set `MCP_INSTRUCTIONS_DIR` to the absolute path of your instructions folder (defaults to `./instructions` relative to server working directory).
 - Use forward slashes or double-escaped backslashes in JSON.
 - Remove any old workspace-level `.vscode/mcp.json` to prevent duplication.
 - The first argument after `command` is executed by Node; with `cwd` set you can use a relative path (`dist/server/index.js`). Using an absolute path AND a `cwd` is redundant, not harmful.
@@ -112,7 +114,10 @@ Previously you could add a `.vscode/mcp.json` inside the repo. This is no longer
       "command": "node",
       "cwd": "C:/path/to/mcp-index-server",
       "args": ["dist/server/index.js"],
-      "env": { "MCP_LOG_VERBOSE": "1" }
+      "env": { 
+        "MCP_LOG_VERBOSE": "1",
+        "MCP_INSTRUCTIONS_DIR": "C:/path/to/mcp-index-server/instructions"
+      }
     }
   }
 }
@@ -137,7 +142,8 @@ Add to a workspace `.vscode/mcp.json` (file intentionally removed from repo to a
       ],
       "env": {
         "MCP_LOG_VERBOSE": "1",
-        "MCP_ENABLE_MUTATION": "1"
+        "MCP_ENABLE_MUTATION": "1",
+        "MCP_INSTRUCTIONS_DIR": "path/to/instructions"
       }
     }
   }
@@ -399,6 +405,106 @@ env MCP_ENABLE_MUTATION=1 node dist/server/index.js # ensure mutation enabled
 # method: instructions/add
 # params: { "entry": { "id": "new-id", "body": "Instruction text" }, "lax": true }
 ```
+
+#### Add Response Contract (1.0.7+)
+
+`instructions/add` now enforces atomic visibility + readability before signaling success.
+
+Success response (subset):
+
+```jsonc
+{
+  "id": "example-id",
+  "created": true,            // Only true if record was not pre-existing AND is now durably readable
+  "overwritten": false,       // True only when overwrite path explicitly taken
+  "skipped": false,           // True when duplicate without overwrite
+  "hash": "<catalog-hash>",
+  "verified": true            // Additional guard: read-back + shape & non-empty title/body validated
+}
+```
+
+Unified failure response:
+
+```jsonc
+{
+  "created": false,
+  "error": "mandatory/critical require owner",   // Stable machine-parsable reason
+  "feedbackHint": "Submit feedback/submit with reproEntry to report add failure",
+  "reproEntry": { "id": "bad-id", "title": "...", "body": "..." }
+}
+```
+
+Failure reasons (non-exhaustive):
+
+- `missing entry`
+- `missing id`
+- `missing required fields`
+- `P1 requires category & owner`
+- `mandatory/critical require owner`
+- `write-failed`
+- `atomic_readback_failed`
+- `readback_invalid_shape`
+
+Client guidance:
+
+1. If `created:false`, inspect `error`.
+2. Present human help text (map error → explanation) or prompt user to review governance requirements.
+3. Offer one-click escalation: call `feedback/submit` including `reproEntry` + the server-reported `error` string.
+4. Retry only after adjusting entry to satisfy governance or required field gaps.
+
+Common troubleshooting:
+
+- **"missing entry" error**: Ensure parameters are `{ "entry": { ... instruction ... } }`, not the instruction object directly
+- **Backup restoration**: Extract individual instruction objects from backup files before calling add
+- **Bulk import**: Use `instructions/import` for multiple entries, not repeated `instructions/add` calls
+
+##### Schema-Aided Failure Guidance (1.1.0+)
+
+For structural / shape errors (`missing entry`, `missing id`, `missing required fields`) the server now embeds the authoritative input schema directly in the failure response so clients can self-correct without an extra discovery round trip.
+
+Example failure payload:
+
+```jsonc
+{
+  "created": false,
+  "error": "missing entry",
+  "feedbackHint": "Submit feedback/submit with reproEntry to report add failure",
+  "reproEntry": { "id": "bad-id", "body": "..." },
+  "schemaRef": "instructions/add#input",          // Stable logical reference
+  "inputSchema": {                                 // JSON Schema excerpt (may evolve additively)
+    "type": "object",
+    "required": ["entry"],
+    "properties": {
+      "entry": {
+        "type": "object",
+        "required": ["id", "body"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "body": { "type": "string", "minLength": 1 }
+        }
+      },
+      "overwrite": { "type": "boolean" },
+      "lax": { "type": "boolean" }
+    }
+  }
+}
+```
+
+Client remediation strategy:
+
+1. If `schemaRef` present, prefer using `inputSchema` immediately for validation / UI hints.
+2. If you had sent a flat object (e.g. `{ "id":"x", "body":"y" }`), wrap it: `{ "entry": { "id":"x", "body":"y" } }`.
+3. Cache the schema per session (invalidate on `tools/list` change or version bump) rather than hard-coding shapes.
+4. Continue to call `tools/list` for canonical schemas; the inline schema is a convenience, not a replacement for standard discovery.
+
+Notes:
+- Inline schema only appears for early shape gaps; governance / semantic failures (e.g. `mandatory/critical require owner`) do not echo the full schema.
+- Fields may gain additive properties; treat unknown properties as forward-compatible.
+- `schemaRef` is stable; you can key a local schema cache with it.
+
+Backward compatibility: The additional fields (`verified`, `feedbackHint`, `reproEntry`) are additive; existing clients ignoring unknown keys continue working.
+
+Process lifecycle: See `docs/FEEDBACK-DEFECT-LIFECYCLE.md` for the end-to-end feedback → red test → fix → verification workflow governing changes like this response contract hardening.
 
 ## Security & Mutation Control
 

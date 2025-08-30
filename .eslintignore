@@ -1,3 +1,32 @@
-scripts/performanceBaseline.ts
+dist/
+node_modules/
+portable-mcp-client/**
+src/tests._park/**
+src/portableClientWrapper.d.ts
+#############################################
+# ESLint Ignore (silent typed baseline)     #
+# Purpose: Guarantee zero parse-noise prior #
+# to governance hash test additions.        #
+#############################################
+
+# Build output
+dist/**
 dist
+
+# Legacy/parked test corpora (excluded from tsconfig)
+src/tests._park/**
+src/tests._legacy/**
+
+# Portable client declaration files kept intentionally outside project include
+portable-mcp-client/client-lib.d.ts
+portable-mcp-client/**/*.d.ts
+
+# (Wrapper d.ts removed; kept here for documentation of historical source of noise)
+# src/portableClientWrapper.d.ts (deleted)
+
+# Logs & generated artifacts
+*.log
+scripts/performanceBaseline.ts
 node_modules
+# Temp directories (defense in depth)
+**/tmp/**

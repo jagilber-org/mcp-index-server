@@ -1,0 +1,32 @@
+{
+  "id": "breakthrough-test",
+  "title": "Breakthrough Test",
+  "body": "Final test",
+  "priority": 80,
+  "audience": "developers",
+  "requirement": "critical",
+  "categories": [
+    "breakthrough"
+  ],
+  "sourceHash": "1d964adab1078fbb1622d0935170ee50413e19072bf57f14d55bef68cf8c1dcf",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T15:16:08.913Z",
+  "updatedAt": "2025-08-30T15:16:08.913Z",
+  "riskScore": 80,
+  "owner": "discovery",
+  "version": "1.0.0",
+  "status": "approved",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T15:16:08.913Z",
+  "nextReviewDue": "2025-09-29T15:16:08.913Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T15:16:08.913Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Final test"
+}

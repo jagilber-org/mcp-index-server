@@ -1,6 +1,6 @@
 {
-  "id": "usage-track-1756509046379-67vf6r",
-  "title": "usage-track-1756509046379-67vf6r",
+  "id": "usage-track-1756564711286-m7p4t",
+  "title": "usage-track-1756564711286-m7p4t",
   "body": "usage tracking test body",
   "priority": 10,
   "audience": "all",
@@ -8,20 +8,20 @@
   "categories": [],
   "sourceHash": "c53c7a9e3b762cc2d5d3f93265f1ac732f9bbf4eba1acbe6096e6f71e8f9f854",
   "schemaVersion": "2",
-  "createdAt": "2025-08-29T23:10:46.379Z",
-  "updatedAt": "2025-08-29T23:10:46.379Z",
+  "createdAt": "2025-08-30T14:38:31.286Z",
+  "updatedAt": "2025-08-30T14:38:31.286Z",
   "owner": "unowned",
   "version": "1.0.0",
   "priorityTier": "P3",
   "status": "approved",
   "classification": "internal",
-  "lastReviewedAt": "2025-08-29T23:10:46.379Z",
-  "nextReviewDue": "2025-08-29T23:10:46.379Z",
+  "lastReviewedAt": "2025-08-30T14:38:31.286Z",
+  "nextReviewDue": "2025-08-30T14:38:31.286Z",
   "reviewIntervalDays": 30,
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-08-29T23:10:46.379Z",
+      "changedAt": "2025-08-30T14:38:31.286Z",
       "summary": "init"
     }
   ],

@@ -15,6 +15,7 @@ This project provides comprehensive enterprise-grade documentation:
 - **[🏗️ Architecture (ARCHITECTURE.md)](./docs/ARCHITECTURE.md)** - System design and component overview
 - **[🔄 Schema Evolution (SCHEMA-V2-PLAN.md)](./docs/SCHEMA-V2-PLAN.md)** - Schema versioning and migration
 - **[🔒 Security (SECURITY.md)](./SECURITY.md)** - Security policies and compliance
+- **[🧪 Governance Hash Test Plan (GOVERNANCE-HASH-TEST-PLAN.md)](./docs/GOVERNANCE-HASH-TEST-PLAN.md)** - Planned integrity & drift test coverage
 
 ### 🔐 Baseline Restoration & Guardrails
 

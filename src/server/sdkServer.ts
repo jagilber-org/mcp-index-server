@@ -41,7 +41,9 @@ function handshakeLog(stage: string, data?: Record<string, unknown>){
 const HANDSHAKE_FALLBACKS_ENABLED = process.env.MCP_HANDSHAKE_FALLBACKS === '1';
 
 // Supported protocol versions (ordered descending preference – first is default)
-const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18'];
+// Include current experimental future version plus officially released SDK versions for backward compatibility.
+// This allows standard SDK clients (which presently support up to 2024-11-05) to negotiate successfully.
+const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18','2024-11-05','2024-10-07'];
 
 // Lightweight in-memory handshake event ring buffer for diagnostics
 interface HandshakeEvent { seq: number; ts: string; stage: string; extra?: Record<string,unknown>; }

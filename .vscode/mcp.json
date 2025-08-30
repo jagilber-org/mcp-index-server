@@ -9,19 +9,43 @@
 				"dist/server/index.js"
 			],
 			"env": {
+				// ===================== DIRECTORY SELECTION =====================
+				// To run against production catalog set MCP_USE_PROD=1 in your launch shell
+				// and optionally uncomment the prod INSTRUCTIONS_DIR / cwd above.
 				// "INSTRUCTIONS_DIR": "C:/mcp/mcp-index-server-prod/instructions",
 				"INSTRUCTIONS_DIR": "C:/github/jagilber/mcp-index-server/devinstructions",
+
+				// ===================== MUTATION CONTROL ========================
+				// CAUTION: Mutation enabled for local iterative CRUD & governance tests.
 				"MCP_ENABLE_MUTATION": "1",
-				"FEEDBACK_DIR": "./feedback",
+				// Optional future safeguard: require a guard token before mutating prod.
+				// "MCP_MUTATION_GUARD": "expected-checksum-or-token"
+
+				// ===================== FEEDBACK STORAGE ========================
+				// Use absolute (workspaceFolder) to avoid context drift when editor CWD differs.
+				"FEEDBACK_DIR": "${workspaceFolder}/feedback",
+
+				// ===================== LOGGING / DIAGNOSTICS ===================
 				// Enable file logging (logs to both stderr and file)
-				// "MCP_LOG_FILE": "./logs/mcp-server.log",
-				// "INSTRUCTIONS_ALWAYS_RELOAD": "1",
+				// "MCP_LOG_FILE": "${workspaceFolder}/logs/mcp-server.log",
+				// Verbose diagnostic logging (high volume)
 				// "MCP_LOG_DIAG": "1",
-				// "MCP_HANDSHAKE_TRACE":1,
-				// "MCP_DEBUG":1,
-				// Optional persistence tuning (uncomment if needed)
-				// "INDEX_AUTOSAVE_INTERVAL_MS": "3000",
-				// "MCP_LOG_VERBOSE": "1"
+				// Extended handshake trace (protocol negotiation ordering)
+				// "MCP_HANDSHAKE_TRACE": "1",
+				// General debug verbosity
+				// "MCP_DEBUG": "1",
+				// Ultra-verbose internal logging
+				// "MCP_LOG_VERBOSE": "1",
+
+				// ===================== GOVERNANCE / HASH TESTING ===============
+				// Force reloading instructions each request to speed drift/hash scenarios.
+				// "INSTRUCTIONS_ALWAYS_RELOAD": "1",
+				// Hash subsystem debug (if supported by server implementation)
+				// "HASH_DEBUG": "1",
+
+				// ===================== PERSISTENCE / AUTOSAVE ==================
+				// Adjust autosave interval (ms) for stress or rapid mutation tests.
+				// "INDEX_AUTOSAVE_INTERVAL_MS": "3000"
 			}
 		},
 		"powershell-mcp-server": {

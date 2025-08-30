@@ -1,0 +1,30 @@
+{
+  "id": "portable-param-0-1756572311133",
+  "title": "portable-param-0-1756572311133",
+  "body": "Default portable CRUD body for parameterized test.\nUPDATE:1756572311815",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "655e9c55244923f4ffd4bcd17263889a63309ed45d37d858022dcc76ace2108a",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T16:45:11.507Z",
+  "updatedAt": "2025-08-30T16:45:11.817Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T16:45:11.507Z",
+  "nextReviewDue": "2025-11-28T16:45:11.507Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T16:45:11.507Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Default portable CRUD body for parameterized test."
+}

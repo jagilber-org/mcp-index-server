@@ -1,0 +1,32 @@
+{
+  "id": "crud-working-test",
+  "title": "CRUD Working Verification Test",
+  "body": "Second test to confirm CREATE is working consistently",
+  "priority": 70,
+  "audience": "developers",
+  "requirement": "recommended",
+  "categories": [
+    "verification"
+  ],
+  "sourceHash": "0121f248fbd4e84d5df67ca9f4619c5e2a6f28ded1a25c12966e0a78b91e8bff",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T15:28:13.821Z",
+  "updatedAt": "2025-08-30T15:28:13.821Z",
+  "riskScore": 50,
+  "owner": "validation-team",
+  "version": "1.0.0",
+  "status": "approved",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T15:28:13.821Z",
+  "nextReviewDue": "2025-11-28T15:28:13.821Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T15:28:13.821Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Second test to confirm CREATE is working consistently"
+}

@@ -1,0 +1,32 @@
+{
+  "id": "minimal",
+  "title": "Minimal Test",
+  "body": "Test",
+  "priority": 50,
+  "audience": "developers",
+  "requirement": "optional",
+  "categories": [
+    "test"
+  ],
+  "sourceHash": "532eaabd9574880dbf76b9b8cc00832c20a6ec113d682299550d7a6e0f345e25",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T15:13:55.260Z",
+  "updatedAt": "2025-08-30T15:13:55.260Z",
+  "riskScore": 55,
+  "owner": "test",
+  "version": "1.0.0",
+  "status": "approved",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T15:13:55.260Z",
+  "nextReviewDue": "2025-11-28T15:13:55.260Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T15:13:55.260Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Test"
+}

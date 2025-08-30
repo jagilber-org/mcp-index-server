@@ -6,7 +6,8 @@
   "audience": "all",
   "requirement": "mandatory",
   "categories": [
-    "auto"
+    "auto",
+    "ghash"
   ],
   "sourceHash": "5eba503ad0aecc563ec135f5c772a2ced93642512e9b39f44c35eb8f3d9528cf",
   "schemaVersion": "2",

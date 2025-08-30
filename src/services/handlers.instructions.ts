@@ -219,6 +219,36 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
     } catch { /* ignore secondary reload error */ }
   }
   if(!atomicVisible){
+    // FINAL RESILIENCE: On some Windows / network FS setups a just-written rename can surface in readdir
+    // fractionally after our second ensureLoaded(). If the on-disk file exists, attempt a direct late
+    // materialization (parse + normalize) rather than returning a false negative atomic_readback_failed.
+    try {
+      if(fs.existsSync(file)){
+        try {
+          const rawAny = JSON.parse(fs.readFileSync(file,'utf8')) as InstructionEntry;
+          const classifier2 = new ClassificationService();
+          const issues = classifier2.validate(rawAny);
+          if(!issues.length){
+            const normalized = classifier2.normalize(rawAny);
+            // Only inject if not already visible (double‑check)
+            if(!st.byId.has(normalized.id)){
+              st.list.push(normalized);
+              st.byId.set(normalized.id, normalized);
+              atomicVisible = true;
+              incrementCounter('instructions:lateMaterializeAfterAdd');
+            }
+          } else {
+            incrementCounter('instructions:lateMaterializeRejected');
+          }
+        } catch {
+          incrementCounter('instructions:lateMaterializeParseError');
+        }
+      } else {
+        incrementCounter('instructions:lateMaterializeFileMissing');
+      }
+    } catch { /* ignore outer fallback errors */ }
+  }
+  if(!atomicVisible){
     const failResp = { id: e.id, created: false, overwritten: false, skipped: false, hash: st.hash, error: 'atomic_readback_failed' } as const;
     logAudit('add', e.id, { created: false, overwritten: false, atomic_readback_failed: true });
     return failResp;

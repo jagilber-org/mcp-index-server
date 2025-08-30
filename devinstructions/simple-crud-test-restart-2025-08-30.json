@@ -1,0 +1,33 @@
+{
+  "id": "simple-crud-test-restart-2025-08-30",
+  "title": "Simple CRUD Test After Restart",
+  "body": "This is a simple test entry to validate CREATE operation after server restart/revert. Testing basic persistence functionality.",
+  "priority": 50,
+  "audience": "developers",
+  "requirement": "recommended",
+  "categories": [
+    "restart-validation",
+    "testing"
+  ],
+  "sourceHash": "239f027d4643f0173bc8369b4fd58d0f904b0709bb4d73e833463d650c85f423",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T15:12:29.068Z",
+  "updatedAt": "2025-08-30T15:12:29.068Z",
+  "riskScore": 70,
+  "owner": "test-team",
+  "version": "1.0.0",
+  "status": "approved",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T15:12:29.068Z",
+  "nextReviewDue": "2025-11-28T15:12:29.068Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T15:12:29.068Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "This is a simple test entry to validate CREATE operation after server restart/revert. Testing basic persistence functionality."
+}

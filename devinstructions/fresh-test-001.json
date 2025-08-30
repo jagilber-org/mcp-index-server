@@ -1,0 +1,33 @@
+{
+  "id": "fresh-test-001",
+  "title": "Fresh Test Entry - Clean Start",
+  "body": "Fresh test entry on completely clean catalog. Testing CREATE operation after index reset.",
+  "priority": 60,
+  "audience": "developers",
+  "requirement": "recommended",
+  "categories": [
+    "fresh-start",
+    "testing"
+  ],
+  "sourceHash": "562f5992c0156f135db99a1fa021b7fa021a3c6702f053b033fcef467837b392",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T15:13:47.274Z",
+  "updatedAt": "2025-08-30T15:13:47.274Z",
+  "riskScore": 60,
+  "owner": "reset-test",
+  "version": "1.0.0",
+  "status": "approved",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T15:13:47.275Z",
+  "nextReviewDue": "2025-11-28T15:13:47.275Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T15:13:47.274Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Fresh test entry on completely clean catalog. Testing CREATE operation after index reset."
+}

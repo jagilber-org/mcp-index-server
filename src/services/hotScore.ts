@@ -139,7 +139,7 @@ export class HotScoreService {
       .filter(point => point.timestamp <= currentTime)
       .sort((a, b) => b.timestamp - a.timestamp); // Most recent first
 
-    const cutoffTime = currentTime - (this.config.maxLookbackHours * 60 * 60 * 1000);
+  const cutoffTime = currentTime - (this.config.maxLookbackHours * 60 * 60 * 1000);
     const relevantHistory = sortedHistory.filter(point => point.timestamp >= cutoffTime);
 
     if (!relevantHistory.length) {
@@ -147,22 +147,22 @@ export class HotScoreService {
     }
 
     // Calculate temporal weights and usage components
-    const recentBoundary = currentTime - (24 * 60 * 60 * 1000); // 24 hours ago
-    const recentUsage = this.calculateTimeWindowUsage(relevantHistory, recentBoundary, currentTime);
-    const historicalUsage = this.calculateTimeWindowUsage(relevantHistory, cutoffTime, recentBoundary);
+  const recentBoundary = currentTime - (24 * 60 * 60 * 1000); // 24 hours ago
+  const recentUsage = this.calculateTimeWindowUsage(relevantHistory, recentBoundary, currentTime);
+  const historicalUsage = this.calculateTimeWindowUsage(relevantHistory, cutoffTime, recentBoundary);
 
     // Apply configuration weights
     const recencyContribution = recentUsage * this.config.recencyWeight;
     const historyContribution = historicalUsage * this.config.historyWeight;
 
     // Calculate bonuses
-    const bonuses = this.calculateBonuses(instructionId, relevantHistory, currentTime);
+  const bonuses = this.calculateBonuses(instructionId, relevantHistory, currentTime);
 
     // Compute final score
     const score = recencyContribution + historyContribution + bonuses;
 
     // Generate metadata
-    const metadata = this.generateMetadata(relevantHistory, currentTime);
+  const metadata = this.generateMetadata(relevantHistory, currentTime);
 
     const result: HotScoreResult = {
       score: Math.max(0, score),
@@ -214,9 +214,9 @@ export class HotScoreService {
    * Calculate bonus points for special usage patterns
    */
   private calculateBonuses(
-    instructionId: string,
+  instructionId: string,
     history: UsagePoint[],
-    currentTime: number
+	_currentTime: number
   ): number {
     let bonuses = 0;
 
@@ -330,12 +330,12 @@ export class HotScoreService {
    */
   public calculateBatchHotScores(
     instructionUsage: Map<string, UsagePoint[]>,
-    currentTime: number = Date.now()
+  _currentTime: number = Date.now()
   ): Map<string, HotScoreResult> {
     const results = new Map<string, HotScoreResult>();
 
     for (const [instructionId, usageHistory] of instructionUsage) {
-      const result = this.calculateHotScore(instructionId, usageHistory, currentTime);
+  const result = this.calculateHotScore(instructionId, usageHistory, _currentTime);
       
       // Apply minimum threshold filter
       if (result.score >= this.config.minScoreThreshold) {

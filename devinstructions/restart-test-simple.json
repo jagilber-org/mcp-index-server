@@ -1,0 +1,32 @@
+{
+  "id": "restart-test-simple",
+  "title": "Simple Restart Test",
+  "body": "Simple test for CREATE validation",
+  "priority": 75,
+  "audience": "developers",
+  "requirement": "optional",
+  "categories": [
+    "testing"
+  ],
+  "sourceHash": "a947c7fbc3ae37516edceeca79207d0d028fd008a9bbc51ae43aa9f6fe8ef2f4",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T15:12:54.224Z",
+  "updatedAt": "2025-08-30T15:12:54.224Z",
+  "riskScore": 30,
+  "owner": "test-user",
+  "version": "1.0.0",
+  "status": "approved",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T15:12:54.224Z",
+  "nextReviewDue": "2025-12-28T15:12:54.224Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T15:12:54.224Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Simple test for CREATE validation"
+}

@@ -1,0 +1,33 @@
+{
+  "id": "portable-atomic-1756564910741",
+  "title": "Atomic Test",
+  "body": "Atomic create visibility test body with deterministic content. XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  "priority": 42,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "atomic",
+    "test"
+  ],
+  "sourceHash": "3208ed0d4601e2bf90a8b3f05033ecb1acf47a2a4010c8f6b0dc53a8efa67dbd",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T14:41:50.743Z",
+  "updatedAt": "2025-08-30T14:41:50.743Z",
+  "riskScore": 63,
+  "owner": "atomic-owner",
+  "version": "1.0.0",
+  "status": "approved",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T14:41:50.744Z",
+  "nextReviewDue": "2025-11-28T14:41:50.744Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T14:41:50.743Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Atomic create visibility test body with deterministic content. XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX..."
+}

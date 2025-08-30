@@ -1,0 +1,30 @@
+{
+  "id": "demo-1756570006912-2",
+  "title": "Title 2",
+  "body": "Instruction body 2 @ 1756570006912",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "47b04020796ad07e65df0a97968e173ca4fdeeffd707b9a907a1096aea5d00be",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T16:06:47.161Z",
+  "updatedAt": "2025-08-30T16:06:47.161Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T16:06:47.161Z",
+  "nextReviewDue": "2025-11-28T16:06:47.161Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T16:06:47.161Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Instruction body 2 @ 1756570006912"
+}

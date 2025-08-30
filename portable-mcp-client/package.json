@@ -1,0 +1,26 @@
+{
+  "name": "portable-mcp-test",
+  "version": "1.0.0",
+  "description": "Self-contained MCP compliant test server and smoke test client.",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=18.0.0" },
+  "scripts": {
+    "start:server": "node server.mjs",
+    "smoke": "node smoke-client.mjs",
+    "smoke:json": "node smoke-client.mjs --json",
+    "crud": "node index-crud-client.mjs --json",
+    "crud:index": "node index-crud-client.mjs --command mcp-index-server --json",
+    "generic:list": "node generic-client.mjs --list --json",
+    "generic:echo": "node generic-client.mjs --tool echo --tool-args '{\"message\":\"hi\"}' --json",
+    "generic:describe:echo": "node generic-client.mjs --describe echo",
+    "generic:repl": "node generic-client.mjs --repl",
+  "count:index": "node index-count-client.mjs --json",
+  "ops:create": "node ops-crud-client.mjs --create --id demo-cli --body 'Body' --json",
+  "ops:crud": "node ops-crud-client.mjs --crud --id demo-seq --json",
+  "build:portable": "pwsh -NoLogo -NoProfile -File ./Build-PortableZip.ps1"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.4"
+  }
+}

@@ -17,9 +17,9 @@ import path from 'path';
 
 describe('Portable CRUD Harness (client-lib)', () => {
 	it('runs a full CRUD sequence via runCrudSequence()', async () => {
-		// Dynamic import to interop with .mjs inside CommonJS test environment.
-		// Dynamic import of ESM helper (no types) -- acceptable for test harness.
-		const { runCrudSequence, createInstructionClient } = await import('../../portable-mcp-client/client-lib.mjs');
+		// Use typed shim (portableClientShim) to avoid pulling external d.ts into tsconfig scope.
+		// Import via TS shim with explicit .js extension (Node16 module resolution requires extension)
+		const { runCrudSequence, createInstructionClient } = await import('../portableClientShim.js');
 
 		// Ephemeral instructions directory unless explicitly reusing repo dir.
 		const useRepoDir = process.env.PORTABLE_HARNESS_USE_REPO_DIR === '1';

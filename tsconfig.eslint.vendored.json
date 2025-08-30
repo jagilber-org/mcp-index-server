@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "portable-mcp-client/client-lib.d.ts"
+  ],
+  "exclude": []
+}

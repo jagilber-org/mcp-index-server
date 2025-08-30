@@ -30,6 +30,33 @@ export function parseToolPayload<T=unknown>(line: string): T | undefined {
   return undefined;
 }
 
+// --- Atomic Create Contract Enforcement Utilities -----------------------------------------
+// We enforce that every test which performs an instructions/dispatch add action validates:
+// 1. Success envelope semantics (either verified:true OR created:true inside payload JSON)
+// 2. Immediate follow-up visibility via at least one list/get of the same id (same test file)
+// This is implemented via lightweight static scanning + runtime registration hook.
+
+export interface AddInvocationRecord { file: string; idLiteral?: string; line: number; verifiedAsserted: boolean; createdAsserted: boolean; visibilityQueried: boolean; }
+const __addContractRegistry: AddInvocationRecord[] = [];
+
+// Called by meta-test after dynamic scan populates registry entries (injected by transform or manual code additions)
+export function registerAddContract(rec: AddInvocationRecord){ __addContractRegistry.push(rec); }
+
+export function getAddContractRegistry(){ return __addContractRegistry.slice(); }
+
+// Helper for tests to manually record when they perform a get/list for a given id (string literal only)
+export function markVisibility(id: string, file: string){
+  for(const r of __addContractRegistry){ if(r.file===file && r.idLiteral===id){ r.visibilityQueried = true; } }
+}
+
+// Helper for tests to mark verified or created assertion executed (to be called right after expect())
+export function markAssertion(id: string, file: string, kind: 'verified'|'created'){
+  for(const r of __addContractRegistry){ if(r.file===file && r.idLiteral===id){ if(kind==='verified') r.verifiedAsserted = true; else r.createdAsserted = true; } }
+}
+
+// NOTE: Existing tests will be gradually instrumented to call markVisibility / markAssertion.
+// Meta-test will fail for any add invocation missing required assertions until migration complete.
+
 // Minimal JSON-RPC envelope type used in tests
 export interface RpcEnvelope {
   id?: number;

@@ -28,12 +28,38 @@ export interface PortableCrudSequenceResult {
 }
 
 // Ambient module for the ESM client library shipped alongside the repo.
+// The client library is imported with different relative depths (shim vs tests),
+// so we provide ambient declarations for both path variants actually used.
 declare module '../portable-mcp-client/client-lib.mjs' {
 	import { PortableInstructionEntry, PortableCrudSequenceResult } from './portableClient.consolidated.d.ts';
-	// Creation of a lightweight instruction client used by tests.
 	function createInstructionClient(options?: Record<string, unknown>): Promise<{
 		read(id: string): Promise<unknown>;
-		// Minimal method surface required by tests; extended methods ignored.
+		close(): Promise<void>;
+	}>;
+	function runCrudSequence(options: { id: string; body: string; updateBody: string; categories?: string[] }): Promise<PortableCrudSequenceResult>;
+	export { createInstructionClient, runCrudSequence };
+	export type InstructionEntry = PortableInstructionEntry;
+	export type RunCrudResult = PortableCrudSequenceResult;
+}
+
+declare module '../../portable-mcp-client/client-lib.mjs' {
+	import { PortableInstructionEntry, PortableCrudSequenceResult } from './portableClient.consolidated.d.ts';
+	function createInstructionClient(options?: Record<string, unknown>): Promise<{
+		read(id: string): Promise<unknown>;
+		close(): Promise<void>;
+	}>;
+	function runCrudSequence(options: { id: string; body: string; updateBody: string; categories?: string[] }): Promise<PortableCrudSequenceResult>;
+	export { createInstructionClient, runCrudSequence };
+	export type InstructionEntry = PortableInstructionEntry;
+	export type RunCrudResult = PortableCrudSequenceResult;
+}
+
+// Wildcard pattern to catch any depth-relative import to portable-mcp-client/client-lib.mjs
+// (e.g., '../portable-mcp-client/client-lib.mjs' or '../../portable-mcp-client/client-lib.mjs').
+declare module '*portable-mcp-client/client-lib.mjs' {
+	import { PortableInstructionEntry, PortableCrudSequenceResult } from './portableClient.consolidated.d.ts';
+	function createInstructionClient(options?: Record<string, unknown>): Promise<{
+		read(id: string): Promise<unknown>;
 		close(): Promise<void>;
 	}>;
 	function runCrudSequence(options: { id: string; body: string; updateBody: string; categories?: string[] }): Promise<PortableCrudSequenceResult>;

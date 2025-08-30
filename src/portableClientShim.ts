@@ -24,6 +24,7 @@ export interface RunCrudSequenceOptions {
 // Dynamic import wrapper so callers can use static imports from this shim.
 export async function runCrudSequence(opts: RunCrudSequenceOptions): Promise<CrudSequenceResult> {
 	// Use relative path with explicit .mjs; ambient declaration supplies typing.
+	// @ts-expect-error Temporary: dynamic ESM import lacks direct .d.ts pairing (guarded separately)
 	const mod = await import('../portable-mcp-client/client-lib.mjs');
 	return (mod as unknown as { runCrudSequence(o: RunCrudSequenceOptions): Promise<CrudSequenceResult> })
 		.runCrudSequence(opts);
@@ -35,6 +36,7 @@ export interface InstructionClient {
 }
 
 export async function createInstructionClient(config: Record<string, unknown>): Promise<InstructionClient> {
+	// @ts-expect-error Temporary: dynamic ESM import lacks direct .d.ts pairing (guarded separately)
 	const mod = await import('../portable-mcp-client/client-lib.mjs');
 	return (mod as unknown as { createInstructionClient(c: Record<string, unknown>): Promise<InstructionClient> })
 		.createInstructionClient(config);

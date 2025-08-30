@@ -14,7 +14,8 @@ const BODY = 'Atomic create visibility test body with deterministic content. ' +
 describe('Portable CRUD Atomicity (portable client)', () => {
   it('ensures create -> immediate list/get visibility; then updates and deletes (abstraction)', async () => {
     // Dynamic import (ESM client-lib inside CommonJS test env)
-    const { createInstructionClient } = await import('../../portable-mcp-client/client-lib.mjs');
+  // @ts-expect-error Temporary suppression: dynamic import typed via consolidated ambient declarations not directly matched by relative path.
+  const { createInstructionClient } = await import('../../portable-mcp-client/client-lib.mjs');
 
     // Isolated temp instructions directory for determinism (unless override specified)
     const useRepoDir = process.env.PORTABLE_ATOMIC_USE_REPO_DIR === '1';

@@ -17,6 +17,11 @@ This project provides comprehensive enterprise-grade documentation:
 - **[🔒 Security (SECURITY.md)](./SECURITY.md)** - Security policies and compliance
 - **[🧪 Governance Hash Test Plan (GOVERNANCE-HASH-TEST-PLAN.md)](./docs/GOVERNANCE-HASH-TEST-PLAN.md)** - Planned integrity & drift test coverage
 
+### Recently Formalized (Pending PRD 1.2.0)
+
+- **Feedback System** – 6 MCP tools (submit/list/get/update/stats/health) with audit & security logging
+- **Portable CRUD & Governance Baseline** – Minimal always-green suite (CRUD + 6 governance scenarios) guarding regression and hash determinism
+
 ### 🔐 Baseline Restoration & Guardrails
 
 This repository operates under an authoritative baseline recovery plan defined in `INTERNAL-BASELINE.md`.

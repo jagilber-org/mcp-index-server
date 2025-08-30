@@ -183,6 +183,8 @@ Rationale: Keeps catalog completeness metrics focused on actual deployable instr
 - **Tool availability listings** - Tools are session-specific and context-dependent
 - **Tool input/output examples** - Use MCP's `get_tool_schema` for current specs
 
+> NEVER embed a static snapshot of tool names, schemas, or capabilities inside instructions. Doing so creates drift risk, undermines dynamic discovery, and forces unnecessary catalog churn when tools evolve.
+
 > **MCP Best Practice**: Let the protocol handle tool discovery. Instructions should focus on **how to use tools effectively**, not **what tools exist**.
 
 **Sensitive Information:**

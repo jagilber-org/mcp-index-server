@@ -1,6 +1,6 @@
 # MCP Index Server Project Requirements Document (PRD)
 
-**Version:** 1.1.0  
+**Version:** 1.1.0 (Addendum drafted for 1.2.0 ratification)  
 **Status:** Binding - Authoritative Project Governance Document  
 **Owner:** Project Maintainers & Governance Working Group  
 **Last Updated:** August 28, 2025  
@@ -24,7 +24,86 @@ This document serves as the **single source of truth** for all project processes
 
 ---
 
-## 🏗️ Project Architecture & Structure
+## � Addendum (Pending Ratification → 1.2.0) – Newly Formalized Requirements
+
+These requirements are already implemented in code/tests but lacked explicit PRD coverage. Upon ratification the version will bump to 1.2.0. Until then they are treated as binding interim policy.
+
+### 1. Feedback / Emit System
+
+**Tools:** `feedback/submit`, `feedback/list`, `feedback/get`, `feedback/update`, `feedback/stats`, `feedback/health` (all REQUIRED; removal is a breaking change).
+
+#### Functional Requirements
+
+| ID | Requirement | Rationale | Verification |
+|----|-------------|-----------|-------------|
+| FB1 | Enumerated types: issue, bug-report, feature-request, security, documentation, performance, usability, other | Normalized taxonomy | Schema enum + submit tests |
+| FB2 | Severities: low, medium, high, critical | Prioritization | Schema enum + stats aggregation |
+| FB3 | Status workflow new→acknowledged→in-progress→resolved→closed | Lifecycle traceability | update tests enforce transitions |
+| FB4 | Atomic durable persistence with rotation on max entries | Corruption prevention | File write uses temp + rename strategy |
+| FB5 | Filterable list (type, severity, status, date range, tags, limit/offset) | Operational triage | list tests exercising filters |
+| FB6 | Statistics endpoint provides byType/bySeverity/byStatus + recentActivity | Reporting & dashboard | stats test |
+| FB7 | Health endpoint returns storage counts & config (maxEntries, dir) | Monitoring | health test |
+| FB8 | Security & critical entries produce elevated log channel event | Audit & alerting | log assertion (future automated) |
+| FB9 | Page size hard limit 200 (reject >200) | Resource safety | boundary test |
+| FB10 | Length limits: title≤200, description≤5000, adminNotes≤1000 | Abuse mitigation | validation tests |
+
+#### Non-Functional
+
+- NFR-FB-1: Median local submit latency <50ms.
+- NFR-FB-2: No data loss on mid-write crash (verified by atomic pattern review).
+
+### 2. Portable Client Minimal CRUD & Governance Baseline
+
+**Baseline Test Set (MUST stay green, no skips):**
+
+- `createReadSmoke.spec.ts`
+- `portableCrudAtomic.spec.ts`
+- `portableCrudParameterized.spec.ts`
+- `portableCrudHarness.spec.ts`
+- `instructionsAddPersistence.spec.ts`
+- `governanceHashIntegrity.spec.ts` (6 scenarios: create-stability, body-update-change, metadata-stability, multi-create consistency, overwrite-or-skip, drift lifecycle)
+
+Expanding beyond this nucleus (stress, fuzz, multi-process contention) requires formal CHANGE REQUEST with stability impact analysis.
+
+### 3. Governance Hash Integrity Policy
+
+Any change to governance hash projection MUST update `GOVERNANCE-HASH-TEST-PLAN.md` with: rationale, expected hash stability/variance, affected scenarios, migration safety evaluation. Drift lifecycle tolerance (2–3 states) may tighten; modifications require explicit sign-off.
+
+### 4. Declaration & Skip Guard Enforcement
+
+| ID | Requirement | Enforcement |
+|----|-------------|-------------|
+| DG1 | Single consolidated portable client declaration file (allowlist) | `guard-declarations.mjs` (build:verify) |
+| DG2 | Zero unintentional TS7016 errors; any `@ts-expect-error` must include portability comment | Typecheck + code review |
+| DG3 | No `describe.skip` / `it.skip` unless line tagged `SKIP_OK` + justification | `guard:skips` pretest stage |
+| DG4 | New `.d.ts` additions require explicit guard allowlist update | Guard failure -> review |
+
+### 5. Deployment Wipe Modes
+
+`scripts/deploy-local.ps1` MUST preserve these semantics:
+
+| Flags | Behavior | Use Case | Acceptance |
+|-------|----------|---------|------------|
+| `-Overwrite` | Backup then preserve existing instructions | Rolling upgrade | Files unchanged except dist/version |
+| `-Overwrite -EmptyIndex` | Backup then remove all instructions | Clean forensic reset | Catalog empty post-deploy |
+| `-Overwrite -ForceSeed` | Backup then replace with seed set | Developer bootstrap | Seed set present exactly |
+| `-Overwrite -EmptyIndex -ForceSeed` | Empty then seed | Reset with known corpus | Only seed entries exist |
+| `-BundleDeps` | Install prod-only deps | Prod footprint reduction | node_modules excludes dev deps |
+
+Backups stored under `backups/instructions-<timestamp>`; non-fatal count warnings allowed; persistent failure requires issue filing within 1 business day.
+
+### 6. Documentation Canonicalization
+
+| ID | Rule | Action |
+|----|------|--------|
+| DOC1 | `PROJECT_PRD.md` is canonical PRD | Version bump on each ratified addendum |
+| DOC2 | Legacy `PRD.md` & `PROJECT-PRD.md` remain stubs only | Do not add new technical content |
+| DOC3 | README must link feedback system & governance hash plan | Verified during release checklist |
+| DOC4 | `CONTENT-GUIDANCE.md` must state NOT to embed MCP tool catalogs/schemas in instructions (protocol discovery only) | Explicit bullet retained |
+
+---
+
+## �🏗️ Project Architecture & Structure
 
 ### High-Level System Architecture
 

@@ -2,7 +2,7 @@
 .SYNOPSIS
   Builds and deploys the MCP Index Server to a local production-style directory (default: C:\mcp\mcp-index-server).
 
-.DESCRIPTION
+  Write-Host "[deploy] Warning: failed to remove $($item | ForEach-Object { try { $_.FullName } catch { '<?> ' } }): $($_.Exception.Message)" -ForegroundColor Yellow
   Copies only the runtime necessities (dist, package.json, LICENSE, README excerpt, instructions directory) and
   creates convenience launch scripts (start.ps1 / start.cmd). Intended for single‑machine, non-network MCP usage.
 
@@ -37,7 +37,11 @@ param(
   [int]$BackupRetention = 10,
   # When a rebuild is requested, allow continuing with an existing dist/ directory
   # if npm ci / build fails (e.g. transient EPERM on Windows from locked executables)
-  [switch]$AllowStaleDistOnRebuildFailure
+  [switch]$AllowStaleDistOnRebuildFailure,
+  # Force reseeding of instructions even if runtime JSON already exists (backs up first unless -NoBackup)
+  [switch]$ForceSeed,
+  # Deploy with an empty runtime index (no baseline JSON copied). Templates still copied/preserved.
+  [switch]$EmptyIndex
 )
 
 Set-StrictMode -Version Latest
@@ -113,9 +117,22 @@ if(Test-Path $Destination){
     $preserveInstructions = $destInstructionsPath
     $hadInstructions = Test-Path $preserveInstructions
     if($hadInstructions){ Write-Host '[deploy] Preserving instructions folder.' -ForegroundColor Green }
-    Get-ChildItem -Force $Destination | ForEach-Object {
-      if($hadInstructions -and $_.FullName -eq $preserveInstructions){ return }
-      try { Remove-Item -Recurse -Force $_.FullName } catch { Write-Host "[deploy] Warning: failed to remove $($_.FullName): $($_.Exception.Message)" -ForegroundColor Yellow }
+    # Robust removal: under concurrent test runs transient race conditions or non-filesystem
+    # objects (e.g. $null placeholders) have caused pipeline objects without a FullName
+    # property, aborting the script (and leaving dist/ uncopied). We defensively filter and
+    # swallow per-item errors so deployment can proceed with best-effort cleanup.
+    Get-ChildItem -Force -LiteralPath $Destination -ErrorAction SilentlyContinue | ForEach-Object {
+      $item = $_
+      if(-not $item){ return }
+      # Skip if not a FileSystemInfo (rare edge) or it's the preserved instructions directory
+      if($hadInstructions -and (Get-Member -InputObject $item -Name FullName -ErrorAction SilentlyContinue) -and $item.FullName -eq $preserveInstructions){ return }
+      try {
+        if((Get-Member -InputObject $item -Name FullName -ErrorAction SilentlyContinue)){
+          Remove-Item -Recurse -Force $item.FullName -ErrorAction Stop
+        }
+      } catch {
+        Write-Host "[deploy] Warning: failed to remove $($item | ForEach-Object { try { $_.FullName } catch { '<?>" } }): $($_.Exception.Message)" -ForegroundColor Yellow
+      }
     }
     if(-not (Test-Path $Destination)) { New-Item -ItemType Directory -Force -Path $Destination | Out-Null }
   } else {
@@ -207,19 +224,43 @@ $runtime | ConvertTo-Json -Depth 10 | Out-File (Join-Path $Destination 'package.
 # Copy license
 Copy-Item -Force LICENSE (Join-Path $Destination 'LICENSE')
 
-# Seed instructions only if destination has none (to avoid overwriting user-managed runtime catalog).
+# Instruction seeding / mirroring strategy
 $destInstructions = Join-Path $Destination 'instructions'
-$hasExistingRuntime = Get-ChildItem -Path $destInstructions -Filter *.json -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\_templates\\" } | Select-Object -First 1
-if(-not $hasExistingRuntime){
-  Write-Host '[deploy] Destination instructions empty -> seeding baseline (non-secret) files...' -ForegroundColor Cyan
+$runtimeJson = Get-ChildItem -Path $destInstructions -Filter *.json -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\_templates\\" }
+$hasExistingRuntime = $runtimeJson | Select-Object -First 1
+
+if($EmptyIndex){
+  if($hasExistingRuntime){
+    Write-Host '[deploy] -EmptyIndex specified -> removing existing runtime instruction JSON (templates preserved)...' -ForegroundColor Cyan
+    foreach($f in $runtimeJson){ try { Remove-Item -Force $f.FullName } catch { Write-Host "[deploy] Warning: failed removing $($f.Name): $($_.Exception.Message)" -ForegroundColor Yellow } }
+  } else {
+    Write-Host '[deploy] -EmptyIndex specified and no runtime JSON present.' -ForegroundColor DarkGray
+  }
+  Write-Host '[deploy] Runtime index now empty (only templates, if any, remain).' -ForegroundColor Green
+} elseif($ForceSeed){
+  Write-Host '[deploy] -ForceSeed specified -> reseeding baseline instruction files (after optional backup)...' -ForegroundColor Cyan
+  # Remove existing non-template JSON first
+  if($hasExistingRuntime){
+    foreach($f in $runtimeJson){ try { Remove-Item -Force $f.FullName } catch { Write-Host "[deploy] Warning: failed removing $($f.Name): $($_.Exception.Message)" -ForegroundColor Yellow } }
+  }
   Get-ChildItem instructions -Filter *.json | Where-Object { -not ($_.Name -match 'concurrent-|fuzz_|crud.cycle|temp') } | ForEach-Object {
     $target = Join-Path $destInstructions $_.Name
-    if(-not (Test-Path $target)){
-      Copy-Item $_.FullName $target
-    }
+    Copy-Item -Force $_.FullName $target
   }
+  Write-Host '[deploy] Forced reseed complete.' -ForegroundColor Green
 } else {
-  Write-Host '[deploy] Skipping instruction seeding (existing runtime instructions preserved).' -ForegroundColor Green
+  # Legacy behavior: seed only if empty
+  if(-not $hasExistingRuntime){
+    Write-Host '[deploy] Destination instructions empty -> seeding baseline (non-secret) files...' -ForegroundColor Cyan
+    Get-ChildItem instructions -Filter *.json | Where-Object { -not ($_.Name -match 'concurrent-|fuzz_|crud.cycle|temp') } | ForEach-Object {
+      $target = Join-Path $destInstructions $_.Name
+      if(-not (Test-Path $target)){
+        Copy-Item $_.FullName $target
+      }
+    }
+  } else {
+    Write-Host '[deploy] Skipping instruction seeding (existing runtime instructions preserved). Use -ForceSeed or -EmptyIndex to override.' -ForegroundColor Green
+  }
 }
 
 # Create launch scripts
@@ -232,17 +273,20 @@ param(
 Set-StrictMode -Version Latest
 if($VerboseLogging){ $env:MCP_LOG_VERBOSE = '1' } elseif(-not $env:MCP_LOG_VERBOSE){ $env:MCP_LOG_VERBOSE = '' }
 if($EnableMutation){ $env:MCP_ENABLE_MUTATION = '1' }
-Write-Host "[start] Launching MCP Index Server..." -ForegroundColor Cyan
+[Console]::Error.WriteLine('[start] Launching MCP Index Server...')
 # Auto-install production dependencies if not present
 if(-not (Test-Path (Join-Path $PSScriptRoot 'node_modules'))){
-  Write-Host '[start] node_modules missing - installing production dependencies (npm install --production)...' -ForegroundColor Yellow
+  [Console]::Error.WriteLine('[start] node_modules missing - installing production dependencies (npm install --production)...')
   pushd $PSScriptRoot
-  try { npm install --production } catch { Write-Host "[start] npm install failed: $($_.Exception.Message)" -ForegroundColor Red; exit 1 }
+  try { npm install --production } catch { [Console]::Error.WriteLine("[start] npm install failed: $($_.Exception.Message)"); exit 1 }
   finally { popd }
 }
 $nodeArgs = @()
 if($TraceRequire){ $nodeArgs += '--trace-require' }
-node @nodeArgs dist/server/index.js 2>&1 | Tee-Object -FilePath (Join-Path $PSScriptRoot 'logs/server.log')
+if(-not (Test-Path (Join-Path $PSScriptRoot 'logs'))){ New-Item -ItemType Directory -Path (Join-Path $PSScriptRoot 'logs') | Out-Null }
+# IMPORTANT: Keep stdout reserved for MCP JSON-RPC protocol frames. Write diagnostics to stderr and also append to log file.
+# Avoid merging stderr into stdout (no 2>&1) to prevent protocol contamination.
+node @nodeArgs dist/server/index.js 2>> (Join-Path $PSScriptRoot 'logs/server.log')
 '@
 Set-Content -Path (Join-Path $Destination 'start.ps1') -Value $startPs1 -Encoding UTF8
 

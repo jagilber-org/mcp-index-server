@@ -206,7 +206,26 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   const record = classifier.normalize(base);
   if(record.owner==='unowned'){ const auto=resolveOwner(record.id); if(auto){ record.owner=auto; record.updatedAt=new Date().toISOString(); } }
   try { atomicWriteJson(file, record); } catch(err){ return { id:e.id, error:(err as Error).message||'write-failed' }; }
-  touchCatalogVersion(); invalidate(); const st=ensureLoaded(); const resp = { id:e.id, created: !exists, overwritten: exists && overwrite, skipped:false, hash: st.hash }; logAudit('add', e.id, { created: !exists, overwritten: exists && overwrite }); return resp;
+  touchCatalogVersion(); invalidate(); let st=ensureLoaded();
+  // Atomic read-back verification: ensure newly written/overwritten entry is *immediately* visible
+  // in the in-memory catalog before declaring success. If not, attempt one forced reload; if still
+  // absent (extremely unlikely on local FS), return an error instead of a false positive 'created'.
+  let atomicVisible = st.byId.has(e.id);
+  if(!atomicVisible){
+    try {
+      invalidate();
+      st = ensureLoaded();
+      atomicVisible = st.byId.has(e.id);
+    } catch { /* ignore secondary reload error */ }
+  }
+  if(!atomicVisible){
+    const failResp = { id: e.id, created: false, overwritten: false, skipped: false, hash: st.hash, error: 'atomic_readback_failed' } as const;
+    logAudit('add', e.id, { created: false, overwritten: false, atomic_readback_failed: true });
+    return failResp;
+  }
+  const resp = { id:e.id, created: !exists, overwritten: exists && overwrite, skipped:false, hash: st.hash, verified:true };
+  logAudit('add', e.id, { created: !exists, overwritten: exists && overwrite, verified:true });
+  return resp;
 }));
 
 registerHandler('instructions/remove', guard('instructions/remove', (p:{ ids:string[]; missingOk?: boolean })=>{ const ids=Array.isArray(p.ids)? Array.from(new Set(p.ids.filter(x=> typeof x==='string' && x.trim()))):[]; if(!ids.length) return { removed:0, missing:[], errors:['no ids supplied'] }; const base=getInstructionsDir(); const missing:string[]=[]; const removed:string[]=[]; const errors:{ id:string; error:string }[]=[]; for(const id of ids){ const file=path.join(base, `${id}.json`); try { if(!fs.existsSync(file)){ missing.push(id); continue; } fs.unlinkSync(file); removed.push(id); } catch(e){ errors.push({ id, error: e instanceof Error? e.message: 'delete-failed' }); } } if(removed.length){ touchCatalogVersion(); invalidate(); ensureLoaded(); } const resp = { removed: removed.length, removedIds: removed, missing, errorCount: errors.length, errors }; logAudit('remove', ids, { removed: removed.length, missing: missing.length, errors: errors.length }); return resp; }));

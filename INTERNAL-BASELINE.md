@@ -244,6 +244,7 @@ No execution until explicitly approved.
 | 2025-08-30 10:00:10Z | 1 | Hard reset & clean | CLEAN | 3583ad46d135fd8730b0590668262b00b8a19be4 |
 | 2025-08-30 10:02:22Z | 2 | Fresh clone created | CLEAN | 3583ad46d135fd8730b0590668262b00b8a19be4 C:\\github\\mcp-index-clean-20250830100222 |
 | 2025-08-30 10:09:33Z | 3 | Dependency install + build | FAIL | TS5103 invalid ignoreDeprecations=6.0 in tsconfig.json (TypeScript ^5.5.0) |
+| 2025-08-30 10:15:10Z | 3 | Dependency install + build -retry2 | FAIL | TS2835 import extensions & TS1479 module mismatch (legacy tests block build) |
 
 Logging Rules:
 

@@ -243,6 +243,7 @@ No execution until explicitly approved.
 | 2025-08-30 09:58:15Z | 0 | Snapshot commit + archive | CREATED | 89b6938f16ef03923b4cea2f4272d589a9748bb5 snapshot-20250830-095815-89b6938f16ef03923b4cea2f4272d589a9748bb5.zip |
 | 2025-08-30 10:00:10Z | 1 | Hard reset & clean | CLEAN | 3583ad46d135fd8730b0590668262b00b8a19be4 |
 | 2025-08-30 10:02:22Z | 2 | Fresh clone created | CLEAN | 3583ad46d135fd8730b0590668262b00b8a19be4 C:\\github\\mcp-index-clean-20250830100222 |
+| 2025-08-30 10:09:33Z | 3 | Dependency install + build | FAIL | TS5103 invalid ignoreDeprecations=6.0 in tsconfig.json (TypeScript ^5.5.0) |
 
 Logging Rules:
 

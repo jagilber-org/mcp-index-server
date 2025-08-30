@@ -12,7 +12,7 @@
   "declaration": true,
   "types": ["node"],
   "moduleResolution": "node16",
-  // Removed invalid ignoreDeprecations ("6.0") for TS 5.5 compatibility (Phase 3 baseline fix)
+  // Removed invalid ignoreDeprecations (was "6.0") – TypeScript build failed with TS5103
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules","dist"]

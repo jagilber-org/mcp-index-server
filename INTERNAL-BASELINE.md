@@ -244,6 +244,7 @@ No execution until explicitly approved.
 | 2025-08-30 10:00:10Z | 1 | Hard reset & clean | CLEAN | 3583ad46d135fd8730b0590668262b00b8a19be4 |
 | 2025-08-30 10:05:45Z | 2 | Fresh clone environment | CLONED | C:\github\mcp-index-clean-20250830100222 @ 3583ad46d135fd8730b0590668262b00b8a19be4 |
 | 2025-08-30 14:29:49Z | 3 | build | FAIL | exit 2 |
+| 2025-08-30 14:31:10Z | 3 | build retry | FAIL | exit 2 |
 
 Logging Rules:
 

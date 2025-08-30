@@ -6,7 +6,7 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 ## [Unreleased]
 
-### Added
+### Added (dispatcher capabilities & batch)
 
 - Authoritative baseline recovery plan (`INTERNAL-BASELINE.md`) with execution log.
 - Baseline guard script `scripts/guard-baseline.mjs` and npm script `guard:baseline`.
@@ -158,7 +158,6 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 - Schemas: removed per-method instruction response schemas; introduced flexible dispatcher response schema (loose anyOf) for rapid iteration
 - Documentation (TOOLS, PRD) pending full rewrite to reflect dispatcher (will land immediately post-merge)
-- Performance & probe scripts migrated to dispatcher
 
 ### Migration Guide (1.0.0)
 
@@ -327,7 +326,12 @@ For routine CI or local verification omit the flag for deterministic results.
 ### Added (feedback / emit system)
 
 - New MCP-compliant feedback tool suite:
-	- `feedback/submit`, `feedback/list`, `feedback/get`, `feedback/update`, `feedback/stats`, `feedback/health`.
+  - `feedback/submit`
+  - `feedback/list`
+  - `feedback/get`
+  - `feedback/update`
+  - `feedback/stats`
+  - `feedback/health`
 - Persistent JSON storage (`feedback/feedback-entries.json`) with max entry cap (`FEEDBACK_MAX_ENTRIES`, default 1000) and trimming.
 - Structured feedback model (type, severity, status workflow, tags, metadata, context) with audit logging.
 - Security & critical feedback entries mirrored to stderr for immediate visibility.
@@ -351,11 +355,11 @@ For routine CI or local verification omit the flag for deterministic results.
 ### Changed (test stability & isolation)
 
 - Refactored feedback test suite:
-	- Introduced `feedbackCore.spec.ts` (comprehensive) & `feedbackSimple.spec.ts` (smoke) with per‑test isolated `FEEDBACK_DIR` directories.
-	- Converted brittle absolute "empty list" assertions to delta-based assertions; legacy expectations gated with `it.skip(... // SKIP_OK)` for documentation without flakiness.
-	- Added deterministic persistence wait loop for filesystem write visibility.
-	- Replaced dynamic requires with explicit static imports (avoids MODULE_NOT_FOUND under variant names).
-	- Added legacy placeholder `feedback.spec.ts` (kept minimal) to preserve historical references.
+    - Introduced `feedbackCore.spec.ts` (comprehensive) & `feedbackSimple.spec.ts` (smoke) with per‑test isolated `FEEDBACK_DIR` directories.
+    - Converted brittle absolute "empty list" assertions to delta-based assertions; legacy expectations gated with `it.skip(... // SKIP_OK)` for documentation without flakiness.
+    - Added deterministic persistence wait loop for filesystem write visibility.
+    - Replaced dynamic requires with explicit static imports (avoids MODULE_NOT_FOUND under variant names).
+    - Added legacy placeholder `feedback.spec.ts` (kept minimal) to preserve historical references.
 
 ### Fixed (rate limiting correctness)
 
@@ -398,4 +402,42 @@ For routine CI or local verification omit the flag for deterministic results.
 ### Notes
 
 - Patch solely for test/developer experience cleanliness; no runtime code modifications.
+
+## [1.1.0] - 2025-08-30
+
+### Added (documented add response contract)
+
+- Finalized and documented enriched `instructions/add` response fields (`verified`, `feedbackHint`, `reproEntry`) in README.
+- Treats previously experimental creation verification semantics as stable API (minor bump per VERSIONING policy: additive response fields after 1.0).
+- No schema version change (response shape additive only; instruction JSON schema unchanged at `schemaVersion: 2`).
+
+### Upgrade Guidance (1.1.0)
+
+- No client changes required if ignoring unknown fields; clients wanting richer UX can surface `feedbackHint` and attach `reproEntry` when auto-filing feedback.
+- Optional: update any strict type definitions to include the new optional keys.
+
+## [1.0.7] - 2025-08-30
+
+### Added (creation verification & failure contract)
+
+- Hardened `instructions/add` success semantics: `created:true` now only emitted after atomic write, catalog visibility, and final readability (title/body non-empty) verification; response includes `verified:true` when these checks pass.
+- Unified failure response contract via internal `fail()` helper returning `{ created:false, error, feedbackHint, reproEntry }` across all add failure paths (missing entry/id/required fields, governance violations, write errors, atomic readback failure, invalid shape).
+- Added enriched guidance encouraging clients to submit structured feedback with embedded `reproEntry` for rapid defect triage.
+- New tests: `instructionsAddCreatedFlag.spec.ts` verifying created/verified gating and feedback guidance on failure conditions (governance + required field omissions).
+- Portable client CRUD harness stabilized (dynamic ESM import shim) with deterministic atomic visibility assertions.
+
+### Documentation (lifecycle)
+
+- Added `FEEDBACK-DEFECT-LIFECYCLE.md` formalizing feedback → red test → fix → coverage workflow.
+- Pending README & TOOLS doc updates for enriched add response (will be completed in 1.1.0 minor bump).
+
+### Internal (stability)
+
+- Introduced ambient module declaration for portable client to resolve TS7016 without expanding `tsconfig` include surface.
+- Eliminated intermittent “No test suite found” flake in portable CRUD atomic spec via stabilization of file export timing.
+
+### Versioning Notes (next minor)
+
+- Patch release retained (1.0.7) while evaluating whether enriched add response should be treated as a documented stable contract.
+- Next release should bump MINOR to 1.1.0 once documentation references are finalized (optional field additions per policy).
 

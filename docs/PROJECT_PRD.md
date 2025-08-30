@@ -101,6 +101,18 @@ Backups stored under `backups/instructions-<timestamp>`; non-fatal count warning
 | DOC3 | README must link feedback system & governance hash plan | Verified during release checklist |
 | DOC4 | `CONTENT-GUIDANCE.md` must state NOT to embed MCP tool catalogs/schemas in instructions (protocol discovery only) | Explicit bullet retained |
 
+### 7. Schema‑Aided Add Failure Contract (Implemented 1.1.0, pending formal ratification)
+
+| ID | Requirement | Rationale | Verification |
+|----|-------------|-----------|-------------|
+| AF1 | `instructions/add` MUST include `schemaRef` & `inputSchema` when returning early structural errors (`missing entry`, `missing id`, `missing required fields`) | Zero round‑trip remediation; improves client UX | Automated test asserting presence on shape errors |
+| AF2 | Inline `inputSchema` MUST be authoritative subset of canonical tool schema (no divergence) | Prevent stale or conflicting schema copies | Compare hash of inline schema subset vs canonical registry schema during test |
+| AF3 | Non-structural governance/semantic failures (e.g. owner/category policy) MUST NOT echo full schema | Avoid noisy payloads; clarity of failure class | Negative test verifying absence |
+| AF4 | `schemaRef` value stable logical key `instructions/add#input` | Enables client cache keying | Test asserts constant string |
+| AF5 | Feature considered additive; clients silently ignoring fields remain functional | Backward compatibility guarantee | Document review + absence of breaking changes in tests |
+
+Upon ratification this section migrates out of Addendum and project version will bump to 1.2.0.
+
 ---
 
 ## �🏗️ Project Architecture & Structure

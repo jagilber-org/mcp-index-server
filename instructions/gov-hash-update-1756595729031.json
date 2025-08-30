@@ -1,0 +1,30 @@
+{
+  "id": "gov-hash-update-1756595729031",
+  "title": "gov-hash-update-1756595729031",
+  "body": "governance-body-static-v2",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "fc5be0b780e44c15f081b62133738fabc7dc045231a2e4c57efc79a4ad63a60f",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T23:15:29.033Z",
+  "updatedAt": "2025-08-30T23:15:29.414Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T23:15:29.034Z",
+  "nextReviewDue": "2025-11-28T23:15:29.034Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T23:15:29.033Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "governance-body-static-v1"
+}

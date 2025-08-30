@@ -1,6 +1,6 @@
 # ARCHITECTURE
 
-Updated for 0.9.x (dispatcher consolidation, governance projection + hash, integrity verification, usage persistence, schema migration hook).
+Updated for 1.1.0 (includes: dispatcher consolidation, governance projection + hash, integrity verification, usage persistence, schema migration hook, feedback/emit subsystem, schema‑aided add failure contract, baseline & declaration guards).
 
 ## High-Level Components
 
@@ -66,9 +66,10 @@ Files -> Validate -> Normalize -> Enrich -> Migrate -> Index -> Serve -> Track -
 | CatalogContext | Caching, mtime + signature invalidation, enrichment persistence | Supports INSTRUCTIONS_ALWAYS_RELOAD, .catalog-version file |
 | Governance Projection | Deterministic subset for governance hash | Fields: id,title,version,owner,priorityTier,nextReviewDue,semanticSummarySha256,changeLogLength |
 | Tool Registry | Central schemas + stable flags + dynamic listing (`meta/tools`) | Exposes machine-consumable tool metadata |
-| Tool Handlers | JSON-RPC implementation (instructions/*, governanceHash, usage, integrity, gates, metrics) | Write tools gated by MCP_ENABLE_MUTATION |
+| Tool Handlers | JSON-RPC implementation (instructions/*, feedback/*, governanceHash, usage, integrity, gates, metrics) | Write tools gated by MCP_ENABLE_MUTATION |
 | MCP SDK Transport | Standard MCP over stdio | Emits `server/ready`, handles capabilities |
 | Usage Tracking | usage/track increments with firstSeenTs + debounced persistence | Optional gating via INDEX_FEATURES='usage' |
+| Feedback / Emit System | feedback/submit,list,get,update,stats,health tools | Persistent JSON store + audit & security logging |
 | Metrics Snapshot | Aggregate per-method counts + feature counters | Lightweight in-memory aggregation |
 | Integrity Verify | Recompute vs stored sourceHash | Detects tampering or stale placeholders |
 | Gates Evaluate | Evaluate gating rules from `instructions/gates.json` | Summarizes pass/fail severities |
@@ -118,6 +119,7 @@ Results summarize counts, highest severity enabling fast gating flows.
 - Loader isolates schema & logical validation errors per file; faulty files skipped with error list preserved.
 - Handlers return `{ notFound:true }` patterns over errors for absence cases.
 - JSON-RPC errors standardized (-32601 unknown method, -32602 validation, -32603 internal).
+- `instructions/add` shape failures embed authoritative input schema (schema‑aided remediation) when id / body / entry wrapper gaps detected (1.1.0+).
 
 ## Security & Governance
 

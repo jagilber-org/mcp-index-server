@@ -1,0 +1,34 @@
+{
+  "id": "workspace-tool-usage-patterns",
+  "title": "Workspace Tool Usage Patterns",
+  "body": "Analysis of tool usage patterns within development workspaces to optimize productivity and identify automation opportunities.",
+  "priority": 40,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "analysis",
+    "productivity",
+    "workspace"
+  ],
+  "sourceHash": "94fa0c850873556f85be1ddc96009e61d3c655ec5e8fcc1640a783273446dc89",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T23:19:23.588Z",
+  "updatedAt": "2025-08-30T23:19:23.588Z",
+  "riskScore": 65,
+  "version": "1.0.0",
+  "owner": "dev-experience",
+  "status": "approved",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T23:19:23.588Z",
+  "nextReviewDue": "2025-10-29T23:19:23.588Z",
+  "reviewIntervalDays": 60,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T23:19:23.588Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Analysis of tool usage patterns within development workspaces to optimize productivity and identify automation opportunities."
+}

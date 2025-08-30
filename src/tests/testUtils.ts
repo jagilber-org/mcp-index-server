@@ -1,3 +1,42 @@
+/**
+ * Shared lightweight test utilities (kept intentionally dependency‑light).
+ * Purpose: remove duplicated ad‑hoc body extraction & hash assertion logic.
+ */
+// Generic record type without pulling in external declaration surfaces
+export type AnyRecord = Record<string, unknown> | undefined | null;
+
+// Normalize instruction body out of varied response envelopes (create/get/update variants)
+export function normalizeBody(obj: AnyRecord): string | undefined {
+  if(!obj || typeof obj !== 'object') return undefined;
+  const o = obj as Record<string, unknown>;
+  const direct = typeof o.body === 'string' ? o.body : undefined;
+  if(direct) return direct;
+  const item = o.item && typeof o.item === 'object' ? o.item as Record<string, unknown> : undefined;
+  const nested = item && typeof item.body === 'string' ? item.body : undefined;
+  return nested;
+}
+
+export function pick<T = unknown>(obj: AnyRecord, path: string[]): T | undefined {
+  let cur: unknown = obj;
+  for(const segment of path){
+    if(cur && typeof cur === 'object' && segment in (cur as Record<string, unknown>)){
+      cur = (cur as Record<string, unknown>)[segment];
+    } else return undefined;
+  }
+  return cur as T | undefined;
+}
+
+// Hash assertions kept minimal to avoid importing vitest directly (call within test scope)
+// Use loose typing; caller supplies expect from vitest. ctx kept for future richer messaging.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function assertHashStable(expectFn: (v: any)=>any, before: string | undefined, after: string | undefined, _ctx='hash stable') {
+  expectFn(!!(before && after && before === after)).toBe(true);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function assertHashChanged(expectFn: (v: any)=>any, before: string | undefined, after: string | undefined, _ctx='hash changed') {
+  expectFn(!!(before && after && before !== after)).toBe(true);
+}
 export async function waitFor(predicate: () => boolean, timeoutMs = 2000, intervalMs = 40): Promise<boolean> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {

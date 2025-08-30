@@ -2,8 +2,8 @@
 	"servers": {
 		"mcp-index-server": {
 			"type": "stdio",
-			// "cwd": "C:/mcp/mcp-index-server-prod",
-			"cwd": "C:/github/jagilber/mcp-index-server",
+			"cwd": "C:/mcp/mcp-index-server-prod",
+			// "cwd": "C:/github/jagilber/mcp-index-server",
 			"command": "node",
 			"args": [
 				"dist/server/index.js"
@@ -12,19 +12,17 @@
 				// ===================== DIRECTORY SELECTION =====================
 				// To run against production catalog set MCP_USE_PROD=1 in your launch shell
 				// and optionally uncomment the prod INSTRUCTIONS_DIR / cwd above.
-				// "INSTRUCTIONS_DIR": "C:/mcp/mcp-index-server-prod/instructions",
-				"INSTRUCTIONS_DIR": "C:/github/jagilber/mcp-index-server/devinstructions",
-
+				"INSTRUCTIONS_DIR": "C:/mcp/mcp-index-server-prod/instructions",
+				// "INSTRUCTIONS_DIR": "C:/github/jagilber/mcp-index-server/devinstructions",
+				"FEEDBACK_DIR": "./feedback",
 				// ===================== MUTATION CONTROL ========================
 				// CAUTION: Mutation enabled for local iterative CRUD & governance tests.
 				"MCP_ENABLE_MUTATION": "1",
 				// Optional future safeguard: require a guard token before mutating prod.
 				// "MCP_MUTATION_GUARD": "expected-checksum-or-token"
-
 				// ===================== FEEDBACK STORAGE ========================
 				// Use absolute (workspaceFolder) to avoid context drift when editor CWD differs.
-				"FEEDBACK_DIR": "${workspaceFolder}/feedback",
-
+				// "FEEDBACK_DIR": "${workspaceFolder}/feedback",
 				// ===================== LOGGING / DIAGNOSTICS ===================
 				// Enable file logging (logs to both stderr and file)
 				// "MCP_LOG_FILE": "${workspaceFolder}/logs/mcp-server.log",
@@ -36,13 +34,11 @@
 				// "MCP_DEBUG": "1",
 				// Ultra-verbose internal logging
 				// "MCP_LOG_VERBOSE": "1",
-
 				// ===================== GOVERNANCE / HASH TESTING ===============
 				// Force reloading instructions each request to speed drift/hash scenarios.
 				// "INSTRUCTIONS_ALWAYS_RELOAD": "1",
 				// Hash subsystem debug (if supported by server implementation)
 				// "HASH_DEBUG": "1",
-
 				// ===================== PERSISTENCE / AUTOSAVE ==================
 				// Adjust autosave interval (ms) for stress or rapid mutation tests.
 				// "INDEX_AUTOSAVE_INTERVAL_MS": "3000"

@@ -1,6 +1,6 @@
 # MCP Index Server - Tools API Reference
 
-**Version:** 1.0.0 (MCP Protocol Compliant)  
+**Version:** 1.1.0 (MCP Protocol Compliant)  
 **Protocol:** Model Context Protocol (MCP) v1.0+  
 **Transport:** JSON-RPC 2.0 over stdio  
 **Last Updated:** December 28, 2024
@@ -11,11 +11,13 @@ The MCP Index Server provides a comprehensive instruction catalog management sys
 
 ### 🎯 Key Features
 
-- **Protocol Compliance**: Full MCP SDK v1.0+ compatibility
-- **Enterprise Security**: Mutation controls and audit logging
-- **High Performance**: Optimized for <120ms P95 response times
-- **Governance Ready**: Built-in versioning and change tracking
-- **Developer Friendly**: Comprehensive error handling and diagnostics
+* **Protocol Compliance**: Full MCP SDK v1.0+ compatibility
+* **Enterprise Security**: Mutation controls and audit logging
+* **High Performance**: Optimized for <120ms P95 response times
+* **Governance Ready**: Built-in versioning and change tracking
+* **Developer Friendly**: Comprehensive error handling and diagnostics
+* **Feedback Subsystem**: 6 MCP tools for structured client feedback (submit/list/get/update/stats/health)
+* **Schema-Aided Add Failures**: Inline JSON Schema returned on early structural `instructions/add` errors (1.1.0+)
 
 ## 🏗️ Architecture Overview
 
@@ -432,23 +434,39 @@ interface DispatchRequest {
 **Validation**: Full schema validation with optional lax mode
 
 ```typescript
-// Request
+// Request (via instructions/dispatch)
 {
   "action": "add",
-  "entry": InstructionEntryInput,
-  "overwrite"?: boolean,  // Allow ID conflicts
-  "lax"?: boolean        // Auto-fill missing fields
+  "entry": InstructionEntryInput,  // REQUIRED: instruction wrapped in entry field
+  "overwrite"?: boolean,           // Allow ID conflicts
+  "lax"?: boolean                  // Auto-fill missing fields
+}
+
+// Direct tool call (instructions/add)
+{
+  "entry": InstructionEntryInput,  // REQUIRED: must wrap instruction object
+  "overwrite"?: boolean,
+  "lax"?: boolean
 }
 
 // Response
 {
   "id": string,
   "hash": string,
-  "created": boolean,
+  "created": boolean,     // Only true if successfully persisted and readable
   "overwritten": boolean,
   "skipped": boolean,
+  "verified": boolean,    // Read-back validation passed
   "sourceHash": string,
   "governanceHash": string
+}
+
+// Common Error Response
+{
+  "created": false,
+  "error": "missing entry",           // Machine-readable error code
+  "feedbackHint": string,             // User guidance
+  "reproEntry": object                // Debugging info
 }
 ```
 
@@ -553,7 +571,87 @@ interface DispatchRequest {
 }
 ```
 
-### 📊 Analytics & Governance
+### � **Common Troubleshooting**
+
+#### Parameter Format Issues
+
+**❌ Incorrect: Sending instruction object directly**
+```typescript
+// This FAILS with "missing entry" error
+{
+  "method": "tools/call",
+  "params": {
+    "name": "instructions/add",
+    "arguments": {
+      "id": "my-instruction",
+      "body": "Content..."
+    }
+  }
+}
+```
+
+**✅ Correct: Wrap in entry field**
+```typescript
+{
+  "method": "tools/call",
+  "params": {
+    "name": "instructions/add",
+    "arguments": {
+      "entry": {                 // ← Required wrapper
+        "id": "my-instruction",
+        "body": "Content..."
+      },
+      "lax": true
+    }
+  }
+}
+```
+
+#### Backup Restoration
+
+**❌ Incorrect: Sending backup file directly**
+```typescript
+// Backup files often contain arrays or metadata
+{
+  "entries": [
+    {"id": "...", "body": "..."},
+    {"id": "...", "body": "..."}
+  ],
+  "timestamp": "...",
+  "version": "..."
+}
+```
+
+**✅ Correct: Extract individual objects**
+```typescript
+// Use instructions/import for multiple entries
+{
+  "action": "import", 
+  "entries": [
+    {"id": "...", "body": "..."},  // Individual instruction objects
+    {"id": "...", "body": "..."}
+  ],
+  "mode": "skip"
+}
+```
+
+#### Error Response Handling
+
+All mutation operations now return enhanced error information:
+
+```typescript
+{
+  "created": false,
+  "error": "mandatory/critical require owner",  // Machine-readable
+  "feedbackHint": "Submit feedback/submit with reproEntry",
+  "reproEntry": {                               // Debugging context
+    "id": "problem-id",
+    "bodyPreview": "First 200 chars..."
+  }
+}
+```
+
+### �📊 Analytics & Governance
 
 #### `governanceHash` - Integrity Verification
 
@@ -658,10 +756,10 @@ interface DispatchRequest {
 
 ### Throughput Targets
 
-- **Read Operations**: >1000 RPS sustained
-- **Write Operations**: >100 RPS sustained  
-- **Concurrent Connections**: 50+ simultaneous clients
-- **Memory Usage**: <512MB under normal load
+* **Read Operations**: >1000 RPS sustained
+* **Write Operations**: >100 RPS sustained
+* **Concurrent Connections**: 50+ simultaneous clients
+* **Memory Usage**: <512MB under normal load
 
 ## 🚨 Error Handling
 
@@ -860,15 +958,15 @@ interface InstructionEntry {
 
 ## 📞 Support & Resources
 
-- **Documentation**: [PROJECT_PRD.md](./PROJECT_PRD.md)
-- **Architecture**: [ARCHITECTURE.md](./ARCHITECTURE.md)  
-- **Security**: [SECURITY.md](../SECURITY.md)
-- **Contributing**: [CONTRIBUTING.md](../CONTRIBUTING.md)
+* **Documentation**: [PROJECT_PRD.md](./PROJECT_PRD.md)
+* **Architecture**: [ARCHITECTURE.md](./ARCHITECTURE.md)
+* **Security**: [SECURITY.md](../SECURITY.md)
+* **Contributing**: [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 **Contact Information:**
-- Technical Issues: Create GitHub issue with `[tools-api]` label
-- Security Concerns: Follow responsible disclosure in SECURITY.md
-- Feature Requests: Use RFC process documented in CONTRIBUTING.md
+* Technical Issues: Create GitHub issue with `[tools-api]` label
+* Security Concerns: Follow responsible disclosure in SECURITY.md
+* Feature Requests: Use RFC process documented in CONTRIBUTING.md
 
 ---
 
@@ -943,16 +1041,17 @@ Params: { mode?: { dryRun?: boolean, mergeDuplicates?: boolean, removeDeprecated
 Result: { previousHash, hash, scanned, repairedHashes, normalizedCategories, deprecatedRemoved, duplicatesMerged, usagePruned, filesRewritten, purgedScopes, dryRun, notes: string[] }
 Notes:
 
-- dryRun reports planned changes without modifying files (hash remains the same).
-- repairedHashes: number of entries whose stored sourceHash was corrected.
-- normalizedCategories: entries whose categories were lowercased/deduped/sorted.
-- duplicatesMerged: number of duplicate entry merges (non-primary members processed).
-- deprecatedRemoved: number of deprecated entries physically removed (when removeDeprecated true and their deprecatedBy target exists).
-- purgedScopes: legacy scope:* category tokens removed from disk when purgeLegacyScopes enabled.
-- mergeDuplicates selects a primary per identical body hash (prefers earliest createdAt then lexicographically smallest id) and merges categories, priority (min), riskScore (max).
-- filesRewritten counts actual JSON files updated on disk (0 in dryRun).
-- usagePruned counts usage snapshot entries removed due to removed instructions.
-- notes array contains lightweight action hints (e.g., would-rewrite:N in dryRun).
+* dryRun reports planned changes without modifying files (hash remains the same).
+* repairedHashes: number of entries whose stored sourceHash was corrected.
+* normalizedCategories: entries whose categories were lowercased/deduped/sorted.
+* duplicatesMerged: number of duplicate entry merges (non-primary members processed).
+* deprecatedRemoved: number of deprecated entries physically removed (when removeDeprecated true and their deprecatedBy target exists).
+* purgedScopes: legacy scope:* category tokens removed from disk when purgeLegacyScopes enabled.
+* mergeDuplicates selects a primary per identical body hash (prefers earliest createdAt then lexicographically smallest id) and merges categories, priority (min), riskScore (max).
+* filesRewritten counts actual JSON files updated on disk (0 in dryRun).
+* usagePruned counts usage snapshot entries removed due to removed instructions.
+* notes array contains lightweight action hints (e.g., would-rewrite:N in dryRun).
+ 
  
 ### Structured Scoping Fields
 
@@ -960,7 +1059,7 @@ Each InstructionEntry may now include:
 
 - workspaceId?: string
 - userId?: string
-- teamIds?: string[]
+* teamIds?: string[]
 
 Derivation: If raw categories contain legacy tokens prefixed with scope:workspace:, scope:user:, or scope:team:, the classifier migrates them into structured fields and removes those tokens from categories. This keeps categories focused on topical / functional tagging while enabling precise scoping logic.
 
@@ -975,7 +1074,7 @@ Each instruction now supports governance metadata:
 - classification: public | internal | restricted (default internal)
 - lastReviewedAt / nextReviewDue – review cadence auto-derived by tier
 - changeLog[] – array of { version, changedAt, summary }
-- supersedes – id of instruction it replaces
+* supersedes – id of instruction it replaces
 
 Grooming / normalization auto-populates defaults on load; future versions will enforce presence at creation.
 
@@ -1007,7 +1106,7 @@ Use cases:
 
 - CI snapshot gating (reject unintended governance changes).
 - Cross-process restart stability checks.
-- Fast diff precursor: if governance hash unchanged, skip deeper governance audits.
+* Fast diff precursor: if governance hash unchanged, skip deeper governance audits.
 
 Params: { prompt: string }
 Result: { issues: [...], summary: { counts, highestSeverity? } }
@@ -1090,7 +1189,7 @@ Guidelines:
 
 - Omit `params` or use `{}` for methods with no required fields.
 - Respect `additionalProperties:false` where specified.
-- Surface `error.data.errors` for actionable diagnostics.
+* Surface `error.data.errors` for actionable diagnostics.
 
 ## Data Model
 
@@ -1125,14 +1224,14 @@ Usage counts stored in data/usage-snapshot.json (debounced ~500ms + flush on shu
 - -32601 Method not found
 - -32600 Invalid Request
 - -32700 Parse error
-- -32603 Internal error (error.data.message contains detail)
+* -32603 Internal error (error.data.message contains detail)
 
 ## Security & Safety
 
 - Read-only by default; enable mutation explicitly.
 - prompt/review uses simple, bounded pattern checks (no catastrophic regex).
 - integrity/verify & instructions/diff aid tamper detection.
-- Logging segregated to stderr to avoid protocol corruption.
+* Logging segregated to stderr to avoid protocol corruption.
 
 ## CLI Flags
 
@@ -1155,7 +1254,7 @@ For comprehensive MCP configuration guidance, see the **[MCP Configuration Guide
 - **Security configurations** (read-only, mutation controls, audit compliance)
 - **Performance optimization** (large datasets, memory management)
 - **Multi-environment setups** (global configurations with multiple servers)
-- **Troubleshooting and monitoring** (diagnostics, performance metrics)
+* **Troubleshooting and monitoring** (diagnostics, performance metrics)
 
 ### Quick Start Example
 
@@ -1184,7 +1283,7 @@ For comprehensive MCP configuration guidance, see the **[MCP Configuration Guide
 - Ensure build completion: `npm run build`
 - Create instructions/ directory before launch
 - Use absolute paths for enterprise deployments
-- Enable mutation only when write access is required
+* Enable mutation only when write access is required
 
 For additional configuration options and environment variables, refer to the complete [MCP Configuration Guide](./MCP-CONFIGURATION.md).
 
@@ -1208,14 +1307,14 @@ Promotion roadmap (tentative, dispatcher model):
 - 0.4.0: Added lifecycle (initialize/shutdown/exit) handling + richer method-not-found diagnostics, consolidated docs, clarified mutation tool list, improved usage persistence & flush gating.
 - 0.3.0: Introduced environment gating (MCP_ENABLE_MUTATION), logging flags (MCP_LOG_VERBOSE, MCP_LOG_MUTATION), meta/tools mutation & disabled flags.
 - 0.2.0: Added integrity/verify, usage/*, metrics/snapshot, gates/evaluate, incremental diff, schemas & performance benchmark.
-- 0.1.0: Initial instruction tools + prompt/review + health.
+* 0.1.0: Initial instruction tools + prompt/review + health.
 
 ## Future (Roadmap)
 
 - Optional checksum streaming diff endpoint for very large catalogs.
 - Batched usage/track variant.
 - Semantic search extension (vector index) behind feature flag.
-- Policy gate expressions with logical combinators.
+* Policy gate expressions with logical combinators.
 
 ## Disclaimer
 
@@ -1237,19 +1336,19 @@ This section provides normative guidance for MCP clients integrating with the In
  
 - Maintain last known `hash` from dispatcher `{ action:"list" }` (catalog hash) and `governanceHash` separately; only refetch full entries when either changes.
 - Use dispatcher diff `{ action:"diff", clientHash }` to minimize payload for incremental updates.
-- If diff reports unknown ids or structural mismatch, fall back to a clean `{ action:"list" }`.
+* If diff reports unknown ids or structural mismatch, fall back to a clean `{ action:"list" }`.
 
 ### C. Tool Schema Validation
  
 - Always validate outbound `params` client-side against `meta/tools.mcp.tools[n].inputSchema` before sending.
 - Reject or correct user input early; surface Ajv-style feedback inline.
-- Tolerate missing `outputSchema` (some tools may not yet declare result schema) by applying defensive parsing.
+* Tolerate missing `outputSchema` (some tools may not yet declare result schema) by applying defensive parsing.
 
 ### D. Governance & Integrity Loop
  
 - On each session start: compare new `governanceHash` vs stored; if drift and no local edits expected, surface warning and optionally run `integrity/verify`.
 - After any local mutation (add/import/groom/remove): refetch `instructions/governanceHash` to update baseline.
-- Cache governance projections only if your client needs offline inspection; otherwise rely on hash.
+* Cache governance projections only if your client needs offline inspection; otherwise rely on hash.
 
 ### E. Usage Tracking Etiquette
  

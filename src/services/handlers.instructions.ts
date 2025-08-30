@@ -154,7 +154,10 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
       owner: (e as Partial<ImportEntry>).owner,
       bodyPreview
     } : { id };
-    const base:any = {
+    interface AddFailureResult {
+      id: string; created: boolean; overwritten: boolean; skipped: boolean; error: string; hash?: string; feedbackHint: string; reproEntry: Record<string, unknown>; schemaRef?: string; inputSchema?: unknown;
+    }
+    const base: AddFailureResult = {
       id,
       created:false,
       overwritten:false,

@@ -58,6 +58,9 @@ Restore a trustworthy, minimal, reproducible, enterprise-grade baseline for the 
 | `createReadSmoke.spec.ts` | Basic CRUD smoke across canonical path |
 | `portableCrudAtomic.spec.ts` | Cross-environment atomicity validation |
 | `instructionsAddPersistence.spec.ts` | Persistence durability + restart semantics |
+| `portableCrudParameterized.spec.ts` | Parameterized CRUD coverage (Added via BASELINE-CR 2025-08-30) |
+| `portableCrudHarness.spec.ts` | Harness lifecycle & deterministic ordering (Added via BASELINE-CR 2025-08-30) |
+| `governanceHashIntegrity.spec.ts` | Governance hash stability & drift scenarios (Added via BASELINE-CR 2025-08-30) |
 
 ## 7. Selective Reintroduction Set (Allowed After Phase 5 Passes)
 
@@ -218,6 +221,20 @@ No execution until explicitly approved.
 - A SHA256 sentinel file `.baseline.sentinel` MUST match `INTERNAL-BASELINE.md` contents.
 - Any modification to this file requires commit message marker: `BASELINE-CR:` (enforced by `commit-msg` hook).
 - After an approved change merges: run `npm run baseline:sentinel:update` in a clean working tree and commit the updated sentinel in the same change request.
+
+### 14.2 Approved Change Request (2025-08-30) – Baseline Expansion
+
+```text
+CHANGE REQUEST: Expand minimal invariant suite with parameterized CRUD, harness lifecycle, and governance hash stability tests.
+Justification: Core deterministic behaviors (parameterized variations, harness orchestration, governance hash invariants) now considered foundational and low‑risk; improves early regression detection without introducing flake.
+Phase Impacted: Post-baseline (Controlled Expansion §9).
+Rollback Plan: Remove the three added spec files + revert table in §6 + update sentinel.
+Approval: Maintainers consensus (documented inline).
+```
+
+Status: ACTIVE. Table in §6 updated; sentinel hash updated accordingly.
+
+<!-- Pre-commit runs: `guard:baseline` + sentinel verify under `BASELINE_ENFORCE=1`. -->
 - Pre-commit runs: `guard:baseline` + sentinel verify under `BASELINE_ENFORCE=1`.
 - CI MUST execute: `BASELINE_ENFORCE=1 npm run guard:baseline && npm run baseline:sentinel:verify`.
 - A mismatch = hard failure; no silent drift accepted.

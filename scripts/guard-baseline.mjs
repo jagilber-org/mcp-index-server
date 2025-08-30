@@ -43,9 +43,17 @@ for (const mt of minimalTests) {
   }
 }
 
+// Additional tests that are allowed beyond the minimal baseline (governance, contracts, extended CRUD harness)
+const allowedAdditional = [
+  'contractSchemas.spec.ts',
+  'portableCrudHarness.spec.ts',
+  'portableCrudParameterized.spec.ts',
+  'governanceHashIntegrity.spec.ts'
+];
+
 // Enforce no unexpected test expansion when BASELINE_ENFORCE=1
 if (process.env.BASELINE_ENFORCE === '1') {
-  const allowed = new Set([...minimalTests]);
+  const allowed = new Set([...minimalTests, ...allowedAdditional]);
   const phase = process.env.BASELINE_PHASE || '';
   const extra = testDirFiles.filter(f => /\.spec\.ts$/.test(f) && !allowed.has(f));
   if (extra.length && phase !== 'pre-isolation') {

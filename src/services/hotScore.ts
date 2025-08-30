@@ -129,12 +129,13 @@ export class HotScoreService {
   public calculateHotScore(
     instructionId: string,
     usageHistory: UsagePoint[],
-    currentTime: number = Date.now()
+  _currentTime: number = Date.now()
   ): HotScoreResult {
     if (!usageHistory.length) {
       return this.createEmptyResult();
     }
 
+    const currentTime = _currentTime; // internal alias; parameter intentionally prefixed underscore to satisfy lint
     const sortedHistory = usageHistory
       .filter(point => point.timestamp <= currentTime)
       .sort((a, b) => b.timestamp - a.timestamp); // Most recent first

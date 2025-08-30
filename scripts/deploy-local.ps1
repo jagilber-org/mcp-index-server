@@ -41,7 +41,11 @@ param(
   # Force reseeding of instructions even if runtime JSON already exists (backs up first unless -NoBackup)
   [switch]$ForceSeed,
   # Deploy with an empty runtime index (no baseline JSON copied). Templates still copied/preserved.
-  [switch]$EmptyIndex
+  [switch]$EmptyIndex,
+  # Prune legacy dist/src tree even without -Overwrite (new enhancement)
+  [switch]$PruneLegacy,
+  # Emit JSON integrity summary to stdout at end (does not contaminate protocol; deploy script only)
+  [switch]$EmitSummary
 )
 
 Set-StrictMode -Version Latest
@@ -79,7 +83,9 @@ if(Test-Path $Destination){
   if($shouldBackup){
   try {
       $jsonFiles = Get-ChildItem -Path $destInstructionsPath -Filter *.json -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\_templates\\" }
-      if($jsonFiles){
+      # Ensure we can safely treat as array for .Count access (fix for occasional Count property warning)
+      $jsonFiles = @($jsonFiles)
+      if($jsonFiles -and $jsonFiles.Count -gt 0){
         $backupRoot = Join-Path $Destination 'backups'
         if(-not (Test-Path $backupRoot)){ New-Item -ItemType Directory -Force -Path $backupRoot | Out-Null }
         $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
@@ -89,11 +95,11 @@ if(Test-Path $Destination){
         while(Test-Path $backupDir){ $backupDir = Join-Path $backupRoot ("instructions-$stamp-" + ($i++)) }
         Write-Host "[deploy] Backing up instructions to $backupDir" -ForegroundColor Cyan
         New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
-  foreach($f in $jsonFiles){ Copy-Item $f.FullName (Join-Path $backupDir $f.Name) }
-  $backupCount = ($jsonFiles | Measure-Object).Count
-  Write-Host "[deploy] Backup completed ($backupCount files)." -ForegroundColor Green
+        foreach($f in $jsonFiles){ Copy-Item $f.FullName (Join-Path $backupDir $f.Name) }
+        $backupCount = ($jsonFiles | Measure-Object).Count
+        Write-Host "[deploy] Backup completed ($backupCount files)." -ForegroundColor Green
         if($BackupRetention -gt 0){
-          $existing = Get-ChildItem -Path $backupRoot -Directory -Filter 'instructions-*' | Sort-Object Name -Descending
+          $existing = @(Get-ChildItem -Path $backupRoot -Directory -Filter 'instructions-*' | Sort-Object Name -Descending)
           if($existing.Count -gt $BackupRetention){
             $toPrune = $existing | Select-Object -Skip $BackupRetention
             foreach($p in $toPrune){
@@ -183,17 +189,22 @@ $newServer = Join-Path $Destination 'dist/server/index.js'
 $legacyServer = Join-Path $Destination 'dist/src/server/index.js'
 if((Test-Path $newServer) -and (Test-Path $legacyServer)){
   Write-Host '[deploy] WARNING: Both new layout (dist/server) and legacy layout (dist/src/server) detected. Runtime may load stale files.' -ForegroundColor Yellow
+  $shouldPruneLegacy = $Overwrite -or $PruneLegacy
   try {
-    # If Overwrite was specified we can safely prune legacy tree
-    if($Overwrite){
-      Write-Host '[deploy] Pruning legacy dist/src/* tree due to -Overwrite and presence of new layout...' -ForegroundColor Cyan
+    if($shouldPruneLegacy){
+      Write-Host '[deploy] Pruning legacy dist/src/* tree...' -ForegroundColor Cyan
       Remove-Item -Recurse -Force (Join-Path $Destination 'dist/src')
     } else {
-      Write-Host '[deploy] Suggestion: re-run with -Overwrite to remove legacy dist/src tree or manually delete dist/src before deploy.' -ForegroundColor DarkYellow
+      Write-Host '[deploy] Legacy dist/src retained (use -PruneLegacy or -Overwrite to remove).' -ForegroundColor DarkYellow
     }
   } catch {
     Write-Host "[deploy] Warning: failed to prune legacy dist/src: $($_.Exception.Message)" -ForegroundColor Yellow
   }
+} elseif($PruneLegacy -and (Test-Path (Join-Path $Destination 'dist/src'))){
+  try {
+    Write-Host '[deploy] Pruning legacy dist/src tree (no new layout conflict).' -ForegroundColor Cyan
+    Remove-Item -Recurse -Force (Join-Path $Destination 'dist/src')
+  } catch { Write-Host "[deploy] Warning: failed to prune legacy dist/src: $($_.Exception.Message)" -ForegroundColor Yellow }
 }
 
 # Minimal runtime package file: strip dev deps to reduce noise
@@ -297,8 +308,40 @@ Set-Content -Path (Join-Path $Destination 'start.cmd') -Value $startCmd -Encodin
 Write-Host '[deploy] Done.' -ForegroundColor Green
 if($BundleDeps){
   Write-Host '[deploy] Installing production dependencies into destination (BundleDeps)...' -ForegroundColor Cyan
-  pushd $Destination
-  try { npm install --production } catch { Write-Host "[deploy] npm install failed: $($_.Exception.Message)" -ForegroundColor Red; exit 1 } finally { popd }
+  Push-Location $Destination
+  try { npm install --production } catch { Write-Host "[deploy] npm install failed: $($_.Exception.Message)" -ForegroundColor Red; exit 1 } finally { Pop-Location }
   Write-Host '[deploy] Production dependencies installed.' -ForegroundColor Green
 }
 Write-Host "Next: (cd $Destination ; pwsh .\\start.ps1 -VerboseLogging -EnableMutation)" -ForegroundColor Cyan
+
+# ---------------------------------------------------------------------------
+# Integrity & Summary (Enhancements 2 & 4)
+# ---------------------------------------------------------------------------
+if($EmitSummary){
+  $summary = [ordered]@{}
+  try {
+    $serverPath = Join-Path $Destination 'dist/server/index.js'
+    $schemaPath = Join-Path $Destination 'schemas/instruction.schema.json'
+    $summary.serverIndexExists = Test-Path $serverPath
+    $summary.schemaExists = Test-Path $schemaPath
+    if($summary.serverIndexExists){
+      try { $hash = Get-FileHash -Algorithm SHA256 -Path $serverPath; $summary.serverIndexSha256 = $hash.Hash } catch { $summary.serverIndexSha256 = '<hash-error>' }
+      try { $fileInfo = Get-Item $serverPath; $summary.serverIndexBytes = $fileInfo.Length } catch { }
+    }
+    if($summary.schemaExists){
+      try { $hash2 = Get-FileHash -Algorithm SHA256 -Path $schemaPath; $summary.schemaSha256 = $hash2.Hash } catch { $summary.schemaSha256 = '<hash-error>' }
+    }
+    # Count runtime instruction JSON (excluding templates)
+    $instrDir = Join-Path $Destination 'instructions'
+    $runtimeFiles = @(Get-ChildItem -Path $instrDir -Filter *.json -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\_templates\\" })
+    $summary.runtimeInstructionCount = $runtimeFiles.Count
+    $summary.mode = if($EmptyIndex){ 'empty-index' } elseif($ForceSeed){ 'force-seed' } elseif(-not $runtimeFiles.Count){ 'empty-post-seed' } else { 'preserve-or-seeded-once' }
+    $summary.timestamp = (Get-Date).ToString('o')
+    # Attempt to read runtime package version
+    try { $pkgDest = Get-Content (Join-Path $Destination 'package.json') -Raw | ConvertFrom-Json; $summary.version = $pkgDest.version } catch { $summary.version = 'unknown' }
+  } catch {
+    $summary.error = $_.Exception.Message
+  }
+  # Emit as single JSON line (machine-friendly). Using Write-Host to ensure stdout visibility.
+  Write-Host (ConvertTo-Json $summary -Depth 5)
+}

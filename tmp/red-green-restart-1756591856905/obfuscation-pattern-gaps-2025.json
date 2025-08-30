@@ -1,0 +1,30 @@
+{
+  "id": "obfuscation-pattern-gaps-2025",
+  "title": "Obfuscation Pattern Coverage Gaps - 2025 Tracking (explicit red/green)",
+  "body": "Explicit red/green test variant to validate persistence across restart.",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [],
+  "sourceHash": "854592ec019102e76327c1ac05c7e0118b089e8d480696f3a624c7fca2b1b598",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T22:10:57.291Z",
+  "updatedAt": "2025-08-30T22:10:57.291Z",
+  "riskScore": 100,
+  "owner": "team.platform-enablement",
+  "version": "1.0.0",
+  "status": "approved",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T22:10:57.291Z",
+  "nextReviewDue": "2025-09-29T22:10:57.291Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T22:10:57.291Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Explicit red/green test variant to validate persistence across restart."
+}

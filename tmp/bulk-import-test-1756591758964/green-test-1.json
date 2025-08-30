@@ -1,0 +1,32 @@
+{
+  "id": "green-test-1",
+  "title": "Green Test Entry",
+  "body": "This should import successfully",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "test"
+  ],
+  "sourceHash": "6235bc0775f6f89d77082c0a0929fb5638005a3c0d33f2a9747d23cb4a98181e",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-30T22:09:19.255Z",
+  "updatedAt": "2025-08-30T22:09:19.255Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T22:09:19.255Z",
+  "nextReviewDue": "2025-11-28T22:09:19.255Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T22:09:19.255Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "This should import successfully"
+}

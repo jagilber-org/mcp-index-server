@@ -9,8 +9,7 @@ import { spawnSync } from 'child_process';
 // Lightweight ambient declarations to avoid requiring @types/node in test context
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const process: any; // provided by Node at runtime
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-declare const Buffer: unknown; // suppress unused Buffer warning (not required directly here)
+// (Removed unused Buffer ambient to satisfy no-unused-vars; Node provides Buffer if needed.)
 
 // Give this hook a timeout larger than the internal waitForDist window so we never fail *before* the poller
 // exhausts its attempts. (Previous flake: hook default 10s < waitForDist 18s => premature 62‑suite cascades.)

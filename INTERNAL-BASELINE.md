@@ -241,6 +241,7 @@ No execution until explicitly approved.
 |-----------------|-------|--------|--------|--------------|
 | PENDING | 0 | Snapshot branch + archive | PENDING | Will record HASH_HEAD |
 | 2025-08-30 09:58:15Z | 0 | Snapshot commit + archive | CREATED | 89b6938f16ef03923b4cea2f4272d589a9748bb5 snapshot-20250830-095815-89b6938f16ef03923b4cea2f4272d589a9748bb5.zip |
+| 2025-08-30 10:00:10Z | 1 | Hard reset & clean | CLEAN | 3583ad46d135fd8730b0590668262b00b8a19be4 |
 
 Logging Rules:
 

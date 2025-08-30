@@ -22,7 +22,10 @@
   // External portable client tree is treated as vendored (kept out of typed lint scope) – fully ignored
   "portable-mcp-client/**",
     // Defensive: re-created wrapper placeholder file should be ignored if it reappears
-  "src/portableClientWrapper.d.ts"
+  "src/portableClientWrapper.d.ts",
+  // Declaration guard script (no type-aware lint needed)
+  "scripts/guard-declarations.mjs",
+  "scripts/purge-extra-decls.mjs"
   ],
   "overrides": [
     {

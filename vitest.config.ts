@@ -7,12 +7,15 @@ export default defineConfig({
   // (multiple workers were triggering overlapping deploy-local.ps1 executions causing file locks)
   pool: 'forks',
   maxWorkers: 1,
+  include: ['src/tests/**/*.spec.ts'],
     // Phase 4 isolation: exclude parked / legacy high-churn suites from discovery
     // Ensures only minimal invariant specs (createReadSmoke, portableCrudAtomic, instructionsAddPersistence,
     // plus governance directive spec) are executed during baseline restoration phases.
     exclude: [
       'src/tests._park/**',
       'src/tests._legacy/**'
+  ,'dist/**'
+  ,'node_modules/**'
     ],
     coverage: {
       exclude: [

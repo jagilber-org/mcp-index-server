@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { spawn } from 'child_process';
-import path from 'path';
-import { StdioFramingParser, buildContentLengthFrame } from './util/stdioFraming.js';
+import { buildContentLengthFrame } from './util/stdioFraming.js';
+import { performHandshake } from './util/handshakeHelper.js';
 
 // Minimal create→read contract smoke test against production deployment layout
 // Fails fast on protocol contamination (non-JSON stdout lines containing braces/quotes)
@@ -9,27 +8,17 @@ import { StdioFramingParser, buildContentLengthFrame } from './util/stdioFraming
 describe('createReadSmoke', () => {
   it('initialize → tools/list → add → get works', async () => {
     const PRODUCTION_DIR = 'C:/mcp/mcp-index-server-prod';
-    const START_SCRIPT = path.join(PRODUCTION_DIR, 'start.ps1');
     const TEST_ID = 'smoke-' + Date.now();
 
-    const server = spawn('pwsh', ['-NoProfile', '-Command', `./${path.basename(START_SCRIPT)} -EnableMutation`], {
-      cwd: PRODUCTION_DIR,
-      env: { ...process.env, INSTRUCTIONS_DIR: path.join(PRODUCTION_DIR, 'instructions') },
-      stdio: 'pipe'
-    });
-
-  const parser = new StdioFramingParser();
+  // Use helper (node server) instead of PowerShell start script for deterministic handshake speed.
+  const { server, parser } = await performHandshake({ cwd: PRODUCTION_DIR, protocolVersion:'2025-06-18' });
   let stdoutText = '';
   let stderrText = '';
-  server.stdout.on('data', chunk => { const text = chunk.toString(); stdoutText += text; parser.push(text); });
-  server.stderr.on('data', c => { const t = c.toString(); stderrText += t; });
+  server.stdout.on('data', chunk => { stdoutText += chunk.toString(); });
+  server.stderr.on('data', c => { stderrText += c.toString(); });
   const sendCL = (m: Record<string, unknown>) => server.stdin.write(buildContentLengthFrame(m));
-  const handshakeMax = Math.max(8000, parseInt(process.env.TEST_HANDSHAKE_READY_TIMEOUT_MS || '12000',10));
-  const wait = (id: number, ms = handshakeMax) => parser.waitForId(id, ms, 35);
-
-  // Send initialize immediately; rely on wait() timeout for readiness.
-  sendCL({ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2024-11-05', capabilities:{ tools:{ listChanged:true } }, clientInfo:{ name:'smoke', version:'1.0.0'} } });
-  const init = await wait(1, handshakeMax);
+  const wait = (id: number, ms = 10000) => parser.waitForId(id, ms, 35);
+  const init = parser.findById(1)!; // already waited in helper
     expect(init.error,'init error').toBeFalsy();
 
     // Request tool list (may return either string[] or object[] with name properties per spec evolution)

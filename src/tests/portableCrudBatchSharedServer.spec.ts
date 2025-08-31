@@ -21,21 +21,18 @@
  *  - Intentionally minimal polling; atomic test fails fast to surface races.
  */
 import { describe, it, expect } from 'vitest';
-import { spawn } from 'child_process';
-import { StdioFramingParser, buildContentLengthFrame } from './util/stdioFraming.js';
+import { buildContentLengthFrame, StdioFramingParser } from './util/stdioFraming.js';
+import { performHandshake } from './util/handshakeHelper.js';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
 
-function startServer(instructionsDir: string) {
-  const dist = path.join(__dirname, '../../dist/server/index.js');
-  if (!fs.existsSync(dist)) throw new Error('Dist server entry missing; build before running tests');
-  const env = { ...process.env, MCP_ENABLE_MUTATION: '1', INSTRUCTIONS_DIR: instructionsDir } as Record<string,string>;
-  return spawn(process.execPath, [dist], { stdio: ['pipe','pipe','pipe'], env });
+async function startServer(instructionsDir: string){
+  return performHandshake({ cwd: path.join(__dirname,'../../'), extraEnv:{ INSTRUCTIONS_DIR: instructionsDir } });
 }
 
-function sendCL(p: ReturnType<typeof startServer>, msg: unknown){ p.stdin?.write(buildContentLengthFrame(msg)); }
-async function waitForId(parser: StdioFramingParser, id: number, timeoutMs=6000){ return parser.waitForId(id, timeoutMs, 40); }
+function sendCL(proc: import('child_process').ChildProcessWithoutNullStreams, msg: unknown){ proc.stdin.write(buildContentLengthFrame(msg)); }
+async function waitForId(parser: StdioFramingParser, id: number, timeoutMs=8000){ return parser.waitForId(id, timeoutMs, 40); }
 
 function parsePayload<T>(line: string | undefined): T {
   if(!line) throw new Error('missing line');
@@ -51,16 +48,9 @@ describe('Portable CRUD Batch (shared single server)', () => {
     const instructionsDir = path.join(tmpRoot, 'instructions');
     fs.mkdirSync(instructionsDir, { recursive:true });
 
-    const server = startServer(instructionsDir);
-  const parser = new StdioFramingParser();
+  const { server, parser } = await startServer(instructionsDir);
   const err: string[] = [];
-  server.stdout.on('data', d=> parser.push(d.toString()));
   server.stderr.on('data', d=> err.push(...d.toString().trim().split(/\n+/)) );
-
-    // Initialize
-  sendCL(server, { jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'portable-batch', version:'0' }, capabilities:{ tools:{ listChanged:true } } } });
-  const initTimeout = Math.max(8000, parseInt(process.env.TEST_HANDSHAKE_READY_TIMEOUT_MS || '12000',10));
-  await waitForId(parser,1,initTimeout);
 
     const now = Date.now();
     const atomicId = `batch-atomic-${now}`;

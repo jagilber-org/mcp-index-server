@@ -37,6 +37,7 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeBody } from './testUtils.js';
 import { spawn } from 'child_process';
+import { StdioFramingParser, buildContentLengthFrame } from './util/stdioFraming.js';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
@@ -95,9 +96,8 @@ function startServer(customInstructionsDir?: string) {
   return spawn(process.execPath, [dist], { stdio: ['pipe', 'pipe', 'pipe'], env });
 }
 
-function send(p: ReturnType<typeof startServer>, msg: unknown) { p.stdin?.write(JSON.stringify(msg) + '\n'); }
-function findLine(lines: string[], id: number) { return lines.find(l => { try { return JSON.parse(l).id === id; } catch { return false; } }); }
-async function waitFor(fn: () => boolean, timeoutMs = 6000, interval = 40) { const s = Date.now(); while (Date.now() - s < timeoutMs) { if (fn()) return; await new Promise(r => setTimeout(r, interval)); } throw new Error('timeout'); }
+function sendCL(p: ReturnType<typeof startServer>, msg: unknown) { p.stdin?.write(buildContentLengthFrame(msg)); }
+async function waitForId(parser: StdioFramingParser, id: number, timeoutMs=8000){ return parser.waitForId(id, timeoutMs, 40); }
 // Parse a JSON-RPC line and attempt to unwrap tools/call textual JSON content.
 function parsePayload<T>(line: string | undefined): T {
   if (!line) throw new Error('missing line');
@@ -119,39 +119,41 @@ describe('Portable CRUD Parameterized', () => {
   if (!useRepoDir) fs.mkdirSync(instructionsDir, { recursive: true });
 
     const server = startServer(instructionsDir);
-    const out: string[] = []; const err: string[] = [];
-    server.stdout.on('data', d => out.push(...d.toString().trim().split(/\n+/)));
-    server.stderr.on('data', d => err.push(...d.toString().trim().split(/\n+/)));
+  const parser = new StdioFramingParser();
+  const err: string[] = [];
+  server.stdout.on('data', d => parser.push(d.toString()));
+  server.stderr.on('data', d => err.push(...d.toString().trim().split(/\n+/)));
 
-    send(server, { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'portable-crud-param', version: '0' }, capabilities: { tools: {} } } });
-    await waitFor(() => !!findLine(out, 1));
+  sendCL(server, { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'portable-crud-param', version: '0' }, capabilities: { tools: { listChanged: true } } } });
+  const initTimeout = Math.max(8000, parseInt(process.env.TEST_HANDSHAKE_READY_TIMEOUT_MS || '12000',10));
+  await waitForId(parser, 1, initTimeout);
 
     const summary: { id: string; created: boolean; updated: boolean; deleted: boolean; roundTripHash?: string }[] = [];
 
     for (let i = 0; i < entries.length; i++) {
       const e = entries[i];
       // CREATE
-      send(server, { jsonrpc: '2.0', id: 100 + i * 10 + 1, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'add', entry: { ...e }, overwrite: true, lax: true } } });
-      await waitFor(() => !!findLine(out, 100 + i * 10 + 1));
+  sendCL(server, { jsonrpc: '2.0', id: 100 + i * 10 + 1, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'add', entry: { ...e }, overwrite: true, lax: true } } });
+  await waitForId(parser, 100 + i * 10 + 1);
   interface AddResp { id?: string; verified?: boolean; error?: string; item?: { id?: string; body?: string } }
-  const addPayload = parsePayload<AddResp>(findLine(out, 100 + i * 10 + 1));
+  const addPayload = parsePayload<AddResp>(parser.findById(100 + i * 10 + 1)?.raw);
       expect(addPayload.error).toBeUndefined();
       expect(addPayload.verified).toBe(true);
 
       // LIST immediate
-      send(server, { jsonrpc: '2.0', id: 100 + i * 10 + 2, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'list' } } });
-      await waitFor(() => !!findLine(out, 100 + i * 10 + 2));
+  sendCL(server, { jsonrpc: '2.0', id: 100 + i * 10 + 2, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'list' } } });
+  await waitForId(parser, 100 + i * 10 + 2);
   interface ListResp { items?: Array<{ id: string }>; error?: string }
-  const listPayload = parsePayload<ListResp>(findLine(out, 100 + i * 10 + 2));
+  const listPayload = parsePayload<ListResp>(parser.findById(100 + i * 10 + 2)?.raw);
   expect(listPayload.error).toBeUndefined();
   expect(Array.isArray(listPayload.items)).toBe(true);
   expect((listPayload.items||[]).map(x => x.id)).toContain(e.id);
 
       // GET immediate
-      send(server, { jsonrpc: '2.0', id: 100 + i * 10 + 3, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'get', id: e.id } } });
-      await waitFor(() => !!findLine(out, 100 + i * 10 + 3));
+  sendCL(server, { jsonrpc: '2.0', id: 100 + i * 10 + 3, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'get', id: e.id } } });
+  await waitForId(parser, 100 + i * 10 + 3);
       interface GetResp { item?: { id?: string; body?: string; sourceHash?: string }; error?: string }
-      const getPayload = parsePayload<GetResp>(findLine(out, 100 + i * 10 + 3));
+  const getPayload = parsePayload<GetResp>(parser.findById(100 + i * 10 + 3)?.raw);
       expect(getPayload.error).toBeUndefined();
       expect(getPayload.item?.id).toBe(e.id);
       if (getPayload.item?.body) {
@@ -160,10 +162,10 @@ describe('Portable CRUD Parameterized', () => {
 
       // UPDATE (idempotent overwrite with small body append) + poll until visible
       const updatedBody = e.body + '\nUPDATE:' + Date.now();
-      send(server, { jsonrpc: '2.0', id: 100 + i * 10 + 4, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'add', entry: { ...e, body: updatedBody }, overwrite: true, lax: true } } });
-      await waitFor(() => !!findLine(out, 100 + i * 10 + 4));
+  sendCL(server, { jsonrpc: '2.0', id: 100 + i * 10 + 4, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'add', entry: { ...e, body: updatedBody }, overwrite: true, lax: true } } });
+  await waitForId(parser, 100 + i * 10 + 4);
   interface UpdateResp { id?: string; verified?: boolean; error?: string; body?: string; item?: { body?: string } }
-  const updPayload = parsePayload<UpdateResp>(findLine(out, 100 + i * 10 + 4));
+  const updPayload = parsePayload<UpdateResp>(parser.findById(100 + i * 10 + 4)?.raw);
   expect(updPayload.error).toBeUndefined();
   expect(updPayload.verified).toBe(true);
 
@@ -172,10 +174,10 @@ describe('Portable CRUD Parameterized', () => {
   const maxPolls = 14; // ~14 * (waitFor + 50ms) < test timeout
       for (let attempt = 0; attempt < maxPolls && !updatedProbe; attempt++) {
         const pollId = 100 + i * 10 + 50 + attempt; // avoid collision with other fixed ids
-        send(server, { jsonrpc: '2.0', id: pollId, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'get', id: e.id } } });
-        await waitFor(() => !!findLine(out, pollId), 1500, 35);
+  sendCL(server, { jsonrpc: '2.0', id: pollId, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'get', id: e.id } } });
+  await waitForId(parser, pollId, 1500);
   interface GetPollResp { item?: { body?: string }; body?: string }
-  const polled = parsePayload<GetPollResp>(findLine(out, pollId));
+  const polled = parsePayload<GetPollResp>(parser.findById(pollId)?.raw);
   // Cast to generic record shape accepted by normalizeBody (test-level loose typing)
   const candidates: Array<unknown> = [normalizeBody(updPayload as unknown as Record<string, unknown>), normalizeBody(polled as unknown as Record<string, unknown>)];
   updatedProbe = candidates.find(v => typeof v === 'string' && (v as string).includes('UPDATE:')) as string | undefined;
@@ -189,13 +191,13 @@ describe('Portable CRUD Parameterized', () => {
       expect(updatedProbe && updatedProbe.includes('UPDATE:'), 'Expected at least one body variant containing UPDATE:').toBe(true);
 
       // DELETE
-      send(server, { jsonrpc: '2.0', id: 100 + i * 10 + 6, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'remove', id: e.id } } });
-      await waitFor(() => !!findLine(out, 100 + i * 10 + 6));
+  sendCL(server, { jsonrpc: '2.0', id: 100 + i * 10 + 6, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'remove', id: e.id } } });
+  await waitForId(parser, 100 + i * 10 + 6);
 
       // LIST after delete -> should not contain
-      send(server, { jsonrpc: '2.0', id: 100 + i * 10 + 7, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'list' } } });
-      await waitFor(() => !!findLine(out, 100 + i * 10 + 7));
-      const listAfterDelete = parsePayload<{ items: Array<{ id: string }> }>(findLine(out, 100 + i * 10 + 7));
+  sendCL(server, { jsonrpc: '2.0', id: 100 + i * 10 + 7, method: 'tools/call', params: { name: 'instructions/dispatch', arguments: { action: 'list' } } });
+  await waitForId(parser, 100 + i * 10 + 7);
+  const listAfterDelete = parsePayload<{ items: Array<{ id: string }> }>(parser.findById(100 + i * 10 + 7)?.raw);
       expect(listAfterDelete.items.map(x => x.id)).not.toContain(e.id);
 
       summary.push({ id: e.id, created: true, updated: !!updatedProbe, deleted: true });
@@ -212,7 +214,7 @@ describe('Portable CRUD Parameterized', () => {
         fs.mkdirSync(logDir, { recursive: true });
         const rawPath = path.join(logDir, `portable-crud-param-raw-${ts}.jsonl`);
         // Only write lines that look like JSON objects OR start with '{'. Retain others for full fidelity.
-        const toWrite = out.join('\n');
+  const toWrite = parser.frames.map(f=>f.raw).join('\n');
         fs.writeFileSync(rawPath, toWrite, 'utf8');
         // eslint-disable-next-line no-console
         console.log('[portable-crud-param][raw-log-saved]', rawPath);

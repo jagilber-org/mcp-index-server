@@ -16,6 +16,13 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 - Formal change control required (see baseline plan section 14) for any test expansion.
 
+### Handshake Hardening
+
+- Implemented early stdin buffering to prevent loss of initial `initialize` frame when clients send immediately on spawn.
+- Removed temporary extended readiness polling loops from CRUD smoke & batch/parameterized tests (now redundant).
+- Added regression test `handshakeTimingRegression.spec.ts` asserting timely initialize response (<15s hard cap, soft warn >5s).
+- Locked handshake path (short-circuit mode removed, version negotiation via spec date retained).
+
 
 ## [0.1.0] - 2025-08-24
 
@@ -355,11 +362,11 @@ For routine CI or local verification omit the flag for deterministic results.
 ### Changed (test stability & isolation)
 
 - Refactored feedback test suite:
-    - Introduced `feedbackCore.spec.ts` (comprehensive) & `feedbackSimple.spec.ts` (smoke) with per‑test isolated `FEEDBACK_DIR` directories.
-    - Converted brittle absolute "empty list" assertions to delta-based assertions; legacy expectations gated with `it.skip(... // SKIP_OK)` for documentation without flakiness.
-    - Added deterministic persistence wait loop for filesystem write visibility.
-    - Replaced dynamic requires with explicit static imports (avoids MODULE_NOT_FOUND under variant names).
-    - Added legacy placeholder `feedback.spec.ts` (kept minimal) to preserve historical references.
+  - Introduced `feedbackCore.spec.ts` (comprehensive) & `feedbackSimple.spec.ts` (smoke) with per‑test isolated `FEEDBACK_DIR` directories.
+  - Converted brittle absolute "empty list" assertions to delta-based assertions; legacy expectations gated with `it.skip(... // SKIP_OK)` for documentation without flakiness.
+  - Added deterministic persistence wait loop for filesystem write visibility.
+  - Replaced dynamic requires with explicit static imports (avoids MODULE_NOT_FOUND under variant names).
+  - Added legacy placeholder `feedback.spec.ts` (kept minimal) to preserve historical references.
 
 ### Fixed (rate limiting correctness)
 

@@ -11,6 +11,24 @@
  * - Read-only interface for status, tools, and metrics
  * - Not for MCP client communication - admin use only
  */
+// Early stdin buffering (handshake hardening):
+// Some fast clients send the initialize frame immediately after spawn. If the
+// SDK server's stdin listener isn't attached yet, those bytes can sit without
+// a consumer until the listener is registered. In practice we observed cases
+// where initialize never produced a response in ~30s test windows. To harden
+// the handshake we capture ALL stdin data prior to startSdkServer() completing
+// and then re-emit the buffered chunks once the SDK has attached its handlers.
+// This ensures spec compliance: an initialize request always yields either a
+// success or a version negotiation error – never silent drop.
+const __earlyInitChunks: Buffer[] = [];
+let __sdkReady = false;
+// Allow opt-out (e.g., diagnostic comparison) via MCP_DISABLE_EARLY_STDIN_BUFFER=1
+const __bufferEnabled = process.env.MCP_DISABLE_EARLY_STDIN_BUFFER !== '1';
+// We attach the temporary listener immediately so even synchronous module load
+// time is covered.
+function __earlyCapture(chunk: Buffer){ if(!__sdkReady && __bufferEnabled) __earlyInitChunks.push(Buffer.from(chunk)); }
+try { if(__bufferEnabled) process.stdin.on('data', __earlyCapture); } catch { /* ignore */ }
+
 import { listRegisteredMethods } from './registry';
 import { startSdkServer } from './sdkServer';
 import '../services/handlers.instructions';
@@ -264,6 +282,19 @@ export async function main(){
     }
   }
   await startSdkServer();
+  // Mark SDK ready & replay any buffered stdin chunks exactly once.
+  __sdkReady = true;
+  if(__bufferEnabled){
+    try { process.stdin.off('data', __earlyCapture); } catch { /* ignore */ }
+    if(__earlyInitChunks.length){
+      try {
+        for(const c of __earlyInitChunks){ process.stdin.emit('data', c); }
+      } catch { /* ignore */ }
+      // eslint-disable-next-line no-console
+      if(process.env.MCP_LOG_DIAG === '1') console.error(`[handshake-buffer] replayed ${__earlyInitChunks.length} early chunk(s)`);
+      __earlyInitChunks.length = 0;
+    }
+  }
   process.stderr.write('[startup] SDK server started (stdio only)\n');
 }
 

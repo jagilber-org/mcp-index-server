@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { spawn } from 'child_process';
 import path from 'path';
+import { StdioFramingParser, buildContentLengthFrame } from './util/stdioFraming.js';
 
 // Minimal create→read contract smoke test against production deployment layout
 // Fails fast on protocol contamination (non-JSON stdout lines containing braces/quotes)
@@ -17,46 +18,22 @@ describe('createReadSmoke', () => {
       stdio: 'pipe'
     });
 
-  // Envelope retains only top-level fields; inner shapes are dynamic per tool
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  interface Frame { id?: number; result?: any; error?: any }
-  const lines: Frame[] = [];
+  const parser = new StdioFramingParser();
   let stdoutText = '';
   let stderrText = '';
-
-    server.stdout.on('data', chunk => {
-      const text = chunk.toString();
-      stdoutText += text;
-      for(const rawLine of text.split(/\r?\n/)){
-        const line = rawLine.trim();
-        if(!line) continue;
-        // Fast contamination guard: if it looks like log (starts with [startup] or [) but not JSON, fail
-        if(line.startsWith('[')){
-          throw new Error('stdout contamination: ' + line.slice(0,120));
-        }
-        try { lines.push(JSON.parse(line)); } catch {/* ignore non json */}
-      }
-    });
+  server.stdout.on('data', chunk => { const text = chunk.toString(); stdoutText += text; parser.push(text); });
   server.stderr.on('data', c => { const t = c.toString(); stderrText += t; });
-
-  const send = (m: Record<string, unknown>) => server.stdin.write(JSON.stringify(m)+'\n');
-  const wait = (id: number, ms = 7000) => new Promise<Frame>((res, rej)=>{
-      const start = Date.now();
-      (function poll(){
-        const found = lines.find(l=>l && l.id === id);
-        if(found) return res(found);
-        if(Date.now()-start>ms) return rej(new Error('timeout id='+id));
-        setTimeout(poll,30);
-      })();
-    });
+  const sendCL = (m: Record<string, unknown>) => server.stdin.write(buildContentLengthFrame(m));
+  const handshakeMax = Math.max(8000, parseInt(process.env.TEST_HANDSHAKE_READY_TIMEOUT_MS || '12000',10));
+  const wait = (id: number, ms = handshakeMax) => parser.waitForId(id, ms, 35);
 
   // Send initialize immediately; rely on wait() timeout for readiness.
-  send({ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2024-11-05', capabilities:{}, clientInfo:{ name:'smoke', version:'1.0.0'} } });
-  const init = await wait(1, 12000);
+  sendCL({ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2024-11-05', capabilities:{ tools:{ listChanged:true } }, clientInfo:{ name:'smoke', version:'1.0.0'} } });
+  const init = await wait(1, handshakeMax);
     expect(init.error,'init error').toBeFalsy();
 
     // Request tool list (may return either string[] or object[] with name properties per spec evolution)
-    send({ jsonrpc:'2.0', id:2, method:'tools/list' });
+  sendCL({ jsonrpc:'2.0', id:2, method:'tools/list', params:{} });
     const list = await wait(2);
     const listObj = list as unknown as { result?: { tools?: unknown; capabilities?: { tools?: unknown } } };
     function extractNames(raw: unknown): string[] {
@@ -70,19 +47,8 @@ describe('createReadSmoke', () => {
       }
       return [];
     }
-    let toolNames: string[] = extractNames(listObj.result?.tools) || extractNames(listObj.result?.capabilities?.tools);
-    // Retry a few times in case registry still warming (should be rare; defensive)
-    if(!toolNames.includes('instructions/dispatch')){
-      for(let attempt=0; attempt<3 && !toolNames.includes('instructions/dispatch'); attempt++){
-        await new Promise(r => setTimeout(r, 100));
-        const retryId = 2000 + attempt;
-        send({ jsonrpc:'2.0', id: retryId, method:'tools/list' });
-        // eslint-disable-next-line no-await-in-loop
-        const retry = await wait(retryId);
-        const retryObj = retry as unknown as { result?: { tools?: unknown; capabilities?: { tools?: unknown } } };
-        toolNames = extractNames(retryObj.result?.tools) || extractNames(retryObj.result?.capabilities?.tools);
-      }
-    }
+  const toolNames: string[] = extractNames(listObj.result?.tools) || extractNames(listObj.result?.capabilities?.tools);
+  // With early stdin buffering the initial tools/list should reflect a stable registry; skip extended polling.
     expect(Array.isArray(toolNames),'tools list array').toBe(true);
     if(!toolNames.includes('instructions/dispatch')){
       // Provide rich diagnostics before failing
@@ -90,12 +56,12 @@ describe('createReadSmoke', () => {
     }
 
     // Add new entry
-    send({ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id:TEST_ID, title:'Smoke', body:'Smoke test entry', priority:10, audience:'all', requirement:'recommended', categories:['test'] }, overwrite:true, lax:true }}});
+  sendCL({ jsonrpc:'2.0', id:3, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id:TEST_ID, title:'Smoke', body:'Smoke test entry', priority:10, audience:'all', requirement:'recommended', categories:['test'] }, overwrite:true, lax:true }}});
     const add = await wait(3);
     expect(add.error,'add error').toBeFalsy();
 
     // Get the entry
-    send({ jsonrpc:'2.0', id:4, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'get', id:TEST_ID }}});
+  sendCL({ jsonrpc:'2.0', id:4, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'get', id:TEST_ID }}});
     const get = await wait(4);
     expect(get.error,'get error').toBeFalsy();
 

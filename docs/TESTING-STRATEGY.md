@@ -25,7 +25,7 @@ This document describes the layered test approach to continuously expand coverag
    - Drift detection only when governance projection changes.
 
 ## Expansion Playbook
-
+ 
 For every new defect class discovered:
 1. Reproduce minimal failing scenario manually or via script.  
 2. Add failing test in the lowest viable layer (unit < service < protocol).  
@@ -59,3 +59,19 @@ For every new defect class discovered:
 - Never broaden a property until it finds at least one real issue historically (evidence-driven expansion).  
 - Keep protocol tests deterministic (avoid racey timing; prefer polling wait utilities).  
 - Fast feedback: majority of suite under 10s local.
+
+## Mandatory CRUD Feedback Red/Green Workflow (Mirrored Policy)
+
+This section mirrors the authoritative policy in `FEEDBACK-DEFECT-LIFECYCLE.md` and is included here so test authors have zero ambiguity when confronted with CRUD / persistence anomalies (phantom writes, visibility gaps, inconsistent list vs get, multi-client divergence).
+
+High-level enforcement (concise):
+
+1. RED test first (`*.red.spec.ts`) using ONLY reporter-provided IDs.
+2. No handler/service code changes until RED test committed & failing in CI.
+3. RED test MUST assert: add contract, list inclusion, per-ID get visibility, catalog hash (or synthetic surrogate) mutation.
+4. Capture evidence (counts, missing IDs) in an analysis doc before any fix.
+5. Apply minimal atomic persistence fix (write → verify → index update) then convert RED to GREEN (rename/duplicate).
+6. Add negative + multi-client visibility regression tests post-fix.
+7. CI guard: CRUD issue closure requires RED→GREEN pair reference.
+
+Refer to the lifecycle doc for the detailed invariant table and justification. Any deviation requires explicit documented waiver in both docs.

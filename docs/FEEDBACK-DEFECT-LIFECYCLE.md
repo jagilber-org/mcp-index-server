@@ -123,6 +123,7 @@ Current instruction schemaVersion: 2 (no change in this cycle)
 13. Archive analysis + keep tests.
 
 ---
+ 
 ## Current Cycle Outcome Summary
 
 | Aspect | Result |
@@ -139,6 +140,7 @@ Current instruction schemaVersion: 2 (no change in this cycle)
 | Docs pending | Need add-response contract section in README & TOOLS docs |
 
 ---
+ 
 ## Action Items (Open)
 
 | Item | Priority |
@@ -152,3 +154,62 @@ Current instruction schemaVersion: 2 (no change in this cycle)
 
 ---
 Prepared to institutionalize feedback-driven hardening. Adopt this file as the canonical playbook for future cycles.
+
+---
+
+## Mandatory CRUD Feedback Red/Green Workflow (Critical Policy)
+
+This policy was established after reproducing a production persistence divergence where multiple `add` operations reported success yet catalog `list` count and `get` visibility (plus hash) remained unchanged for some IDs. To prevent ANY speculative or premature fixes that could mask root causes, the following workflow is now mandatory for ALL feedback reports alleging CRUD or persistence anomalies (visibility, phantom writes, skipped vs notFound contradictions, multi‑client divergence):
+
+1. **Freeze Code Paths**
+
+- Absolutely no handler / service modifications (instructions add/get/list/remove, indexing, hashing) until a deterministic RED test exists.
+- Only permitted pre‑fix changes: adding test files, adding documentation of the issue, adding diagnostic NON-MUTATING logging (guarded behind env flags if noisy).
+
+1. **Author Deterministic RED Test**
+
+- File must carry `.red.spec.ts` suffix while failing (e.g. `instructionsPersistenceDivergence.red.spec.ts`).
+- Use ONLY reporter‑supplied IDs and bodies (or a constant minimal body if body content is irrelevant) – never generate synthetic random IDs unless explicitly part of the repro.
+- Assertions MUST cover: (a) add result contract (created / overwritten / skipped), (b) subsequent list inclusion, (c) direct read success, (d) catalog hash change (or synthetic hash surrogate) when new logical entries are added.
+- Failure message text should clearly encode the invariant ("Post-add count should increase by N", "Read should succeed for \<id\>").
+
+1. **Evidence Lock**
+
+- Run the RED test in isolation and capture: initial count/hash, per‑ID add results, post‑list count/hash, which IDs are missing.
+- If only a subset materializes (e.g. 4/5), record the exact missing ID(s) in a checkpoint doc (`docs/FEEDBACK-ANALYSIS-*.md`) BEFORE any code change.
+
+1. **Minimal Fix Cycle**
+
+- Implement smallest change set to guarantee atomic, durable, and visible catalog mutation (write → fsync/close → in‑memory index update → read-back verify).
+- If write or verify fails, surface explicit error (do NOT claim created/skipped) and DO NOT mutate in‑memory index.
+- Re-run the RED test; upon passing, rename file (drop `.red`) or duplicate into a GREEN regression spec if historical naming required.
+
+1. **Post-Fix Hardening**
+
+- Add a companion negative test (e.g. forced simulated write failure → expect error path, no partial visibility).
+- Add multi‑client visibility test ensuring second client observes the new IDs without restart.
+
+1. **Documentation & Governance**
+
+- Update this lifecycle file and `TESTING-STRATEGY.md` (policy section) with any nuance discovered (e.g. need for synthetic hash due to absence of exposed server hash API).
+- Append CHANGELOG entry referencing the RED test filename to provide forensic linkage.
+
+1. **Enforcement Gate**
+
+- CI should fail if a feedback-labeled issue (type CRUD) is closed without a corresponding RED→GREEN test pair or documented rationale for contradiction.
+- Lint/Future: optional script scans for `.red.spec.ts` still passing (should fail intentionally or be renamed once green).
+
+### Invariants Locked by Policy
+
+| Invariant | Rationale | Detection Vector |
+|-----------|-----------|------------------|
+| add success must increase list count (unless overwriting existing ID) | Prevent phantom writes | RED test count delta |
+| add success + !skipped implies readable via get | Eliminate skip/notFound contradiction | RED test read loop |
+| batch of unique new IDs changes catalog hash | Ensures hash reflects logical state | Synthetic hash comparison (until native exposed) |
+| multi-client sees new instruction within bounded delay | Confirms synchronization/visibility | Multi-client RED/Green spec |
+
+### Synthetic Hash Justification
+
+Until a stable public tool returns catalog hash for external tests, a deterministic synthetic hash (sorted IDs FNV-1a) is permissible solely for detecting absence of ID deltas. Replace with real hash once exposed to avoid drift between representations.
+
+---

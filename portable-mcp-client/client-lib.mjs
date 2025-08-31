@@ -60,10 +60,66 @@ export async function connect({ command='node', args=[], name='portable-generic-
     if(onOp) { try { onOp(opRecord); } catch {/* ignore */} }
     if(error) throw error; else return response;
   };
-  await client.connect(transport);
+  // Handshake diagnostics & timeout (helps surface deadlocks where neither side sends initialize/ready)
+  const tStart = Date.now();
+  // Slightly extended default to reduce false positives under cold build/start
+  const timeoutMs = parseInt(process.env.PORTABLE_CONNECT_TIMEOUT_MS || '6000', 10);
+  let timedOut = false;
+  if(process.env.PORTABLE_CONNECT_TRACE==='1'){
+    try { console.error('[portable-connect] starting spawn command=', command, 'args=', JSON.stringify(args)); } catch { /* ignore */ }
+  }
+  const connectPromise = client.connect(transport);
+  const raced = await Promise.race([
+    connectPromise,
+    new Promise(res => setTimeout(()=>{ timedOut = true; res(undefined); }, timeoutMs))
+  ]);
+  let handshakeMs = undefined;
+  if(timedOut){
+    try { console.error('[portable-connect] WARNING: connect() timeout after', timeoutMs, 'ms (proceeding; operations likely to fail)'); } catch { /* ignore */ }
+  } else {
+    handshakeMs = Date.now()-tStart;
+    if(process.env.PORTABLE_CONNECT_TRACE==='1'){
+      try { console.error('[portable-connect] handshake complete in', handshakeMs, 'ms'); } catch { /* ignore */ }
+    }
+  }
+  // -----------------------------------------------------------------------
+  // Handshake readiness gating (Step 4 remediation): some racey suites were
+  // calling listTools() immediately after connect() before the initialize
+  // result had fully propagated in underlying transport layers. We actively
+  // probe listTools() with a short backoff loop until it succeeds OR we hit
+  // a secondary readiness timeout. This isolates transient startup latency
+  // (cold builds, first-run JIT) from actual protocol faults and removes
+  // flakiness seen in governance + multi‑client tests.
+  // Config:
+  //   PORTABLE_HANDSHAKE_WAIT_MS  (default 4000) upper bound extra wait
+  //   PORTABLE_HANDSHAKE_INTERVAL_MS (default 125) poll interval
+  //   PORTABLE_HANDSHAKE_TRACE=1 diagnostic logging
+  // On success we record an additional field handshake.toolsListedMs.
+  // -----------------------------------------------------------------------
+  let toolsListedMs; let readinessError;
+  const readinessBudget = parseInt(process.env.PORTABLE_HANDSHAKE_WAIT_MS || '4000',10);
+  const readinessInterval = parseInt(process.env.PORTABLE_HANDSHAKE_INTERVAL_MS || '125',10);
+  const readinessTracing = process.env.PORTABLE_HANDSHAKE_TRACE === '1';
+  const readinessStart = Date.now();
+  if(!timedOut){
+    while(Date.now() - readinessStart < readinessBudget){
+      try {
+        const tl = await client.listTools();
+        if(Array.isArray(tl?.tools)){
+          toolsListedMs = Date.now() - readinessStart;
+          if(readinessTracing) console.error('[portable-connect] tools/list readiness in', toolsListedMs,'ms');
+          break;
+        }
+      } catch(e){ readinessError = e; }
+      await new Promise(r=> setTimeout(r, readinessInterval));
+    }
+    if(toolsListedMs === undefined){
+      if(readinessTracing) console.error('[portable-connect] WARN: tools/list readiness not confirmed within', readinessBudget,'ms', readinessError?('lastErr='+readinessError.message):'');
+    }
+  }
   function getOperationsTimeline(){ return operations.slice(); }
   async function close(){ if(cap){ cap.stream.end(JSON.stringify({ ts: makeTimestamp(), event:'capture-end', lines: cap.lines })+'\n'); } await transport.close(); }
-  return { client, transport, getOperationsTimeline, close, captureFile: cap?.file };
+  return { client, transport, getOperationsTimeline, close, captureFile: cap?.file, handshake: { timedOut, timeoutMs, handshakeMs, toolsListedMs } };
 }
 
 // Create synthetic instruction entries (id, title, body, version, hash placeholder)
@@ -229,10 +285,15 @@ function classifyListObject(obj){
   return { items, count: obj?.count ?? items.length, hash: obj?.hash };
 }
 
-export async function createInstructionClient({ command='node', args=['dist/server/index.js'], forceMutation=true, verbose=false, instructionsDir }={}) {
+export async function createInstructionClient({ command='node', args=['dist/server/index.js'], forceMutation=true, verbose=false, instructionsDir, extraEnv }={}) {
   if(forceMutation && process.env.MCP_ENABLE_MUTATION !== '1') process.env.MCP_ENABLE_MUTATION='1';
   const envOverrides = { MCP_ENABLE_MUTATION: process.env.MCP_ENABLE_MUTATION || (forceMutation? '1':'0') };
   if(instructionsDir){ envOverrides.INSTRUCTIONS_DIR = instructionsDir; }
+  if(extraEnv && typeof extraEnv === 'object'){
+    for(const [k,v] of Object.entries(extraEnv)){
+      if(v !== undefined) envOverrides[k] = String(v);
+    }
+  }
   const { client, transport } = await connect({ command, args, envOverrides });
   // Discover dispatcher vs legacy
   let toolNames=[]; try { const tl = await client.listTools(); toolNames = (tl.tools||[]).map(t=>t.name); } catch(e){ if(verbose) console.error('[ops] tools/list failed', e.message); }

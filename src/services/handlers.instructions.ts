@@ -50,13 +50,17 @@ function guard<TParams, TResult>(name:string, fn:(p:TParams)=>TResult){
   return (p:TParams)=>{ if(!isMutationEnabled()) throw { code:-32601, message:`Mutation disabled. Use instructions/dispatch with action parameter instead of direct ${name} calls. Set MCP_ENABLE_MUTATION=1 to enable direct calls.`, data:{ method:name, alternative: 'instructions/dispatch' } }; return fn(p); };
 }
 
+// Centralized tracing (reuse service-level utilities)
+import { emitTrace, traceEnabled } from './tracing';
+function traceVisibility(){ return traceEnabled(1); }
+
 // Legacy individual instruction handlers removed in favor of unified dispatcher (instructions/dispatch).
 // Internal implementation functions retained below for dispatcher direct invocation.
 export const instructionActions = {
-  list: (p:{category?:string})=>{ const st = ensureLoaded(); let items = st.list; if(p?.category){ const c = p.category.toLowerCase(); items = items.filter(i=> i.categories.includes(c)); } return limitResponseSize({ hash: st.hash, count: items.length, items }); },
+  list: (p:{category?:string; expectId?:string})=>{ const st = ensureLoaded(); let items = st.list; if(p?.category){ const c = p.category.toLowerCase(); items = items.filter(i=> i.categories.includes(c)); } if(traceVisibility()){ try { const dir=getInstructionsDir(); const disk=fs.readdirSync(dir).filter(f=>f.endsWith('.json')); const diskIds=new Set(disk.map(f=>f.slice(0,-5))); const idsSample=items.slice(0,5).map(i=>i.id); const missingOnCatalog=[...diskIds].filter(id=> !st.byId.has(id)); const expectId=p?.expectId; const expectOnDisk= expectId? diskIds.has(expectId): undefined; const expectInCatalog = expectId? st.byId.has(expectId): undefined; emitTrace('[trace:list]', { dir, total: st.list.length, filtered: items.length, sample: idsSample, diskCount: disk.length, missingOnCatalogCount: missingOnCatalog.length, missingOnCatalog: missingOnCatalog.slice(0,5), expectId, expectOnDisk, expectInCatalog }); } catch { /* ignore */ } } return limitResponseSize({ hash: st.hash, count: items.length, items }); },
   listScoped: (p:{ userId?:string; workspaceId?:string; teamIds?: string[] })=>{ const st=ensureLoaded(); const userId=p.userId?.toLowerCase(); const workspaceId=p.workspaceId?.toLowerCase(); const teamIds=(p.teamIds||[]).map(t=>t.toLowerCase()); const all=st.list; const matchUser = userId? all.filter(e=> (e.userId||'').toLowerCase()===userId):[]; if(matchUser.length) return { hash: st.hash, count: matchUser.length, scope:'user', items:matchUser }; const matchWorkspace = workspaceId? all.filter(e=> (e.workspaceId||'').toLowerCase()===workspaceId):[]; if(matchWorkspace.length) return { hash: st.hash, count: matchWorkspace.length, scope:'workspace', items:matchWorkspace }; const teamSet = new Set(teamIds); const matchTeams = teamIds.length? all.filter(e=> Array.isArray(e.teamIds) && e.teamIds.some(t=> teamSet.has(t.toLowerCase()))):[]; if(matchTeams.length) return { hash: st.hash, count: matchTeams.length, scope:'team', items:matchTeams }; const audienceAll = all.filter(e=> e.audience==='all'); return { hash: st.hash, count: audienceAll.length, scope:'all', items: audienceAll }; },
-  get: (p:{id:string})=>{ const st=ensureLoaded(); const item = st.byId.get(p.id); return item? { hash: st.hash, item }: { notFound:true }; },
-  search: (p:{q:string})=>{ const st=ensureLoaded(); const q=(p.q||'').toLowerCase(); const items = st.list.filter(i=> i.title.toLowerCase().includes(q)|| i.body.toLowerCase().includes(q)); return { hash: st.hash, count: items.length, items }; },
+  get: (p:{id:string})=>{ const st=ensureLoaded(); const item = st.byId.get(p.id); if(traceVisibility()){ const dir=getInstructionsDir(); emitTrace('[trace:get]', { dir, id:p.id, found: !!item, total: st.list.length }); } return item? { hash: st.hash, item }: { notFound:true }; },
+  search: (p:{q:string})=>{ const st=ensureLoaded(); const q=(p.q||'').toLowerCase(); const items = st.list.filter(i=> i.title.toLowerCase().includes(q)|| i.body.toLowerCase().includes(q)); if(traceVisibility()){ const dir=getInstructionsDir(); const sample=items.slice(0,5).map(i=>i.id); emitTrace('[trace:search]', { dir, q, matches: items.length, sample }); } return { hash: st.hash, count: items.length, items }; },
   diff: (p:{clientHash?:string; known?:{id:string; sourceHash:string}[]})=>{ const st=ensureLoaded(); const clientHash=p.clientHash; const known=p.known; if(!known && clientHash && clientHash===st.hash) return { upToDate:true, hash: st.hash }; if(known){ const map=new Map<string,string>(); for(const k of known){ if(k && k.id && !map.has(k.id)) map.set(k.id,k.sourceHash); } const added:InstructionEntry[]=[]; const updated:InstructionEntry[]=[]; const removed:string[]=[]; for(const e of st.list){ const prev=map.get(e.id); if(prev===undefined) added.push(e); else if(prev!==e.sourceHash) updated.push(e); } for(const id of map.keys()){ if(!st.byId.has(id)) removed.push(id); } if(!added.length && !updated.length && !removed.length && clientHash===st.hash) return { upToDate:true, hash: st.hash }; return { hash: st.hash, added, updated, removed }; } if(!clientHash || clientHash!==st.hash) return { hash: st.hash, changed: st.list }; return { upToDate:true, hash: st.hash }; },
   export: (p:{ids?:string[]; metaOnly?:boolean})=>{ const st=ensureLoaded(); let items=st.list; if(p?.ids?.length){ const want=new Set(p.ids); items=items.filter(i=>want.has(i.id)); } if(p?.metaOnly){ items=items.map(i=> ({ ...i, body:'' })); } return limitResponseSize({ hash: st.hash, count: items.length, items }); },
   query: (p:{ categoriesAll?:string[]; categoriesAny?:string[]; excludeCategories?:string[]; priorityMin?:number; priorityMax?:number; priorityTiers?:('P1'|'P2'|'P3'|'P4')[]; requirements?: InstructionEntry['requirement'][]; text?:string; limit?:number; offset?:number })=>{ const st=ensureLoaded(); const norm = (arr?:string[])=> Array.from(new Set((arr||[]).filter(x=> typeof x==='string' && x.trim()).map(x=> x.toLowerCase()))); const catsAll = norm(p.categoriesAll); const catsAny = norm(p.categoriesAny); const catsEx = norm(p.excludeCategories); const tierSet = new Set((p.priorityTiers||[]).filter(t=> ['P1','P2','P3','P4'].includes(String(t))) as Array<'P1'|'P2'|'P3'|'P4'>); const reqSet = new Set((p.requirements||[]).filter(r=> ['mandatory','critical','recommended','optional','deprecated'].includes(String(r))) as InstructionEntry['requirement'][]); const prMin = typeof p.priorityMin==='number'? p.priorityMin: undefined; const prMax = typeof p.priorityMax==='number'? p.priorityMax: undefined; const text = (p.text||'').toLowerCase().trim(); let items = st.list; if(catsAll.length){ items = items.filter(e=> catsAll.every(c=> e.categories.includes(c))); } if(catsAny.length){ items = items.filter(e=> e.categories.some(c=> catsAny.includes(c))); } if(catsEx.length){ items = items.filter(e=> !e.categories.some(c=> catsEx.includes(c))); } if(prMin!==undefined){ items = items.filter(e=> e.priority >= prMin); } if(prMax!==undefined){ items = items.filter(e=> e.priority <= prMax); } if(tierSet.size){ items = items.filter(e=> e.priorityTier && tierSet.has(e.priorityTier)); } if(reqSet.size){ items = items.filter(e=> reqSet.has(e.requirement)); } if(text){ items = items.filter(e=> e.title.toLowerCase().includes(text) || e.body.toLowerCase().includes(text) || (e.semanticSummary||'').toLowerCase().includes(text)); } const total = items.length; const limit = Math.min(Math.max((p.limit??100),1),1000); const offset = Math.max((p.offset??0),0); const paged = items.slice(offset, offset+limit); return { hash: st.hash, total, count: paged.length, offset, limit, items: paged, applied: { catsAll, catsAny, catsEx, prMin, prMax, tiers:[...tierSet], requirements:[...reqSet], text: text||undefined } }; },
@@ -248,6 +252,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   if(record.owner==='unowned'){ const auto=resolveOwner(record.id); if(auto){ record.owner=auto; record.updatedAt=new Date().toISOString(); } }
   try { atomicWriteJson(file, record); } catch(err){ return fail((err as Error).message||'write-failed', { id:e.id }); }
   touchCatalogVersion(); invalidate(); let st=ensureLoaded();
+  if(traceVisibility()){ emitTrace('[trace:add:post-write]', { dir, id:e.id, exists: fs.existsSync(file), catalogHas: st.byId.has(e.id), listCount: st.list.length }); }
   // Atomic read-back verification: ensure newly written/overwritten entry is *immediately* visible
   // in the in-memory catalog before declaring success. If not, attempt one forced reload; if still
   // absent (extremely unlikely on local FS), return an error instead of a false positive 'created'.
@@ -291,6 +296,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   }
   if(!atomicVisible){
     logAudit('add', e.id, { created: false, overwritten: false, atomic_readback_failed: true });
+  if(traceVisibility()){ emitTrace('[trace:add:failure]', { dir, id:e.id, fileExists: fs.existsSync(file), catalogHas: st.byId.has(e.id), listCount: st.list.length }); }
     return fail('atomic_readback_failed', { id:e.id, hash: st.hash });
   }
   // Final shape/readability validation: ensure catalog entry is structurally sound before
@@ -308,10 +314,49 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   } catch { /* ignore */ }
   if(!readable){
     logAudit('add', e.id, { created: false, overwritten: false, readback_invalid_shape: true });
+  if(traceVisibility()){ emitTrace('[trace:add:invalid-shape]', { dir, id:e.id }); }
     return fail('readback_invalid_shape', { id:e.id, hash: st.hash });
   }
-  const resp = { id:e.id, created: !exists, overwritten: exists && overwrite, skipped:false, hash: st.hash, verified:true };
+  // Optional STRICT post-write verification (opt-in via MCP_INSTRUCTIONS_STRICT_CREATE=1)
+  // Performs an additional independent read & integrity checks BEFORE returning success.
+  const strictEnabled = process.env.MCP_INSTRUCTIONS_STRICT_CREATE === '1';
+  let strictVerified = false;
+  if(strictEnabled){
+    try {
+      // Direct disk read (bypassing catalog) to verify file contents exactly reflect catalog entry.
+      const rawText = fs.readFileSync(file,'utf8');
+      const rawJson = JSON.parse(rawText) as Partial<InstructionEntry>;
+      // Basic structural assertions
+      const structOk = rawJson.id === e.id && typeof rawJson.body === 'string' && rawJson.body.trim().length>0 && typeof rawJson.title === 'string' && rawJson.title.trim().length>0;
+      if(structOk){
+        // Recompute hash over raw body using same canonicalization rules
+        const bodyForHash = rawJson.body as string;
+        const recomputed = process.env.MCP_CANONICAL_DISABLE === '1'
+          ? crypto.createHash('sha256').update(bodyForHash,'utf8').digest('hex')
+          : hashBody(bodyForHash);
+        const sourceHashMatches = rawJson.sourceHash === recomputed;
+        // Ensure catalog still has the entry and body matches catalog view
+        const catalogRec = st.byId.get(e.id) as InstructionEntry | undefined;
+        const catalogConsistent = !!catalogRec && catalogRec.body === rawJson.body && catalogRec.title === rawJson.title;
+        strictVerified = structOk && sourceHashMatches && catalogConsistent;
+        if(!strictVerified && traceVisibility()){
+          emitTrace('[trace:add:strict-mismatch]', { id:e.id, structOk, sourceHashMatches, catalogConsistent, rawSourceHash: rawJson.sourceHash, recomputed });
+        }
+      } else if(traceVisibility()){
+        emitTrace('[trace:add:strict-struct-fail]', { id:e.id });
+      }
+    } catch(err){
+      if(traceVisibility()) emitTrace('[trace:add:strict-error]', { id:e.id, error: (err as Error).message });
+      strictVerified = false;
+    }
+    if(!strictVerified){
+      logAudit('add', e.id, { created: false, overwritten: false, strict_verification_failed: true });
+      return fail('strict_verification_failed', { id:e.id, hash: st.hash });
+    }
+  }
+  const resp = { id:e.id, created: !exists, overwritten: exists && overwrite, skipped:false, hash: st.hash, verified:true, strictVerified: strictEnabled? true: undefined };
   logAudit('add', e.id, { created: !exists, overwritten: exists && overwrite, verified:true });
+  if(traceVisibility()){ emitTrace('[trace:add:success]', { dir, id:e.id, created: !exists, overwritten: exists && overwrite, listCount: st.list.length }); }
   return resp;
 }));
 

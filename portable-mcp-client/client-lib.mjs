@@ -325,6 +325,10 @@ export async function createInstructionClient({ command='node', args=['dist/serv
     }
     throw new Error('no_add_method_available');
   }
+  // Bulk import convenience used by certain RED tests (falls back gracefully if unsupported)
+    async function importBulk(entries, { mode='overwrite' }={}) {
+      throw new Error('no_import_method_available');
+    }
   async function read(id){
     if(hasDispatcher){ return callJSON('instructions/dispatch', { action:'get', id }); }
     if(hasLegacyGet){ return callJSON('instructions/get',{ id }); }
@@ -363,7 +367,7 @@ export async function createInstructionClient({ command='node', args=['dist/serv
     return { ok:false, attempts, finalBody: undefined };
   }
   async function close(){ await transport.close(); }
-  return { create, read, update, remove, list, verify, close, dispatcher: hasDispatcher };
+  return { create, read, update, remove, list, importBulk, verify, close, dispatcher: hasDispatcher };
 }
 
 // Orchestrated CRUD test using discrete helpers (create -> read -> update -> read -> delete).

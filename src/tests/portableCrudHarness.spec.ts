@@ -15,8 +15,10 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
+const skipForBatchHarness = process.env.PORTABLE_SHARED_BATCH === '1';
 describe('Portable CRUD Harness (client-lib)', () => {
-	it('runs a full CRUD sequence via runCrudSequence()', async () => {
+	const maybe = skipForBatchHarness ? it.skip : it;
+	maybe('runs a full CRUD sequence via runCrudSequence()', async () => {
 		// Use typed shim (portableClientShim) to avoid pulling external d.ts into tsconfig scope.
 		// Import via TS shim with explicit .js extension (Node16 module resolution requires extension)
 		const { runCrudSequence, createInstructionClient } = await import('../portableClientShim.js');

@@ -62,7 +62,7 @@ export interface InstructionClient {
   close(): Promise<void>;
   dispatcher: boolean;
 }
-export interface CreateInstructionClientOptions { command?: string; args?: string[]; forceMutation?: boolean; verbose?: boolean; }
+export interface CreateInstructionClientOptions { command?: string; args?: string[]; forceMutation?: boolean; verbose?: boolean; instructionsDir?: string; }
 export function createInstructionClient(options?: CreateInstructionClientOptions): Promise<InstructionClient>;
 
 export interface CrudSequenceResult {

@@ -1,0 +1,30 @@
+{
+  "id": "crud-consistency-test-instruction",
+  "title": "crud-consistency-test-instruction",
+  "body": "Atomic body",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "b1102d5b7cd1c3ffd4258e6a19790763d06d3fe24e617446dc18f819274cc2a5",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-31T22:29:49.983Z",
+  "updatedAt": "2025-08-31T22:29:49.983Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-31T22:29:49.983Z",
+  "nextReviewDue": "2025-11-29T22:29:49.983Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-31T22:29:49.983Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Atomic body"
+}

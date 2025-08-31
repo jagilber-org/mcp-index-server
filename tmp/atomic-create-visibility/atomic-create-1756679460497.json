@@ -1,0 +1,30 @@
+{
+  "id": "atomic-create-1756679460497",
+  "title": "Atomic Create Test",
+  "body": "Body created at 2025-08-31T22:31:00.497Z",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "c10afaeaebf1dbc9cfec987b3f0ba2366f4d78d60863a3fadaedcb16b09b1311",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-31T22:31:00.527Z",
+  "updatedAt": "2025-08-31T22:31:00.527Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-31T22:31:00.527Z",
+  "nextReviewDue": "2025-11-29T22:31:00.527Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-31T22:31:00.527Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Body created at 2025-08-31T22:31:00.497Z"
+}

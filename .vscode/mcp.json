@@ -2,8 +2,8 @@
 	"servers": {
 		"mcp-index-server": {
 			"type": "stdio",
-			"cwd": "C:/mcp/mcp-index-server-prod",
-			// "cwd": "C:/github/jagilber/mcp-index-server",
+			// "cwd": "C:/mcp/mcp-index-server-prod",
+			"cwd": "C:/github/jagilber/mcp-index-server",
 			"command": "node",
 			"args": [
 				"dist/server/index.js"
@@ -12,12 +12,16 @@
 				// ===================== DIRECTORY SELECTION =====================
 				// To run against production catalog set MCP_USE_PROD=1 in your launch shell
 				// and optionally uncomment the prod INSTRUCTIONS_DIR / cwd above.
-				"INSTRUCTIONS_DIR": "C:/mcp/mcp-index-server-prod/instructions",
-				// "INSTRUCTIONS_DIR": "C:/github/jagilber/mcp-index-server/devinstructions",
-				"FEEDBACK_DIR": "./feedback",
+				// "INSTRUCTIONS_DIR": "C:/mcp/mcp-index-server-prod/instructions",
+				"INSTRUCTIONS_DIR": "C:/github/jagilber/mcp-index-server/devinstructions",
+				"FEEDBACK_DIR": "C:/github/jagilber/mcp-index-server/feedback",
+				// "FEEDBACK_DIR": "./feedback",
 				// ===================== MUTATION CONTROL ========================
 				// CAUTION: Mutation enabled for local iterative CRUD & governance tests.
 				"MCP_ENABLE_MUTATION": "1",
+				"INSTRUCTIONS_ALWAYS_RELOAD": "1",
+				"MCP_TRACE_LEVEL": "1",
+				"MCP_CATALOG_FILE_TRACE": "1",
 				// Optional future safeguard: require a guard token before mutating prod.
 				// "MCP_MUTATION_GUARD": "expected-checksum-or-token"
 				// ===================== FEEDBACK STORAGE ========================

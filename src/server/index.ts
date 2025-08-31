@@ -20,6 +20,8 @@
 // and then re-emit the buffered chunks once the SDK has attached its handlers.
 // This ensures spec compliance: an initialize request always yields either a
 // success or a version negotiation error – never silent drop.
+// Install global stderr log prefix (timestamps, pid, ppid, seq, tid) before any diagnostic output.
+import '../services/logPrefix';
 const __earlyInitChunks: Buffer[] = [];
 let __earlyInitFirstLogged = false;
 let __sdkReady = false;

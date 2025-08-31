@@ -1,0 +1,32 @@
+{
+  "id": "smoke-1756673698946",
+  "title": "Smoke",
+  "body": "Smoke test entry",
+  "priority": 10,
+  "audience": "all",
+  "requirement": "recommended",
+  "categories": [
+    "test"
+  ],
+  "sourceHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-31T20:54:59.283Z",
+  "updatedAt": "2025-08-31T20:54:59.283Z",
+  "riskScore": 110,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-31T20:54:59.284Z",
+  "nextReviewDue": "2025-09-30T20:54:59.284Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-31T20:54:59.283Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Smoke test entry"
+}

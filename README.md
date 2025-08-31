@@ -610,6 +610,19 @@ npm run test:diag
 
 Rationale: Segregating heavy concurrency / fragmentation tests avoids intermittent initialize starvation or off-by-one health count flakes from masking real regressions in routine PR validation while retaining full reproduction power on-demand.
 
+### Handshake Reliability (1.1.1)
+
+As of 1.1.1 the legacy short-circuit handshake flag (`MCP_SHORTCIRCUIT`) was removed. All tests and clients MUST use the canonical MCP SDK initialize sequence:
+
+1. Client spawns server process.
+2. Server buffers early stdin until SDK ready (guards against dropped initialize in fast clients).
+3. Client sends a single `initialize` (id=1). Helper may resend once if no frame observed (idempotent per spec).
+4. Server responds with initialize result, then emits exactly one `server/ready`, optionally followed by `tools/list_changed`.
+
+Test harness specs requiring direct process spawn MUST use the shared helper `performHandshake()` in `src/tests/util/handshakeHelper.ts` rather than bespoke timing loops. This ensures consistent startup behavior and eliminates intermittent initialize timeouts under parallel suite load.
+
+Diagnostic flags affecting handshake (`MCP_INIT_FALLBACK_ALLOW`, `MCP_DISABLE_INIT_SNIFF`, `MCP_HANDSHAKE_TRACE`) are for investigation only and MUST remain unset in production deployments.
+
 ## Testing
 
 Comprehensive green test suite (no skipped tests) covering:

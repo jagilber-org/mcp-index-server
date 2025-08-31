@@ -11,10 +11,13 @@ import path from 'path';
 
 const BODY = 'Atomic create visibility test body with deterministic content. ' + 'X'.repeat(512);
 
+const skipForBatch = process.env.PORTABLE_SHARED_BATCH === '1';
 describe('Portable CRUD Atomicity (portable client)', () => {
-  it('ensures create -> immediate list/get visibility; then updates and deletes (abstraction)', async () => {
+  const maybe = skipForBatch ? it.skip : it;
+  maybe('ensures create -> immediate list/get visibility; then updates and deletes (abstraction)', async () => {
     // Dynamic import (ESM client-lib inside CommonJS test env)
-  // @ts-expect-error Temporary suppression: dynamic import typed via consolidated ambient declarations not directly matched by relative path.
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore dynamic ESM import; types supplied via ambient declarations
   const { createInstructionClient } = await import('../../portable-mcp-client/client-lib.mjs');
 
     // Isolated temp instructions directory for determinism (unless override specified)

@@ -1,0 +1,35 @@
+{
+  "id": "github-mermaid-dark-theme-quick-guide-2025",
+  "title": "GitHub Mermaid Dark Theme Quick Guide",
+  "body": "Minimal body for persistence divergence reproduction. Focus on ID visibility only.",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "documentation",
+    "github",
+    "markdown",
+    "visualization"
+  ],
+  "sourceHash": "8d265bdb1888ac9933fa8db2502d3673299e1e21f2b94b5ca479985d2852b591",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-31T22:29:22.472Z",
+  "updatedAt": "2025-08-31T22:30:18.007Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-31T22:29:22.472Z",
+  "nextReviewDue": "2025-12-29T22:29:22.472Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-31T22:29:22.472Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Complete guide for creating Mermaid diagrams in GitHub markdown with dark theme optimization."
+}

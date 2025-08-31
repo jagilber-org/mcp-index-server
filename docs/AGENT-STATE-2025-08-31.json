@@ -1,0 +1,61 @@
+{
+  "timestamp": "2025-08-31T15:05:00Z",
+  "version": "1.1.0",
+  "instructionSchema": {
+    "enumDomains": {"audience": ["individual","group","all"], "requirement": ["mandatory","critical","recommended","optional","deprecated"]},
+    "lastInvalidFieldFixed": {
+      "file": "instructions/post-restart-crud-validation-2025-08-30.json",
+      "field": "audience",
+      "oldValue": "developers",
+      "newValue": "all"
+    },
+    "remainingInvalidAudienceCount": 0
+  },
+  "tests": {
+    "passedFiles": 12,
+    "skippedFiles": 46,
+    "placeholderSkippedGuardFailures": 26,
+    "listGetCrossValidation": {
+      "sampled": true,
+      "sampleSize": 80,
+      "total": 211,
+      "recentDurationSecondsRange": [38.4, 46.7],
+      "timeoutMs": 120000,
+      "nextOptimizations": ["earlyAbortOnAllReadsOK","dynamicSampleCap","separateSlowTag"]
+    }
+  },
+  "reportedIssues": [
+    {
+      "id": "0b17eedef4c07621",
+      "title": "Multi-Client Instruction Verification Failure (visibility/search)",
+      "reproTest": "CLIENT_1_ADD_CLIENT_2_SEARCH_VISIBILITY",
+      "status": "GREEN (passes)",
+      "notes": "Search visibility now consistent across two clients after schema enum correction (audience) and loader synchronization checks." 
+    },
+    {
+      "id": "740513ece59b2a0c",
+      "title": "CRUD Operation Inconsistency (add skip vs get not found / phantom list entries)",
+      "reproTests": [
+        "ADD_SKIP_GET_CONSISTENCY",
+        "LIST_GET_CROSS_VALIDATION"
+      ],
+      "status": "PARTIAL",
+      "notes": "ADD_SKIP_GET_CONSISTENCY passes (no phantom notFound after skip). LIST_GET_CROSS_VALIDATION stable under sampling but full exhaustive run previously timed out at 60s; needs early-abort optimization before marking fully GREEN."
+    }
+  ],
+  "envDefaults": {
+    "LIST_GET_MAX_VALIDATE": 80,
+    "LIST_GET_CONCURRENCY": 25,
+    "FULL_LIST_GET": 0
+  },
+  "outstandingActions": [
+    "Implement JSON schema validation script for instructions pre-commit",
+    "Standardize placeholder tests: convert phased or mark with SKIP_OK to satisfy skip guard",
+    "Add early-exit to LIST_GET_CROSS_VALIDATION",
+    "Prune tmp/* artifacts older than 24h (CI task)",
+    "Consolidate duplicate portable client .d.ts ambient declarations",
+    "Document env flags in TESTING-STRATEGY.md"
+  ],
+  "recommendNewSession": true,
+  "rationale": "State captured; large placeholder backlog suitable for fresh focused optimization session."
+}

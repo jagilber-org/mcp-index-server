@@ -30,3 +30,4 @@ scripts/performanceBaseline.ts
 node_modules
 # Temp directories (defense in depth)
 **/tmp/**
+scripts/analyze-traces.js

@@ -1,0 +1,41 @@
+{
+  "id": "obfuscation-pattern-gaps-2025",
+  "title": "Obfuscation Pattern Coverage Gaps - 2025 Tracking",
+  "body": "TRACKER ENRICHED: Enumerate sensitive classes missing patterns (financial tokens, extended GUID variants, proprietary session IDs, edge PII). For each: risk, sample, proposed regex, false-positive mitigation, owner, ETA. Update monthly after diff against live pattern registry. GOVERNANCE: owner assigned, P2, 30d review cadence.",
+  "rationale": "Reduce unnoticed PII leakage by closing pattern gaps.",
+  "priority": 76,
+  "audience": "security",
+  "requirement": "mandatory",
+  "categories": [
+    "obfuscation",
+    "pii",
+    "security",
+    "tracking"
+  ],
+  "sourceHash": "53b7dc75e9c0435d57df46965180ccec226e92874f12d585e071b9e96bc2badb",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-31T15:18:41.700Z",
+  "updatedAt": "2025-08-31T15:18:41.700Z",
+  "riskScore": 74,
+  "version": "1.1.0",
+  "owner": "team.platform-enablement",
+  "status": "draft",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-25T17:20:20.000Z",
+  "nextReviewDue": "2025-09-24T17:20:20.000Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T16:40:11.000Z",
+      "summary": "initial creation"
+    },
+    {
+      "version": "1.1.0",
+      "changedAt": "2025-08-25T17:20:20.000Z",
+      "summary": "Governance enrichment (owner,tier,summary,cadence)"
+    }
+  ],
+  "semanticSummary": "Governed tracker of unaddressed high-risk obfuscation pattern gaps.",
+  "reviewIntervalDays": 30
+}

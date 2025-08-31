@@ -10,6 +10,8 @@ import addFormats from 'ajv-formats';
 // Ensure https draft-07 meta-schema is recognized when $schema uses TLS URL
 import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import schema from '../../schemas/instruction.schema.json';
+// Normal-verbosity tracing (level 1+) for per-file load lifecycle
+import { emitTrace, traceEnabled } from './tracing';
 
 export interface CatalogLoadResult {
   entries: InstructionEntry[];
@@ -53,6 +55,21 @@ export class CatalogLoader {
   load(): CatalogLoadResult {
     const dir = path.resolve(this.baseDir);
     if(!fs.existsSync(dir)) return { entries: [], errors: [{ file: dir, error: 'missing directory'}], hash: '' };
+  // Lightweight in-process memoization to reduce repeated parse/validate cost when ALWAYS_RELOAD is set.
+  // Enabled if MCP_CATALOG_MEMOIZE=1 OR (INSTRUCTIONS_ALWAYS_RELOAD=1 and MCP_CATALOG_MEMOIZE not explicitly disabled with 0).
+  // Semantics preserved: directory is still scanned each load; changed files (mtime/size) are re-read.
+  // Cache key: absolute file path; validation skipped only if size + mtime unchanged.
+  // NOTE: This deliberately trusts OS mtime granularity (sufficient for test/runtime reload cadence).
+  const memoryCacheEnabled = (process.env.MCP_CATALOG_MEMOIZE === '1') || (process.env.INSTRUCTIONS_ALWAYS_RELOAD === '1' && process.env.MCP_CATALOG_MEMOIZE !== '0');
+  const hashMemoEnabled = process.env.MCP_CATALOG_MEMOIZE_HASH === '1';
+  type CacheEntry = { mtimeMs: number; size: number; entry: InstructionEntry; contentHash?: string; buildSig: string };
+  const buildSig = `schema:${SCHEMA_VERSION}`; // extend with classifier / normalization version if those become versioned
+  // Module-level singleton map (attached to globalThis to survive module reloads in test environments without duplicating state)
+  const globalAny = globalThis as unknown as { __MCP_CATALOG_MEMO?: Map<string, CacheEntry> };
+  if(!globalAny.__MCP_CATALOG_MEMO){ globalAny.__MCP_CATALOG_MEMO = new Map(); }
+  const catalogMemo = globalAny.__MCP_CATALOG_MEMO as Map<string, CacheEntry>;
+  let cacheHits = 0;
+  let hashHits = 0;
   const ajv = new Ajv({ allErrors: true, strict: false });
   // Add standard date-time, uri, etc. formats
   addFormats(ajv);
@@ -69,21 +86,77 @@ export class CatalogLoader {
   // File-level trace (opt-in) surfaces every scanned file decision so higher-level diagnostics
   // can correlate missingOnCatalog IDs with explicit acceptance / rejection reasons. Enable by
   // setting MCP_CATALOG_FILE_TRACE=1 together with MCP_TRACE_ALL for broader context.
-  const traceEnabled = process.env.MCP_CATALOG_FILE_TRACE === '1';
-  const trace: { file:string; accepted:boolean; reason?:string }[] | undefined = traceEnabled ? [] : undefined;
+  const fileTraceEnabled = process.env.MCP_CATALOG_FILE_TRACE === '1';
+  const trace: { file:string; accepted:boolean; reason?:string }[] | undefined = fileTraceEnabled ? [] : undefined;
+  // New lightweight always-available (level>=1) sequential tracing with cumulative counters.
+  let scannedSoFar = 0;
+  let acceptedSoFar = 0;
   for(const f of files){
+      scannedSoFar++;
+      if(traceEnabled(1)){
+        try { emitTrace('[trace:catalog:file-begin]', { file: f, index: scannedSoFar - 1, total: files.length }); } catch { /* ignore */ }
+      }
   const full = path.join(dir, f);
+      // Attempt cache reuse before any I/O beyond stat
+      let reused = false;
+    if(memoryCacheEnabled){
+        try {
+          const st = fs.statSync(full);
+          const cached = catalogMemo.get(full);
+      if(cached && cached.size === st.size && Math.abs(cached.mtimeMs - st.mtimeMs) < 1 && cached.buildSig === buildSig){
+            // Reuse cached normalized entry
+            entries.push({ ...cached.entry });
+            acceptedSoFar++;
+            cacheHits++;
+            reused = true;
+            if(trace) trace.push({ file:f, accepted:true, reason:'cache-hit' });
+            if(traceEnabled(1)){
+              try { emitTrace('[trace:catalog:file-end]', { file: f, accepted: true, cached: true, scanned: scannedSoFar, acceptedSoFar }); } catch { /* ignore */ }
+              try { emitTrace('[trace:catalog:file-progress]', { scanned: scannedSoFar, total: files.length, acceptedSoFar, rejectedSoFar: scannedSoFar - acceptedSoFar }); } catch { /* ignore */ }
+            }
+          }
+        } catch { /* stat or reuse failure falls through to normal path */ }
+      }
+      if(reused) continue;
       // Exclude any files within a _templates directory (non-runtime placeholders)
       if(full.includes(`${path.sep}_templates${path.sep}`)){
         if(trace) trace.push({ file:f, accepted:false, reason:'ignored:template' });
+        if(traceEnabled(1)){
+          try { emitTrace('[trace:catalog:file-end]', { file: f, accepted: false, reason: 'ignored:template', scanned: scannedSoFar, acceptedSoFar }); } catch { /* ignore */ }
+          try { emitTrace('[trace:catalog:file-progress]', { scanned: scannedSoFar, total: files.length, acceptedSoFar, rejectedSoFar: scannedSoFar - acceptedSoFar }); } catch { /* ignore */ }
+        }
         continue;
       }
       try {
+        // Hash-based reuse path (only if metadata changed but content identical). We compute hash before parsing.
+        if(memoryCacheEnabled && hashMemoEnabled){
+          try {
+            const rawBuf = fs.readFileSync(full);
+            const contentHash = crypto.createHash('sha256').update(rawBuf).digest('hex');
+            const cached = catalogMemo.get(full);
+            if(cached && cached.contentHash === contentHash && cached.buildSig === buildSig){
+              // Accept from hash cache without reparsing / revalidation
+              entries.push({ ...cached.entry });
+              acceptedSoFar++;
+              hashHits++;
+              if(trace) trace.push({ file:f, accepted:true, reason:'hash-cache-hit' });
+              if(traceEnabled(1)){
+                try { emitTrace('[trace:catalog:file-end]', { file: f, accepted: true, cached: true, hash: true, scanned: scannedSoFar, acceptedSoFar }); } catch { /* ignore */ }
+                try { emitTrace('[trace:catalog:file-progress]', { scanned: scannedSoFar, total: files.length, acceptedSoFar, rejectedSoFar: scannedSoFar - acceptedSoFar }); } catch { /* ignore */ }
+              }
+              continue; // proceed next file
+            }
+          } catch { /* fall through to normal parse */ }
+        }
   const rawAny = this.readJsonWithRetry(full) as Record<string, unknown>;
         // Ignore clearly non-instruction config files (no id/title/body/requirement) e.g. gates.json
         const looksInstruction = typeof rawAny.id === 'string' && typeof rawAny.title === 'string' && typeof rawAny.body === 'string';
         if(!looksInstruction){
           if(trace) trace.push({ file:f, accepted:false, reason:'ignored:non-instruction-config' });
+          if(traceEnabled(1)){
+            try { emitTrace('[trace:catalog:file-end]', { file: f, accepted: false, reason: 'ignored:non-instruction-config', scanned: scannedSoFar, acceptedSoFar }); } catch { /* ignore */ }
+            try { emitTrace('[trace:catalog:file-progress]', { scanned: scannedSoFar, total: files.length, acceptedSoFar, rejectedSoFar: scannedSoFar - acceptedSoFar }); } catch { /* ignore */ }
+          }
           continue;
         }
         // Clone to typed object after basic shape check
@@ -121,6 +194,10 @@ export class CatalogLoader {
           const reason = 'schema: ' + ajv.errorsText();
           errors.push({ file: f, error: reason });
           if(trace) trace.push({ file:f, accepted:false, reason });
+          if(traceEnabled(1)){
+            try { emitTrace('[trace:catalog:file-end]', { file: f, accepted: false, reason, scanned: scannedSoFar, acceptedSoFar }); } catch { /* ignore */ }
+            try { emitTrace('[trace:catalog:file-progress]', { scanned: scannedSoFar, total: files.length, acceptedSoFar, rejectedSoFar: scannedSoFar - acceptedSoFar }); } catch { /* ignore */ }
+          }
           continue;
         }
   const issues = this.classifier.validate(mutRaw);
@@ -128,18 +205,45 @@ export class CatalogLoader {
           const reason = issues.join(', ');
           errors.push({ file: f, error: reason });
           if(trace) trace.push({ file:f, accepted:false, reason });
+          if(traceEnabled(1)){
+            try { emitTrace('[trace:catalog:file-end]', { file: f, accepted: false, reason, scanned: scannedSoFar, acceptedSoFar }); } catch { /* ignore */ }
+            try { emitTrace('[trace:catalog:file-progress]', { scanned: scannedSoFar, total: files.length, acceptedSoFar, rejectedSoFar: scannedSoFar - acceptedSoFar }); } catch { /* ignore */ }
+          }
           continue;
         }
         const normalized = this.classifier.normalize(mutRaw);
         entries.push(normalized);
+        acceptedSoFar++;
+        // Populate / refresh cache after successful normalization
+        if(memoryCacheEnabled){
+          try {
+            const st = fs.statSync(full);
+            let contentHash: string | undefined;
+            if(hashMemoEnabled){
+              try { contentHash = crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex'); } catch { /* ignore */ }
+            }
+            catalogMemo.set(full, { mtimeMs: st.mtimeMs, size: st.size, entry: { ...normalized }, contentHash, buildSig });
+          } catch { /* ignore */ }
+        }
         if(trace) trace.push({ file:f, accepted:true });
+        if(traceEnabled(1)){
+          try { emitTrace('[trace:catalog:file-end]', { file: f, accepted: true, scanned: scannedSoFar, acceptedSoFar }); } catch { /* ignore */ }
+          try { emitTrace('[trace:catalog:file-progress]', { scanned: scannedSoFar, total: files.length, acceptedSoFar, rejectedSoFar: scannedSoFar - acceptedSoFar }); } catch { /* ignore */ }
+        }
       } catch(e: unknown){
         const reason = e instanceof Error ? e.message : 'unknown error';
         errors.push({ file: f, error: reason });
         if(trace) trace.push({ file:f, accepted:false, reason });
+        if(traceEnabled(1)){
+          try { emitTrace('[trace:catalog:file-end]', { file: f, accepted: false, reason, scanned: scannedSoFar, acceptedSoFar }); } catch { /* ignore */ }
+          try { emitTrace('[trace:catalog:file-progress]', { scanned: scannedSoFar, total: files.length, acceptedSoFar, rejectedSoFar: scannedSoFar - acceptedSoFar }); } catch { /* ignore */ }
+        }
       }
     }
     const hash = this.computeCatalogHash(entries);
+    if(memoryCacheEnabled && (cacheHits || hashHits) && traceEnabled(1)){
+      try { emitTrace('[trace:catalog:cache-summary]', { hits: cacheHits, hashHits, scanned: files.length, percent: Number(((cacheHits+hashHits) / files.length * 100).toFixed(2)) }); } catch { /* ignore */ }
+    }
     return { entries, errors, hash, debug: { scanned: files.length, accepted: entries.length, skipped: files.length - entries.length, trace } };
   }
 

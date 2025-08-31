@@ -1,0 +1,35 @@
+{
+  "id": "github-mermaid-dark-theme-quick-guide-2025",
+  "title": "GitHub Mermaid Dark Theme Quick Guide",
+  "body": "Minimal body for isolated persistence divergence reproduction.",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "documentation",
+    "github",
+    "markdown",
+    "visualization"
+  ],
+  "sourceHash": "bbb2b09d1860b0bd9f8abaeb6f70255766581beb41cb1fbf75538d7db33d0ac7",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-31T22:30:58.891Z",
+  "updatedAt": "2025-08-31T22:30:58.891Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-31T22:30:58.891Z",
+  "nextReviewDue": "2025-11-29T22:30:58.891Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-31T22:30:58.891Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Minimal body for isolated persistence divergence reproduction."
+}

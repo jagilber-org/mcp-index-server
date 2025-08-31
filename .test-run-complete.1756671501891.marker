@@ -1,0 +1,11 @@
+{
+  "started": 1756671346600,
+  "ended": 1756671501891,
+  "durationMs": 155291,
+  "node": "v20.18.3",
+  "filesTotal": 73,
+  "filesFailed": 0,
+  "testsTotal": 97,
+  "testsFailed": 0,
+  "errors": 0
+}

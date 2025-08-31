@@ -1,0 +1,30 @@
+{
+  "id": "atomic-overwrite-1756679460561",
+  "title": "Overwrite Test Updated",
+  "body": "Updated body @ 1756679460590",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "0b1b037517cc869d3f0afcb2ed49bc67cfc5043256283c7dfd9617057e9b5b4d",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-31T22:31:00.562Z",
+  "updatedAt": "2025-08-31T22:31:00.591Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-31T22:31:00.562Z",
+  "nextReviewDue": "2025-11-29T22:31:00.562Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-31T22:31:00.562Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Initial body"
+}

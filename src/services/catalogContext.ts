@@ -196,6 +196,13 @@ const PINNED_INSTRUCTIONS_DIR = (() => {
   return resolved;
 })();
 export function getInstructionsDir(){ return PINNED_INSTRUCTIONS_DIR; }
+// Centralized tracing utilities
+import { emitTrace, traceEnabled } from './tracing';
+// Throttled file trace emission (avoid per-get amplification). We emit per-file decisions only
+// on true reloads AND if file signature changed OR time since last emission > threshold.
+let lastFileTraceSignature = '';
+let lastFileTraceAt = 0;
+const FILE_TRACE_COOLDOWN_MS = 2000; // configurable later if needed
 // Lightweight diagnostics for external callers (startup logging / health checks)
 export function diagnoseInstructionsDir(){
   const dir = getInstructionsDir();
@@ -266,6 +273,7 @@ function readVersionToken(): string { try { const vf=getVersionFile(); if(fs.exi
 export function markCatalogDirty(){ dirty = true; }
 export function ensureLoaded(): CatalogState {
   const baseDir = getInstructionsDir();
+  const perfStart = traceEnabled(2)? Date.now(): 0;
   // Force reload if state missing or marked dirty or ALWAYS_RELOAD enabled
   if(process.env.INSTRUCTIONS_ALWAYS_RELOAD === '1') dirty = true;
   if(state && !dirty){
@@ -307,12 +315,28 @@ export function ensureLoaded(): CatalogState {
           if(Date.now() - start > 15) break;
         }
       }
+      // FINAL LATE MATERIALIZATION GUARD (cache-hit path): If we still consider the cache valid but a
+      // newly added file's directory entry became visible only AFTER the micro‑spin above (common on
+      // Windows / network FS with coarse mtime granularity), we may miss it until the *next* call.
+      // To tighten multi‑client propagation guarantees (list() immediately after another process add),
+      // perform a lightweight name diff: if any *.json file on disk is not present in state.byId, force
+      // an immediate reload now instead of leaking a stale view to the caller.
+      if(!dirty){
+        try {
+          const diskFiles = fs.readdirSync(baseDir).filter(f=> f.endsWith('.json'));
+          for(const f of diskFiles){
+            const id = f.slice(0,-5);
+            if(!state.byId.has(id)) { dirty = true; incrementCounter('catalog:lateMaterializeReload'); break; }
+          }
+        } catch { /* ignore directory scan errors */ }
+      }
     } catch { /* ignore detection errors */ }
     if(!dirty){
       if(process.env.MCP_CATALOG_DIAG==='1'){
         // eslint-disable-next-line no-console
         console.error('[catalogContext.ensureLoaded] cache-hit dirty=false entries=', state.list.length, 'hash=', state.hash);
       }
+  if(traceEnabled(1)){ try { const disk=fs.readdirSync(baseDir).filter(f=>f.endsWith('.json')); const missing=disk.filter(f=> !state!.byId.has(f.slice(0,-5))); if(missing.length){ emitTrace('[trace:ensureLoaded:cache-hit-missing]', { dir:baseDir, listCount: state.list.length, diskCount: disk.length, missingIds: missing.map(m=>m.slice(0,-5)) },1); } else { emitTrace('[trace:ensureLoaded:cache-hit]', { dir:baseDir, listCount: state.list.length, diskCount: disk.length },1); } } catch { /* ignore */ } }
       return state;
     }
   }
@@ -321,6 +345,8 @@ export function ensureLoaded(): CatalogState {
   while(attempts <= maxAttempts){
     const loader = new CatalogLoader(baseDir);
     const result = loader.load();
+    // If file-level trace enabled, surface each file decision (accepted/rejected + reason)
+  const willEmitFileTrace = traceEnabled(3);
     const byId = new Map<string, InstructionEntry>(); result.entries.forEach(e=>byId.set(e.id,e));
   const meta = computeDirMeta(baseDir);
     const versionMTime = readVersionMTime();
@@ -332,6 +358,20 @@ export function ensureLoaded(): CatalogState {
     }
   state = { loadedAt: new Date().toISOString(), hash: result.hash, byId, list: result.entries, latestMTime: meta.latest, fileSignature: meta.signature, fileCount: meta.count, versionMTime, versionToken };
     dirty = false;
+  if(traceEnabled(2)){ try { const disk=fs.readdirSync(baseDir).filter(f=>f.endsWith('.json')); emitTrace('[trace:ensureLoaded:reloaded]', { dir:baseDir, listCount: state.list.length, diskCount: disk.length },2); } catch { /* ignore */ } }
+    if(willEmitFileTrace && result.debug?.trace){
+      const now = Date.now();
+      const sigChanged = state.fileSignature !== lastFileTraceSignature;
+      if(sigChanged || (now - lastFileTraceAt) > FILE_TRACE_COOLDOWN_MS){
+        try {
+          for(const t of result.debug.trace){
+            emitTrace('[trace:catalog:file]', t, 3);
+          }
+          lastFileTraceSignature = state.fileSignature;
+          lastFileTraceAt = now;
+        } catch { /* ignore */ }
+      }
+    }
     // NEW: Post-load visibility stabilization spin (initial load or freshly invalidated) to mitigate rare
     // rename visibility lag causing a just-written instruction file to be missed on first pass (observed
     // as silent add/import success with missing list entry until a later mutation forced reload).
@@ -398,6 +438,10 @@ export function ensureLoaded(): CatalogState {
   if(process.env.MCP_CATALOG_DIAG==='1' && state){
     // eslint-disable-next-line no-console
     console.error('[catalogContext.ensureLoaded] reload complete entries=', state.list.length, 'hash=', state.hash, 'fileCount=', state.fileCount);
+  }
+  if(perfStart && traceEnabled(2)){
+    const ms = Date.now()-perfStart;
+    emitTrace('[trace:ensureLoaded:perf]', { ms, count: state!.list.length, fileCount: state!.fileCount, signature: state!.fileSignature },2);
   }
   // state is always set here
   return state!;

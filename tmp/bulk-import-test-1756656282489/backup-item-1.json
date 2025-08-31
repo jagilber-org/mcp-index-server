@@ -1,0 +1,33 @@
+{
+  "id": "backup-item-1",
+  "title": "Backed Up Item 1",
+  "body": "Content from backup file",
+  "priority": 20,
+  "audience": "all",
+  "requirement": "mandatory",
+  "categories": [
+    "backup",
+    "restore"
+  ],
+  "sourceHash": "b56d9c401b05a8a98b94c8d219c18fb5fae580132507b87ca7d89d682b04c50d",
+  "schemaVersion": "2",
+  "createdAt": "2025-08-31T16:04:47.563Z",
+  "updatedAt": "2025-08-31T16:04:47.563Z",
+  "riskScore": 130,
+  "owner": "admin",
+  "version": "1.0.0",
+  "status": "approved",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-31T16:04:47.563Z",
+  "nextReviewDue": "2025-09-30T16:04:47.563Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-31T16:04:47.563Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Content from backup file"
+}

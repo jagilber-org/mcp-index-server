@@ -54,12 +54,102 @@ function guard<TParams, TResult>(name:string, fn:(p:TParams)=>TResult){
 import { emitTrace, traceEnabled } from './tracing';
 function traceVisibility(){ return traceEnabled(1); }
 
+// Deep visibility tracing helper (no side effects). Captures catalog + disk state for an id.
+function traceInstructionVisibility(id:string, phase:string, extra?: Record<string, unknown>){
+  if(!traceVisibility()) return;
+  try {
+    const dir = getInstructionsDir();
+    const file = path.join(dir, `${id}.json`);
+    const st = ensureLoaded();
+    const catalogItem = st.byId.get(id) as Partial<InstructionEntry> | undefined;
+  let fileExists = false; let fileSize:number|undefined; let mtime:string|undefined; let diskHash:string|undefined;
+    if(fs.existsSync(file)){
+      fileExists = true;
+      const stat = fs.statSync(file);
+      fileSize = stat.size; mtime = stat.mtime.toISOString();
+      try {
+  const rawTxt = fs.readFileSync(file,'utf8');
+        try { const rawJson = JSON.parse(rawTxt) as { sourceHash?:string }; if(typeof rawJson.sourceHash==='string') diskHash = rawJson.sourceHash; } catch { /* ignore parse */ }
+      } catch { /* ignore read */ }
+    }
+    emitTrace('[trace:visibility]', {
+      phase,
+      id,
+      dir,
+      now: new Date().toISOString(),
+      fileExists,
+      fileSize,
+      mtime,
+      diskHash,
+      catalogHas: !!catalogItem,
+      catalogSourceHash: catalogItem?.sourceHash,
+      catalogUpdatedAt: catalogItem?.updatedAt,
+      serverHash: st.hash,
+      listCount: st.list.length,
+      sampleIds: st.list.slice(0,3).map(e=>e.id),
+      ...extra
+    });
+  } catch { /* swallow tracing issues */ }
+}
+
+// Lightweight environment snapshot for correlating anomalous visibility states with runtime flags.
+function traceEnvSnapshot(phase:string, extra?:Record<string, unknown>){
+  if(!traceVisibility()) return;
+  try {
+    const pick = (k:string)=> process.env[k];
+    emitTrace('[trace:env]', {
+      phase,
+      pid: process.pid,
+      flags: {
+        MCP_ENABLE_MUTATION: pick('MCP_ENABLE_MUTATION'),
+        MCP_INSTRUCTIONS_STRICT_CREATE: pick('MCP_INSTRUCTIONS_STRICT_CREATE'),
+        MCP_CANONICAL_DISABLE: pick('MCP_CANONICAL_DISABLE'),
+        MCP_READ_RETRIES: pick('MCP_READ_RETRIES'),
+        MCP_READ_BACKOFF_MS: pick('MCP_READ_BACKOFF_MS'),
+        FULL_LIST_GET: pick('FULL_LIST_GET'),
+        LIST_GET_SAMPLE_SIZE: pick('LIST_GET_SAMPLE_SIZE'),
+        LIST_GET_SAMPLE_SEED: pick('LIST_GET_SAMPLE_SEED'),
+        LIST_GET_CONCURRENCY: pick('LIST_GET_CONCURRENCY'),
+        INSTRUCTIONS_DIR: pick('INSTRUCTIONS_DIR')
+      },
+      ...extra
+    });
+  } catch { /* ignore env tracing errors */ }
+}
+
 // Legacy individual instruction handlers removed in favor of unified dispatcher (instructions/dispatch).
 // Internal implementation functions retained below for dispatcher direct invocation.
 export const instructionActions = {
   list: (p:{category?:string; expectId?:string})=>{ const st = ensureLoaded(); let items = st.list; if(p?.category){ const c = p.category.toLowerCase(); items = items.filter(i=> i.categories.includes(c)); } if(traceVisibility()){ try { const dir=getInstructionsDir(); const disk=fs.readdirSync(dir).filter(f=>f.endsWith('.json')); const diskIds=new Set(disk.map(f=>f.slice(0,-5))); const idsSample=items.slice(0,5).map(i=>i.id); const missingOnCatalog=[...diskIds].filter(id=> !st.byId.has(id)); const expectId=p?.expectId; const expectOnDisk= expectId? diskIds.has(expectId): undefined; const expectInCatalog = expectId? st.byId.has(expectId): undefined; emitTrace('[trace:list]', { dir, total: st.list.length, filtered: items.length, sample: idsSample, diskCount: disk.length, missingOnCatalogCount: missingOnCatalog.length, missingOnCatalog: missingOnCatalog.slice(0,5), expectId, expectOnDisk, expectInCatalog }); } catch { /* ignore */ } } return limitResponseSize({ hash: st.hash, count: items.length, items }); },
   listScoped: (p:{ userId?:string; workspaceId?:string; teamIds?: string[] })=>{ const st=ensureLoaded(); const userId=p.userId?.toLowerCase(); const workspaceId=p.workspaceId?.toLowerCase(); const teamIds=(p.teamIds||[]).map(t=>t.toLowerCase()); const all=st.list; const matchUser = userId? all.filter(e=> (e.userId||'').toLowerCase()===userId):[]; if(matchUser.length) return { hash: st.hash, count: matchUser.length, scope:'user', items:matchUser }; const matchWorkspace = workspaceId? all.filter(e=> (e.workspaceId||'').toLowerCase()===workspaceId):[]; if(matchWorkspace.length) return { hash: st.hash, count: matchWorkspace.length, scope:'workspace', items:matchWorkspace }; const teamSet = new Set(teamIds); const matchTeams = teamIds.length? all.filter(e=> Array.isArray(e.teamIds) && e.teamIds.some(t=> teamSet.has(t.toLowerCase()))):[]; if(matchTeams.length) return { hash: st.hash, count: matchTeams.length, scope:'team', items:matchTeams }; const audienceAll = all.filter(e=> e.audience==='all'); return { hash: st.hash, count: audienceAll.length, scope:'all', items: audienceAll }; },
-  get: (p:{id:string})=>{ const st=ensureLoaded(); const item = st.byId.get(p.id); if(traceVisibility()){ const dir=getInstructionsDir(); emitTrace('[trace:get]', { dir, id:p.id, found: !!item, total: st.list.length }); } return item? { hash: st.hash, item }: { notFound:true }; },
+  get: (p:{id:string})=>{ const st=ensureLoaded(); const item = st.byId.get(p.id); if(traceVisibility()){ const dir=getInstructionsDir(); emitTrace('[trace:get]', { dir, id:p.id, found: !!item, total: st.list.length }); traceInstructionVisibility(p.id, item? 'get-found':'get-not-found'); if(!item) traceEnvSnapshot('get-not-found'); } return item? { hash: st.hash, item }: { notFound:true }; },
+  // Reliability enhancement: if an entry is reported notFound but a file with that id exists on disk,
+  // attempt a focused late materialization (mirrors logic used in add strict path) to reduce false
+  // negatives under extremely tight cross-process races.
+  // NOTE: We keep original semantics unless visibility repair succeeds; if repair works we surface
+  // lateMaterialized flag for observability.
+  // getEnhanced is exposed only for internal diagnostic use (not a dispatcher action) and reused
+  // by the public get above when needed.
+  // (Intentionally not exported separately to avoid expanding public surface.)
+  // Implementation detail: we avoid unnecessary reload if file missing to keep hot path fast.
+  // This code path triggers only when notFound AND file present.
+  // Coverage: Added by reliability patch addressing user-reported "skipped + notFound" confusion.
+  getEnhanced: (p:{id:string})=>{ const base=getInstructionsDir(); const file=path.join(base, `${p.id}.json`); let st=ensureLoaded(); let item=st.byId.get(p.id); if(item) return { hash: st.hash, item } as const; if(!fs.existsSync(file)) return { notFound:true } as const; let repaired=false; try {
+  traceInstructionVisibility(p.id, 'getEnhanced-start');
+      // First attempt: invalidate + reload (cheap if already dirty)
+      invalidate(); st=ensureLoaded(); item=st.byId.get(p.id); if(item){ repaired=true; }
+      if(!repaired){
+        // Second attempt: direct disk read + classification normalization (late materialization)
+        const txt=fs.readFileSync(file,'utf8'); if(txt.trim()){
+          try { const raw=JSON.parse(txt) as InstructionEntry; const classifier=new ClassificationService(); const issues=classifier.validate(raw); if(!issues.length){ const norm=classifier.normalize(raw); st.list.push(norm); st.byId.set(norm.id,norm); item=norm; repaired=true; incrementCounter('instructions:getLateMaterialize'); } else { incrementCounter('instructions:getLateMaterializeRejected'); }
+          } catch { incrementCounter('instructions:getLateMaterializeParseError'); }
+        } else { incrementCounter('instructions:getLateMaterializeEmptyFile'); }
+      }
+    } catch { /* swallow */ }
+    if(traceVisibility()){ emitTrace('[trace:get:late-materialize]', { id:p.id, repaired, fileExists:true }); }
+  traceInstructionVisibility(p.id, 'getEnhanced-end', { repaired, finalFound: !!item });
+    return item? { hash: st.hash, item, lateMaterialized: repaired }: { notFound:true };
+  },
   search: (p:{q:string})=>{ const st=ensureLoaded(); const q=(p.q||'').toLowerCase(); const items = st.list.filter(i=> i.title.toLowerCase().includes(q)|| i.body.toLowerCase().includes(q)); if(traceVisibility()){ const dir=getInstructionsDir(); const sample=items.slice(0,5).map(i=>i.id); emitTrace('[trace:search]', { dir, q, matches: items.length, sample }); } return { hash: st.hash, count: items.length, items }; },
   diff: (p:{clientHash?:string; known?:{id:string; sourceHash:string}[]})=>{ const st=ensureLoaded(); const clientHash=p.clientHash; const known=p.known; if(!known && clientHash && clientHash===st.hash) return { upToDate:true, hash: st.hash }; if(known){ const map=new Map<string,string>(); for(const k of known){ if(k && k.id && !map.has(k.id)) map.set(k.id,k.sourceHash); } const added:InstructionEntry[]=[]; const updated:InstructionEntry[]=[]; const removed:string[]=[]; for(const e of st.list){ const prev=map.get(e.id); if(prev===undefined) added.push(e); else if(prev!==e.sourceHash) updated.push(e); } for(const id of map.keys()){ if(!st.byId.has(id)) removed.push(id); } if(!added.length && !updated.length && !removed.length && clientHash===st.hash) return { upToDate:true, hash: st.hash }; return { hash: st.hash, added, updated, removed }; } if(!clientHash || clientHash!==st.hash) return { hash: st.hash, changed: st.list }; return { upToDate:true, hash: st.hash }; },
   export: (p:{ids?:string[]; metaOnly?:boolean})=>{ const st=ensureLoaded(); let items=st.list; if(p?.ids?.length){ const want=new Set(p.ids); items=items.filter(i=>want.has(i.id)); } if(p?.metaOnly){ items=items.map(i=> ({ ...i, body:'' })); } return limitResponseSize({ hash: st.hash, count: items.length, items }); },
@@ -199,7 +289,29 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   if(!e.id || !e.title || !e.body) return fail('missing required fields');
   const dir = getInstructionsDir(); if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true});
   const file = path.join(dir, `${e.id}.json`); const exists = fs.existsSync(file); const overwrite = !!p.overwrite;
-  if(exists && !overwrite){ const st0=ensureLoaded(); logAudit('add', e.id, { skipped:true }); return { id:e.id, skipped:true, created:false, overwritten:false, hash: st0.hash }; }
+  if(exists && !overwrite){
+    // Reliability patch: ensure that a skip (meaning file existed) also implies catalog visibility.
+    // If not immediately visible, attempt reload then late materialization; if still missing we
+    // annotate the response so clients/tests can flag the anomalous state explicitly instead of
+    // silently returning skipped + subsequent notFound.
+    let st0=ensureLoaded(); let visible=st0.byId.has(e.id); let repaired=false; if(!visible){
+      try { invalidate(); st0=ensureLoaded(); visible=st0.byId.has(e.id); if(visible) repaired=true; } catch { /* ignore reload */ }
+      if(!visible){
+        const filePath=file; if(fs.existsSync(filePath)){
+          try { const rawTxt=fs.readFileSync(filePath,'utf8'); if(rawTxt.trim()){ const rawJson=JSON.parse(rawTxt) as InstructionEntry; const classifier=new ClassificationService(); const issues=classifier.validate(rawJson); if(!issues.length){ const norm=classifier.normalize(rawJson); st0.list.push(norm); st0.byId.set(norm.id,norm); visible=true; repaired=true; incrementCounter('instructions:addSkipLateMaterialize'); } else { incrementCounter('instructions:addSkipLateMaterializeRejected'); } } else { incrementCounter('instructions:addSkipLateMaterializeEmpty'); }
+          } catch { incrementCounter('instructions:addSkipLateMaterializeParseError'); }
+        }
+      }
+    }
+    logAudit('add', e.id, { skipped:true, late_visible: visible, repaired });
+    if(traceVisibility()){ emitTrace('[trace:add:skip]', { id:e.id, visible, repaired }); }
+    if(traceVisibility()){
+      traceInstructionVisibility(e.id, 'add-skip-pre-return', { visible, repaired });
+      if(!visible) traceEnvSnapshot('add-skip-anomalous', { repaired });
+    }
+    if(!visible){ return { id:e.id, skipped:true, created:false, overwritten:false, hash: st0.hash, visibilityWarning:'skipped_file_not_in_catalog' }; }
+    return { id:e.id, skipped:true, created:false, overwritten:false, hash: st0.hash, repaired: repaired? true: undefined };
+  }
   const now = new Date().toISOString();
   const rawBody = typeof e.body==='string'? e.body: String(e.body||'');
   const bodyTrimmed = rawBody.trim();
@@ -252,7 +364,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   if(record.owner==='unowned'){ const auto=resolveOwner(record.id); if(auto){ record.owner=auto; record.updatedAt=new Date().toISOString(); } }
   try { atomicWriteJson(file, record); } catch(err){ return fail((err as Error).message||'write-failed', { id:e.id }); }
   touchCatalogVersion(); invalidate(); let st=ensureLoaded();
-  if(traceVisibility()){ emitTrace('[trace:add:post-write]', { dir, id:e.id, exists: fs.existsSync(file), catalogHas: st.byId.has(e.id), listCount: st.list.length }); }
+  if(traceVisibility()){ emitTrace('[trace:add:post-write]', { dir, id:e.id, exists: fs.existsSync(file), catalogHas: st.byId.has(e.id), listCount: st.list.length }); traceInstructionVisibility(e.id, 'add-post-write'); }
   // Atomic read-back verification: ensure newly written/overwritten entry is *immediately* visible
   // in the in-memory catalog before declaring success. If not, attempt one forced reload; if still
   // absent (extremely unlikely on local FS), return an error instead of a false positive 'created'.
@@ -320,7 +432,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   }
   if(!atomicVisible){
     logAudit('add', e.id, { created: false, overwritten: false, atomic_readback_failed: true });
-  if(traceVisibility()){ emitTrace('[trace:add:failure]', { dir, id:e.id, fileExists: fs.existsSync(file), catalogHas: st.byId.has(e.id), listCount: st.list.length }); }
+  if(traceVisibility()){ emitTrace('[trace:add:failure]', { dir, id:e.id, fileExists: fs.existsSync(file), catalogHas: st.byId.has(e.id), listCount: st.list.length }); traceInstructionVisibility(e.id, 'add-failure'); traceEnvSnapshot('add-failure'); }
     return fail('atomic_readback_failed', { id:e.id, hash: st.hash });
   }
   // Final shape/readability validation: ensure catalog entry is structurally sound before
@@ -338,7 +450,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   } catch { /* ignore */ }
   if(!readable){
     logAudit('add', e.id, { created: false, overwritten: false, readback_invalid_shape: true });
-  if(traceVisibility()){ emitTrace('[trace:add:invalid-shape]', { dir, id:e.id }); }
+  if(traceVisibility()){ emitTrace('[trace:add:invalid-shape]', { dir, id:e.id }); traceInstructionVisibility(e.id, 'add-invalid-shape'); traceEnvSnapshot('add-invalid-shape'); }
     return fail('readback_invalid_shape', { id:e.id, hash: st.hash });
   }
   // Optional STRICT post-write verification (opt-in via MCP_INSTRUCTIONS_STRICT_CREATE=1)
@@ -380,7 +492,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   }
   const resp = { id:e.id, created: !exists, overwritten: exists && overwrite, skipped:false, hash: st.hash, verified:true, strictVerified: strictEnabled? true: undefined };
   logAudit('add', e.id, { created: !exists, overwritten: exists && overwrite, verified:true });
-  if(traceVisibility()){ emitTrace('[trace:add:success]', { dir, id:e.id, created: !exists, overwritten: exists && overwrite, listCount: st.list.length }); }
+  if(traceVisibility()){ emitTrace('[trace:add:success]', { dir, id:e.id, created: !exists, overwritten: exists && overwrite, listCount: st.list.length }); traceInstructionVisibility(e.id, 'add-success', { created: !exists, overwritten: exists && overwrite }); }
   return resp;
 }));
 

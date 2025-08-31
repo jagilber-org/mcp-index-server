@@ -378,7 +378,7 @@ For routine CI or local verification omit the flag for deterministic results.
 - New `CONTENT-GUIDANCE.md` clarifying instruction classification, promotion workflow, and MCP protocol separation of concerns.
 - Explicit MCP compliance guidance: do NOT embed tool catalogs/schemas inside instruction content (dynamic discovery via protocol only).
 
-### Documentation
+### Documentation (1.1.1)
 
 - Expanded TOOLS.md & README with Feedback System Features section.
 - Clarified short-circuit / minimal handshake modes and environment flags (previous sections consolidated).
@@ -422,6 +422,34 @@ For routine CI or local verification omit the flag for deterministic results.
 
 - No client changes required if ignoring unknown fields; clients wanting richer UX can surface `feedbackHint` and attach `reproEntry` when auto-filing feedback.
 - Optional: update any strict type definitions to include the new optional keys.
+
+## [1.1.1] - 2025-08-31
+
+### Changed (handshake & test harness reliability)
+
+- Removed legacy short-circuit handshake mode (`MCP_SHORTCIRCUIT`); only canonical SDK-driven initialize path is supported.
+- Added shared handshake helper (`src/tests/util/handshakeHelper.ts`) consolidating spawn + sentinel wait + initialize send + one-time resend fallback (idempotent initialize id=1).
+- Added timing regression guard (`handshakeTimingRegression.spec.ts`) enforcing initialize response under 15s hard cap (warn >5s) post early stdin buffering.
+- Standardized resend logic (single resend after 4s inactivity) eliminating ad-hoc polling loops that caused sporadic timeouts under suite contention.
+- Clarified diagnostic flag usage: production must keep `MCP_INIT_FALLBACK_ALLOW`, `MCP_DISABLE_INIT_SNIFF`, `MCP_HANDSHAKE_TRACE` unset unless actively debugging.
+
+### Fixed (intermittent test timeouts)
+
+- Resolved sporadic initialize wait timeouts in `createReadSmoke` & portable CRUD specs when run amidst heavy reproduction suites; root cause was duplicated bespoke timing logic racing process startup.
+- Direct protocol compliance test (`handshakeDirect.spec.ts`) remained stable confirming server-side sequencing correctness.
+
+### Documentation
+
+- Changelog now records deprecation & removal of short-circuit path; README environment flag table implicitly authoritative (no short-circuit flag documented).
+- Next minor (1.2.0) PRD addendum will ratify handshake helper as mandatory pattern for new spawn-based specs.
+
+### Internal (1.1.1)
+
+- Patch bump only; no schema or tool surface modifications.
+
+### Upgrade Guidance (1.1.1)
+
+No action required. Remove any legacy use of `MCP_SHORTCIRCUIT`; standard initialize sequence already compatible.
 
 ## [1.0.7] - 2025-08-30
 

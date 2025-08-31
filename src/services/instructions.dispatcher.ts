@@ -52,6 +52,23 @@ registerHandler('instructions/dispatch', async (params: DispatchParams) => {
   // Read-only internal actions
   if(Object.prototype.hasOwnProperty.call(instructionActions, action)){
     const fn = (instructionActions as Record<string, (p:unknown)=>unknown>)[action];
+    // Specialized reliability wrapper for 'get': automatically attempt late materialization
+    // using internal getEnhanced when initial catalog lookup fails but on-disk file exists.
+    if(action === 'get'){
+      const id = (params as { id?: unknown }).id;
+      if(typeof id === 'string' && id.trim()){
+        const base = fn({ id });
+        if((base as { notFound?: boolean }).notFound){
+          try {
+            const enhanced = (instructionActions as unknown as { getEnhanced?: (p:{id:string})=>unknown }).getEnhanced?.({ id });
+            if(enhanced && !(enhanced as { notFound?: boolean }).notFound){
+              return enhanced; // lateMaterialized success
+            }
+          } catch { /* swallow fallback errors to preserve original semantics */ }
+        }
+        return base;
+      }
+    }
     return fn(params);
   }
 

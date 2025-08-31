@@ -134,7 +134,8 @@ export function emitTrace(label: string, data: unknown, min: TraceLevel = 1){
     try {
       ensureTraceStream();
       if(traceStream){
-        const line = JSON.stringify(rec)+'\n';
+        // Persist in the same bracketed label + JSON format stderr uses so existing analyzers parse it.
+        const line = `${label} ${JSON.stringify(rec)}\n`;
         traceStream.write(line);
         traceBytesWritten += Buffer.byteLength(line);
         rotateIfNeeded();

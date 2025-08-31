@@ -267,6 +267,17 @@ graph TD
 
 ## 🔍 Development & Testing Configurations
 
+> 🧩 Multi‑Process / Multi‑Worker Requirement
+>
+> When you run more than one instance of the index server (parallel test runners, editor + background job, clustered PM2/containers, or any sidecar mutation process), you MUST ensure every process sees the latest on‑disk instruction state immediately. The in‑process cache is intentionally lightweight and only invalidated on detected mtime/signature changes inside a single process. Cross‑process visibility is therefore guaranteed ONLY if you either:
+>
+> 1. Set `INSTRUCTIONS_ALWAYS_RELOAD=1` (strongest consistency: disables caching, forces fresh disk read each operation), or
+> 2. Constrain all writes to a single authoritative process and route reads there (harder operationally), or
+> 3. Implement an external invalidation signal (e.g., file watcher broadcast) – not yet bundled here.
+>
+> For most multi‑process/editor scenarios, set `INSTRUCTIONS_ALWAYS_RELOAD=1` in the `env` block of your `mcp.json` until a coordinated cache invalidation layer is introduced. This flag converts the server into a stateless read‑through layer and prevents phantom stale reads that can otherwise appear momentarily under concurrent mutation.
+
+
 ### Full Debug Mode
 
 ```json

@@ -1,13 +1,69 @@
 // Portable MCP client helper library providing generic CRUD scenario support.
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import fs from 'fs';
+import path from 'path';
 
-export async function connect({ command='node', args=[], name='portable-generic-client', version='1.0.0', envOverrides={} }={}) {
+// ---------------------------------------------------------------------------
+// Phase 1 Instrumentation Additions (correlation IDs, raw capture, op timeline)
+// Opt-in via parameters or environment variables:
+//   PORTABLE_CAPTURE=1            -> enable raw JSON-RPC style capture (requests/responses summary)
+//   PORTABLE_CAPTURE_FILE=path    -> override capture file path (default tmp file)
+//   PORTABLE_CAPTURE_MAX=1000     -> max lines retained / written (after that, truncation notice)
+//   PORTABLE_OP_TRACE=1           -> console trace each operation with correlation id + latency
+//   PORTABLE_OP_MAX=500           -> max in-memory operations timeline retained
+// These additions are non-breaking; existing callers can ignore.
+// ---------------------------------------------------------------------------
+
+function makeTimestamp(){ return new Date().toISOString(); }
+function defaultTmpFile(prefix='portable-capture'){ const ts = Date.now(); const fname = `${prefix}-${ts}.jsonl`; const dir = path.join(process.cwd(), 'tmp', 'portable'); fs.mkdirSync(dir, { recursive:true }); return path.join(dir, fname); }
+
+function openCaptureIfEnabled({ capture, captureFile, maxLines }){
+  if(!capture) return null;
+  const file = captureFile || process.env.PORTABLE_CAPTURE_FILE || defaultTmpFile();
+  const stream = fs.createWriteStream(file, { flags:'a' });
+  stream.write(JSON.stringify({ ts: makeTimestamp(), event:'capture-start', file })+'\n');
+  return { stream, file, lines:0, maxLines: maxLines|| parseInt(process.env.PORTABLE_CAPTURE_MAX||'1000',10) };
+}
+
+function writeCapture(cap, obj){
+  if(!cap) return;
+  if(cap.lines >= cap.maxLines){ return; }
+  cap.stream.write(JSON.stringify(obj)+'\n');
+  cap.lines++;
+  if(cap.lines === cap.maxLines){ cap.stream.write(JSON.stringify({ ts: makeTimestamp(), event:'capture-truncated', maxLines: cap.maxLines })+'\n'); }
+}
+
+export async function connect({ command='node', args=[], name='portable-generic-client', version='1.0.0', envOverrides={},
+  capture = (process.env.PORTABLE_CAPTURE === '1'), captureFile, opTrace = (process.env.PORTABLE_OP_TRACE === '1'), maxOps = parseInt(process.env.PORTABLE_OP_MAX||'500',10), onOp }={}) {
   const env = { ...process.env, ...envOverrides };
   const transport = new StdioClientTransport({ command, args, env });
   const client = new Client({ name, version }, { capabilities: { tools: {} } });
+  const cap = openCaptureIfEnabled({ capture, captureFile });
+  const operations = []; // bounded timeline
+  let opCounter = 0;
+  const originalCallTool = client.callTool.bind(client);
+  client.callTool = async (request)=>{
+    const opId = 'op'+(++opCounter).toString().padStart(4,'0');
+    const started = performance.now();
+    writeCapture(cap, { ts: makeTimestamp(), phase:'request', opId, name: request.name, args: request.arguments });
+    if(opTrace) console.error('[portable-op][start]', opId, request.name);
+    let error, response;
+    try { response = await originalCallTool(request); }
+    catch(e){ error = e; }
+    const dur = Math.round(performance.now()-started);
+    const text = response?.content?.[0]?.text;
+    writeCapture(cap, { ts: makeTimestamp(), phase:'response', opId, name: request.name, ms: dur, ok: !error, error: error?.message, resultPreview: text? (text.length>200? text.slice(0,200)+'…': text): undefined });
+    if(opTrace) console.error('[portable-op][end]', opId, request.name, 'ms='+dur, error?('ERR:'+error.message):'OK');
+    const opRecord = { opId, name: request.name, ms: dur, ok: !error, error: error?.message };
+    operations.push(opRecord); if(operations.length > maxOps) operations.shift();
+    if(onOp) { try { onOp(opRecord); } catch {/* ignore */} }
+    if(error) throw error; else return response;
+  };
   await client.connect(transport);
-  return { client, transport };
+  function getOperationsTimeline(){ return operations.slice(); }
+  async function close(){ if(cap){ cap.stream.end(JSON.stringify({ ts: makeTimestamp(), event:'capture-end', lines: cap.lines })+'\n'); } await transport.close(); }
+  return { client, transport, getOperationsTimeline, close, captureFile: cap?.file };
 }
 
 // Create synthetic instruction entries (id, title, body, version, hash placeholder)
@@ -173,9 +229,11 @@ function classifyListObject(obj){
   return { items, count: obj?.count ?? items.length, hash: obj?.hash };
 }
 
-export async function createInstructionClient({ command='node', args=['dist/server/index.js'], forceMutation=true, verbose=false }={}) {
+export async function createInstructionClient({ command='node', args=['dist/server/index.js'], forceMutation=true, verbose=false, instructionsDir }={}) {
   if(forceMutation && process.env.MCP_ENABLE_MUTATION !== '1') process.env.MCP_ENABLE_MUTATION='1';
-  const { client, transport } = await connect({ command, args, envOverrides:{ MCP_ENABLE_MUTATION: process.env.MCP_ENABLE_MUTATION || (forceMutation? '1':'0') } });
+  const envOverrides = { MCP_ENABLE_MUTATION: process.env.MCP_ENABLE_MUTATION || (forceMutation? '1':'0') };
+  if(instructionsDir){ envOverrides.INSTRUCTIONS_DIR = instructionsDir; }
+  const { client, transport } = await connect({ command, args, envOverrides });
   // Discover dispatcher vs legacy
   let toolNames=[]; try { const tl = await client.listTools(); toolNames = (tl.tools||[]).map(t=>t.name); } catch(e){ if(verbose) console.error('[ops] tools/list failed', e.message); }
   const hasDispatcher = toolNames.includes('instructions/dispatch');
@@ -225,8 +283,26 @@ export async function createInstructionClient({ command='node', args=['dist/serv
     if(hasLegacyList){ const obj = await callJSON('instructions/list', {}); if(Array.isArray(obj)) return { items:obj, count:obj.length }; return classifyListObject(obj); }
     throw new Error('no_list_method_available');
   }
+  /**
+   * Verify persistence (read-after-write) with small retry loop to surface transient visibility gaps.
+   * @param {string} id instruction id
+   * @param {string} expectedBody expected body text
+   * @param {{attempts?:number, delayMs?:number}} opts optional attempts (default 3) and delay between attempts
+   * @returns {{ ok:boolean, attempts:number, finalBody?:string }} result
+   */
+  async function verify(id, expectedBody, { attempts=3, delayMs=50 }={}){
+    for(let i=0;i<attempts;i++){
+      try {
+        const r = await read(id);
+        const body = r?.item?.body || r?.body;
+        if(body === expectedBody) return { ok:true, attempts:i+1, finalBody:body };
+      } catch {/* ignore */}
+      if(i < attempts-1) await new Promise(res=>setTimeout(res, delayMs));
+    }
+    return { ok:false, attempts, finalBody: undefined };
+  }
   async function close(){ await transport.close(); }
-  return { create, read, update, remove, list, close, dispatcher: hasDispatcher };
+  return { create, read, update, remove, list, verify, close, dispatcher: hasDispatcher };
 }
 
 // Orchestrated CRUD test using discrete helpers (create -> read -> update -> read -> delete).

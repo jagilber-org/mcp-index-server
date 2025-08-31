@@ -71,3 +71,26 @@ A PowerShell script `Build-PortableZip.ps1` (at repo root portable folder) produ
 - All tool discovery and schemas come purely from runtime protocol (`tools/list`) – no server source inspection required.
 - If a server restarts during a REPL session, restart the client; a future enhancement may add `:refresh`.
 - Pin or lock the `@modelcontextprotocol/sdk` version for strict reproducibility if embedding in critical workflows.
+
+## Phase 1 Instrumentation Enhancements (Opt-In)
+
+Added optional debugging / tracing facilities to `client-lib.mjs`:
+
+Environment Variables:
+
+| Variable | Effect |
+|----------|--------|
+| `PORTABLE_CAPTURE=1` | Enable raw JSONL capture of request/response summaries. |
+| `PORTABLE_CAPTURE_FILE=path` | Override capture file location (default: `tmp/portable/portable-capture-<ts>.jsonl`). |
+| `PORTABLE_CAPTURE_MAX` | Max lines before truncation (default 1000). Truncation emits `capture-truncated`. |
+| `PORTABLE_OP_TRACE=1` | Emit stderr start/end lines per operation with correlation id + latency. |
+| `PORTABLE_OP_MAX` | Max in-memory operations kept for `getOperationsTimeline()` (default 500). |
+
+Programmatic Additions:
+
+- `connect({...})` now returns `{ getOperationsTimeline(), close(), captureFile }`.
+- Each `callTool` is wrapped with correlation IDs (`op0001`, ...), latency measurement, optional raw capture entry.
+- `createInstructionClient` now exposes `verify(id, expectedBody, { attempts=3, delayMs=50 })` performing a short read-after-write confirmation loop (diagnoses transient persistence visibility issues).
+
+All features are backwards compatible and disabled unless the corresponding env var is set or options passed.
+

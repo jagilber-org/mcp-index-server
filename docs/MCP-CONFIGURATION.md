@@ -157,7 +157,6 @@ graph TD
 | Variable | Type | Default | Description | Use Case |
 |----------|------|---------|-------------|----------|
 | `INSTRUCTIONS_ALWAYS_RELOAD` | Boolean | `false` | Disable caching, reload on every request | Development/Testing |
-| `MCP_SHORTCIRCUIT` | Boolean | `false` | Minimal handshake mode for testing | Testing Only |
 | `GOV_HASH_TRAILING_NEWLINE` | Boolean | `false` | Hash compatibility mode | Legacy Compatibility |
 
 ### Analytics & Usage Tracking
@@ -321,11 +320,10 @@ graph TD
       "env": {
         "INSTRUCTIONS_DIR": "./test-instructions",
         "MCP_ENABLE_MUTATION": "1",
-        "MCP_LOG_VERBOSE": "1",
-        "MCP_SHORTCIRCUIT": "1"
+  "MCP_LOG_VERBOSE": "1"
       },
       "restart": "never",
-      "tags": ["testing", "ci-cd", "short-circuit"]
+  "tags": ["testing", "ci-cd"]
     }
   }
 }

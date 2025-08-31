@@ -6,7 +6,6 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server/index.js",
-    "start:short": "cross-env MCP_SHORTCIRCUIT=1 node dist/server/index.js",
     "start-minimal": "node dist/minimal/index.js",
     "prestart": "npm run build",
     "pretest": "pwsh scripts/pretest-build-or-skip.ps1",
@@ -20,7 +19,6 @@
     "contract:tools": "node scripts/generate-tools-snapshot.mjs",
     "verify:manifest": "node scripts/verify-manifest.mjs",
     "test": "vitest run",
-    "test:short": "vitest run src/tests/shortCircuitHandshake.spec.ts",
     "test:watch": "vitest",
     "test:contracts": "vitest run src/tests/contractSchemas.spec.ts",
     "test:diag": "cross-env MCP_HEALTH_MIXED_DIAG=1 vitest run src/tests/handshakeFlakeRepro.spec.ts src/tests/healthMixedReproLoop.spec.ts src/tests/healthHangExploration.spec.ts",

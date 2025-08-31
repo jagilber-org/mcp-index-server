@@ -15,7 +15,7 @@ interface Frame { jsonrpc?: string; id?: number; method?: string; result?: any; 
 describe('MCP Raw Handshake Compliance', () => {
   it('initialize -> server/ready -> tools/list_changed (optional) ordering + list + ping', async () => {
     // Use full SDK server path (Content-Length framed). This locks handshake semantics against drift.
-  const child = spawn('node', ['dist/server/index.js'], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_SHORTCIRCUIT:'0' } });
+  const child = spawn('node', ['dist/server/index.js'], { stdio:['pipe','pipe','pipe'], env:{ ...process.env } });
     const frames: Frame[] = [];
     let closed = false;
     child.on('close', ()=> closed = true);

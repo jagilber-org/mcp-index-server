@@ -1,6 +1,6 @@
 # ARCHITECTURE
 
-Updated for 1.1.0 (includes: dispatcher consolidation, governance projection + hash, integrity verification, usage persistence, schema migration hook, feedback/emit subsystem, schema‑aided add failure contract, baseline & declaration guards).
+Updated for 1.1.2 (adds: memoized catalog reload (mtime/size signature + optional hash), late materialization eliminating add→get race, persistent structured tracing (label + JSON lines w/ rotation), feedback/emit subsystem, dispatcher consolidation, governance projection + hash, integrity verification, usage persistence, schema‑aided add failure contract, baseline & declaration guards).
 
 ## High-Level Components
 
@@ -80,7 +80,7 @@ Files -> Validate -> Normalize -> Enrich -> Migrate -> Index -> Serve -> Track -
 
 1. Loader enumerates `instructions/*.json`, applies Ajv validation (draft-07) and minimal bootstrap defaults.
 2. Classification normalizes + derives governance fields (version/status/owner/priorityTier/review dates/semantic summary) & risk score.
-3. Migration hook updates schemaVersion if older (current version: 1).
+3. Migration hook updates schemaVersion if older (current schemaVersion: 2 per instruction.schema.json).
 4. Catalog hash (id:sourceHash) and governance hash (projection set) computed.
 5. Entries cached (map + sorted list); enrichment persistence pass rewrites placeholders once.
 6. Tools served: diff / list / governanceHash / integrity / gates / prompt review / usage / metrics.
@@ -133,7 +133,8 @@ Results summarize counts, highest severity enabling fast gating flows.
 
 - `metrics/snapshot` returns per-method counts, feature counters, env feature list.
 - Optional verbose/mutation logging to stderr (MCP_LOG_VERBOSE / MCP_LOG_MUTATION).
-- Future: latency buckets & structured JSON logs beyond stderr text.
+- Structured tracing (1.1.2+): each line `[trace:category[:sub]] { json }` persisted to rotating JSONL (env controlled categories via `MCP_TRACE_CATEGORIES`).
+- Future: latency buckets & richer trace event taxonomy.
 
 ## Scaling Notes
 

@@ -1,9 +1,9 @@
 # MCP Index Server - Tools API Reference
 
-**Version:** 1.1.0 (MCP Protocol Compliant)  
+**Version:** 1.1.2 (MCP Protocol Compliant)  
 **Protocol:** Model Context Protocol (MCP) v1.0+  
 **Transport:** JSON-RPC 2.0 over stdio  
-**Last Updated:** December 28, 2024
+**Last Updated:** August 31, 2025
 
 ## 📖 Overview
 
@@ -17,6 +17,7 @@ The MCP Index Server provides a comprehensive instruction catalog management sys
 * **Governance Ready**: Built-in versioning and change tracking
 * **Developer Friendly**: Comprehensive error handling and diagnostics
 * **Feedback Subsystem**: 6 MCP tools for structured client feedback (submit/list/get/update/stats/health)
+* **Structured Tracing (1.1.2+)**: Rotated JSONL trace lines `[trace:category[:sub]] { json }` for reliable test parsing
 * **Schema-Aided Add Failures**: Inline JSON Schema returned on early structural `instructions/add` errors (1.1.0+)
 
 ## 🏗️ Architecture Overview

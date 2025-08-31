@@ -40,8 +40,13 @@ describe('Tracing Basics', () => {
     expect(after.length).toBeGreaterThan(0);
     const file = path.join(dir, after[0]);
     const content = fs.readFileSync(file,'utf8').trim().split(/\n+/);
-    // At least one record should be present and include session id
-    const recs = content.map(l=>{ try { return JSON.parse(l); } catch { return null; } });
+    // Lines are in the format: [label] {json}; extract the JSON segment starting at first '{'
+    const recs = content.map(l=>{
+      const brace = l.indexOf('{');
+      if(brace === -1) return null;
+      try { return JSON.parse(l.slice(brace)); } catch { return null; }
+    });
+    expect(recs.some(r=> r!==null)).toBe(true);
     const hasTest = recs.some(r=> r && r.label && String(r.label).includes('test:unit'));
     expect(hasTest).toBe(true);
     const hasOther = recs.some(r=> r && r.label && String(r.label).includes('[trace:other]'));

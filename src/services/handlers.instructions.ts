@@ -271,7 +271,31 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
     try {
       if(fs.existsSync(file)){
         try {
-          const rawAny = JSON.parse(fs.readFileSync(file,'utf8')) as InstructionEntry;
+          // Minimal inline retry (mirrors CatalogLoader.readJsonWithRetry) for late materialization
+          let rawAny: InstructionEntry | null = null; let attemptErr: unknown = null;
+          const maxAttempts = Math.max(1, Number(process.env.MCP_READ_RETRIES)||3);
+          const baseBackoff = Math.max(1, Number(process.env.MCP_READ_BACKOFF_MS)||8);
+          for(let attempt=1; attempt<=maxAttempts; attempt++){
+            try {
+              const txt = fs.readFileSync(file,'utf8');
+              if(!txt.trim()){
+                if(attempt===maxAttempts) throw new Error('empty file');
+              } else {
+                rawAny = JSON.parse(txt) as InstructionEntry;
+                break;
+              }
+            } catch(e){
+              attemptErr = e;
+              if(attempt===maxAttempts) break;
+              const code=(e as NodeJS.ErrnoException).code;
+              const transient = code==='EPERM'||code==='EBUSY'||code==='EACCES'||code==='ENOENT'|| (e instanceof Error && /empty/.test(e.message));
+              if(!transient) break;
+              const sleep= baseBackoff * Math.pow(2, attempt-1) + Math.floor(Math.random()*baseBackoff);
+              const start=Date.now();
+              while(Date.now()-start<sleep) { /* spin small backoff */ }
+            }
+          }
+          if(!rawAny) throw attemptErr || new Error('late materialization read failed');
           const classifier2 = new ClassificationService();
           const issues = classifier2.validate(rawAny);
           if(!issues.length){
@@ -360,7 +384,41 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   return resp;
 }));
 
-registerHandler('instructions/remove', guard('instructions/remove', (p:{ ids:string[]; missingOk?: boolean })=>{ const ids=Array.isArray(p.ids)? Array.from(new Set(p.ids.filter(x=> typeof x==='string' && x.trim()))):[]; if(!ids.length) return { removed:0, missing:[], errors:['no ids supplied'] }; const base=getInstructionsDir(); const missing:string[]=[]; const removed:string[]=[]; const errors:{ id:string; error:string }[]=[]; for(const id of ids){ const file=path.join(base, `${id}.json`); try { if(!fs.existsSync(file)){ missing.push(id); continue; } fs.unlinkSync(file); removed.push(id); } catch(e){ errors.push({ id, error: e instanceof Error? e.message: 'delete-failed' }); } } if(removed.length){ touchCatalogVersion(); invalidate(); ensureLoaded(); } const resp = { removed: removed.length, removedIds: removed, missing, errorCount: errors.length, errors }; logAudit('remove', ids, { removed: removed.length, missing: missing.length, errors: errors.length }); return resp; }));
+registerHandler('instructions/remove', guard('instructions/remove', (p:{ ids:string[]; missingOk?: boolean })=>{
+  const ids=Array.isArray(p.ids)? Array.from(new Set(p.ids.filter(x=> typeof x==='string' && x.trim()))):[];
+  if(!ids.length) return { removed:0, removedIds:[], missing:[], errorCount:0, errors:['no ids supplied'] };
+  const base=getInstructionsDir();
+  const missing:string[]=[]; const removed:string[]=[]; const errors:{ id:string; error:string }[]=[];
+  for(const id of ids){
+    const file=path.join(base, `${id}.json`);
+    try {
+      if(!fs.existsSync(file)){ missing.push(id); continue; }
+      fs.unlinkSync(file);
+      removed.push(id);
+    } catch(e){ errors.push({ id, error: e instanceof Error? e.message: 'delete-failed' }); }
+  }
+  if(removed.length){ touchCatalogVersion(); invalidate(); }
+  let st = ensureLoaded();
+  // Optional strict verification: ensure removed IDs are not present in catalog after reload.
+  const strictRemove = process.env.MCP_INSTRUCTIONS_STRICT_REMOVE === '1';
+  let strictFailed: string[] = [];
+  if(strictRemove){
+    // If any removed IDs still visible, attempt one more reload then final check.
+    const stillVisible = removed.filter(id=> st.byId.has(id));
+    if(stillVisible.length){
+      try { invalidate(); st = ensureLoaded(); } catch { /* ignore */ }
+    }
+    strictFailed = removed.filter(id=> st.byId.has(id));
+    if(strictFailed.length && traceVisibility()) emitTrace('[trace:remove:strict-failed]', { ids: strictFailed });
+  }
+  const resp = { removed: removed.length, removedIds: removed, missing, errorCount: errors.length + (strictFailed.length? 1:0), errors, strictVerified: strictRemove? (strictFailed.length===0): undefined, strictFailed };
+  if(strictRemove && strictFailed.length){
+    logAudit('remove', ids, { removed: removed.length, missing: missing.length, errors: errors.length, strict_failed: strictFailed.length });
+    return resp;
+  }
+  logAudit('remove', ids, { removed: removed.length, missing: missing.length, errors: errors.length });
+  return resp;
+}));
 
 registerHandler('instructions/reload', guard('instructions/reload', ()=>{ invalidate(); const st=ensureLoaded(); const resp = { reloaded:true, hash: st.hash, count: st.list.length }; logAudit('reload', undefined, { count: st.list.length }); return resp; }));
 

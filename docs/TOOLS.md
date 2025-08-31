@@ -1420,6 +1420,8 @@ The server provides a comprehensive feedback system enabling clients to submit s
 
 Submit structured feedback entries with rich metadata and context.
 
+> **Data Fidelity Policy (MANDATORY)**: When a feedback entry alleges a defect or provides reproduction data (IDs, markdown bodies, operation sequences), ALL subsequent analysis, red tests, and fixes MUST reuse the provided payload verbatim. No synthetic IDs, trimming, or markdown reflow is permitted unless an inline `DATA-FIDELITY-WAIVER` comment documents explicit reporter approval. This mirrors and reinforces the policies in `FEEDBACK-DEFECT-LIFECYCLE.md` and `TESTING-STRATEGY.md`.
+
 **Input Schema:**
 
 ```json
@@ -1609,17 +1611,17 @@ await client.callTool("feedback/submit", {
 
 ### Enterprise Features
 
-- **Audit Trail**: All submissions logged with timestamps and context
-- **Security Alerting**: Critical/security items trigger special logging
-- **Persistence**: Feedback stored in `feedback/feedback-entries.json`
-- **Data Rotation**: Automatic cleanup when exceeding configurable limits
-- **Status Workflow**: Full lifecycle from submission to resolution
-- **Rich Filtering**: Query by type, severity, status, date ranges, tags
+* **Audit Trail**: All submissions logged with timestamps and context
+* **Security Alerting**: Critical/security items trigger special logging
+* **Persistence**: Feedback stored in `feedback/feedback-entries.json`
+* **Data Rotation**: Automatic cleanup when exceeding configurable limits
+* **Status Workflow**: Full lifecycle from submission to resolution
+* **Rich Filtering**: Query by type, severity, status, date ranges, tags
 
 ### Configuration
 
 Set environment variables to customize:
 
-- `FEEDBACK_DIR`: Storage directory (default: `./feedback`)
-- `FEEDBACK_MAX_ENTRIES`: Maximum entries before rotation (default: 1000)
+* `FEEDBACK_DIR`: Storage directory (default: `./feedback`)
+* `FEEDBACK_MAX_ENTRIES`: Maximum entries before rotation (default: 1000)
 

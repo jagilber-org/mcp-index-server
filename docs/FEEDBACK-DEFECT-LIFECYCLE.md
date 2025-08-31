@@ -28,6 +28,20 @@ Current instruction schemaVersion: 2 (no change in this cycle)
 - Create focused Vitest spec (e.g. `src/tests/feedbackReproduction.spec.ts`).
 - Encode each alleged symptom as a RED test that should initially fail if defect is real OR pass if allegation is contradicted.
 - Use original instruction blobs (embedded or imported) to minimize drift; name constants after feedback ID or reported instruction ID.
+ 
+### ABSOLUTE DATA FIDELITY REQUIREMENT (MANDATORY)
+
+You stated policy: ALWAYS use the provided data. This section codifies that requirement:
+
+1. Every reproduction test MUST embed or import the exact reporter-supplied payload (IDs, title, body markdown including whitespace/newlines, rationale, requirement, audience, priority, categories, tags, overwrite flags, etc.).
+2. No paraphrasing, trimming, normalization, or synthetic alteration (including random suffixes) is permitted unless an explicit written waiver is added as a comment directly above the modified value with the tag `DATA-FIDELITY-WAIVER` and a justification.
+3. Large payloads: If performance is a concern, store the full original in a fixture file (`src/tests/fixtures/<feedbackId>.json` or `devinstructions/`) and load it verbatim; derive any reduced form only after documenting rationale and securing a waiver comment.
+4. Whitespace, ordering, and markdown structure are treated as semantically significant for reproduction until disproven; do not collapse or reflow.
+5. Review checklist MUST include “Exact payload fidelity preserved?”; PRs failing this are rejected.
+6. Future enforcement: linter rule to diff payload constants against archived feedback JSON and fail on mismatch.
+
+Violation of data fidelity is a policy breach and invalidates the RED→GREEN chain for that defect.
+
 - Categories inside spec:
   - Persistence Validation (RED) – reported broken paths.
   - GREEN Baselines – expected healthy behavior (acts as control group).
@@ -170,6 +184,7 @@ This policy was established after reproducing a production persistence divergenc
 
 - File must carry `.red.spec.ts` suffix while failing (e.g. `instructionsPersistenceDivergence.red.spec.ts`).
 - Use ONLY reporter‑supplied IDs and bodies (or a constant minimal body if body content is irrelevant) – never generate synthetic random IDs unless explicitly part of the repro.
+- Preserve the ENTIRE provided payload verbatim (see ABSOLUTE DATA FIDELITY REQUIREMENT). Any deviation requires `DATA-FIDELITY-WAIVER` inline annotation.
 - Assertions MUST cover: (a) add result contract (created / overwritten / skipped), (b) subsequent list inclusion, (c) direct read success, (d) catalog hash change (or synthetic hash surrogate) when new logical entries are added.
 - Failure message text should clearly encode the invariant ("Post-add count should increase by N", "Read should succeed for \<id\>").
 

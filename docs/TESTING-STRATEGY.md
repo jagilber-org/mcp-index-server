@@ -74,4 +74,8 @@ High-level enforcement (concise):
 6. Add negative + multi-client visibility regression tests post-fix.
 7. CI guard: CRUD issue closure requires RED→GREEN pair reference.
 
+### Data Fidelity Enforcement (ALWAYS Use Provided Data)
+
+ALL reproduction tests MUST embed or import the exact reporter-supplied payload (every field & original whitespace). No trimming, reformatting, synthesized IDs, or markdown reflow unless an inline `DATA-FIDELITY-WAIVER` comment references explicit approval & rationale. Reviewers reject any PR that paraphrases payload content. Future automation will lint for divergence against archived feedback JSON.
+
 Refer to the lifecycle doc for the detailed invariant table and justification. Any deviation requires explicit documented waiver in both docs.

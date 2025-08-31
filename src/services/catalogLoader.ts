@@ -21,6 +21,35 @@ export interface CatalogLoadResult {
 export class CatalogLoader {
   constructor(private readonly baseDir: string, private readonly classifier = new ClassificationService()){}
 
+  /**
+   * Robust JSON file reader with retry/backoff for transient Windows / network FS issues (EPERM/EBUSY/EACCES)
+   * and partial write races (empty file or truncated JSON). Ensures we rarely skip valid instructions due
+   * to momentary locks while another process is atomically renaming/writing.
+   */
+  private readJsonWithRetry(file: string): unknown {
+    const maxAttempts = Math.max(1, Number(process.env.MCP_READ_RETRIES)||3);
+    const baseBackoff = Math.max(1, Number(process.env.MCP_READ_BACKOFF_MS)||8);
+    let lastErr: unknown = null;
+    for(let attempt=1; attempt<=maxAttempts; attempt++){
+      try {
+        const raw = fs.readFileSync(file,'utf8');
+        // Treat empty content as transient (likely race) unless final attempt
+        if(!raw.trim()){ if(attempt===maxAttempts) return {}; throw new Error('empty file transient'); }
+        return JSON.parse(raw) as unknown;
+      } catch(err){
+        const code = (err as NodeJS.ErrnoException).code;
+        const transient = code==='EPERM' || code==='EBUSY' || code==='EACCES' || code==='ENOENT' || (err instanceof Error && /transient|JSON/.test(err.message));
+        if(!transient || attempt===maxAttempts){ lastErr = err; break; }
+        lastErr = err;
+        const sleep = baseBackoff * Math.pow(2, attempt-1) + Math.floor(Math.random()*baseBackoff);
+        const start = Date.now();
+        while(Date.now()-start < sleep){ /* spin tiny backoff (< few ms) */ }
+      }
+    }
+    if(lastErr) throw lastErr instanceof Error? lastErr: new Error('readJsonWithRetry failed');
+    return {}; // unreachable but satisfies typing
+  }
+
   load(): CatalogLoadResult {
     const dir = path.resolve(this.baseDir);
     if(!fs.existsSync(dir)) return { entries: [], errors: [{ file: dir, error: 'missing directory'}], hash: '' };
@@ -37,17 +66,20 @@ export class CatalogLoader {
   const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
   const entries: InstructionEntry[] = [];
   const errors: { file: string; error: string }[] = [];
+  // File-level trace (opt-in) surfaces every scanned file decision so higher-level diagnostics
+  // can correlate missingOnCatalog IDs with explicit acceptance / rejection reasons. Enable by
+  // setting MCP_CATALOG_FILE_TRACE=1 together with MCP_TRACE_ALL for broader context.
   const traceEnabled = process.env.MCP_CATALOG_FILE_TRACE === '1';
   const trace: { file:string; accepted:boolean; reason?:string }[] | undefined = traceEnabled ? [] : undefined;
   for(const f of files){
-      const full = path.join(dir, f);
+  const full = path.join(dir, f);
       // Exclude any files within a _templates directory (non-runtime placeholders)
       if(full.includes(`${path.sep}_templates${path.sep}`)){
         if(trace) trace.push({ file:f, accepted:false, reason:'ignored:template' });
         continue;
       }
       try {
-        const rawAny = JSON.parse(fs.readFileSync(full,'utf8')) as Record<string, unknown>;
+  const rawAny = this.readJsonWithRetry(full) as Record<string, unknown>;
         // Ignore clearly non-instruction config files (no id/title/body/requirement) e.g. gates.json
         const looksInstruction = typeof rawAny.id === 'string' && typeof rawAny.title === 'string' && typeof rawAny.body === 'string';
         if(!looksInstruction){
@@ -67,7 +99,7 @@ export class CatalogLoader {
         }
         
         if(needsRewrite){
-          fs.writeFileSync(full, JSON.stringify(raw, null, 2));
+          try { fs.writeFileSync(full, JSON.stringify(raw, null, 2)); } catch { /* ignore rewrite failure */ }
         }
         
   const mutRaw = raw as InstructionEntry;

@@ -451,6 +451,35 @@ For routine CI or local verification omit the flag for deterministic results.
 
 No action required. Remove any legacy use of `MCP_SHORTCIRCUIT`; standard initialize sequence already compatible.
 
+## [1.1.2] - 2025-08-31
+
+### Changed (catalog performance & visibility race elimination)
+
+- Implemented late materialization on add/get paths eliminating rare duplicate add -> immediate get notFound race under high concurrency.
+- Added per-file lifecycle tracing (`begin`, `progress`, `end`) at normal trace level for catalog loads.
+- Introduced memoized catalog caching (mtime/size heuristic + optional SHA-256 hash path) gated by `MCP_CATALOG_MEMOIZE` / `MCP_CATALOG_MEMOIZE_HASH` while preserving `INSTRUCTIONS_ALWAYS_RELOAD` semantics.
+- Emitted cache summary trace (`catalog:cache-summary`) for observability (hit/miss, strategy, counts).
+
+### Fixed (multi-client visibility anomalies)
+
+- Resolved cross-client immediate visibility lag after duplicate add with overwrite=false by deferring reconstruction until atomic write + canonical readback complete.
+- Eliminated list/get sampling phantom mismatches (analyzer now reports 0 anomalies across large trace corpus).
+
+### Added (tracing & analysis tooling)
+
+- Standardized trace persistence format to bracketed label + JSON for analyzer compatibility.
+- Added trace analysis scripts (`scripts/analyze-traces.*`) and reproduction harness (`scripts/run-feedback-repro-with-trace.ps1`).
+- Minimal instruction assembly script (`scripts/prepare-minimal-instructions.mjs`) for performance-focused runs without altering tests.
+
+### Notes (release scope)
+
+- Patch release (1.1.2) is internal reliability + performance; no external tool / schema surface change.
+- All previously RED reproduction tests now GREEN; two legacy RED specs still intentionally failing due to unsupported bulk import pathway (guarded by test expectations).
+
+### Upgrade Guidance (1.1.2)
+
+No client changes required. Enable `MCP_CATALOG_MEMOIZE=1` (and optionally `MCP_CATALOG_MEMOIZE_HASH=1`) to reduce reload overhead in high-churn scenarios without sacrificing correctness.
+
 ## [1.0.7] - 2025-08-30
 
 ### Added (creation verification & failure contract)

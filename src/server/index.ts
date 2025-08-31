@@ -21,12 +21,26 @@
 // This ensures spec compliance: an initialize request always yields either a
 // success or a version negotiation error – never silent drop.
 const __earlyInitChunks: Buffer[] = [];
+let __earlyInitFirstLogged = false;
 let __sdkReady = false;
 // Allow opt-out (e.g., diagnostic comparison) via MCP_DISABLE_EARLY_STDIN_BUFFER=1
 const __bufferEnabled = process.env.MCP_DISABLE_EARLY_STDIN_BUFFER !== '1';
 // We attach the temporary listener immediately so even synchronous module load
 // time is covered.
-function __earlyCapture(chunk: Buffer){ if(!__sdkReady && __bufferEnabled) __earlyInitChunks.push(Buffer.from(chunk)); }
+function __earlyCapture(chunk: Buffer){
+  if(!__sdkReady && __bufferEnabled){
+    __earlyInitChunks.push(Buffer.from(chunk));
+    // Light diagnostic: log only on first capture & optionally every 10th if deep buffering occurs.
+    if(process.env.MCP_LOG_DIAG === '1'){
+      if(!__earlyInitFirstLogged){
+        __earlyInitFirstLogged = true;
+        try { process.stderr.write(`[handshake-buffer] first early chunk captured size=${chunk.length}\n`); } catch { /* ignore */ }
+      } else if(__earlyInitChunks.length % 10 === 0){
+        try { process.stderr.write(`[handshake-buffer] bufferedChunks=${__earlyInitChunks.length}\n`); } catch { /* ignore */ }
+      }
+    }
+  }
+}
 try { if(__bufferEnabled) process.stdin.on('data', __earlyCapture); } catch { /* ignore */ }
 
 import { listRegisteredMethods } from './registry';
@@ -281,12 +295,15 @@ export async function main(){
       process.stderr.write(`[startup] diagnostics_error ${(e instanceof Error)? e.message: String(e)}\n`);
     }
   }
+  if(__bufferEnabled && process.env.MCP_LOG_DIAG === '1'){
+    try { process.stderr.write(`[handshake-buffer] pre-start buffered=${__earlyInitChunks.length}\n`); } catch { /* ignore */ }
+  }
   await startSdkServer();
   // Mark SDK ready & replay any buffered stdin chunks exactly once.
   __sdkReady = true;
   if(__bufferEnabled){
     try { process.stdin.off('data', __earlyCapture); } catch { /* ignore */ }
-    if(__earlyInitChunks.length){
+  if(__earlyInitChunks.length){
       try {
         for(const c of __earlyInitChunks){ process.stdin.emit('data', c); }
       } catch { /* ignore */ }

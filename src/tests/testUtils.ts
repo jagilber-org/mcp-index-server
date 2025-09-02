@@ -186,7 +186,8 @@ export async function getResponse(lines: string[], id: number, timeoutMs = 4000)
 // Wait for a file to appear (and optionally satisfy a predicate) up to timeout
 import fs from 'fs';
 import path from 'path';
-import { CatalogLoader } from '../services/catalogLoader';
+// Add explicit .js extension for Node16 moduleResolution compliance (TS2835 avoidance)
+import { CatalogLoader } from '../services/catalogLoader.js';
 import type { InstructionEntry } from '../models/instruction';
 export async function waitForFile(filePath: string, timeoutMs = 4000, predicate: (txt: string)=>boolean = ()=>true): Promise<string> {
   const start = Date.now();

@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import * as atomic from '../services/atomicFs';
+// Node16/NodeNext moduleResolution requires explicit file extensions for relative ESM-style imports.
+// Tests compile under that mode; add .js so emitted CJS/ESM interop resolves correctly.
+import * as atomic from '../services/atomicFs.js';
 
 describe('atomicWriteJson retry semantics', () => {
   it('retries transient rename failures and eventually succeeds', () => {

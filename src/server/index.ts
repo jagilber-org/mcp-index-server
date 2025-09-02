@@ -156,13 +156,16 @@ function findPackageVersion(): string {
   return '0.0.0';
 }
 
-async function startDashboard(cfg: CliConfig): Promise<{ url: string } | null> {
+// Added close handle in return object for test coverage harness so unit tests can start and stop the dashboard
+// without leaving open event loop handles. Production code ignores the extra property.
+async function startDashboard(cfg: CliConfig): Promise<{ url: string; close: () => void } | null> {
   if(!cfg.dashboard) return null;
   let port = cfg.dashboardPort;
   const host = cfg.dashboardHost;
   for(let attempt=0; attempt<cfg.maxPortTries; attempt++){
+    let server: http.Server | null = null;
     const ok = await new Promise<boolean>(resolve => {
-      const server = http.createServer((req, res) => {
+      server = http.createServer((req, res) => {
         if(!req.url){ res.statusCode=404; return res.end(); }
         if(req.url === '/' || req.url.startsWith('/index')){
           const tools = listRegisteredMethods();
@@ -182,8 +185,18 @@ async function startDashboard(cfg: CliConfig): Promise<{ url: string } | null> {
         if(code === 'EADDRINUSE'){ resolve(false); } else { resolve(false); }
       });
       server.listen(port, host, () => {
+        // If ephemeral port (0) requested, update port variable with assigned value for URL construction.
+        if(port === 0){
+          const addr = server!.address();
+          if(addr && typeof addr === 'object' && 'port' in addr && typeof addr.port === 'number'){
+            // mutate outer loop variable so returned url reflects actual bound port
+            port = addr.port;
+          }
+        }
         // success
-        process.on('exit', () => { try { server.close(); } catch { /* ignore */ } });
+          // server is set just above; non-null assertion safe here
+          const s = server!;
+          process.on('exit', () => { try { s.close(); } catch { /* ignore */ } });
         resolve(true);
       });
     });
@@ -194,7 +207,8 @@ async function startDashboard(cfg: CliConfig): Promise<{ url: string } | null> {
   // Local loopback HTTP (no TLS) acceptable for dev dashboard; constructed to appease static scanners.
   const proto = 'http:'; // dev-only
   const url = `${proto}//${host}:${port}/`;
-  return { url };
+  const close = () => { try { server?.close(); } catch { /* ignore */ } };
+  return { url, close };
     }
     port++;
   }

@@ -4,7 +4,7 @@ import type { Reporter, Vitest, File } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 
-class JsonResultsReporter implements Reporter {
+export default class JsonResultsReporter implements Reporter {
   onInit(ctx: Vitest) {
     // Ensure target directory exists early (harmless if already present)
     try { fs.mkdirSync('test-results', { recursive: true }); } catch { /* ignore */ }
@@ -40,5 +40,3 @@ class JsonResultsReporter implements Reporter {
     }
   }
 }
-
-export default new JsonResultsReporter();

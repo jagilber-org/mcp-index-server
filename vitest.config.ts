@@ -23,6 +23,10 @@ export default defineConfig({
   ,'node_modules/**'
     ],
     coverage: {
+      // Ensure CI artifact presence: generate multiple reporters
+      provider: 'v8',
+      reporter: ['text', 'json', 'lcov'],
+      reportsDirectory: 'coverage',
       exclude: [
         'scripts/**',
         'dist/**',

@@ -638,6 +638,110 @@ interface DispatchRequest {
 
 #### Error Response Handling
 
+### 🛠️ Index Visibility / Catalog Recovery Guide
+
+Use this when an instruction file exists on disk but one or more MCP operations (typically `instructions/list`) fail to show it, or when catalog hash/count drift is suspected. The server now self‑heals many cases automatically; these steps document observability and manual recovery levers.
+
+#### 1. Quick Triage Decision Tree
+
+| Symptom | Fast Check | Expected Auto‑Repair? | Next Step |
+|---------|------------|-----------------------|-----------|
+| `get` works, `list` missing id | Call `instructions/list` with `expectId` | Yes (targeted reload + late materialize) | If still absent, step 2 |
+| Both `get` and `list` miss id but file present on disk | Call `instructions/getEnhanced` | Yes (invalidate + late materialize) | If not repaired, step 3 |
+| Hash/count mismatch after bulk adds | Re‑invoke `list` with `expectId` for a missing representative id | Yes | If mismatch persists, step 4 |
+| Many files absent / widespread drift | Check trace flags (`repairedVisibility`, `lateMaterialized`) | Partial (may be iterative) | Step 4 (full reload) |
+| Corrupt JSON (parse error) | Manual open file; validate JSON | No (rejected) | Fix file or remove |
+| Need clean forensic baseline | Confirm backups/ | n/a | Step 5 (reset modes) |
+
+#### 2. Verify Auto‑Repair Flags
+
+Enable trace (set env `MCP_CATALOG_DIAG=1` or use existing verbose harness). Invoke:
+
+```json
+{ "name": "instructions/list", "arguments": { "expectId": "your-id" } }
+```
+
+Trace line `[trace:list]` includes:
+
+* `repairedVisibility: true` → entry surfaced via reload or late materialization
+* `lateMaterialized: true` → file parsed & injected without full reload
+* `attemptedReload/attemptedLate` → repair paths tried (even if final repair failed)
+
+If `expectOnDisk:true` and `expectInCatalog:false` AND no repair flags turned true, proceed to step 3.
+
+#### 3. Target a Single ID Repair
+
+Call enhanced getter (exposes repair):
+
+```json
+{ "name": "instructions/getEnhanced", "arguments": { "id": "your-id" } }
+```
+
+Outcomes:
+
+* Returns `{ item }` → repaired
+* Returns `{ notFound:true }` but file exists → likely validation failure (check file JSON + required fields)
+
+If repaired, re‑run `list` (no restart needed). If not, inspect file integrity:
+
+1. Confirm `.json` extension & UTF‑8 encoding
+2. Ensure `id` inside file matches filename
+3. Validate mandatory fields: `id`, `body`
+
+#### 4. Full Catalog Reload / Sanity Sweep
+
+If multiple items missing:
+
+1. Force reload via dispatch (if exposed) or temporarily rename `.catalog-version` then invoke any list/get (will repopulate)
+2. Optionally trigger a groom (if enabled) for hash recomputation & normalization.
+3. Re‑run a hash integrity test (`governanceHashIntegrity.spec.ts` pattern) in a diagnostic environment.
+
+#### 5. Reset / Seed Strategies
+
+Use deployment script flags (PowerShell examples):
+
+* Preserve & upgrade only:  
+  `pwsh scripts/deploy-local.ps1 -Overwrite -TargetDir <prod>`
+* Empty index (keep templates) for forensic isolation:  
+  `pwsh scripts/deploy-local.ps1 -Overwrite -EmptyIndex -TargetDir <prod>`
+* Force known seed set (replace current):  
+  `pwsh scripts/deploy-local.ps1 -Overwrite -ForceSeed -TargetDir <prod>`
+* Full wipe then seed:  
+  `pwsh scripts/deploy-local.ps1 -Overwrite -EmptyIndex -ForceSeed -TargetDir <prod>`
+
+Always capture backup first (script does this automatically into `backups/`). For manual emergency: copy `instructions/` elsewhere before resetting.
+
+#### 6. Bulk Validation After Recovery
+
+After any repair/reset:
+
+1. `instructions/list` → record `count` & `hash`
+2. Spot check 2–3 representative IDs with `get`
+3. Run quick portable client smoke (`createReadSmoke.spec.ts` or harness) against same directory (set `INSTRUCTIONS_DIR`)
+4. Check traces for unexpected high frequency of `lateMaterializeRejected` (indicates malformed files)
+
+#### 7. When to Escalate
+
+Open an issue if ANY occurs:
+
+* Repeated absence requiring >1 repair per same id per hour
+* `lateMaterializeRejected` increments for properly formatted files
+* Catalog hash oscillates between >3 distinct values without mutations
+
+Include in report: recent `[trace:list]` payload, file stat (mtime/size), and whether `invalidate` was manually triggered.
+
+#### 8. Preventive Practices
+
+* Avoid out‑of‑band writes that keep file open (write atomically: temp file + rename)
+* Keep filenames stable; changing internal `id` without renaming breaks validation
+* Run periodic groom in maintenance windows for normalization & hash check
+* Use overwrite flag for planned corrections instead of editing large batches manually
+
+---
+
+> This section documents the new self‑healing visibility feature (expectId‑driven targeted reload + late materialization) added in version 1.1.2.
+
+
 All mutation operations now return enhanced error information:
 
 ```typescript

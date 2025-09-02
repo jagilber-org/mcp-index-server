@@ -326,9 +326,39 @@ export async function createInstructionClient({ command='node', args=['dist/serv
     throw new Error('no_add_method_available');
   }
   // Bulk import convenience used by certain RED tests (falls back gracefully if unsupported)
-    async function importBulk(entries, { mode='overwrite' }={}) {
-      throw new Error('no_import_method_available');
+  async function importBulk(entries, { mode='overwrite' }={}) {
+    // Normalize entries once (avoid mutating original array)
+    const normEntries = Array.isArray(entries) ? entries.map(e=>e && typeof e==='object'? e: { id:String(e), body:'' }) : [];
+    if(normEntries.length === 0) return { imported:0, overwritten:0, skipped:0, entries:[] };
+    // Attempt dispatcher bulk import first if available.
+    if(hasDispatcher){
+      try {
+        const resp = await callJSON('instructions/dispatch', { action:'import', entries: normEntries, mode });
+        if(resp && (resp.imported !== undefined || resp.overwritten !== undefined || resp.skipped !== undefined)){
+          return resp;
+        }
+        // If shape unexpected, fall through to per-entry fallback.
+      } catch(_e){ /* swallow & fallback */ }
     }
+    // Fallback: perform per-entry create with overwrite flag based on mode semantics.
+    // mode: 'overwrite' => overwrite true; 'skip' => overwrite false; anything else treat as overwrite true for now.
+    const overwriteForMode = mode === 'skip' ? false : true;
+    let imported = 0, overwritten = 0, skipped = 0;
+    const results = [];
+    for(const entry of normEntries){
+      try {
+        const r = await create(entry, { overwrite: overwriteForMode });
+        // Heuristics: server likely returns created/overwritten/skipped flags.
+        if(r?.created) imported++; else if(r?.overwritten) overwritten++; else if(r?.skipped) skipped++; else imported++;
+        results.push(r);
+      } catch(e){
+        // If duplicate and we chose skip mode treat as skipped; otherwise record minimal error object.
+        if(mode==='skip'){ skipped++; results.push({ error: e.message }); }
+        else { results.push({ error: e.message }); }
+      }
+    }
+    return { imported, overwritten, skipped, entries: results, fallback:true };
+  }
   async function read(id){
     if(hasDispatcher){ return callJSON('instructions/dispatch', { action:'get', id }); }
     if(hasLegacyGet){ return callJSON('instructions/get',{ id }); }

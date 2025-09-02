@@ -13,8 +13,18 @@ export interface HandshakeResult { server: ChildProcessWithoutNullStreams; parse
  *  - Returns process + parser once initialize response observed.
  */
 export async function performHandshake(opts?: { cwd?: string; protocolVersion?: string; extraEnv?: Record<string,string> }): Promise<HandshakeResult> {
-  const cwd = opts?.cwd || process.cwd();
-  const dist = path.join(cwd, 'dist', 'server', 'index.js');
+  let cwd = opts?.cwd || process.cwd();
+  let dist = path.join(cwd, 'dist', 'server', 'index.js');
+  // CI fallback: if provided cwd doesn't exist on this platform (e.g. Windows path on Linux runner),
+  // fall back to current working directory so tests still exercise built server.
+  const fs = await import('fs');
+  if(!fs.existsSync(dist)){
+    const candidate = path.join(process.cwd(), 'dist', 'server', 'index.js');
+    if(fs.existsSync(candidate)){
+      dist = candidate;
+      cwd = process.cwd();
+    }
+  }
   const enableMutationEnv = { MCP_ENABLE_MUTATION: '1' };
   const server = spawn(process.execPath, [dist], { stdio: ['pipe','pipe','pipe'], env: { ...process.env, ...enableMutationEnv, ...(opts?.extraEnv||{}) } });
   const parser = new StdioFramingParser();

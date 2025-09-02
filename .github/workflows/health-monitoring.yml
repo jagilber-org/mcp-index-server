@@ -1,5 +1,9 @@
 name: Error Monitoring & Health Checks
 
+permissions:
+  contents: read
+  issues: write
+
 on:
   schedule:
     # Run health checks every 6 hours
@@ -27,34 +31,11 @@ jobs:
       - name: Build
         run: npm run build
         
-      - name: Run server health check
-        timeout-minutes: 2
+      - name: Run server health check (JSON-RPC)
+        timeout-minutes: 3
         run: |
-          # Start server in background
-          npm start &
-          SERVER_PID=$!
-          
-          # Wait for server to be ready
-          sleep 5
-          
-          # Send test request to verify server is responding
-          echo '{"jsonrpc":"2.0","id":1,"method":"health/check","params":{}}' | npm start > health_response.json 2>&1 &
-          HEALTH_PID=$!
-          
-          # Wait for response
-          sleep 3
-          
-          # Kill processes
-          kill $SERVER_PID $HEALTH_PID 2>/dev/null || true
-          
-          # Check if we got a valid response
-          if grep -q '"status":"ok"' health_response.json; then
-            echo "✅ Server health check passed"
-          else
-            echo "❌ Server health check failed"
-            cat health_response.json
-            exit 1
-          fi
+          echo 'Running JSON-RPC health check (initialize -> health/check)...'
+          node scripts/health-check.mjs || (echo 'Health check failed'; cat health_response.json || true; exit 1)
 
       - name: Check for error logs
         run: |

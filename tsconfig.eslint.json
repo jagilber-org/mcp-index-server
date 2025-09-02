@@ -6,7 +6,8 @@
   "extends": "./tsconfig.json",
   "include": [
     "src/**/*.ts",
-    "src/**/*.tsx"
+  "src/**/*.tsx",
+  "scripts/**/*.mjs"
   ],
   "exclude": [
     "node_modules",

@@ -1,0 +1,30 @@
+{
+  "id": "skip-visibility-1756810634698",
+  "title": "skip-visibility-1756810634698",
+  "body": "Test body for skip visibility reliability patch",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "30478d1699fe0a3592d052e986eef2cd524785afa309d82a0d552a717ad64b64",
+  "schemaVersion": "2",
+  "createdAt": "2025-09-02T10:57:15.000Z",
+  "updatedAt": "2025-09-02T10:57:15.000Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-02T10:57:15.001Z",
+  "nextReviewDue": "2025-12-01T10:57:15.001Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-02T10:57:15.000Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Test body for skip visibility reliability patch"
+}

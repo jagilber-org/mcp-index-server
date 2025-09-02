@@ -1,0 +1,14 @@
+{
+  "id": "ext-pre-1756816754245-2",
+  "title": "ext pre 1756816754245 2",
+  "body": "External file visibility test body for ext-pre-1756816754245-2",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "test",
+    "visibility"
+  ],
+  "reviewIntervalDays": 120,
+  "schemaVersion": "2"
+}

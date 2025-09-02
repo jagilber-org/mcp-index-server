@@ -120,12 +120,54 @@ function traceEnvSnapshot(phase:string, extra?:Record<string, unknown>){
 // Legacy individual instruction handlers removed in favor of unified dispatcher (instructions/dispatch).
 // Internal implementation functions retained below for dispatcher direct invocation.
 export const instructionActions = {
-  list: (p:{category?:string; expectId?:string})=>{ const st = ensureLoaded(); let items = st.list; if(p?.category){ const c = p.category.toLowerCase(); items = items.filter(i=> i.categories.includes(c)); }
+  list: (p:{category?:string; expectId?:string})=>{ let st = ensureLoaded(); const originalHash = st.hash; let items = st.list; if(p?.category){ const c = p.category.toLowerCase(); items = items.filter(i=> i.categories.includes(c)); }
+    let repairedVisibility:boolean|undefined; let lateMaterialized:boolean|undefined; let attemptedReload=false; let attemptedLate=false;
     // Reliability enhancement: if caller supplies expectId and catalog contains it, move that
     // entry to the front so CI size-limiting (which retains only the first few items) still
     // exposes the newly added instruction for immediate visibility assertions.
-    if(p?.expectId){ const idx = items.findIndex(i=> i.id===p.expectId); if(idx>0){ const target = items[idx]; items = [target, ...items.slice(0,idx), ...items.slice(idx+1)]; } }
-    if(traceVisibility()){ try { const dir=getInstructionsDir(); const disk=fs.readdirSync(dir).filter(f=>f.endsWith('.json')); const diskIds=new Set(disk.map(f=>f.slice(0,-5))); const idsSample=items.slice(0,5).map(i=>i.id); const missingOnCatalog=[...diskIds].filter(id=> !st.byId.has(id)); const expectId=p?.expectId; const expectOnDisk= expectId? diskIds.has(expectId): undefined; const expectInCatalog = expectId? st.byId.has(expectId): undefined; emitTrace('[trace:list]', { dir, total: st.list.length, filtered: items.length, sample: idsSample, diskCount: disk.length, missingOnCatalogCount: missingOnCatalog.length, missingOnCatalog: missingOnCatalog.slice(0,5), expectId, expectOnDisk, expectInCatalog }); } catch { /* ignore */ } } return limitResponseSize({ hash: st.hash, count: items.length, items }); },
+    if(p?.expectId){
+      const idx = items.findIndex(i=> i.id===p.expectId);
+      if(idx>0){ const target = items[idx]; items = [target, ...items.slice(0,idx), ...items.slice(idx+1)]; }
+    }
+    // NEW: If expectId provided but not currently visible while file exists on disk, attempt a focused
+    // repair (invalidate + reload; if still missing perform late materialization). This narrows the race
+    // window where list could lag behind a just-written instruction that get() would already surface via
+    // late materialization paths in other handlers.
+    if(p?.expectId){
+      try {
+        const dir = getInstructionsDir();
+        const file = path.join(dir, `${p.expectId}.json`);
+        const hasFile = fs.existsSync(file);
+        const inCatalog = st.byId.has(p.expectId);
+        if(hasFile && !inCatalog){
+          attemptedReload = true;
+          invalidate(); st = ensureLoaded(); items = st.list; // refresh view
+          if(p.category){ const c2 = p.category.toLowerCase(); items = items.filter(i=> i.categories.includes(c2)); }
+          if(!st.byId.has(p.expectId)){
+            // Late materialize directly from disk (classification validated) to avoid false negative.
+            attemptedLate = true;
+            try {
+              const rawTxt = fs.readFileSync(file,'utf8');
+              if(rawTxt.trim()){
+                try {
+                  const rawJson = JSON.parse(rawTxt) as InstructionEntry; const classifier=new ClassificationService(); const issues=classifier.validate(rawJson); if(!issues.length){ const norm=classifier.normalize(rawJson); st.list.push(norm); st.byId.set(norm.id,norm); items = st.list; repairedVisibility = true; lateMaterialized = true; incrementCounter('instructions:listLateMaterialize'); } else { incrementCounter('instructions:listLateMaterializeRejected'); }
+                } catch { incrementCounter('instructions:listLateMaterializeParseError'); }
+              } else { incrementCounter('instructions:listLateMaterializeEmpty'); }
+            } catch { /* ignore disk read */ }
+          } else {
+            repairedVisibility = true;
+          }
+          // If we repaired or reloaded, re-apply expectId ordering
+          if(st.byId.has(p.expectId)){
+            const idx2 = items.findIndex(i=> i.id===p.expectId);
+            if(idx2>0){ const target2 = items[idx2]; items = [target2, ...items.slice(0,idx2), ...items.slice(idx2+1)]; }
+          }
+        }
+      } catch { /* ignore repair errors */ }
+    }
+    if(traceVisibility()){ try { const dir=getInstructionsDir(); const disk=fs.readdirSync(dir).filter(f=>f.endsWith('.json')); const diskIds=new Set(disk.map(f=>f.slice(0,-5))); const idsSample=items.slice(0,5).map(i=>i.id); const missingOnCatalog=[...diskIds].filter(id=> !st.byId.has(id)); const expectId=p?.expectId; const expectOnDisk= expectId? diskIds.has(expectId): undefined; const expectInCatalog = expectId? st.byId.has(expectId): undefined; emitTrace('[trace:list]', { dir, total: st.list.length, filtered: items.length, sample: idsSample, diskCount: disk.length, missingOnCatalogCount: missingOnCatalog.length, missingOnCatalog: missingOnCatalog.slice(0,5), expectId, expectOnDisk, expectInCatalog, repairedVisibility, lateMaterialized, attemptedReload, attemptedLate, originalHash, finalHash: st.hash }); } catch { /* ignore */ } }
+    const resp = limitResponseSize({ hash: st.hash, count: items.length, items, repairedVisibility, lateMaterialized });
+    return resp; },
   listScoped: (p:{ userId?:string; workspaceId?:string; teamIds?: string[] })=>{ const st=ensureLoaded(); const userId=p.userId?.toLowerCase(); const workspaceId=p.workspaceId?.toLowerCase(); const teamIds=(p.teamIds||[]).map(t=>t.toLowerCase()); const all=st.list; const matchUser = userId? all.filter(e=> (e.userId||'').toLowerCase()===userId):[]; if(matchUser.length) return { hash: st.hash, count: matchUser.length, scope:'user', items:matchUser }; const matchWorkspace = workspaceId? all.filter(e=> (e.workspaceId||'').toLowerCase()===workspaceId):[]; if(matchWorkspace.length) return { hash: st.hash, count: matchWorkspace.length, scope:'workspace', items:matchWorkspace }; const teamSet = new Set(teamIds); const matchTeams = teamIds.length? all.filter(e=> Array.isArray(e.teamIds) && e.teamIds.some(t=> teamSet.has(t.toLowerCase()))):[]; if(matchTeams.length) return { hash: st.hash, count: matchTeams.length, scope:'team', items:matchTeams }; const audienceAll = all.filter(e=> e.audience==='all'); return { hash: st.hash, count: audienceAll.length, scope:'all', items: audienceAll }; },
   get: (p:{id:string})=>{ const st=ensureLoaded(); const item = st.byId.get(p.id); if(traceVisibility()){ const dir=getInstructionsDir(); emitTrace('[trace:get]', { dir, id:p.id, found: !!item, total: st.list.length }); traceInstructionVisibility(p.id, item? 'get-found':'get-not-found'); if(!item) traceEnvSnapshot('get-not-found'); } return item? { hash: st.hash, item }: { notFound:true }; },
   // Reliability enhancement: if an entry is reported notFound but a file with that id exists on disk,

@@ -1,34 +1,34 @@
 {
   "id": "mcp-server-testing-patterns-2025",
   "title": "MCP Server Testing Patterns 2025 - Structured Validation Playbook",
-  "body": "# MCP Server Testing Patterns 2025 - Structured Validation Playbook\n\n## Purpose\nCodify repeatable patterns for validating MCP server functionality (capabilities, mutations, governance, performance) to ensure reliable multi-workspace usage and regression resilience.\n\n## Core Testing Pillars\n1. Capability Surface Verification\n2. Instruction CRUD & Persistence\n3. Governance & Metadata Integrity\n4. Performance & Resource Efficiency\n5. Drift & Integrity Detection\n6. Usage Analytics & Adoption\n\n## Pattern 1: Capability Surface Snapshot\n\n```\nTools Enumerate -> Categorize -> Compare Baseline Hash -> Flag Deltas\n```\nSteps:\n1. list/tools (capture names, categories)\n2. hash baseline (store with timestamp)\n3. diff against last known manifest\n4. alert on additions/removals (breaking risk score)\n\n## Pattern 2: Instruction Lifecycle Roundtrip\n| Step | Action | Expected | Metric |\n|------|--------|----------|--------|\n| 1 | add test-instruction-X | hash changes | add latency |\n| 2 | get test-instruction-X | body exact | retrieval ms |\n| 3 | list | entry present | catalog size |\n| 4 | restart server | entry persists | persistence OK |\n| 5 | delete (optional) | hash changes | cleanup latency |\n\n## Pattern 3: Governance Field Validation\nRequired fields: id, title, body, status, owner (if mandated), priorityTier, reviewIntervalDays. Test:\n- Add with missing optional fields -> auto-populate defaults\n- Attempt add missing required -> expect validation error\n- Edit owner -> verify changeLog + updatedAt mutate\n\n## Pattern 4: Performance Budget Checks\nThreshold examples (adjust per environment):\n- list: < 150ms\n- get: < 100ms\n- add(import): < 300ms (median)\n- diff/groom: < 400ms\nRecord 10-sample rolling median; raise warning above 1.5x baseline.\n\n## Pattern 5: Drift & Integrity Cycle\n1. list (catalog snapshot)\n2. usage/track for sentinel instruction\n3. groom (normalize)\n4. diff (no-op expectation)\n5. integrity/verify (when implemented) -> expect PASS\n\n## Pattern 6: High-Risk Change Guardrails\n| Change Type | Risk | Extra Step |\n|-------------|------|-----------|\n| Tool Removal | High | require manual approval hash |\n| Schema Field Add | High | run migration dry-run |\n| Instruction Overwrite | Medium | capture pre-image snapshot |\n| Owner Reassignment | Medium | log governance event |\n| Review Interval Change | Low | ensure nextReviewDue recalculated |\n\n## Pattern 7: Usage Analytics Sanity\n- Track 3 distinct instructions\n- usage/hotset includes them within N events\n- usage/flush persists & clears ephemeral counters (if available)\n\n## Pattern 8: Edge Content Stress (Reference)\nLeverage: complex-edge-cases-instruction-2025 & complex-test-instruction-persistence-2025 as canonical stress objects.\n\n## Pattern 9: Backup & Restore Drill\n1. Export instructions directory snapshot\n2. Simulate deletion of one test instruction on disk\n3. Restart with ALWAYS_RELOAD -> absence confirmed\n4. Re-import snapshot -> integrity restored\n\n## Pattern 10: Hash Determinism\n- Add instruction A\n- Re-import identical A -> no hash change (idempotent)\n- Modify single char -> new hash != old hash\n\n## Metrics Schema (Suggested)\n\n```json\n{\n  \"timestamp\": \"2025-08-31T00:00:00Z\",\n  \"operation\": \"add\",\n  \"latencyMs\": 123,\n  \"catalogHash\": \"...\",\n  \"catalogCount\": 42,\n  \"anomalies\": []\n}\n```\n\n## Failure Triage Quick Table\n| Symptom | Likely Cause | First Action | Deep Dive |\n|---------|-------------|--------------|-----------|\n| Add claims success, not listed | Write bypassed or filter skip | Enable verbose logging | Inspect disk, check write path |\n| Hash unchanged after add | No mutation persisted | Compare pre/post snapshots | Force reload & diff |\n| Slow list (>500ms) | I/O or large body parse | Capture profiler sample | Segment large instructions |\n| Missing governance fields | Validation gap | Enforce schema at add | Add server-side check |\n| Drift after groom | Non-idempotent normalization | Inspect changed fields | Add deterministic ordering |\n\n## Daily Test Cadence (Light)\n1. Capability snapshot\n2. Add/get/delete sentinel (optional)\n3. Hash compare vs prior day\n\n## Weekly Extended Cadence\n1. Full lifecycle roundtrip\n2. Drift + groom verification\n3. Performance budget re-baseline\n4. Backup/restore simulation\n\n## Risk Mitigation\n- Maintain sentinel instructions (test-add-functionality-2025, complex-edge-cases-instruction-2025)\n- Log structured metrics for longitudinal trends\n- Alert on riskScore spikes or owner=unowned above threshold percentage\n\n## Adoption Metrics\nTrack: distinct instructions retrieved per day, add vs overwrite ratio, catalog growth trend (slope). Target stable growth without orphaned unowned entries > 30%.\n\n## Next Evolution\n- Integrate integrity/verify endpoint once server supports\n- Add semantic diff classification (content vs metadata)\n- Introduce automatic rollback on failed overwrite anomaly\n\n*End of playbook.*",
+  "body": "# MCP Server Testing Patterns 2025 - Structured Validation Playbook\n\nInitial import body.",
   "priority": 58,
   "audience": "all",
   "requirement": "recommended",
   "categories": [
-    "testing",
-    "patterns",
     "governance",
-    "validation",
-    "performance"
+    "patterns",
+    "performance",
+    "testing",
+    "validation"
   ],
-  "sourceHash": "d7ea63749ebd79ffb2b7840e709edcf36d4af431803cb3c28b1c811938744aa5",
+  "sourceHash": "e9c6de3475eabb604ca91baebaac872237fe93e5f20b6daa925137a993cbf9bf",
   "schemaVersion": "2",
-  "createdAt": "2025-08-31T22:30:43.262Z",
-  "updatedAt": "2025-08-31T22:30:43.262Z",
+  "createdAt": "2025-09-02T12:38:50.174Z",
+  "updatedAt": "2025-09-02T12:38:58.067Z",
   "riskScore": 62,
   "version": "1.0.0",
   "status": "approved",
   "owner": "quality-engineering",
   "priorityTier": "P2",
   "classification": "internal",
-  "lastReviewedAt": "2025-08-31T22:30:43.262Z",
-  "nextReviewDue": "2025-08-31T22:30:43.262Z",
+  "lastReviewedAt": "2025-09-02T12:38:50.174Z",
+  "nextReviewDue": "2025-09-02T12:38:50.174Z",
   "reviewIntervalDays": 60,
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-08-31T22:30:43.262Z",
+      "changedAt": "2025-09-02T12:38:50.174Z",
       "summary": "initial import"
     }
   ],

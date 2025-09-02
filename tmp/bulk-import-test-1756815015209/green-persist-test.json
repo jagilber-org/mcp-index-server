@@ -1,0 +1,33 @@
+{
+  "id": "green-persist-test",
+  "title": "Persistence Test",
+  "body": "This instruction should persist correctly",
+  "priority": 30,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "persistence",
+    "test"
+  ],
+  "sourceHash": "4cd6eb02fca8f999893bd3f00f83f52d6e2c3756242d07b649315bfdf38f8df2",
+  "schemaVersion": "2",
+  "createdAt": "2025-09-02T12:10:15.493Z",
+  "updatedAt": "2025-09-02T12:10:15.493Z",
+  "riskScore": 75,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-02T12:10:15.494Z",
+  "nextReviewDue": "2025-11-01T12:10:15.494Z",
+  "reviewIntervalDays": 60,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-02T12:10:15.493Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "This instruction should persist correctly"
+}

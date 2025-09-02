@@ -21,6 +21,13 @@ const g = globalThis as any;
 if(!g.__SETUP_DIST_READY_INIT){
   g.__SETUP_DIST_READY_INIT = true;
   try {
+    // Recommendation 2: Skip production deploy auto-sync on non-Windows runners to eliminate noisy
+    // "Cannot find drive 'C'" errors in Linux CI. Users can still force behavior by unsetting
+    // SKIP_PROD_DEPLOY on Windows. On non-win32 platforms we set SKIP_PROD_DEPLOY=1 implicitly.
+    const isWindows = process.platform === 'win32';
+    if(!isWindows && process.env.SKIP_PROD_DEPLOY !== '0'){
+      process.env.SKIP_PROD_DEPLOY = '1';
+    }
     if(process.env.SKIP_PROD_DEPLOY !== '1'){
       const prodDir = 'C:/mcp/mcp-index-server-prod';
       const prodPkg = path.join(prodDir, 'package.json');

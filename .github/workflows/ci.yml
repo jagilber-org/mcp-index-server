@@ -35,14 +35,24 @@ jobs:
           # Pretest build still exists but we already built explicitly; this ensures deterministic availability.
           # Run coverage-enabled test execution so coverage artifact is generated.
           npm run coverage:ci --if-present || npm test --if-present
-      - name: Collect Coverage Artifact
+      - name: Upload coverage (directory)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-            name: coverage
-            path: |
-              coverage
-              coverage.xml
-              test-results
-            # Note: coverage directory appears only when running with --coverage (coverage or coverage:ci scripts)
-            # test-results will exist once we add a reporter output (future enhancement)
+          name: coverage
+          path: coverage
+          if-no-files-found: warn
+      - name: Upload coverage lcov
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+          if-no-files-found: warn
+      - name: Upload test results JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results
+          if-no-files-found: warn

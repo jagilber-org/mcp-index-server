@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
   // Global setup ensures dist readiness; run completion sentinel now handled by custom reporter.
   setupFiles: ['src/tests/setupDistReady.ts'],
-  reporters: ['default', './src/tests/runSentinelReporter.ts'],
+  reporters: ['default', './src/tests/runSentinelReporter.ts', './src/tests/jsonResultsReporter.ts'],
   // Serialize tests in a single worker process to avoid concurrent production deploy races during Phase 4
   // (multiple workers were triggering overlapping deploy-local.ps1 executions causing file locks)
   pool: 'forks',

@@ -429,6 +429,33 @@ export function ensureLoaded(): CatalogState {
         console.error('[catalogContext] UsageBuckets service creation failed:', err);
       }
     }
+
+    // FINAL POST-RELOAD LATE MATERIALIZATION GUARD (addresses ultra‑narrow race where a just-written
+    // instruction file becomes visible on disk only AFTER the primary load + spin loops completed).
+    // Instead of forcing an immediate second full reload (which could still miss under pathological
+    // timing), we surgically parse any missing *.json files now and inject them in-memory so callers
+    // (especially tests asserting immediate visibility after writeEntry) observe a consistent view.
+    // The next catalog mutation or explicit reload will recompute hash/fileSignature including these.
+    try {
+      const diskFiles = fs.readdirSync(baseDir).filter(f=> f.endsWith('.json'));
+      const missing: string[] = [];
+      for(const f of diskFiles){
+        const id = f.slice(0,-5);
+        if(!state.byId.has(id)) missing.push(f);
+      }
+      if(missing.length){
+        for(const f of missing){
+          try {
+            const raw = JSON.parse(fs.readFileSync(path.join(baseDir,f),'utf8')) as InstructionEntry;
+            if(raw && raw.id && !state.byId.has(raw.id)){
+              state.list.push(raw);
+              state.byId.set(raw.id, raw);
+              try { incrementCounter('catalog:lateMaterializePostReload'); } catch { /* ignore */ }
+            }
+          } catch { /* ignore parse */ }
+        }
+      }
+    } catch { /* ignore directory scan */ }
     
     break;
   }

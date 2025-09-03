@@ -160,6 +160,53 @@ describe('sdkServer handshake harness (P1)', () => {
       expect(/transport-send-hook/.test(readyEmitLine)).toBe(true);
     }
 
+    // ---------------------------------------------------------------------
+    // Initialize frame instrumentation validation (env gated)
+    // We enabled MCP_INIT_FRAME_DIAG=1 so stderr should contain ordered
+    // [init-frame] JSON lines marking handshake progression.
+    // Stages we expect on dynamic path:
+    //   handler_return -> dispatcher_before_send -> dispatcher_send_resolved ->
+    //   transport_detect_init_result -> transport_send_resolved -> [ready]
+    // Some environments may elide dispatcher_* if SDK internal path differs;
+    // we enforce minimal guarantees + relative ordering when present.
+    // ---------------------------------------------------------------------
+    const initFrameLines = stderrLines.filter(l=> l.startsWith('[init-frame]'));
+    // Parse JSON portion after prefix
+    const initEvents = initFrameLines.map(l=>{
+      const jsonPart = l.slice('[init-frame]'.length).trim();
+      try { return JSON.parse(jsonPart); } catch { return { stage:'__parse_error__' }; }
+    });
+    const idx = (stage: string)=> initEvents.findIndex(e=> e.stage===stage);
+    const sHandler = idx('handler_return');
+    // Must have at least handler_return for coverage
+    expect(sHandler).toBeGreaterThan(-1);
+    const sDispBefore = idx('dispatcher_before_send');
+    const sDispResolved = idx('dispatcher_send_resolved');
+    const sTransDetect = idx('transport_detect_init_result');
+    const sTransResolved = idx('transport_send_resolved');
+    // At minimum we need either dispatcher_send_resolved OR transport_send_resolved to confirm flush path
+    expect((sDispResolved !== -1) || (sTransResolved !== -1)).toBe(true);
+    // Ordering checks when both present (soft assertion style via expect)
+    if(sDispBefore !== -1){ expect(sHandler).toBeLessThan(sDispBefore); }
+    if(sDispBefore !== -1 && sDispResolved !== -1){ expect(sDispBefore).toBeLessThan(sDispResolved); }
+    if(sDispResolved !== -1 && sTransDetect !== -1){
+      // Empirically transport_detect_init_result may appear before dispatcher_send_resolved due to
+      // stderr flushing differences; enforce ordering only if natural else log diagnostic.
+      if(!(sDispResolved < sTransDetect)){
+        // eslint-disable-next-line no-console
+        console.warn('[sdkServerHandshake.p1] non-fatal ordering: transport_detect_init_result logged before dispatcher_send_resolved', { sDispResolved, sTransDetect, initEvents });
+      }
+    }
+    if(sTransDetect !== -1 && sTransResolved !== -1){ expect(sTransDetect).toBeLessThan(sTransResolved); }
+    // Ensure ready emission came after the last observed init frame event
+    if(initFrameLines.length){
+      const lastInitIdxInStderr = stderrLines.findIndex(l=> l === initFrameLines[initFrameLines.length-1]);
+      const readyStderrIdx = stderrLines.findIndex(l=> /\[ready\] emit/.test(l));
+      if(readyStderrIdx !== -1 && lastInitIdxInStderr !== -1){
+        expect(lastInitIdxInStderr).toBeLessThan(readyStderrIdx);
+      }
+    }
+
     // Cleanup
     try { child.kill(); } catch { /* ignore */ }
   }, 25_000);

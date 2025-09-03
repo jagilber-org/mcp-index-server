@@ -1340,6 +1340,36 @@ The `mcp` block is the new machine-consumable registry enabling client-side vali
 
 The server performs pre-dispatch JSON Schema validation of `params` using the registry `inputSchema`.
 
+#### Hybrid Validation (Zod + Ajv) – 2025-09-03
+
+Beginning with the Zod enhancement (commit `feat(validation): introduce Zod-enhanced tool registry`), the runtime now
+maintains a dual-layer validation pipeline:
+
+1. Zod (preferred when a `zodSchema` is attached to a tool registry entry) – provides richer developer ergonomics,
+   type inference, and precise issue localization.
+2. Ajv JSON Schema (fallback and always retained for protocol / tooling parity) – authoritative external contract
+   backing generated documentation and client-side validation.
+
+Behavioral Guarantees:
+
+* Error Semantics: Validation failures (whether raised by Zod or Ajv) surface uniformly as JSON-RPC `-32602` with an Ajv-shaped `errors` array (fields: `instancePath`, `keyword`, `message`, `schemaPath`, `params`). Zod issues are mapped into this structure for transport consistency.
+* Backward Compatibility: No existing tool schemas were removed or relaxed; Zod adds a parallel, not replacement, validator. Tools without a Zod attachment still validate exclusively via Ajv.
+* Incremental Rollout: Only a subset of tools (core catalog ops, feedback suite, usage tracking) currently have Zod coverage. Additional tools will be layered in with future commits.
+
+Operational Notes:
+
+* Adding Zod to a tool: augment `toolRegistry.zod.ts` `zodMap` with a schema keyed by the tool name.
+* Removal / Disable Path: If a Zod schema throws unexpectedly, the fallback Ajv path continues to function; no feature flags required yet. (A future `MCP_VALIDATION_MODE` env flag may allow forcing `ajv`, `zod`, or `auto`.)
+* Meta-Schema TLS: The switch of `$schema` URLs to `https://` required explicit registration of the draft-07 meta-schema (with and without trailing `#`) in both the validation service and catalog loader to avoid Ajv compile errors.
+
+Planned Enhancements:
+
+* Automated Type Export: Derive TypeScript parameter types from attached Zod schemas to eliminate manual interface drift.
+* Coverage Metrics: Emit optional diagnostics summarizing how many incoming requests used Zod vs Ajv for observability.
+* Feature Flag: `MCP_VALIDATION_MODE` to toggle behavior during large refactors.
+
+If you observe any divergence between Zod and JSON Schema acceptance, file an issue with a minimal repro payload.
+
 Failure:
 
 ```json
@@ -1348,8 +1378,9 @@ Failure:
 
 Guidelines:
 
-- Omit `params` or use `{}` for methods with no required fields.
-- Respect `additionalProperties:false` where specified.
+
+* Omit `params` or use `{}` for methods with no required fields.
+* Respect `additionalProperties:false` where specified.
 * Surface `error.data.errors` for actionable diagnostics.
 
 ## Data Model
@@ -1382,16 +1413,16 @@ Usage counts stored in data/usage-snapshot.json (debounced ~500ms + flush on shu
 
 ## Error Codes
 
-- -32601 Method not found
-- -32600 Invalid Request
-- -32700 Parse error
+* -32601 Method not found
+* -32600 Invalid Request
+* -32700 Parse error
 * -32603 Internal error (error.data.message contains detail)
 
 ## Security & Safety
 
-- Read-only by default; enable mutation explicitly.
-- prompt/review uses simple, bounded pattern checks (no catastrophic regex).
-- integrity/verify & instructions/diff aid tamper detection.
+* Read-only by default; enable mutation explicitly.
+* prompt/review uses simple, bounded pattern checks (no catastrophic regex).
+* integrity/verify & instructions/diff aid tamper detection.
 * Logging segregated to stderr to avoid protocol corruption.
 
 ## CLI Flags
@@ -1411,10 +1442,10 @@ Dashboard URL is written to stderr when available.
 
 For comprehensive MCP configuration guidance, see the **[MCP Configuration Guide](./MCP-CONFIGURATION.md)** which covers:
 
-- **Enterprise deployment patterns** (production, staging, development)
-- **Security configurations** (read-only, mutation controls, audit compliance)
-- **Performance optimization** (large datasets, memory management)
-- **Multi-environment setups** (global configurations with multiple servers)
+* **Enterprise deployment patterns** (production, staging, development)
+* **Security configurations** (read-only, mutation controls, audit compliance)
+* **Performance optimization** (large datasets, memory management)
+* **Multi-environment setups** (global configurations with multiple servers)
 * **Troubleshooting and monitoring** (diagnostics, performance metrics)
 
 ### Quick Start Example
@@ -1443,7 +1474,8 @@ For comprehensive MCP configuration guidance, see the **[MCP Configuration Guide
 
 - Ensure build completion: `npm run build`
 - Create instructions/ directory before launch
-- Use absolute paths for enterprise deployments
+
+* Use absolute paths for enterprise deployments
 * Enable mutation only when write access is required
 
 For additional configuration options and environment variables, refer to the complete [MCP Configuration Guide](./MCP-CONFIGURATION.md).
@@ -1467,14 +1499,16 @@ Promotion roadmap (tentative, dispatcher model):
 - 0.5.0: Migrated to official @modelcontextprotocol/sdk; added ping, server/ready notification, initialize guidance, standardized error codes/data.
 - 0.4.0: Added lifecycle (initialize/shutdown/exit) handling + richer method-not-found diagnostics, consolidated docs, clarified mutation tool list, improved usage persistence & flush gating.
 - 0.3.0: Introduced environment gating (MCP_ENABLE_MUTATION), logging flags (MCP_LOG_VERBOSE, MCP_LOG_MUTATION), meta/tools mutation & disabled flags.
-- 0.2.0: Added integrity/verify, usage/*, metrics/snapshot, gates/evaluate, incremental diff, schemas & performance benchmark.
+
+* 0.2.0: Added integrity/verify, usage/*, metrics/snapshot, gates/evaluate, incremental diff, schemas & performance benchmark.
 * 0.1.0: Initial instruction tools + prompt/review + health.
 
 ## Future (Roadmap)
 
-- Optional checksum streaming diff endpoint for very large catalogs.
-- Batched usage/track variant.
-- Semantic search extension (vector index) behind feature flag.
+* Optional checksum streaming diff endpoint for very large catalogs.
+* Batched usage/track variant.
+
+* Semantic search extension (vector index) behind feature flag.
 * Policy gate expressions with logical combinators.
 
 ## Disclaimer
@@ -1495,26 +1529,28 @@ This section provides normative guidance for MCP clients integrating with the In
 
 ### B. Conditional Sync Strategy
  
-- Maintain last known `hash` from dispatcher `{ action:"list" }` (catalog hash) and `governanceHash` separately; only refetch full entries when either changes.
-- Use dispatcher diff `{ action:"diff", clientHash }` to minimize payload for incremental updates.
+* Maintain last known `hash` from dispatcher `{ action:"list" }` (catalog hash) and `governanceHash` separately; only refetch full entries when either changes.
+
+* Use dispatcher diff `{ action:"diff", clientHash }` to minimize payload for incremental updates.
 * If diff reports unknown ids or structural mismatch, fall back to a clean `{ action:"list" }`.
 
 ### C. Tool Schema Validation
  
-- Always validate outbound `params` client-side against `meta/tools.mcp.tools[n].inputSchema` before sending.
-- Reject or correct user input early; surface Ajv-style feedback inline.
+* Always validate outbound `params` client-side against `meta/tools.mcp.tools[n].inputSchema` before sending.
+
+* Reject or correct user input early; surface Ajv-style feedback inline.
 * Tolerate missing `outputSchema` (some tools may not yet declare result schema) by applying defensive parsing.
 
 ### D. Governance & Integrity Loop
  
-- On each session start: compare new `governanceHash` vs stored; if drift and no local edits expected, surface warning and optionally run `integrity/verify`.
-- After any local mutation (add/import/groom/remove): refetch `instructions/governanceHash` to update baseline.
+* On each session start: compare new `governanceHash` vs stored; if drift and no local edits expected, surface warning and optionally run `integrity/verify`.
+* After any local mutation (add/import/groom/remove): refetch `instructions/governanceHash` to update baseline.
 * Cache governance projections only if your client needs offline inspection; otherwise rely on hash.
 
 ### E. Usage Tracking Etiquette
  
-- Avoid spamming `usage/track`; only call at meaningful interaction points (tool invocation, successful suggestion application).
-- Batch (future) or debounce client-side for rapid-fire events; current server debounces persistence but counts all calls.
+* Avoid spamming `usage/track`; only call at meaningful interaction points (tool invocation, successful suggestion application).
+* Batch (future) or debounce client-side for rapid-fire events; current server debounces persistence but counts all calls.
 
 ### F. Feature Flag Adaptation
  
@@ -1523,42 +1559,42 @@ This section provides normative guidance for MCP clients integrating with the In
 
 ### G. Mutation Safety Controls
  
-- Before invoking any mutation tool, confirm environment gating: if `mutationEnabled` false, either disable mutation UI or prompt to restart with `MCP_ENABLE_MUTATION=1`.
-- After mutation, prefer dispatcher diff `{ action:"diff" }` rather than full reload unless you modified many entries (>5% of catalog).
+* Before invoking any mutation tool, confirm environment gating: if `mutationEnabled` false, either disable mutation UI or prompt to restart with `MCP_ENABLE_MUTATION=1`.
+* After mutation, prefer dispatcher diff `{ action:"diff" }` rather than full reload unless you modified many entries (>5% of catalog).
 
 ### H. Resilience & Fallbacks
  
-- On JSON-RPC method not found (-32601), re-request `meta/tools` in case of dynamic server upgrade.
-- On parse or internal error for a read tool, implement exponential backoff (e.g., 250ms, 500ms, 1s) before retry; log correlation id (request id) for debugging.
-- If `integrity/verify` returns issues unexpectedly, flag local cache invalid and perform full reload cycle.
+* On JSON-RPC method not found (-32601), re-request `meta/tools` in case of dynamic server upgrade.
+* On parse or internal error for a read tool, implement exponential backoff (e.g., 250ms, 500ms, 1s) before retry; log correlation id (request id) for debugging.
+* If `integrity/verify` returns issues unexpectedly, flag local cache invalid and perform full reload cycle.
 
 ### I. Multi-Source Precedence Integration
  
-- If combining multiple instruction sources, apply precedence BEFORE hashing for governance; this server’s local instructions should sit at precedence tier 0.
-- Tag external entries (e.g., categories `source:external`) so downstream filtering remains explicit.
-- Do not allow external sources to overwrite local ids silently—emit a warning and skip or require explicit user approval.
+* If combining multiple instruction sources, apply precedence BEFORE hashing for governance; this server’s local instructions should sit at precedence tier 0.
+* Tag external entries (e.g., categories `source:external`) so downstream filtering remains explicit.
+* Do not allow external sources to overwrite local ids silently—emit a warning and skip or require explicit user approval.
 
 ### J. Learning / Adaptive Ranking (Client-Side)
  
-- Use `usage/hotset` to bootstrap ranking of frequently used instructions; combine with recency (lastUsedAt) decay for personalization.
-- Never feed raw body text externally without user consent; treat instruction content as potentially sensitive IP.
-- Track success metrics (acceptance, modification, rejection) out-of-band from this protocol if you need advanced learning.
+* Use `usage/hotset` to bootstrap ranking of frequently used instructions; combine with recency (lastUsedAt) decay for personalization.
+* Never feed raw body text externally without user consent; treat instruction content as potentially sensitive IP.
+* Track success metrics (acceptance, modification, rejection) out-of-band from this protocol if you need advanced learning.
 
 ### K. Caching Guidelines
  
-- Persist only: last `hash`, last `governanceHash`, and (optionally) `meta/tools` snapshot; revalidate hashes each new session.
-- Avoid persisting entire instruction bodies unless offline mode required; prefer on-demand `instructions/get` or incremental diffs.
+* Persist only: last `hash`, last `governanceHash`, and (optionally) `meta/tools` snapshot; revalidate hashes each new session.
+* Avoid persisting entire instruction bodies unless offline mode required; prefer on-demand `instructions/get` or incremental diffs.
 
 ### L. Security Hygiene
  
-- Treat all textual instruction data as untrusted until validated; never execute embedded code segments.
-- Enforce a max body length client-side (mirror server expectations) to prevent UI performance degradation.
-- Strip or escape any instruction-provided HTML before rendering in rich clients.
+* Treat all textual instruction data as untrusted until validated; never execute embedded code segments.
+* Enforce a max body length client-side (mirror server expectations) to prevent UI performance degradation.
+* Strip or escape any instruction-provided HTML before rendering in rich clients.
 
 ### M. Telemetry (Ethical Use)
  
-- Aggregate usage counts; avoid sending per-instruction body content in telemetry.
-- Respect user / workspace privacy; provide opt-outs for analytics layers built above usage tracking.
+* Aggregate usage counts; avoid sending per-instruction body content in telemetry.
+* Respect user / workspace privacy; provide opt-outs for analytics layers built above usage tracking.
 
 ### N. Version Awareness
  

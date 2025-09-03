@@ -1004,6 +1004,62 @@ export class IndexServerClient extends MCPClient {
 
 ## 📚 Schema Reference
 
+### Environment Variables (Runtime Behavior)
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `MCP_ENABLE_MUTATION` | Enables mutation tools (add/remove/update). | `0` |
+| `INSTRUCTIONS_DIR` | Override instruction storage directory. | `instructions/` |
+| `MCP_INSTRUCTIONS_STRICT_CREATE` | Enforce strict create (no implicit upsert). | `0` |
+| `MCP_INSTRUCTIONS_STRICT_REMOVE` | Enforce strict remove (must exist). | `0` |
+| `MCP_CANONICAL_DISABLE` | Disable source hash canonicalization on write. | `0` |
+| `MCP_READ_RETRIES` | Read retry attempts for IO transient errors. | `3` |
+| `MCP_READ_BACKOFF_MS` | Base backoff ms for read retries. | `8` |
+| `MCP_ATOMIC_WRITE_RETRIES` | Atomic write retry attempts. | `3` |
+| `MCP_ATOMIC_WRITE_BACKOFF_MS` | Base backoff ms for atomic writes. | `8` |
+| `MCP_CATALOG_MEMOIZE` | Cache catalog in-memory to reduce file IO. | disabled |
+| `MCP_CATALOG_DIAG` | Verbose catalog diagnostics to stderr. | `0` |
+| `MCP_CATALOG_FILE_TRACE` | Trace file load sequence. | `0` |
+| `MCP_DISABLE_USAGE_RATE_LIMIT` | Disable usage rate limiter. | `0` |
+| `MCP_DISABLE_USAGE_CLAMP` | Disable clamp of usage increments. | `0` |
+| `MCP_USAGE_FLUSH_MS` | Delay (ms) for batching usage snapshot writes. | `75` |
+| `INDEX_FEATURES` | Feature flags (comma list) e.g. `usage`. | none |
+| `MCP_LOG_VERBOSE` | Verbose RPC / transport logging. | `0` |
+| `MCP_LOG_DIAG` | Diagnostic handshake / buffer logging. | `0` |
+| `MCP_LOG_FILE` | File to append structured logs. | unset |
+| `MCP_DISABLE_EARLY_STDIN_BUFFER` | Disable early stdin buffer before handshake. | `0` |
+| `MCP_IDLE_KEEPALIVE_MS` | Keepalive echo interval for idle transports. | `30000` |
+| `MCP_SHARED_SERVER_SENTINEL` | Multi-client shared server sentinel. | unset |
+| `MCP_HANDSHAKE_TRACE` | Detailed handshake stage tracing. | `0` |
+| `MCP_HANDSHAKE_FALLBACKS` | Enable handshake fallback logic. | `0` |
+| `MCP_INIT_FALLBACK_ALLOW` | Allow init fallback override path. | `0` |
+| `MCP_INIT_FRAME_DIAG` | Output handshake frame diagnostics. | `0` |
+| `MCP_HEALTH_MIXED_DIAG` | Mixed transport health diagnostics. | `0` |
+| `MCP_DISABLE_INIT_SNIFF` | Disable initial stdout sniff logic. | `0` |
+| `MCP_LOG_ROTATE_BYTES` | Max logger file size before rotation. | `524288` |
+| `MCP_TRACE_DIR` | Directory for trace JSONL emissions. | `traces/` |
+| `MCP_TRACE_MAX_BYTES` | Max bytes per trace file before rotate. | `65536` |
+| `MCP_TRACE_SESSION` | Force trace session id. | random |
+| `MCP_TRACE_FILTER` | Category allowlist (comma list). | all |
+| `MCP_TRACE_FILTER_DENY` | Category denylist (comma list). | none |
+| `MCP_AGENT_ID` | Identifier of agent performing mutations. | unset |
+| `WORKSPACE_ID` / `INSTRUCTIONS_WORKSPACE` | Source workspace for new instruction. | unset |
+| `DIST_WAIT_MS` | Override dist readiness wait in tests. | dynamic |
+| `EXTEND_DIST_WAIT` | Extend default dist wait budget. | `0` |
+| `DIST_WAIT_DEBUG` | Verbose dist wait debug logging. | `0` |
+| `SKIP_PROD_DEPLOY` | Skip prod deploy in test harness. | dynamic |
+| `MCP_HANDSHAKE_FALLBACKS` | Enable handshake fallback stages. | `0` |
+| `MCP_INIT_FRAME_DIAG` | Frame-level init diagnostics. | `0` |
+| `MULTICLIENT_TRACE` | Multi-client orchestration trace. | `0` |
+| `MCP_FORCE_REBUILD` | Force rebuild on startup (tests). | `0` |
+| `MCP_HEALTH_MIXED_DIAG` | Mixed health diagnostics. | `0` |
+| `MCP_SHARED_SERVER_SENTINEL` | Shared server id (test harness). | unset |
+| `MCP_ATOMIC_WRITE_RETRIES` | Override atomic write retries. | `3` |
+| `MCP_ATOMIC_WRITE_BACKOFF_MS` | Override atomic write backoff. | `8` |
+
+Additional specialized env vars may appear in test-only contexts; production runtime should rely on documented set above.
+
+
 ### Core Data Types
 
 #### InstructionEntry

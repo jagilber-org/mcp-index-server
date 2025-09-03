@@ -22,10 +22,11 @@ const INPUT_SCHEMAS: Record<string, object> = {
   'health/check': { type: 'object', additionalProperties: true }, // no params
   'instructions/dispatch': { type: 'object', additionalProperties: true, required: ['action'], properties: { action: { type: 'string' } } },
   'instructions/governanceHash': { type: 'object', additionalProperties: true },
+  // status enum intentionally limited to schema-supported states (PROJECT_PRD Governance Hash Integrity Policy)
   'instructions/governanceUpdate': { type: 'object', additionalProperties: false, required: ['id'], properties: {
     id: { type: 'string' },
     owner: { type: 'string' },
-    status: { type: 'string', enum: ['approved','draft','deprecated','superseded'] },
+    status: { type: 'string', enum: ['approved','draft','deprecated'] },
     lastReviewedAt: { type: 'string' },
     nextReviewDue: { type: 'string' },
     bump: { type: 'string', enum: ['patch','minor','major','none'] }

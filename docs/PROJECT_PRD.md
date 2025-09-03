@@ -490,7 +490,7 @@ describe('Index Server Schema Compliance', () => {
 **Schema Governance Requirements:**
 
 1. **Documentation Standards**
-   - ALL schema changes MUST be documented in `SCHEMA-V2-PLAN.md` or equivalent
+   - ALL schema changes MUST be documented in the active schema evolution section of the PRD (deprecated: SCHEMA-V2-PLAN.md)
    - Schema evolution MUST include migration guides
    - Breaking changes MUST have deprecation notices (minimum 1 minor version)
    - All fields MUST have comprehensive descriptions and validation rules

@@ -13,9 +13,8 @@ This project provides comprehensive enterprise-grade documentation:
 - **[🧠 Prompt Optimization (PROMPT-OPTIMIZATION.md)](./docs/PROMPT-OPTIMIZATION.md)** - AI prompt handling and optimization guide
 - **[🔍 Portable Test Client (PORTABLE-MCP-TEST-CLIENT.md)](./docs/PORTABLE-MCP-TEST-CLIENT.md)** - Critical testing tool for MCP troubleshooting
 - **[🏗️ Architecture (ARCHITECTURE.md)](./docs/ARCHITECTURE.md)** - System design and component overview
-- **[🔄 Schema Evolution (SCHEMA-V2-PLAN.md)](./docs/SCHEMA-V2-PLAN.md)** - Schema versioning and migration
 - **[🔒 Security (SECURITY.md)](./SECURITY.md)** - Security policies and compliance
-- **[🧪 Governance Hash Test Plan (GOVERNANCE-HASH-TEST-PLAN.md)](./docs/GOVERNANCE-HASH-TEST-PLAN.md)** - Planned integrity & drift test coverage
+- **Instruction Usage Plan (INSTRUCTION-USAGE-PLAN.md)** - Active instrumentation & grooming enablement plan
 
 ### Recently Formalized (Pending PRD 1.2.0)
 
@@ -644,7 +643,7 @@ Contract-only schema verification: `npm run test:contracts` (3 focused contract 
 - **MCP Transport**: JSON-RPC 2.0 over stdio (client communication)
 - **HTTP Dashboard**: Optional localhost web interface (admin monitoring)
 - **Validation**: AJV-based input schema validation with fail-open fallback
-- **Registry**: Centralized tool metadata with input/output schemas
+- **Registry**: Centralized tool metadata with input/output schemas for client validation
 - **Persistence**: File-based instruction storage with usage analytics
 - **Gating**: Environment-controlled mutation access with audit logging
 

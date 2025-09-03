@@ -242,7 +242,6 @@ Legacy methods (`instructions/list`, `instructions/get`, etc.) removed in 0.9.0.
 
 ## 17. Appendices
 
-- Reference: `SCHEMA-V2-PLAN.md` (detailed engineering migration plan).
 - Architecture: `ARCHITECTURE.md` (updated component flow).
 
 ---

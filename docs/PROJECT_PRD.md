@@ -24,7 +24,7 @@ This document serves as the **single source of truth** for all project processes
 
 ---
 
-## � Addendum (Pending Ratification → 1.2.0) – Newly Formalized Requirements
+## ✳️ Addendum (Pending Ratification → 1.2.0) – Newly Formalized Requirements
 
 These requirements are already implemented in code/tests but lacked explicit PRD coverage. Upon ratification the version will bump to 1.2.0. Until then they are treated as binding interim policy.
 
@@ -45,7 +45,7 @@ These requirements are already implemented in code/tests but lacked explicit PRD
 | FB7 | Health endpoint returns storage counts & config (maxEntries, dir) | Monitoring | health test |
 | FB8 | Security & critical entries produce elevated log channel event | Audit & alerting | log assertion (future automated) |
 | FB9 | Page size hard limit 200 (reject >200) | Resource safety | boundary test |
-| FB10 | Length limits: title≤200, description≤5000, adminNotes≤1000 | Abuse mitigation | validation tests |
+| FB10 | Length limits: title≤200, description≤2000, adminNotes≤1000 | Abuse mitigation | validation tests (schema-aligned) |
 
 #### Non-Functional
 
@@ -67,7 +67,20 @@ Expanding beyond this nucleus (stress, fuzz, multi-process contention) requires 
 
 ### 3. Governance Hash Integrity Policy
 
-Any change to governance hash projection MUST update `GOVERNANCE-HASH-TEST-PLAN.md` with: rationale, expected hash stability/variance, affected scenarios, migration safety evaluation. Drift lifecycle tolerance (2–3 states) may tighten; modifications require explicit sign-off.
+The standalone governance hash test plan file has been deprecated (single-plan consolidation). The following inline protocol is now binding for any governance hash projection change:
+
+| Step | Requirement | Details |
+|------|-------------|---------|
+| 1 | Change Proposal | Pull request MUST include rationale, field diff (added/removed), and expected stability impact (hash churn %) |
+| 2 | Stability Classification | Label change as: PATCH (non-breaking ordering tweak), MINOR (adds projected field — hash changes for all entries), MAJOR (removes/renames field or semantic re-derivation) |
+| 3 | Test Adjustment | Update existing governance hash tests with new expected projection & add regression ensuring old hash mismatches (documented) |
+| 4 | Migration Safety | If field added requires enrichment pass, note idempotency & fallback behavior |
+| 5 | Rollout Note | CHANGELOG entry summarizing impact + upgrade note for downstream caches |
+| 6 | Approval | At least one governance maintainer & one reviewer sign-off (recorded in PR) |
+
+Drift Lifecycle: Acceptable transient sequence remains ≤3 states (stable → modification proposal → ratified). More than 3 successive rapid hash changes within 14 days requires formal stability review.
+
+Status Field Scope: Current `instruction.schema.json` status enum = `draft | review | approved | deprecated`. The governanceUpdate tool previously exposed `superseded` — this state is deprecated for now; replacement relationships should use `deprecated` + `deprecatedBy` field. Future addition of `superseded` requires this section + schema update.
 
 ### 4. Declaration & Skip Guard Enforcement
 
@@ -115,7 +128,7 @@ Upon ratification this section migrates out of Addendum and project version will
 
 ---
 
-## �🏗️ Project Architecture & Structure
+## 🏗️ Project Architecture & Structure
 
 ### High-Level System Architecture
 

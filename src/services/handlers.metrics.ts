@@ -3,7 +3,8 @@ import { featureStatus } from '../services/features';
 import fs from 'fs';
 import path from 'path';
 
-registerHandler('metrics/snapshot', ()=>{ const raw=getMetricsRaw(); const methods=Object.entries(raw).map(([method, rec])=>({ method, count: rec.count, avgMs: rec.count? +(rec.totalMs/rec.count).toFixed(2):0, maxMs:+rec.maxMs.toFixed(2) })).sort((a,b)=> a.method.localeCompare(b.method)); const features = featureStatus(); return { generatedAt: new Date().toISOString(), methods, features }; });
+import { getValidationMetrics } from './validationService';
+registerHandler('metrics/snapshot', ()=>{ const raw=getMetricsRaw(); const methods=Object.entries(raw).map(([method, rec])=>({ method, count: rec.count, avgMs: rec.count? +(rec.totalMs/rec.count).toFixed(2):0, maxMs:+rec.maxMs.toFixed(2) })).sort((a,b)=> a.method.localeCompare(b.method)); const features = featureStatus(); const validation = getValidationMetrics(); return { generatedAt: new Date().toISOString(), methods, features, validation }; });
 // health/check retained here (meta/tools provided by shim for rich output)
 // Resolve version locally (mirrors transport logic) to avoid import cycles
 let VERSION = '0.0.0';

@@ -1366,7 +1366,11 @@ Planned Enhancements:
 
 * Automated Type Export: Derive TypeScript parameter types from attached Zod schemas to eliminate manual interface drift.
 * Coverage Metrics: Emit optional diagnostics summarizing how many incoming requests used Zod vs Ajv for observability.
-* Feature Flag: `MCP_VALIDATION_MODE` to toggle behavior during large refactors.
+* Feature Flag: `MCP_VALIDATION_MODE` (values: `ajv`, `zod`, `auto`) to toggle behavior during large refactors.
+  * `ajv` – bypass Zod entirely (useful for isolation, performance comparison, regression triage)
+  * `zod` – prefer Zod when schema present, fallback to Ajv (current default)
+  * `auto` – alias of `zod` today; reserved for future adaptive heuristics (e.g., caching failures, perf sampling)
+  * Metrics exposed via `metrics/snapshot.validation` (zodSuccess, zodFailure, ajvSuccess, ajvFailure, mode)
 
 If you observe any divergence between Zod and JSON Schema acceptance, file an issue with a minimal repro payload.
 
@@ -1472,8 +1476,8 @@ For comprehensive MCP configuration guidance, see the **[MCP Configuration Guide
 
 **Important Notes:**
 
-- Ensure build completion: `npm run build`
-- Create instructions/ directory before launch
+* Ensure build completion: `npm run build`
+* Create instructions/ directory before launch
 
 * Use absolute paths for enterprise deployments
 * Enable mutation only when write access is required
@@ -1492,13 +1496,13 @@ Promotion roadmap (tentative, dispatcher model):
 
 ## Change Log
 
-- 0.9.0: BREAKING unify instruction catalog under `instructions/dispatch`; add actions batch, capabilities, governanceUpdate, enrich; remove legacy `instructions/*` read methods from registry; update docs & migration guidance.
-- 0.7.0: Added `instructions/governanceHash` stable tool, governance projection & deterministic hash, enrichment persistence pass, stabilization of usage tracking (atomic firstSeenTs + synchronous first flush), added governance lifecycle fields documentation, optional `GOV_HASH_TRAILING_NEWLINE` flag.
-- 0.6.0: Added structured scoping fields (workspaceId, userId, teamIds), new listScoped tool (now action), groom purgeLegacyScopes + purgedScopes metric.
-- 0.5.1: Added remove mutation tool (now action); updated schemas, registry, docs.
-- 0.5.0: Migrated to official @modelcontextprotocol/sdk; added ping, server/ready notification, initialize guidance, standardized error codes/data.
-- 0.4.0: Added lifecycle (initialize/shutdown/exit) handling + richer method-not-found diagnostics, consolidated docs, clarified mutation tool list, improved usage persistence & flush gating.
-- 0.3.0: Introduced environment gating (MCP_ENABLE_MUTATION), logging flags (MCP_LOG_VERBOSE, MCP_LOG_MUTATION), meta/tools mutation & disabled flags.
+* 0.9.0: BREAKING unify instruction catalog under `instructions/dispatch`; add actions batch, capabilities, governanceUpdate, enrich; remove legacy `instructions/*` read methods from registry; update docs & migration guidance.
+* 0.7.0: Added `instructions/governanceHash` stable tool, governance projection & deterministic hash, enrichment persistence pass, stabilization of usage tracking (atomic firstSeenTs + synchronous first flush), added governance lifecycle fields documentation, optional `GOV_HASH_TRAILING_NEWLINE` flag.
+* 0.6.0: Added structured scoping fields (workspaceId, userId, teamIds), new listScoped tool (now action), groom purgeLegacyScopes + purgedScopes metric.
+* 0.5.1: Added remove mutation tool (now action); updated schemas, registry, docs.
+* 0.5.0: Migrated to official @modelcontextprotocol/sdk; added ping, server/ready notification, initialize guidance, standardized error codes/data.
+* 0.4.0: Added lifecycle (initialize/shutdown/exit) handling + richer method-not-found diagnostics, consolidated docs, clarified mutation tool list, improved usage persistence & flush gating.
+* 0.3.0: Introduced environment gating (MCP_ENABLE_MUTATION), logging flags (MCP_LOG_VERBOSE, MCP_LOG_MUTATION), meta/tools mutation & disabled flags.
 
 * 0.2.0: Added integrity/verify, usage/*, metrics/snapshot, gates/evaluate, incremental diff, schemas & performance benchmark.
 * 0.1.0: Initial instruction tools + prompt/review + health.
@@ -1554,8 +1558,8 @@ This section provides normative guidance for MCP clients integrating with the In
 
 ### F. Feature Flag Adaptation
  
-- Use `feature/status` to confirm `usage` feature before rendering usage dashboards.
-- If feature absent, degrade UI silently (do not emit errors to end user).
+* Use `feature/status` to confirm `usage` feature before rendering usage dashboards.
+* If feature absent, degrade UI silently (do not emit errors to end user).
 
 ### G. Mutation Safety Controls
  

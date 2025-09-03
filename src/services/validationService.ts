@@ -14,6 +14,22 @@ try {
 }
 const cache = new Map<string, ValidatorEntry | null>();
 
+// Validation mode feature flag:
+// MCP_VALIDATION_MODE=ajv  -> force Ajv only (ignore Zod)
+// MCP_VALIDATION_MODE=zod  -> prefer Zod; if missing fall back to Ajv (default)
+// MCP_VALIDATION_MODE=auto (or unset) -> same as 'zod' today (reserved for future heuristics)
+const VALIDATION_MODE = (process.env.MCP_VALIDATION_MODE || 'zod').toLowerCase();
+const FORCE_AJV = VALIDATION_MODE === 'ajv';
+
+// Simple counters for metrics/snapshot (zod vs ajv path usage)
+interface ValidationCounters { zodSuccess: number; zodFailure: number; ajvSuccess: number; ajvFailure: number; mode: string }
+const validationCounters: ValidationCounters = { zodSuccess: 0, zodFailure: 0, ajvSuccess: 0, ajvFailure: 0, mode: VALIDATION_MODE };
+declare global { // augment global type for side-channel metrics exposure
+  // eslint-disable-next-line no-var
+  var __MCP_VALIDATION_METRICS__ : ValidationCounters | undefined;
+}
+globalThis.__MCP_VALIDATION_METRICS__ = validationCounters;
+
 // Composite validator prefers Zod (when present) then falls back to Ajv JSON Schema.
 interface AjvLikeValidateFn {
   (data: unknown): boolean;
@@ -25,8 +41,8 @@ function buildValidator(method: string): ValidatorEntry | null {
   try {
     const reg = getZodEnhancedRegistry().find(t => t.name === method);
     if(!reg) return null;
-  const compiled = ajv.compile(reg.inputSchema as object) as AjvLikeValidateFn;
-    if(reg.zodSchema){
+    const compiled = ajv.compile(reg.inputSchema as object) as AjvLikeValidateFn;
+    if(reg.zodSchema && !FORCE_AJV){
       const z = reg.zodSchema as ZodTypeAny;
       const v: CompositeValidator = {
         validate: (d: unknown) => {
@@ -40,8 +56,10 @@ function buildValidator(method: string): ValidatorEntry | null {
                 params: { issue },
                 schemaPath: '#'
               })) as ErrorObject[];
+              validationCounters.zodFailure++;
               return false;
             }
+            validationCounters.zodFailure++;
             return false;
           }
         },
@@ -60,10 +78,18 @@ export function validateParams(method: string, params: unknown): { ok: true } | 
   if(entry === undefined){ entry = buildValidator(method); cache.set(method, entry); }
   if(!entry) return { ok: true }; // no schema => accept
   const ok = entry.validate(params === undefined ? {} : params);
-  if(ok) return { ok: true };
+  const hasZod = (entry as CompositeValidator).zod !== undefined && !FORCE_AJV;
+  if(ok){
+    if(hasZod){ validationCounters.zodSuccess++; } else { validationCounters.ajvSuccess++; }
+    return { ok: true };
+  }
+  if(hasZod){ validationCounters.zodFailure++; } else { validationCounters.ajvFailure++; }
   const v: unknown = entry.validate;
   const errors = (v && typeof v === 'object' && 'errors' in (v as Record<string,unknown>)) ? (v as { errors?: ErrorObject[] }).errors || [] : [];
   return { ok: false, errors };
 }
 
 export function clearValidationCache(){ cache.clear(); }
+
+// Utility for metrics collector (optional direct import in tests)
+export function getValidationMetrics(){ return { ...validationCounters }; }

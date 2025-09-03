@@ -73,12 +73,19 @@ export class CatalogLoader {
   const ajv = new Ajv({ allErrors: true, strict: false });
   // Add standard date-time, uri, etc. formats
   addFormats(ajv);
-  // Register draft-07 meta schema under https id if not present
+  // Register draft-07 meta schema under https id (with and without trailing #) if not present.
+  // Some schema files include $schema value with trailing '#', so we defensively register both forms.
   try {
-    if(!ajv.getSchema('https://json-schema.org/draft-07/schema')){
-      ajv.addMetaSchema(draft7MetaSchema, 'https://json-schema.org/draft-07/schema');
+    const httpsIdNoHash = 'https://json-schema.org/draft-07/schema';
+    const httpsIdHash = 'https://json-schema.org/draft-07/schema#';
+    if(!ajv.getSchema(httpsIdNoHash)){
+      ajv.addMetaSchema({ ...draft7MetaSchema, $id: httpsIdNoHash });
     }
-  } catch { /* ignore */ }
+    if(!ajv.getSchema(httpsIdHash)){
+      // Provide alias with trailing # (clone to avoid mutating previously added object)
+      ajv.addMetaSchema({ ...draft7MetaSchema, $id: httpsIdHash });
+    }
+  } catch { /* ignore meta-schema registration issues */ }
   const validate = ajv.compile(schema as unknown as object) as (data: unknown) => boolean;
   const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
   const entries: InstructionEntry[] = [];

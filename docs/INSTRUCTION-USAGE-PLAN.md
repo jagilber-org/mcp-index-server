@@ -22,7 +22,7 @@ OUT: Server persistence changes (assume endpoint exists / feature can be toggled
 
 ## 4. Architecture (Client-Side)
 
-```
+```text
    +-----------------------------+
    | Instruction Access Layer    |
    | (list/get/add/remove/search)|
@@ -53,28 +53,49 @@ OUT: Server persistence changes (assume endpoint exists / feature can be toggled
 ```
 
 ## 5. Data Model (Event)
-   {
-     instructionId: string,
-     action: enum(get|list|add|remove|searchHit),
-     tsUtc: ISO8601,
-     clientId: sha256(seed|machine|session) (optional),
-     version: "1",
-     contextHash: optional (catalog hash at time of access)
-   }
+
+```jsonc
+{
+   // Unique instruction identifier (file path or logical id)
+   "instructionId": "string",
+   // Action performed
+   "action": "get" | "list" | "add" | "remove" | "searchHit",
+   // UTC timestamp in ISO8601
+   "tsUtc": "2025-09-03T10:15:30.123Z",
+   // Optional stable, anonymized client hash
+   "clientId": "sha256(seed|machine|session)",
+   // Schema / versioning for forward compatibility
+   "version": "1",
+   // Optional catalog hash at the moment of access
+   "contextHash": "<catalog-hash>"
+}
+```
 
 ## 6. Batch Model
-   {
-     batchId: guid,
-     generatedUtc: ISO8601,
-     events: [UsageEvent...],
-     count: n
-   }
+
+```jsonc
+{
+   "batchId": "guid",
+   "generatedUtc": "2025-09-03T10:15:35.000Z",
+   "events": [ /* UsageEvent[] */ ],
+   "count": 42
+}
+```
 
 ## 7. Scoring Heuristic (Rolling)
-   Windows: W30 (0–30d), W60 (31–60d), W90 (61–90d)
-   score = W30*1.0 + W60*0.5 + W90*0.25
-   decay applied daily; events shift windows.
-   Zero score for >2 review intervals => archive candidate (unless protected).
+
+Windows: W30 (0–30d), W60 (31–60d), W90 (61–90d)
+
+Formula:
+
+```text
+score = (W30 * 1.0) + (W60 * 0.5) + (W90 * 0.25)
+```
+
+Rules:
+
+- Decay applied daily by shifting window buckets.
+- Zero score for >2 review intervals => archive candidate (unless protected).
 
 ## 8. State Tracked (Local Cache)
 
@@ -110,14 +131,21 @@ OUT: Server persistence changes (assume endpoint exists / feature can be toggled
 
 ## 12. Config Knobs
 
-```
-USAGE_ENABLED (bool, default true when feature flag on)
-MAX_EVENTS (int, default 25)
-MAX_AGE_SEC (int, default 5)
-DEDUP_WINDOW_SEC (int, default 60)
-RETRY_LIMIT (int, default 3)
-RETRY_BACKOFF_MS = [1000, 2000, 5000]
-PROTECTED_TAGS = ["mandatory","must","core"]
+```env
+# Master enable (feature flag)
+USAGE_ENABLED=true
+
+# Flush triggers
+MAX_EVENTS=25
+MAX_AGE_SEC=5
+DEDUP_WINDOW_SEC=60
+
+# Retry controls
+RETRY_LIMIT=3
+RETRY_BACKOFF_MS=1000,2000,5000
+
+# Governance protections
+PROTECTED_TAGS=mandatory,must,core
 ```
 
 ## 13. Security / Privacy
@@ -128,12 +156,12 @@ PROTECTED_TAGS = ["mandatory","must","core"]
 
 ## 14. Instrumentation Points
 
-```
-wrapInstructionGet(id)        -> record get
-wrapInstructionList()         -> record list (one event, not per item)
-wrapInstructionAdd(id)        -> record add
-wrapInstructionRemove(id)     -> record remove
-search(term)->results         -> record searchHit per distinct instructionId (cap 10 per search)
+```ts
+wrapInstructionGet(id)        // record get
+wrapInstructionList()         // record list (one event, not per item)
+wrapInstructionAdd(id)        // record add
+wrapInstructionRemove(id)     // record remove
+search(term) -> results       // record searchHit per distinct instructionId (cap 10 per search)
 ```
 
 ## 15. Batch Aggregation Rules
@@ -145,6 +173,7 @@ search(term)->results         -> record searchHit per distinct instructionId (ca
 ## 16. Metrics (Local)
 
 Counters:
+
 - usage.enqueue.success
 - usage.enqueue.dropped
 - usage.flush.sent
@@ -152,10 +181,12 @@ Counters:
 - usage.event.coalesced
 
 Gauges:
+
 - usage.queue.length
 - usage.queue.oldestAgeSec
 
 Derived:
+
 - usage.loss.percent (dropped / (dropped + sent))
 
 ## 17. Grooming Decision Matrix
@@ -228,6 +259,7 @@ function isDuplicate(e: UsageEvent): boolean {
 ## 22. Daily Scoring Job (Logic)
 
 Algorithm:
+
 1. Shift window buckets (move older counts downward)
 2. Add todayCount to W30
 3. Recompute score
@@ -236,7 +268,8 @@ Algorithm:
 ## 23. Grooming Report Format (Text)
 
 Sections:
-```
+
+```text
 == STALE CANDIDATES ==
 {id} | lastAccess: {date} | risk: {riskScore}
 
@@ -248,15 +281,19 @@ Sections:
 ```
 
 ## 24. Risk Mitigation
-   - Feature flag kill switch (env var)
-   - Hard queue size cap
-   - Silent degrade on POST failures
-   - Version field for forward-compatible decoding
+
+- Feature flag kill switch (env var)
+- Hard queue size cap
+- Silent degrade on POST failures
+- Version field for forward-compatible decoding
 
 ## 25. Extensibility
-   Future fields: actionSource (api|ui|automation), sessionCorrelationId
-   Potential server push: popularity snapshot to client for UX ordering
-   Anomaly detection: spike vs moving average
+
+Future fields: actionSource (api|ui|automation), sessionCorrelationId
+
+Potential server push: popularity snapshot to client for UX ordering
+
+Anomaly detection: spike vs moving average
 
 ## 26. Validation Checklist (Implementer)
 
@@ -297,6 +334,7 @@ Lightweight async event capture + rolling window scoring enables objective groom
 | 6     | Policy enforcement                           | [ ]    |
 
 Milestones:
+
 - [ ] USAGE_ENABLED flag wired
 - [ ] Instrumentation wrappers
 - [ ] Queue + dedup unit tests
@@ -306,6 +344,5 @@ Milestones:
 - [ ] Grooming report prototype
 - [ ] Archive suggestion gating
 
-----------------------------------------------------------------------
-END OF PLAN
-----------------------------------------------------------------------
+---
+End of Plan

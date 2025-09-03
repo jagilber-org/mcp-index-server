@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { parseInitFrameLines, summarizeInitFrames, validateInitFrameSequence, formatSummary } from '../util/handshakeDiag';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
@@ -170,41 +171,40 @@ describe('sdkServer handshake harness (P1)', () => {
     // Some environments may elide dispatcher_* if SDK internal path differs;
     // we enforce minimal guarantees + relative ordering when present.
     // ---------------------------------------------------------------------
-    const initFrameLines = stderrLines.filter(l=> l.startsWith('[init-frame]'));
-    // Parse JSON portion after prefix
-    const initEvents = initFrameLines.map(l=>{
-      const jsonPart = l.slice('[init-frame]'.length).trim();
-      try { return JSON.parse(jsonPart); } catch { return { stage:'__parse_error__' }; }
-    });
-    const idx = (stage: string)=> initEvents.findIndex(e=> e.stage===stage);
-    const sHandler = idx('handler_return');
-    // Must have at least handler_return for coverage
-    expect(sHandler).toBeGreaterThan(-1);
-    const sDispBefore = idx('dispatcher_before_send');
-    const sDispResolved = idx('dispatcher_send_resolved');
-    const sTransDetect = idx('transport_detect_init_result');
-    const sTransResolved = idx('transport_send_resolved');
-    // At minimum we need either dispatcher_send_resolved OR transport_send_resolved to confirm flush path
-    expect((sDispResolved !== -1) || (sTransResolved !== -1)).toBe(true);
-    // Ordering checks when both present (soft assertion style via expect)
-    if(sDispBefore !== -1){ expect(sHandler).toBeLessThan(sDispBefore); }
-    if(sDispBefore !== -1 && sDispResolved !== -1){ expect(sDispBefore).toBeLessThan(sDispResolved); }
-    if(sDispResolved !== -1 && sTransDetect !== -1){
-      // Empirically transport_detect_init_result may appear before dispatcher_send_resolved due to
-      // stderr flushing differences; enforce ordering only if natural else log diagnostic.
-      if(!(sDispResolved < sTransDetect)){
-        // eslint-disable-next-line no-console
-        console.warn('[sdkServerHandshake.p1] non-fatal ordering: transport_detect_init_result logged before dispatcher_send_resolved', { sDispResolved, sTransDetect, initEvents });
-      }
+    const initEvents = parseInitFrameLines(stderrLines);
+    const summary = summarizeInitFrames(initEvents);
+    // Core expectations (fail-fast)
+    expect(summary.hasHandlerReturn).toBe(true);
+    expect(summary.flushStageObserved).toBe(true);
+    // Dynamic path evidence
+    expect(summary.hasTransportDetect).toBe(true);
+    expect(summary.hasTransportResolved).toBe(true);
+    // Allow dispatcher markers to be absent but if present maintain basic ordering (non-fatal otherwise)
+    const orderIndex = (stage: string)=> initEvents.findIndex(e=> e.stage===stage);
+    const hIdx = orderIndex('handler_return');
+    const dbIdx = orderIndex('dispatcher_before_send');
+    const dsIdx = orderIndex('dispatcher_send_resolved');
+    const tdIdx = orderIndex('transport_detect_init_result');
+    const trIdx = orderIndex('transport_send_resolved');
+    if(hIdx !== -1 && dbIdx !== -1) expect(hIdx).toBeLessThan(dbIdx);
+    if(dbIdx !== -1 && dsIdx !== -1) expect(dbIdx).toBeLessThan(dsIdx);
+    if(tdIdx !== -1 && trIdx !== -1) expect(tdIdx).toBeLessThan(trIdx);
+    // Non-fatal ordering check for dispatcher_send_resolved vs transport_detect_init_result
+    if(dsIdx !== -1 && tdIdx !== -1 && !(dsIdx < tdIdx)){
+      // eslint-disable-next-line no-console
+      console.warn('[sdkServerHandshake.p1] non-fatal ordering inversion (dispatcher_send_resolved vs transport_detect_init_result)', { dsIdx, tdIdx, summary: formatSummary(summary) });
     }
-    if(sTransDetect !== -1 && sTransResolved !== -1){ expect(sTransDetect).toBeLessThan(sTransResolved); }
-    // Ensure ready emission came after the last observed init frame event
-    if(initFrameLines.length){
-      const lastInitIdxInStderr = stderrLines.findIndex(l=> l === initFrameLines[initFrameLines.length-1]);
-      const readyStderrIdx = stderrLines.findIndex(l=> /\[ready\] emit/.test(l));
-      if(readyStderrIdx !== -1 && lastInitIdxInStderr !== -1){
-        expect(lastInitIdxInStderr).toBeLessThan(readyStderrIdx);
-      }
+    // Ready after last init-frame
+    if(initEvents.length){
+      const lastStageIdx = stderrLines.findIndex(l=> l.startsWith('[init-frame]') && l.includes(initEvents[initEvents.length-1].stage));
+      const readyIdx = stderrLines.findIndex(l=> /\[ready\] emit/.test(l));
+      if(lastStageIdx !== -1 && readyIdx !== -1){ expect(lastStageIdx).toBeLessThan(readyIdx); }
+    }
+    // Collect issues (diagnostic only)
+    const issues = validateInitFrameSequence(summary);
+    if(issues.length){
+      // eslint-disable-next-line no-console
+      console.warn('[sdkServerHandshake.p1] init-frame issues (non-fatal):', issues);
     }
 
     // Cleanup

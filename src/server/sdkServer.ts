@@ -53,6 +53,27 @@ function record(stage: string, extra?: Record<string,unknown>){
   HANDSHAKE_EVENTS.push(evt); if(HANDSHAKE_EVENTS.length > 50) HANDSHAKE_EVENTS.shift();
   if(HANDSHAKE_TRACE_ENABLED){ try { process.stderr.write(`[handshake] ${JSON.stringify(evt)}\n`); } catch { /* ignore */ } }
 }
+
+// ---------------------------------------------------------------------------
+// Initialize frame instrumentation (opt-in via MCP_INIT_FRAME_DIAG=1)
+// Provides high-fidelity breadcrumbs to stderr with prefix [init-frame]
+// Stages:
+//   handler_return                -> explicit initialize handler about to return result
+//   dispatcher_before_send        -> dispatcher wrapper about to send initialize result
+//   dispatcher_send_resolved      -> initialize sendPromise resolved in dispatcher wrapper
+//   transport_detect_init_result  -> dynamic transport wrapper detected initialize result frame
+//   transport_send_resolved       -> transport wrapper sendPromise resolved for initialize
+//   ready_emit_after_init         -> emitReadyGlobal invoked (not instrumented separately here)
+// Each line includes a minimal JSON blob for downstream parsing without polluting stdout.
+// ---------------------------------------------------------------------------
+const INIT_FRAME_DIAG = process.env.MCP_INIT_FRAME_DIAG === '1';
+function initFrameLog(stage: string, extra?: Record<string, unknown>){
+  if(!INIT_FRAME_DIAG) return;
+  try {
+    const payload = { stage, t: Date.now(), ...(extra||{}) };
+    process.stderr.write(`[init-frame] ${JSON.stringify(payload)}\n`);
+  } catch { /* ignore */ }
+}
 // Expose reference for diagnostics/handshake tool (read-only access)
 try { (global as unknown as { HANDSHAKE_EVENTS_REF?: HandshakeEvent[] }).HANDSHAKE_EVENTS_REF = HANDSHAKE_EVENTS; } catch { /* ignore */ }
 
@@ -187,6 +208,7 @@ export function createSdkServer(ServerClass: any) {
         capabilities: { tools: { listChanged: true } },
         instructions: 'Use initialize -> tools/list -> tools/call { name, arguments }. Health: tools/call health/check. Metrics: tools/call metrics/snapshot. Ping: ping.'
       };
+  initFrameLog('handler_return', { negotiated });
   // NOTE: Do NOT emit ready here. We rely exclusively on the transport send hook
   // (see dispatcher wrapper further below) which marks __initResponseSent only
   // after the initialize response frame is flushed. This guarantees ordering:
@@ -602,12 +624,14 @@ export async function startSdkServer() {
             }
             const sendPromise = (this as any)._transport?.send({ jsonrpc:'2.0', id: request.id, result });
             if(request.method === 'initialize'){
+              initFrameLog('dispatcher_before_send', { id: request.id });
               // After initialize response send promise resolves, mark sent then defer ready emission to a
               // subsequent macrotask. Empirically the underlying transport send() can resolve before the
               // initialize result frame is fully flushed to the stdout reader in tests, producing occasional
               // ordering inversions (ready appearing before result). Scheduling with setTimeout(0) yields a
               // strict happens-after relationship relative to prior synchronous writes inside the transport.
               (sendPromise?.then?.(()=> {
+                initFrameLog('dispatcher_send_resolved', { id: request.id });
                 (server as any).__initResponseSent = true;
                 setTimeout(()=> emitReadyGlobal(server,'transport-send-hook'), 0);
               }))?.catch(()=>{});
@@ -865,9 +889,11 @@ export async function startSdkServer() {
           } catch { /* ignore */ }
           if(isInitResult && !(server as any).__readyNotified){
             (server as any).__sawInitializeRequest = true;
+            initFrameLog('transport_detect_init_result', { id: msg.id });
             // Defer ready emission one macrotask after send resolves to reduce chance of interleaving
             // ahead of the initialize result line under high I/O contention (observed flake).
             sendPromise?.then?.(()=>{
+              initFrameLog('transport_send_resolved', { id: msg.id });
               (server as any).__initResponseSent = true;
               setTimeout(()=> emitReadyGlobal(server,'transport-send-hook-dynamic'), 0);
             })?.catch?.(()=>{});

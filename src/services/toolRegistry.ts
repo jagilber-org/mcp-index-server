@@ -12,6 +12,10 @@ export interface ToolRegistryEntry {
   mutation: boolean;            // Performs mutation / requires MCP_ENABLE_MUTATION
   inputSchema: object;          // JSON Schema for params (always an object schema)
   outputSchema?: object;        // JSON Schema for successful result (subset of outputSchemas map)
+  // Optional Zod schema (progressive enhancement). When present, runtime validation service
+  // can prefer this for richer type inference while JSON Schema remains authoritative for
+  // external protocol documentation / generation.
+  zodSchema?: unknown;
 }
 
 // Input schema helpers (keep intentionally permissive if params optional)
@@ -124,7 +128,8 @@ export function getToolRegistry(): ToolRegistryEntry[] {
       stable: STABLE.has(name),
       mutation: MUTATION.has(name),
       inputSchema: INPUT_SCHEMAS[name] || { type: 'object' },
-      outputSchema
+      outputSchema,
+      // zodSchema to be attached incrementally by a forthcoming zodRegistry enhancer.
     });
   }
   return entries;

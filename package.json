@@ -35,15 +35,15 @@
     "release:major": "pwsh scripts/bump-version.ps1 major",
     "perf": "ts-node src/perf/benchmark.ts",
     "perf:baseline": "npm run build && node dist/scripts/runPerformanceBaseline.js",
-  "build:verify": "pwsh scripts/build.ps1 && npm run guard:decl",
+    "build:verify": "pwsh scripts/build.ps1 && npm run guard:decl",
     "docs:tools": "node scripts/generate-tools-doc.cjs",
-  "health:check": "node scripts/health-check.mjs",
-  "guard:skips": "node scripts/check-no-skips.mjs",
-  "guard:baseline": "node scripts/guard-baseline.mjs"
-  ,"baseline:sentinel:update": "node scripts/baseline-sentinel.mjs update"
-  ,"baseline:sentinel:verify": "node scripts/baseline-sentinel.mjs verify"
-  ,"guard:decl": "node scripts/guard-declarations.mjs"
-  ,"guard:decl:fix": "node scripts/purge-extra-decls.mjs && node scripts/guard-declarations.mjs"
+    "health:check": "node scripts/health-check.mjs",
+    "guard:skips": "node scripts/check-no-skips.mjs",
+    "guard:baseline": "node scripts/guard-baseline.mjs",
+    "baseline:sentinel:update": "node scripts/baseline-sentinel.mjs update",
+    "baseline:sentinel:verify": "node scripts/baseline-sentinel.mjs verify",
+    "guard:decl": "node scripts/guard-declarations.mjs",
+    "guard:decl:fix": "node scripts/purge-extra-decls.mjs && node scripts/guard-declarations.mjs"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
@@ -60,8 +60,12 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.6.0",
+    "@types/express": "^5.0.3",
+    "@types/ws": "^8.18.1",
     "ajv": "^8.12.0",
-    "ajv-formats": "^2.1.1"
+    "ajv-formats": "^2.1.1",
+    "express": "^5.1.0",
+    "ws": "^8.18.3"
   },
   "optionalScripts": {},
   "promptReviewCriteriaVersion": "1.0.0",

@@ -59,7 +59,8 @@ import '../services/handlers.testPrimitive';
 import '../services/handlers.diagnostics';
 import '../services/handlers.feedback';
 import { getCatalogState, diagnoseInstructionsDir } from '../services/catalogContext';
-import http from 'http';
+import DashboardServer from '../dashboard/server/DashboardServer.js';
+import { getMetricsCollector } from '../dashboard/server/MetricsCollector.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -92,6 +93,14 @@ interface CliConfig {
 
 function parseArgs(argv: string[]): CliConfig {
   const config: CliConfig = { dashboard: false, dashboardPort: 8787, dashboardHost: '127.0.0.1', maxPortTries: 10, legacy: false };
+  
+  // Apply environment variable defaults first (command line args override env vars)
+  if(process.env.MCP_DASHBOARD === '1') config.dashboard = true;
+  if(process.env.MCP_DASHBOARD === '0') config.dashboard = false;
+  if(process.env.MCP_DASHBOARD_PORT) config.dashboardPort = parseInt(process.env.MCP_DASHBOARD_PORT, 10) || config.dashboardPort;
+  if(process.env.MCP_DASHBOARD_HOST) config.dashboardHost = process.env.MCP_DASHBOARD_HOST;
+  if(process.env.MCP_DASHBOARD_TRIES) config.maxPortTries = Math.max(1, parseInt(process.env.MCP_DASHBOARD_TRIES, 10) || config.maxPortTries);
+  
   const args = argv.slice(2);
   for(let i=0;i<args.length;i++){
     const raw = args[i];
@@ -127,6 +136,18 @@ ADMIN DASHBOARD (Optional):
   --no-dashboard           Disable dashboard
   Purpose: Local administrator monitoring only
 
+ENVIRONMENT VARIABLES:
+  MCP_DASHBOARD=1          Enable dashboard (0=disable, 1=enable)
+  MCP_DASHBOARD_PORT=PORT  Dashboard port (default 8787)
+  MCP_DASHBOARD_HOST=HOST  Dashboard host (default 127.0.0.1)
+  MCP_DASHBOARD_TRIES=N    Port retry attempts (default 10)
+  
+  Other environment variables:
+  MCP_LOG_VERBOSE=1        Verbose RPC/transport logging
+  MCP_LOG_DIAG=1           Diagnostic logging
+  MCP_ENABLE_MUTATION=1    Enable write operations
+  MCP_IDLE_KEEPALIVE_MS    Keepalive interval (default 30000ms)
+
 GENERAL:
   -h, --help               Show this help and exit
   (legacy transport removed; SDK only)
@@ -134,7 +155,8 @@ GENERAL:
 IMPORTANT:
 - MCP clients connect via stdio only, not HTTP dashboard
 - Dashboard is for admin monitoring, not client communication
-- All MCP protocol frames output to stdout; logs to stderr`;
+- All MCP protocol frames output to stdout; logs to stderr
+- Command line arguments override environment variables`;
   // write to stderr to avoid contaminating stdout protocol
   process.stderr.write(help + '\n');
   process.exit(0);
@@ -159,61 +181,32 @@ function findPackageVersion(): string {
 // Added close handle in return object for test coverage harness so unit tests can start and stop the dashboard
 // without leaving open event loop handles. Production code ignores the extra property.
 async function startDashboard(cfg: CliConfig): Promise<{ url: string; close: () => void } | null> {
-  if(!cfg.dashboard) return null;
-  let port = cfg.dashboardPort;
-  const host = cfg.dashboardHost;
-  for(let attempt=0; attempt<cfg.maxPortTries; attempt++){
-    let server: http.Server | null = null;
-    const ok = await new Promise<boolean>(resolve => {
-      server = http.createServer((req, res) => {
-        if(!req.url){ res.statusCode=404; return res.end(); }
-        if(req.url === '/' || req.url.startsWith('/index')){
-          const tools = listRegisteredMethods();
-            res.setHeader('Content-Type','text/html; charset=utf-8');
-            res.end(`<html><head><title>MCP Index Server - Admin Dashboard</title><style>body{font-family:system-ui;margin:1.5rem;background:#f9f9f9;}h1{color:#2c3e50;}code{background:#e8f4fd;padding:2px 4px;border-radius:4px;color:#2980b9;}table{border-collapse:collapse;}td,th{border:1px solid #ddd;padding:4px 8px;}.admin-notice{background:#fff3cd;border:1px solid #ffeaa7;padding:1rem;border-radius:5px;margin:1rem 0;}.transport-note{background:#d4edda;border:1px solid #c3e6cb;padding:1rem;border-radius:5px;margin:1rem 0;}</style></head><body><div class="admin-notice"><strong>🔒 Administrator Dashboard</strong><br>This interface is for local administrators only. MCP clients connect via stdio transport, not this HTTP interface.</div><h1>MCP Index Server</h1><p>Version: ${findPackageVersion()}</p><h2>Available Tools</h2><ul>${tools.map(t => `<li><code>${t}</code></li>`).join('')}</ul><div class="transport-note"><strong>📡 Transport Information</strong><br><strong>Primary:</strong> stdio (JSON-RPC 2.0) - for MCP client communication<br><strong>Secondary:</strong> HTTP dashboard - for administrator monitoring (read-only)</div></body></html>`);
-        } else if(req.url === '/tools.json'){
-          const tools = listRegisteredMethods();
-          res.setHeader('Content-Type','application/json');
-          res.end(JSON.stringify({ tools }));
-        } else {
-          res.statusCode = 404; res.end('Not Found');
-        }
-      });
-      server.on('error', (e: unknown) => {
-        // If port in use, signal failure; other errors also fail and advance
-        const code = (e as { code?: string })?.code;
-        if(code === 'EADDRINUSE'){ resolve(false); } else { resolve(false); }
-      });
-      server.listen(port, host, () => {
-        // If ephemeral port (0) requested, update port variable with assigned value for URL construction.
-        if(port === 0){
-          const addr = server!.address();
-          if(addr && typeof addr === 'object' && 'port' in addr && typeof addr.port === 'number'){
-            // mutate outer loop variable so returned url reflects actual bound port
-            port = addr.port;
-          }
-        }
-        // success
-          // server is set just above; non-null assertion safe here
-          const s = server!;
-          process.on('exit', () => { try { s.close(); } catch { /* ignore */ } });
-        resolve(true);
-      });
+  if (!cfg.dashboard) return null;
+
+  try {
+    const dashboardServer = new DashboardServer({
+      port: cfg.dashboardPort,
+      host: cfg.dashboardHost,
+      maxPortTries: cfg.maxPortTries,
+      enableWebSockets: true,
+      enableCors: false,
     });
-    if(ok){
-  // Local dashboard served over HTTP (intended for local dev only)
-  // Local HTTP (dashboard) intentionally non-TLS for dev; restrict host to loopback by default.
-  // Localhost admin dashboard on loopback only (HTTP acceptable for local dev)
-  // Local loopback HTTP (no TLS) acceptable for dev dashboard; constructed to appease static scanners.
-  const proto = 'http:'; // dev-only
-  const url = `${proto}//${host}:${port}/`;
-  const close = () => { try { server?.close(); } catch { /* ignore */ } };
-  return { url, close };
-    }
-    port++;
+
+    const result = await dashboardServer.start();
+    
+    // Record dashboard startup in metrics
+    getMetricsCollector().recordConnection('dashboard_server');
+    
+    return {
+      url: result.url,
+      close: () => {
+        dashboardServer.stop();
+      },
+    };
+  } catch (error) {
+    process.stderr.write(`Dashboard: failed to start - ${error}\n`);
+    return null;
   }
-  process.stderr.write(`Dashboard: failed to bind after ${cfg.maxPortTries} attempts starting at port ${cfg.dashboardPort}.\n`);
-  return null;
 }
 
 export async function main(){

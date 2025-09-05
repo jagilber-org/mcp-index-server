@@ -314,7 +314,7 @@
             <div class="admin-nav">
                 <button class="nav-btn active" onclick="showSection('overview')">📊 Overview</button>
                 <button class="nav-btn" onclick="showSection('config')">⚙️ Configuration</button>
-                <button class="nav-btn" onclick="showSection('sessions')">👥 Sessions</button>
+                <button id="nav-sessions-btn" class="nav-btn" onclick="showSection('sessions')">👥 Sessions</button>
                 <button class="nav-btn" onclick="showSection('maintenance')">🔧 Maintenance</button>
                 <button class="nav-btn" onclick="showSection('monitoring')">📈 Monitoring</button>
                 <button class="nav-btn" onclick="showSection('instructions')">📚 Instructions</button>
@@ -371,13 +371,43 @@
 
         <!-- Sessions Section -->
         <div id="sessions-section" class="admin-section hidden">
-            <div class="admin-card">
-                <div class="card-header">
-                    <div class="card-icon">👥</div>
-                    <div class="card-title">Active Admin Sessions</div>
+            <div class="admin-grid" style="grid-template-columns:1fr;">
+                <div class="admin-card">
+                    <div class="card-header">
+                        <div class="card-icon">👥</div>
+                        <div class="card-title">Active Admin Sessions</div>
+                    </div>
+                    <div id="sessions-list" class="loading">Loading sessions...</div>
+                    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+                        <button class="action-btn" onclick="createTestSession()">Create Test Session</button>
+                        <button class="action-btn" onclick="loadSessions()">🔄 Refresh</button>
+                    </div>
                 </div>
-                <div id="sessions-list" class="loading">Loading sessions...</div>
-                <button class="action-btn" onclick="createTestSession()">Create Test Session</button>
+                <div class="admin-card" style="margin-top:20px;">
+                    <div class="card-header">
+                        <div class="card-icon">🔌</div>
+                        <div class="card-title">Active WebSocket Connections</div>
+                    </div>
+                    <div id="connections-list" class="loading">Loading connections...</div>
+                </div>
+                <div class="admin-card" style="margin-top:20px;">
+                    <div class="card-header">
+                        <div class="card-icon">🗂️</div>
+                        <div class="card-title">Session History</div>
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+                        <label style="font-size:12px;">Limit
+                            <select id="session-history-limit" class="form-input" style="width:80px; padding:4px;" onchange="refreshSessionHistory()">
+                                <option value="25">25</option>
+                                <option value="50" selected>50</option>
+                                <option value="100">100</option>
+                                <option value="250">250</option>
+                            </select>
+                        </label>
+                        <button class="action-btn" onclick="refreshSessionHistory()">🔄 Refresh History</button>
+                    </div>
+                    <div id="session-history-list" class="loading">History not loaded...</div>
+                </div>
             </div>
         </div>
 
@@ -433,10 +463,32 @@
                     <div id="synthetic-output" style="font-size:12px; opacity:0.85; min-height:20px; line-height:1.3; white-space:pre-wrap;"></div>
                 </div>
                 <div style="margin-top:8px; font-size:11px; opacity:0.7;">Executes random safe tools to exercise metrics & health. <span id="synthetic-last-meta" style="font-style:italic;"></span></div>
+                                <div id="synthetic-traces-wrapper" style="margin-top:14px; display:none;">
+                                    <div style="font-weight:600; font-size:13px; margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+                                        Per‑Call Trace
+                                        <label style="font-size:11px; font-weight:400; display:flex; align-items:center; gap:4px;">
+                                            <input id="synthetic-trace-toggle" type="checkbox" checked onchange="toggleSyntheticTraceVisibility()" /> show
+                                        </label>
+                                    </div>
+                                    <div style="max-height:220px; overflow:auto; border:1px solid #eee; border-radius:4px;">
+                                        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+                                            <thead style="position:sticky; top:0; background:#fafafa;">
+                                                <tr>
+                                                    <th style="text-align:left; padding:4px; border-bottom:1px solid #ddd;">#</th>
+                                                    <th style="text-align:left; padding:4px; border-bottom:1px solid #ddd;">Tool</th>
+                                                    <th style="text-align:left; padding:4px; border-bottom:1px solid #ddd;">Success</th>
+                                                    <th style="text-align:left; padding:4px; border-bottom:1px solid #ddd;">Duration</th>
+                                                    <th style="text-align:left; padding:4px; border-bottom:1px solid #ddd;">Error</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="synthetic-traces-body"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
             </div>
         </div>
 
-        <!-- Instruction Management Section -->
+    <!-- Instruction Management Section -->
         <div id="instructions-section" class="admin-section hidden">
             <div class="admin-card">
                 <div class="card-header">
@@ -446,7 +498,31 @@
                 <div style="margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;">
                     <button class="action-btn" onclick="loadInstructions()">🔄 Refresh</button>
                     <button class="action-btn" onclick="showCreateInstruction()">➕ Create</button>
-                    <input id="instruction-filter" placeholder="Filter by name..." class="form-input" style="flex:1; min-width:200px;" oninput="filterInstructions()" />
+                    <input id="instruction-filter" placeholder="Filter by name..." class="form-input" style="flex:1; min-width:180px;" oninput="filterInstructions()" />
+                    <select id="instruction-category-filter" class="form-input" style="width:130px;" onchange="filterInstructions()">
+                        <option value="">All Categories</option>
+                        <option value="alpha">alpha</option>
+                        <option value="beta">beta</option>
+                        <option value="seed">seed</option>
+                        <option value="enterprise">enterprise</option>
+                        <option value="dispatcher">dispatcher</option>
+                        <option value="general">general</option>
+                    </select>
+                    <select id="instruction-size-filter" class="form-input" style="width:120px;" onchange="filterInstructions()">
+                        <option value="">All Sizes</option>
+                        <option value="small">small</option>
+                        <option value="medium">medium</option>
+                        <option value="large">large</option>
+                    </select>
+                    <select id="instruction-sort" class="form-input" style="width:150px;" onchange="filterInstructions()">
+                        <option value="name-asc">Name A→Z</option>
+                        <option value="name-desc">Name Z→A</option>
+                        <option value="size-asc">Size ↑</option>
+                        <option value="size-desc">Size ↓</option>
+                        <option value="mtime-desc">Modified ↓</option>
+                        <option value="mtime-asc">Modified ↑</option>
+                        <option value="category">Category</option>
+                    </select>
                 </div>
                 <div id="instructions-list" class="loading">Loading instructions...</div>
                 <div id="instruction-pagination" style="margin-top:12px;"></div>
@@ -466,24 +542,6 @@
                     </div>
                 </div>
             </div>
-            <div class="admin-card" style="margin-top:20px;">
-                <div class="card-header">
-                    <div class="card-icon">🗂️</div>
-                    <div class="card-title">Session History</div>
-                </div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
-                    <label style="font-size:12px;">Limit
-                        <select id="session-history-limit" class="form-input" style="width:80px; padding:4px;" onchange="refreshSessionHistory()">
-                            <option value="25">25</option>
-                            <option value="50" selected>50</option>
-                            <option value="100">100</option>
-                            <option value="250">250</option>
-                        </select>
-                    </label>
-                    <button class="action-btn" onclick="refreshSessionHistory()">🔄 Refresh History</button>
-                </div>
-                <div id="session-history-list" class="loading">History not loaded...</div>
-            </div>
         </div>
     </div>
 
@@ -499,6 +557,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             showSection('overview');
             startAutoRefresh();
+            // Attempt to auto-create a dashboard admin session if none exists for this browser tab
+            try { maybeEnsureAdminSession(); } catch(e) { console.warn('auto session create failed', e); }
         });
 
         function showSection(section) {
@@ -539,6 +599,7 @@
                     break;
                 case 'monitoring':
                     loadMonitoringData();
+                    ensureMonitoringPoll();
                     break;
                 case 'instructions':
                     loadInstructions();
@@ -759,20 +820,112 @@
             document.getElementById('system-health').innerHTML = html;
         }
 
-        async function loadSessions() {
+                async function loadSessions() {
             try {
+                let sessionsCount = 0;
+                let connectionsCount = 0;
+                // Admin logical sessions
                 const response = await fetch('/api/admin/sessions');
                 const data = await response.json();
-
                 if (data.success) {
                     displaySessions(data.sessions);
+                    sessionsCount = Array.isArray(data.sessions) ? data.sessions.length : 0;
+                    // If no sessions were active, attempt auto-create then reload once
+                    if (sessionsCount === 0) {
+                        try {
+                            const created = await maybeEnsureAdminSession(true);
+                            if (created) {
+                                // Re-fetch sessions after creation
+                                const r2 = await fetch('/api/admin/sessions');
+                                const d2 = await r2.json();
+                                if (d2.success) { displaySessions(d2.sessions); sessionsCount = d2.sessions.length; }
+                            }
+                        } catch(e) { /* ignore */ }
+                    }
                 } else {
                     showError('Failed to load sessions');
                 }
+                // Active websocket connections
+                try {
+                    const connRes = await fetch('/api/admin/connections');
+                    const connData = await connRes.json();
+                    const connEl = document.getElementById('connections-list');
+                    if (connData.success && connEl) {
+                        connectionsCount = Array.isArray(connData.connections) ? connData.connections.length : 0;
+                        if (!connectionsCount) {
+                            connEl.innerHTML = '<div class="empty-state">No active websocket connections</div>';
+                        } else {
+                            const fmt = (ms) => {
+                                if (ms == null) return '—';
+                                if (ms < 1000) return ms + ' ms';
+                                const s = ms / 1000;
+                                if (s < 60) return s.toFixed(1) + ' s';
+                                const m = Math.floor(s / 60);
+                                const rs = Math.floor(s % 60);
+                                return m + 'm ' + rs + 's';
+                            };
+                            connEl.innerHTML = '<table class="session-table"><thead><tr><th>ID</th><th>Connected</th><th>Duration</th></tr></thead><tbody>' +
+                                connData.connections.map(c => {
+                                    const connected = c.connectedAt ? new Date(c.connectedAt).toLocaleTimeString() : '—';
+                                    return `<tr><td>${escapeHtml(c.id)}</td><td>${connected}</td><td>${fmt(c.durationMs)}</td></tr>`;
+                                }).join('') + '</tbody></table>';
+                        }
+                    } else if (connEl) {
+                        connEl.innerHTML = '<div class="error-message">Failed to load active connections</div>';
+                    }
+                } catch (e) {
+                    const connEl = document.getElementById('connections-list');
+                    if (connEl) connEl.innerHTML = '<div class="error-message">Error loading active connections</div>';
+                }
+
+                // Auto-load session history (now part of Sessions section)
+                try { if (typeof loadSessionHistory === 'function') loadSessionHistory(parseInt((document.getElementById('session-history-limit')||{value:'50'}).value,10)); } catch {}
+                // Update nav badge with latest counts
+                window.__lastSessionsCount = sessionsCount;
+                window.__lastConnectionsCount = connectionsCount;
+                updateSessionsNavBadge();
             } catch (error) {
                 console.error('Error loading sessions:', error);
                 showError('Failed to load sessions');
             }
+        }
+
+        function updateSessionsNavBadge(){
+            const navBtn = document.getElementById('nav-sessions');
+            if(!navBtn) return;
+            const s = window.__lastSessionsCount ?? 0;
+            const c = window.__lastConnectionsCount ?? 0;
+            let badge = navBtn.querySelector('.nav-badge');
+            if(!badge){
+                badge = document.createElement('span');
+                badge.className = 'nav-badge';
+                badge.style.cssText = 'margin-left:6px; background:#444; color:#fff; padding:2px 6px; border-radius:10px; font-size:11px; font-weight:500;';
+                navBtn.appendChild(badge);
+            }
+            badge.textContent = `${s}/${c}`; // sessions / connections
+            badge.title = `Admin sessions: ${s} | Websocket connections: ${c}`;
+        }
+
+        // Auto-session creation logic; stores created session id in sessionStorage to avoid duplicates per tab.
+        async function maybeEnsureAdminSession(onlyIfRequested) {
+            try {
+                if (typeof sessionStorage === 'undefined') return false;
+                const existing = sessionStorage.getItem('mcp_admin_session_id');
+                // If we already have a session id and we're NOT being explicitly
+                // asked to ensure one, skip creating a new one.
+                if (existing && !onlyIfRequested) return false;
+                // Previous logic bailed out even when the server had zero sessions but
+                // the tab held a stale session id (after server restart). That prevented
+                // auto recreation. Now, when onlyIfRequested is true we will attempt
+                // creation even if a stale id exists; we simply overwrite it.
+                const res = await fetch('/api/admin/sessions', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId: 'dashboard_auto' }) });
+                const data = await res.json().catch(()=>({}));
+                if (data.success && data.session && data.session.id) {
+                    sessionStorage.setItem('mcp_admin_session_id', data.session.id);
+                    return true;
+                }
+            } catch (e) { /* ignore */ }
+            return false;
         }
 
         // ===== Session History (NEW) =====
@@ -798,7 +951,7 @@
                     <span class="session-id" style="background:#ececec;">${h.id}</span>
                     <span style="font-size:11px; opacity:0.7;">${h.terminationReason || 'active'}</span>
                   </div>
-                  <div class="stat-row"><span class="stat-label">Created</span><span class="stat-value">${new Date(h.createdAt).toLocaleString()}</span></div>
+                  <div class="stat-row"><span class="stat-label">Started</span><span class="stat-value">${h.startTime ? new Date(h.startTime).toLocaleString() : '—'}</span></div>
                   <div class="stat-row"><span class="stat-label">Ended</span><span class="stat-value">${h.endTime ? new Date(h.endTime).toLocaleString() : '—'}</span></div>
                 </div>`).join('');
         }
@@ -809,41 +962,66 @@
             loadSessionHistory(limit);
         }
 
-        // ===== Synthetic Activity (NEW) =====
+                // ===== Synthetic Activity (TRACE-ENABLED) =====
+                function toggleSyntheticTraceVisibility(){
+                    const wrap = document.getElementById('synthetic-traces-wrapper');
+                    const chk = document.getElementById('synthetic-trace-toggle');
+                    if(!wrap||!chk) return;
+                    wrap.style.display = chk.checked ? 'block':'none';
+                }
                 async function runSyntheticActivity() {
-            const iter = parseInt(document.getElementById('synthetic-iterations').value, 10) || 10;
-            const conc = parseInt(document.getElementById('synthetic-concurrency').value, 10) || 2;
-            const btn = document.getElementById('synthetic-run-btn');
-            const output = document.getElementById('synthetic-output');
-            btn.disabled = true; btn.textContent = 'Running…';
-            output.textContent = 'Executing synthetic activity...';
-            try {
-                                const res = await fetch('/api/admin/synthetic/activity?debug=1', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ iterations: iter, concurrency: conc }) });
-                                const rawText = await res.text();
-                                let data = null;
-                                try { data = JSON.parse(rawText); } catch { /* non-JSON */ }
-                                if (!res.ok || !data) {
-                                    throw new Error(data && (data.error || data.message) ? (data.error || data.message) : `HTTP ${res.status} (non-JSON)`);
-                                }
-                                if (!data.success) {
-                                    throw new Error(data.error || data.message || 'Unknown failure');
-                                }
-                                const metaLine = `Executed ${data.executed}/${data.iterationsRequested} (errors:${data.errors}) in ${data.durationMs}ms @c=${data.concurrency} tools:${data.availableCount}`;
-                                output.textContent = metaLine + (data.available ? `\nSample: ${data.available.slice(0,5).join(', ')}` : '');
-                                const lastMeta = document.getElementById('synthetic-last-meta');
-                                if (lastMeta) lastMeta.textContent = `Last run: ${new Date().toLocaleTimeString()} ${metaLine}`;
-                // Optionally refresh overview stats & health after synthetic load
-                loadOverviewData();
-            } catch (err) {
-                                const emsg = (err && err.message) || 'unknown error';
-                                output.textContent = `Synthetic activity failed: ${emsg}`;
-                                if (/No safe tools/i.test(emsg)) {
-                                    output.textContent += '\nHint: Ensure server started after tool handlers registered (import order)';
-                                }
-            } finally {
-                btn.disabled = false; btn.textContent = 'Run Synthetic Activity';
-            }
-        }
+                    const iter = parseInt(document.getElementById('synthetic-iterations').value, 10) || 10;
+                    const conc = parseInt(document.getElementById('synthetic-concurrency').value, 10) || 2;
+                    const wantTrace = document.getElementById('synthetic-trace-toggle')?.checked !== false; // default true
+                    const btn = document.getElementById('synthetic-run-btn');
+                    const output = document.getElementById('synthetic-output');
+                    btn.disabled = true; btn.textContent = 'Running…';
+                    output.textContent = 'Executing synthetic activity...';
+                    const tracesBody = document.getElementById('synthetic-traces-body');
+                    if(tracesBody) tracesBody.innerHTML = '';
+                    try {
+                        const url = '/api/admin/synthetic/activity?debug=1'+(wantTrace?'&trace=1':'');
+                        const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ iterations: iter, concurrency: conc }) });
+                        const rawText = await res.text();
+                        let data = null; try { data = JSON.parse(rawText); } catch { /* ignore */ }
+                        if (!res.ok || !data) {
+                            throw new Error(data && (data.error || data.message) ? (data.error || data.message) : `HTTP ${res.status} (non-JSON)`);
+                        }
+                        if (!data.success) {
+                            throw new Error(data.error || data.message || 'Unknown failure');
+                        }
+                        const metaLine = `Executed ${data.executed}/${data.iterationsRequested} (errors:${data.errors}) in ${data.durationMs}ms @c=${data.concurrency} tools:${data.availableCount}`;
+                        output.textContent = metaLine + (data.available ? `\nSample: ${data.available.slice(0,5).join(', ')}` : '');
+                        const lastMeta = document.getElementById('synthetic-last-meta');
+                        if (lastMeta) lastMeta.textContent = `Last run: ${new Date().toLocaleTimeString()} ${metaLine}`;
+                        if (wantTrace && Array.isArray(data.traces) && tracesBody) {
+                            const rows = data.traces.map((t,i)=>{
+                                const clr = t.success ? '#0a0' : '#a00';
+                                const err = t.error ? String(t.error).slice(0,80) : '';
+                                return `<tr>
+                                    <td style="padding:2px 4px; border-bottom:1px solid #eee;">${i+1}</td>
+                                    <td style="padding:2px 4px; border-bottom:1px solid #eee; font-family:monospace;">${t.method}</td>
+                                    <td style="padding:2px 4px; border-bottom:1px solid #eee; color:${clr};">${t.success?'✓':'✗'}</td>
+                                    <td style="padding:2px 4px; border-bottom:1px solid #eee;">${t.durationMs}ms</td>
+                                    <td style="padding:2px 4px; border-bottom:1px solid #eee; color:${t.error?'#b55':'#666'};">${err}</td>
+                                </tr>`;
+                            }).join('');
+                            tracesBody.innerHTML = rows || '<tr><td colspan="5" style="padding:4px; font-style:italic;">No traces captured</td></tr>';
+                            document.getElementById('synthetic-traces-wrapper').style.display = 'block';
+                        }
+                        // Refresh overview + monitoring for updated metrics
+                        loadOverviewData();
+                        loadMonitoringData();
+                    } catch (err) {
+                        const emsg = (err && err.message) || 'unknown error';
+                        output.textContent = `Synthetic activity failed: ${emsg}`;
+                        if (/No safe tools/i.test(emsg)) {
+                            output.textContent += '\nHint: Ensure server started after tool handlers registered (import order)';
+                        }
+                    } finally {
+                        btn.disabled = false; btn.textContent = 'Run Synthetic Activity';
+                    }
+                }
 
         function displaySessions(sessions) {
             if (sessions.length === 0) {
@@ -1136,10 +1314,23 @@
                     <ul style="margin-left:20px;">${alerts.map(a=>`<li>${a.type} (${a.severity}) - ${a.message}</li>`).join('') || '<li>No active alerts</li>'}</ul>
                   </div>`;
                 document.getElementById('monitoring-data').innerHTML = html;
+                                // Update nav badge if sessions already loaded
+                                updateSessionsNavBadge();
             } catch (e) {
                 document.getElementById('monitoring-data').innerHTML = '<div class="error">Failed to load monitoring data</div>';
             }
         }
+
+                // Periodic refresh when Monitoring tab visible
+                let monitoringInterval = null;
+                function ensureMonitoringPoll(){
+                    if (document.getElementById('monitoring-section')?.classList.contains('hidden')) return;
+                    if (monitoringInterval) return; // already
+                    monitoringInterval = setInterval(()=>{
+                        if (document.getElementById('monitoring-section')?.classList.contains('hidden')) { clearInterval(monitoringInterval); monitoringInterval=null; return; }
+                        loadMonitoringData();
+                    }, 5000);
+                }
 
         // ===== Instruction Management =====
         let instructionEditing = null;
@@ -1195,12 +1386,34 @@
                         renderInstructionList(allInstructions);
                 }
 
+                // Instruction filtering & sorting enhancements
                 function getFilteredInstructions(list) {
-                        const filter = (document.getElementById('instruction-filter').value || '').toLowerCase();
-                        return list.filter(i => i.name.toLowerCase().includes(filter));
+                    const nameFilter = (document.getElementById('instruction-filter').value || '').toLowerCase();
+                    const categoryFilter = (document.getElementById('instruction-category-filter')?.value || '');
+                    const sizeFilter = (document.getElementById('instruction-size-filter')?.value || '');
+                    let filtered = list.filter(i => i.name.toLowerCase().includes(nameFilter));
+                    if (categoryFilter) filtered = filtered.filter(i => i.category === categoryFilter);
+                    if (sizeFilter) filtered = filtered.filter(i => i.sizeCategory === sizeFilter);
+                    const sortSelect = document.getElementById('instruction-sort');
+                    const sortVal = sortSelect ? sortSelect.value : 'name-asc';
+                    const cmp = (a,b, key, dir='asc') => {
+                        if (a[key] === b[key]) return 0;
+                        return (a[key] < b[key] ? -1 : 1) * (dir === 'asc' ? 1 : -1);
+                    };
+                    switch(sortVal) {
+                        case 'name-desc': filtered.sort((a,b)=>cmp(a,b,'name','desc')); break;
+                        case 'size-asc': filtered.sort((a,b)=>cmp(a,b,'size','asc')); break;
+                        case 'size-desc': filtered.sort((a,b)=>cmp(a,b,'size','desc')); break;
+                        case 'mtime-asc': filtered.sort((a,b)=>cmp(a,b,'mtime','asc')); break;
+                        case 'mtime-desc': filtered.sort((a,b)=>cmp(a,b,'mtime','desc')); break;
+                        case 'category': filtered.sort((a,b)=>cmp(a,b,'category','asc') || cmp(a,b,'name','asc')); break;
+                        default: // name-asc
+                            filtered.sort((a,b)=>cmp(a,b,'name','asc'));
+                    }
+                    return filtered;
                 }
 
-        async function loadInstructions() {
+    async function loadInstructions() {
             const listEl = document.getElementById('instructions-list');
             listEl.innerHTML = 'Loading...';
             try {
@@ -1239,7 +1452,8 @@
                            <button class="action-btn danger" onclick="deleteInstruction('${instr.name}')">🗑 Delete</button>
                         </div>
                     </div>
-                    <div class="stat-row"><span class="stat-label">Size</span><span class="stat-value">${instr.size} bytes</span></div>
+                    <div class="stat-row"><span class="stat-label">Category</span><span class="stat-value">${instr.category || '—'}</span></div>
+                    <div class="stat-row"><span class="stat-label">Size</span><span class="stat-value">${instr.size} bytes (${instr.sizeCategory})</span></div>
                     <div class="stat-row"><span class="stat-label">Modified</span><span class="stat-value">${new Date(instr.mtime).toLocaleString()}</span></div>
                 </div>`).join('');
             document.getElementById('instructions-list').innerHTML = rows;
@@ -1316,9 +1530,10 @@
         }
 
         // Build metadata loader
-        (async function fetchBuildMeta(){
+    (async function fetchBuildMeta(){
             try {
-                const r = await fetch('/api/status');
+        // Cache bust query param to avoid any intermediary caching of status response
+        const r = await fetch('/api/status?t=' + Date.now());
                 const j = await r.json();
                 const el = document.getElementById('buildMeta');
                 const ver = j.version || '?.?.?';
@@ -1368,6 +1583,15 @@
             if (bytes === 0) return '0 B';
             const i = Math.floor(Math.log(bytes) / Math.log(1024));
             return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        function escapeHtml(str) {
+            if (str == null) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
     </script>
 </body>

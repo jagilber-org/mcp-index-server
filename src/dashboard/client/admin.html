@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 4.1 Admin Panel - MCP Index Server</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .admin-header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .admin-header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .admin-nav {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .nav-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(45deg, #764ba2, #667eea);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .admin-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .admin-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+            margin-right: 15px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            font-weight: 500;
+            color: #666;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+
+        .status-healthy { background: #2ecc71; }
+        .status-warning { background: #f39c12; }
+        .status-critical { background: #e74c3c; }
+
+        .action-btn {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .action-btn.danger {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .action-btn.warning {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+        }
+
+        .maintenance-status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: 600;
+        }
+
+        .maintenance-enabled {
+            background: #ffe6e6;
+            color: #c0392b;
+            border: 2px solid #e74c3c;
+        }
+
+        .maintenance-disabled {
+            background: #e6ffe6;
+            color: #27ae60;
+            border: 2px solid #2ecc71;
+        }
+
+        .config-form {
+            display: grid;
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .sessions-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .session-item {
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+        }
+
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .session-id {
+            font-family: monospace;
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .error {
+            background: #ffe6e6;
+            color: #c0392b;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #e74c3c;
+        }
+
+        .success {
+            background: #e6ffe6;
+            color: #27ae60;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #2ecc71;
+        }
+
+        @media (max-width: 768px) {
+            .admin-nav {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .admin-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-btn {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>🛡️ Phase 4.1 Admin Panel</h1>
+            <p>Enterprise Administration Interface for MCP Index Server</p>
+            <div class="admin-nav">
+                <button class="nav-btn active" onclick="showSection('overview')">📊 Overview</button>
+                <button class="nav-btn" onclick="showSection('config')">⚙️ Configuration</button>
+                <button class="nav-btn" onclick="showSection('sessions')">👥 Sessions</button>
+                <button class="nav-btn" onclick="showSection('maintenance')">🔧 Maintenance</button>
+                <button class="nav-btn" onclick="showSection('monitoring')">📈 Monitoring</button>
+            </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div id="overview-section" class="admin-section">
+            <div class="admin-grid">
+                <div class="admin-card">
+                    <div class="card-header">
+                        <div class="card-icon">📊</div>
+                        <div class="card-title">System Statistics</div>
+                    </div>
+                    <div id="system-stats" class="loading">Loading system statistics...</div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="card-header">
+                        <div class="card-icon">💚</div>
+                        <div class="card-title">System Health</div>
+                    </div>
+                    <div id="system-health" class="loading">Loading system health...</div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="card-header">
+                        <div class="card-icon">⚡</div>
+                        <div class="card-title">Performance</div>
+                    </div>
+                    <div id="performance-stats" class="loading">Loading performance data...</div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="card-header">
+                        <div class="card-icon">📚</div>
+                        <div class="card-title">Catalog Status</div>
+                    </div>
+                    <div id="catalog-stats" class="loading">Loading catalog information...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Section -->
+        <div id="config-section" class="admin-section hidden">
+            <div class="admin-card">
+                <div class="card-header">
+                    <div class="card-icon">⚙️</div>
+                    <div class="card-title">Server Configuration</div>
+                </div>
+                <div id="config-form" class="loading">Loading configuration...</div>
+            </div>
+        </div>
+
+        <!-- Sessions Section -->
+        <div id="sessions-section" class="admin-section hidden">
+            <div class="admin-card">
+                <div class="card-header">
+                    <div class="card-icon">👥</div>
+                    <div class="card-title">Active Admin Sessions</div>
+                </div>
+                <div id="sessions-list" class="loading">Loading sessions...</div>
+                <button class="action-btn" onclick="createTestSession()">Create Test Session</button>
+            </div>
+        </div>
+
+        <!-- Maintenance Section -->
+        <div id="maintenance-section" class="admin-section hidden">
+            <div class="admin-grid">
+                <div class="admin-card">
+                    <div class="card-header">
+                        <div class="card-icon">🔧</div>
+                        <div class="card-title">Maintenance Control</div>
+                    </div>
+                    <div id="maintenance-control" class="loading">Loading maintenance status...</div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="card-header">
+                        <div class="card-icon">💾</div>
+                        <div class="card-title">System Operations</div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="performBackup()">💾 Create Backup</button>
+                        <button class="action-btn warning" onclick="clearCaches()">🗑️ Clear Caches</button>
+                        <button class="action-btn danger" onclick="restartServer()">🔄 Restart Server</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monitoring Section -->
+        <div id="monitoring-section" class="admin-section hidden">
+            <div class="admin-card">
+                <div class="card-header">
+                    <div class="card-icon">📈</div>
+                    <div class="card-title">Real-time Monitoring</div>
+                </div>
+                <div id="monitoring-data" class="loading">Loading monitoring data...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Admin Panel JavaScript
+        let currentSection = 'overview';
+        let refreshInterval;
+
+        // Initialize admin panel
+        document.addEventListener('DOMContentLoaded', function() {
+            showSection('overview');
+            startAutoRefresh();
+        });
+
+        function showSection(section) {
+            // Hide all sections
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.add('hidden'));
+
+            // Show selected section if present
+            const activeSection = document.getElementById(section + '-section');
+            if (activeSection) activeSection.classList.remove('hidden');
+
+            // Update nav buttons without relying on implicit event
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                const isTarget = btn.getAttribute('onclick')?.includes(`showSection('${section}')`);
+                if (isTarget) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            currentSection = section;
+            loadSectionData(section);
+        }
+
+        function loadSectionData(section) {
+            switch(section) {
+                case 'overview':
+                    loadOverviewData();
+                    break;
+                case 'config':
+                    loadConfiguration();
+                    break;
+                case 'sessions':
+                    loadSessions();
+                    break;
+                case 'maintenance':
+                    loadMaintenanceStatus();
+                    break;
+                case 'monitoring':
+                    loadMonitoringData();
+                    break;
+            }
+        }
+
+        async function loadOverviewData() {
+            try {
+                const [statsRes, maintenanceRes, healthRes] = await Promise.all([
+                    fetch('/api/admin/stats').catch(e => e),
+                    fetch('/api/admin/maintenance').catch(e => e),
+                    fetch('/api/health').catch(e => e)
+                ]);
+
+                const [statsData, maintenanceData, healthData] = await Promise.all([
+                    statsRes?.json ? statsRes.json().catch(() => ({})) : {},
+                    maintenanceRes?.json ? maintenanceRes.json().catch(() => ({})) : {},
+                    healthRes?.json ? healthRes.json().catch(() => ({})) : {}
+                ]);
+
+                if (statsData?.success && statsData.stats) {
+                    displaySystemStats(statsData.stats);
+                } else {
+                    const statsEl = document.getElementById('system-stats');
+                    if (statsEl) statsEl.innerHTML = '<div class="error-message">Stats unavailable</div>';
+                }
+
+                if (maintenanceData?.success && maintenanceData.maintenance) {
+                    displayMaintenanceInfo(maintenanceData.maintenance);
+                }
+
+                if ((healthData?.success || healthData?.status === 'ok') && healthData) {
+                    displaySystemHealth(healthData.systemHealth || healthData.maintenance?.systemHealth || healthData);
+                }
+            } catch (error) {
+                console.error('Error loading overview data:', error);
+                showError('Failed to load overview data');
+            }
+        }
+
+        function displaySystemStats(stats) {
+            const html = `
+                <div class="stat-row">
+                    <span class="stat-label">Uptime</span>
+                    <span class="stat-value">${formatUptime(stats.uptime)}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Active Connections</span>
+                    <span class="stat-value">${stats.activeConnections}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total Requests</span>
+                    <span class="stat-value">${stats.totalRequests.toLocaleString()}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Error Rate</span>
+                    <span class="stat-value">${stats.errorRate.toFixed(2)}%</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Avg Response Time</span>
+                    <span class="stat-value">${stats.avgResponseTime.toFixed(1)}ms</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Memory Usage</span>
+                    <span class="stat-value">${formatBytes(stats.memoryUsage.heapUsed)} / ${formatBytes(stats.memoryUsage.heapTotal)}</span>
+                </div>
+            `;
+            document.getElementById('system-stats').innerHTML = html;
+
+            // Performance stats
+            const perfHtml = `
+                <div class="stat-row">
+                    <span class="stat-label">Total Connections</span>
+                    <span class="stat-value">${stats.totalConnections.toLocaleString()}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Error Rate</span>
+                    <span class="stat-value">${stats.errorRate.toFixed(2)}%</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Response Time</span>
+                    <span class="stat-value">${stats.avgResponseTime.toFixed(1)}ms</span>
+                </div>
+            `;
+            document.getElementById('performance-stats').innerHTML = perfHtml;
+
+            // Catalog stats
+            const catalogHtml = `
+                <div class="stat-row">
+                    <span class="stat-label">Total Instructions</span>
+                    <span class="stat-value">${stats.catalogStats.totalInstructions}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Version</span>
+                    <span class="stat-value">${stats.catalogStats.version}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Last Updated</span>
+                    <span class="stat-value">${new Date(stats.catalogStats.lastUpdated).toLocaleString()}</span>
+                </div>
+            `;
+            document.getElementById('catalog-stats').innerHTML = catalogHtml;
+        }
+
+        function displaySystemHealth(health) {
+            const statusClass = `status-${health.status}`;
+            let html = `
+                <div class="stat-row">
+                    <span class="stat-label">Overall Status</span>
+                    <span class="stat-value">
+                        ${health.status.toUpperCase()}
+                        <span class="${statusClass} status-indicator"></span>
+                    </span>
+                </div>
+            `;
+
+            if (health.issues.length > 0) {
+                html += `
+                    <div style="margin-top: 15px;">
+                        <strong>Issues:</strong>
+                        <ul style="margin-left: 20px; margin-top: 5px;">
+                            ${health.issues.map(issue => `<li style="color: #e74c3c;">${issue}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            if (health.recommendations.length > 0) {
+                html += `
+                    <div style="margin-top: 15px;">
+                        <strong>Recommendations:</strong>
+                        <ul style="margin-left: 20px; margin-top: 5px;">
+                            ${health.recommendations.map(rec => `<li style="color: #f39c12;">${rec}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            document.getElementById('system-health').innerHTML = html;
+        }
+
+        async function loadSessions() {
+            try {
+                const response = await fetch('/api/admin/sessions');
+                const data = await response.json();
+
+                if (data.success) {
+                    displaySessions(data.sessions);
+                } else {
+                    showError('Failed to load sessions');
+                }
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                showError('Failed to load sessions');
+            }
+        }
+
+        function displaySessions(sessions) {
+            if (sessions.length === 0) {
+                document.getElementById('sessions-list').innerHTML = '<p>No active admin sessions</p>';
+                return;
+            }
+
+            const html = sessions.map(session => `
+                <div class="session-item">
+                    <div class="session-header">
+                        <span class="session-id">${session.id}</span>
+                        <button class="action-btn danger" onclick="terminateSession('${session.id}')">Terminate</button>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">User ID</span>
+                        <span class="stat-value">${session.userId}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">IP Address</span>
+                        <span class="stat-value">${session.ipAddress}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Start Time</span>
+                        <span class="stat-value">${new Date(session.startTime).toLocaleString()}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Last Activity</span>
+                        <span class="stat-value">${new Date(session.lastActivity).toLocaleString()}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('sessions-list').innerHTML = html;
+        }
+
+        async function createTestSession() {
+            try {
+                const response = await fetch('/api/admin/sessions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: 'test_admin_' + Date.now() })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showSuccess('Test session created successfully');
+                    loadSessions();
+                } else {
+                    showError('Failed to create test session');
+                }
+            } catch (error) {
+                console.error('Error creating test session:', error);
+                showError('Failed to create test session');
+            }
+        }
+
+        async function terminateSession(sessionId) {
+            try {
+                const response = await fetch(`/api/admin/sessions/${sessionId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showSuccess('Session terminated successfully');
+                    loadSessions();
+                } else {
+                    showError('Failed to terminate session');
+                }
+            } catch (error) {
+                console.error('Error terminating session:', error);
+                showError('Failed to terminate session');
+            }
+        }
+
+        async function loadMaintenanceStatus() {
+            try {
+                const response = await fetch('/api/admin/maintenance');
+                const data = await response.json();
+
+                if (data.success) {
+                    displayMaintenanceStatus(data.maintenance);
+                } else {
+                    showError('Failed to load maintenance status');
+                }
+            } catch (error) {
+                console.error('Error loading maintenance status:', error);
+                showError('Failed to load maintenance status');
+            }
+        }
+
+        function displayMaintenanceStatus(maintenance) {
+            const statusClass = maintenance.maintenanceMode ? 'maintenance-enabled' : 'maintenance-disabled';
+            const statusText = maintenance.maintenanceMode ? 'MAINTENANCE MODE ENABLED' : 'NORMAL OPERATION';
+            
+            let html = `
+                <div class="maintenance-status ${statusClass}">
+                    ${statusText}
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Last Backup</span>
+                    <span class="stat-value">${maintenance.lastBackup ? new Date(maintenance.lastBackup).toLocaleString() : 'Never'}</span>
+                </div>
+            `;
+
+            if (!maintenance.maintenanceMode) {
+                html += `<button class="action-btn warning" onclick="toggleMaintenanceMode(true)">Enable Maintenance Mode</button>`;
+            } else {
+                html += `<button class="action-btn" onclick="toggleMaintenanceMode(false)">Disable Maintenance Mode</button>`;
+            }
+
+            document.getElementById('maintenance-control').innerHTML = html;
+        }
+
+        async function toggleMaintenanceMode(enable) {
+            try {
+                const response = await fetch('/api/admin/maintenance/mode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        enabled: enable, 
+                        message: enable ? 'Admin panel maintenance' : undefined 
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showSuccess(data.message);
+                    loadMaintenanceStatus();
+                } else {
+                    showError('Failed to toggle maintenance mode');
+                }
+            } catch (error) {
+                console.error('Error toggling maintenance mode:', error);
+                showError('Failed to toggle maintenance mode');
+            }
+        }
+
+        async function performBackup() {
+            try {
+                showSuccess('Backup started...');
+                const response = await fetch('/api/admin/maintenance/backup', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showSuccess(`Backup completed: ${data.backupId}`);
+                    loadMaintenanceStatus();
+                } else {
+                    showError('Backup failed');
+                }
+            } catch (error) {
+                console.error('Error performing backup:', error);
+                showError('Backup failed');
+            }
+        }
+
+        async function clearCaches() {
+            try {
+                const response = await fetch('/api/admin/cache/clear', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showSuccess(`Caches cleared: ${data.cleared.join(', ')}`);
+                } else {
+                    showError('Failed to clear caches');
+                }
+            } catch (error) {
+                console.error('Error clearing caches:', error);
+                showError('Failed to clear caches');
+            }
+        }
+
+        async function restartServer() {
+            if (!confirm('Are you sure you want to restart the server? This may temporarily interrupt service.')) {
+                return;
+            }
+
+            try {
+                showSuccess('Server restart initiated...');
+                const response = await fetch('/api/admin/restart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ component: 'all' })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showSuccess(data.message);
+                } else {
+                    showError('Server restart failed');
+                }
+            } catch (error) {
+                console.error('Error restarting server:', error);
+                showError('Server restart failed');
+            }
+        }
+
+        function loadConfiguration() {
+            document.getElementById('config-form').innerHTML = `
+                <p>Configuration management interface will be available in the next update.</p>
+                <p>Current configuration can be viewed via API endpoints.</p>
+            `;
+        }
+
+        function loadMonitoringData() {
+            document.getElementById('monitoring-data').innerHTML = `
+                <p>Real-time monitoring dashboard will be available in the next update.</p>
+                <p>Basic monitoring data is available in the Overview section.</p>
+            `;
+        }
+
+        function startAutoRefresh() {
+            refreshInterval = setInterval(() => {
+                if (currentSection === 'overview') {
+                    loadOverviewData();
+                } else if (currentSection === 'sessions') {
+                    loadSessions();
+                } else if (currentSection === 'maintenance') {
+                    loadMaintenanceStatus();
+                }
+            }, 30000); // Refresh every 30 seconds
+        }
+
+        function showError(message) {
+            // Remove existing notifications
+            document.querySelectorAll('.error, .success').forEach(el => el.remove());
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            document.querySelector('.admin-container').insertBefore(errorDiv, document.querySelector('.admin-container').firstChild.nextSibling);
+            
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        function showSuccess(message) {
+            // Remove existing notifications
+            document.querySelectorAll('.error, .success').forEach(el => el.remove());
+            
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success';
+            successDiv.textContent = message;
+            document.querySelector('.admin-container').insertBefore(successDiv, document.querySelector('.admin-container').firstChild.nextSibling);
+            
+            setTimeout(() => successDiv.remove(), 5000);
+        }
+
+        // Utility functions
+        function formatUptime(seconds) {
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            
+            if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+            if (hours > 0) return `${hours}h ${minutes}m`;
+            return `${minutes}m`;
+        }
+
+        function formatBytes(bytes) {
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            if (bytes === 0) return '0 B';
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>

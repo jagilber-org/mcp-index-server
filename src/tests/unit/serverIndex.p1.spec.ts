@@ -16,6 +16,42 @@ describe('server/index helper exports (P1)', () => {
     expect(cfg.maxPortTries).toBe(1);
   });
 
+  it('parseArgs respects environment variables with CLI override', () => {
+    // Save original env vars
+    const originalDashboard = process.env.MCP_DASHBOARD;
+    const originalPort = process.env.MCP_DASHBOARD_PORT;
+    const originalHost = process.env.MCP_DASHBOARD_HOST;
+    const originalTries = process.env.MCP_DASHBOARD_TRIES;
+    
+    try {
+      // Set env vars
+      process.env.MCP_DASHBOARD = '1';
+      process.env.MCP_DASHBOARD_PORT = '9000';
+      process.env.MCP_DASHBOARD_HOST = 'localhost';
+      process.env.MCP_DASHBOARD_TRIES = '5';
+      
+      // Test env vars are applied
+      const envCfg = _parseArgs(['node','index']);
+      expect(envCfg.dashboard).toBe(true);
+      expect(envCfg.dashboardPort).toBe(9000);
+      expect(envCfg.dashboardHost).toBe('localhost');
+      expect(envCfg.maxPortTries).toBe(5);
+      
+      // Test CLI overrides env vars
+      const cliCfg = _parseArgs(['node','index','--no-dashboard','--dashboard-port=8888']);
+      expect(cliCfg.dashboard).toBe(false);
+      expect(cliCfg.dashboardPort).toBe(8888);
+      expect(cliCfg.dashboardHost).toBe('localhost'); // still from env
+      expect(cliCfg.maxPortTries).toBe(5); // still from env
+    } finally {
+      // Restore original env vars
+      if (originalDashboard !== undefined) process.env.MCP_DASHBOARD = originalDashboard; else delete process.env.MCP_DASHBOARD;
+      if (originalPort !== undefined) process.env.MCP_DASHBOARD_PORT = originalPort; else delete process.env.MCP_DASHBOARD_PORT;
+      if (originalHost !== undefined) process.env.MCP_DASHBOARD_HOST = originalHost; else delete process.env.MCP_DASHBOARD_HOST;
+      if (originalTries !== undefined) process.env.MCP_DASHBOARD_TRIES = originalTries; else delete process.env.MCP_DASHBOARD_TRIES;
+    }
+  });
+
   it('findPackageVersion returns semver-like string', () => {
     const v = _findPackageVersion();
     expect(v).toMatch(/\d+\.\d+\.\d+/);

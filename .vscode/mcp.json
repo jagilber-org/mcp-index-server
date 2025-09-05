@@ -22,6 +22,7 @@
 				"INSTRUCTIONS_ALWAYS_RELOAD": "1",
 				"MCP_TRACE_LEVEL": "1",
 				"MCP_CATALOG_FILE_TRACE": "1",
+				"MCP_DASHBOARD": "1",
 				// Optional future safeguard: require a guard token before mutating prod.
 				// "MCP_MUTATION_GUARD": "expected-checksum-or-token"
 				// ===================== FEEDBACK STORAGE ========================
@@ -48,14 +49,14 @@
 				// "INDEX_AUTOSAVE_INTERVAL_MS": "3000"
 			}
 		},
-		"powershell-mcp-server": {
-			"command": "node",
-			"args": [
-				"dist/server.js"
-			],
-			"cwd": "c:\\mcp\\powershell-mcp-server",
-			"type": "stdio"
-		}
+		// "powershell-mcp-server": {
+		// 	"command": "node",
+		// 	"args": [
+		// 		"dist/server.js"
+		// 	],
+		// 	"cwd": "c:\\mcp\\powershell-mcp-server",
+		// 	"type": "stdio"
+		// }
 	},
 	"inputs": []
 }

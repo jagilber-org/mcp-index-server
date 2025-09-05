@@ -1,4 +1,15 @@
-# MCP Instruction Server
+# MCP Instr- - **[📋 Product Requirements (PROJECT_PRD.md)](./docs/PROJECT_PRD.md)** - Authoritative binding requirements and governance
+- **[🔧 API Reference (TOOLS.md)](./docs/TOOLS.md)** - Complete MCP protocol-compliant tool documentation  
+- **[⚙️ Configuration Guide (MCP-CONFIGURATION.md)](./docs/MCP-CONFIGURATION.md)** - Comprehensive MCP setup patterns for all environments
+- **[🔧 Server Configuration (CONFIGURATION.md)](./docs/CONFIGURATION.md)** - Environment variables and CLI options reference
+- **[📊 Dashboard Development Plan (DASHBOARD-DEVELOPMENT-PLAN.md)](./docs/DASHBOARD-DEVELOPMENT-PLAN.md)** - Multi-phase dashboard enhancement roadmap
+- **[📝 Content Guidance (CONTENT-GUIDANCE.md)](./docs/CONTENT-GUIDANCE.md)** - What to include in local vs. central instruction servers
+- **[🧠 Prompt Optimization (PROMPT-OPTIMIZATION.md)](./docs/PROMPT-OPTIMIZATION.md)** - AI prompt handling and optimization guide
+- **[🔍 Portable Test Client (PORTABLE-MCP-TEST-CLIENT.md)](./docs/PORTABLE-MCP-TEST-CLIENT.md)** - Critical testing tool for MCP troubleshooting
+- **[🏗️ Architecture (ARCHITECTURE.md)](./docs/ARCHITECTURE.md)** - System design and component overview
+- **[🔒 Security (SECURITY.md)](./SECURITY.md)** - Security policies and compliance*[🔧 Server Configuration (CONFIGURATION.md)](./docs/CONFIGURATION.md)** - Environment variables and CLI options reference
+- **[📊 Dashboard Development Plan (DASHBOARD-DEVELOPMENT-PLAN.md)](./docs/DASHBOARD-DEVELOPMENT-PLAN.md)** - Multi-phase dashboard enhancement roadmap
+- **[📝 Content Guidance (CONTENT-GUIDANCE.md)](./docs/CONTENT-GUIDANCE.md)** - What to include in local vs. central instruction serverstion Server
 
 Enterprise-grade local Model Context Protocol server providing a governed, classified, auditable instruction catalog with analytics and optional admin dashboard.
 
@@ -9,7 +20,8 @@ This project provides comprehensive enterprise-grade documentation:
 - **[📋 Product Requirements (PROJECT_PRD.md)](./docs/PROJECT_PRD.md)** - Authoritative binding requirements and governance
 - **[🔧 API Reference (TOOLS.md)](./docs/TOOLS.md)** - Complete MCP protocol-compliant tool documentation  
 - **[⚙️ Configuration Guide (MCP-CONFIGURATION.md)](./docs/MCP-CONFIGURATION.md)** - Comprehensive MCP setup patterns for all environments
-- **[📝 Content Guidance (CONTENT-GUIDANCE.md)](./docs/CONTENT-GUIDANCE.md)** - What to include in local vs. central instruction servers
+- **[� Server Configuration (CONFIGURATION.md)](./docs/CONFIGURATION.md)** - Environment variables and CLI options reference
+- **[�📝 Content Guidance (CONTENT-GUIDANCE.md)](./docs/CONTENT-GUIDANCE.md)** - What to include in local vs. central instruction servers
 - **[🧠 Prompt Optimization (PROMPT-OPTIMIZATION.md)](./docs/PROMPT-OPTIMIZATION.md)** - AI prompt handling and optimization guide
 - **[🔍 Portable Test Client (PORTABLE-MCP-TEST-CLIENT.md)](./docs/PORTABLE-MCP-TEST-CLIENT.md)** - Critical testing tool for MCP troubleshooting
 - **[🏗️ Architecture (ARCHITECTURE.md)](./docs/ARCHITECTURE.md)** - System design and component overview
@@ -559,6 +571,11 @@ Rationale: a single execution pathway (tools/call) eliminates duplicate validati
 |------|---------|-------|-------------|
 | `MCP_LOG_VERBOSE` | off | runtime | Enables detailed diagnostic logging (handshake, tool dispatch timings). |
 | `MCP_ENABLE_MUTATION` | off | runtime | Allows mutating tools (add/import/remove/enrich/governanceUpdate/repair/reload/flush). Leave off in read-only production. |
+| `MCP_DASHBOARD` | off | runtime | Enable admin dashboard (0=disable, 1=enable). Can be overridden by `--dashboard` or `--no-dashboard` CLI args. |
+| `MCP_DASHBOARD_PORT` | 8787 | runtime | Dashboard HTTP port. Can be overridden by `--dashboard-port` CLI arg. |
+| `MCP_DASHBOARD_HOST` | 127.0.0.1 | runtime | Dashboard bind address. Can be overridden by `--dashboard-host` CLI arg. |
+| `MCP_DASHBOARD_TRIES` | 10 | runtime | Maximum port retry attempts when dashboard port is busy. Can be overridden by `--dashboard-tries` CLI arg. |
+| `MCP_IDLE_KEEPALIVE_MS` | 30000 | runtime | Keepalive echo interval for idle transports (milliseconds). |
 | `MCP_INIT_FALLBACK_ALLOW` | off | runtime (diagnostic) | Permits synthetic initialize fallback path used only for investigating lost/blocked initialize sequences. Keep off for protocol compliance; tests assert no synthetic markers when off. |
 | `MCP_STRESS_DIAG` | off | test harness | When set to `1`, activates heavy fuzz / fragmentation / multi-process saturation tests (handshake fragmentation, long reproduction loops, escalated health contention). Left off for normal CI or production validation to ensure deterministic green suite. |
 | `MCP_HANDSHAKE_TRACE` | off | runtime (diagnostic) | Extra trace around initialize & server/ready sequencing. |
@@ -568,6 +585,8 @@ Rationale: a single execution pathway (tools/call) eliminates duplicate validati
 Operational guidance:
 
 - Keep all diagnostic flags OFF for production unless actively debugging an issue.
+- Dashboard environment variables are overridden by command line arguments.
+- For security, dashboard should only be enabled on localhost (127.0.0.1) for local administration.
 - Enable `MCP_STRESS_DIAG=1` locally or in a dedicated CI job (e.g., nightly) to exercise adversarial workloads without destabilizing standard PR validations.
 - Never enable `MCP_INIT_FALLBACK_ALLOW` in production; it is purely for reproducing initialize starvation scenarios and is guarded by compliance tests.
 
@@ -672,4 +691,4 @@ Hooks: Pre-commit runs typecheck, lint, tests, and security scan. Manual scan: `
 
 ## Roadmap
 
-See `docs/IMPLEMENTATION-PLAN.md` and `docs/ARCHITECTURE.md` for detailed planning.
+See `docs/DASHBOARD-DEVELOPMENT-PLAN.md` and `docs/ARCHITECTURE.md` for detailed planning.

@@ -1,47 +1,48 @@
 /**
- * DashboardServer - Phase 1 Dashboard Foundation
+ * DashboardServer - Enhanced Phase 2 Dashboard with Real-time Features
  * 
- * Enhanced Express.js server for the MCP Index Server dashboard.
- * Integrates metrics collection, WebSocket communication, and API routes.
+ * Express server providing comprehensive dashboard with:
+ * - Phase 1: WebSocket support, API routes, metrics collection
+ * - Phase 2: Interactive charts, real-time updates, enhanced UI
  */
 
 import express, { Express } from 'express';
 import { Server as HttpServer, createServer } from 'http';
+import { readFile } from 'fs/promises';
 import path from 'path';
+import { createApiRoutes } from './ApiRoutes.js';
 import { getMetricsCollector } from './MetricsCollector.js';
 import { getWebSocketManager } from './WebSocketManager.js';
-import createApiRoutes from './ApiRoutes.js';
 
 export interface DashboardServerOptions {
-  port?: number;
   host?: string;
+  port?: number;
+  maxPortTries?: number;
   enableWebSockets?: boolean;
   enableCors?: boolean;
-  staticPath?: string;
-  maxPortTries?: number;
 }
 
-export interface DashboardServerResult {
-  url: string;
+interface ServerInfo {
   port: number;
-  close: () => void;
+  host: string;
+  url: string;
 }
 
 export class DashboardServer {
   private app: Express;
   private server: HttpServer | null = null;
-  private options: Required<DashboardServerOptions>;
   private metricsCollector = getMetricsCollector();
   private webSocketManager = getWebSocketManager();
 
+  private options: Required<DashboardServerOptions>;
+
   constructor(options: DashboardServerOptions = {}) {
     this.options = {
-      port: options.port ?? 8787,
-      host: options.host ?? '127.0.0.1',
+      host: options.host || '127.0.0.1',
+      port: options.port || 8989,
+      maxPortTries: options.maxPortTries || 10,
       enableWebSockets: options.enableWebSockets ?? true,
-      enableCors: options.enableCors ?? false,
-      staticPath: options.staticPath ?? path.join(__dirname, '../client'),
-      maxPortTries: options.maxPortTries ?? 10,
+      enableCors: options.enableCors ?? true
     };
 
     this.app = express();
@@ -49,20 +50,27 @@ export class DashboardServer {
     this.setupRoutes();
   }
 
-  /**
-   * Start the dashboard server
-   */
-  async start(): Promise<DashboardServerResult> {
-    let port = this.options.port;
-    const host = this.options.host;
-
+  async start(): Promise<{ url: string; port: number; close: () => void }> {
     for (let attempt = 0; attempt < this.options.maxPortTries; attempt++) {
+      const currentPort = this.options.port + attempt;
       try {
-        const result = await this.tryStartServer(host, port);
-        return result;
+        await this.startServer(currentPort);
+        /* eslint-disable-next-line */
+        console.log(`[Dashboard] Server started on http://${this.options.host}:${currentPort}`);
+        
+        if (this.options.enableWebSockets) {
+          this.webSocketManager.initialize(this.server!);
+          console.log(`[Dashboard] WebSocket support enabled on ws://${this.options.host}:${currentPort}/ws`);
+        }
+        
+        return {
+          url: `http://${this.options.host}:${currentPort}/`,
+          port: currentPort,
+          close: () => this.stop()
+        };
       } catch (error) {
         if ((error as { code?: string })?.code === 'EADDRINUSE') {
-          port++;
+          console.log(`[Dashboard] Port ${currentPort} in use, trying ${currentPort + 1}`);
           continue;
         }
         throw error;
@@ -72,133 +80,133 @@ export class DashboardServer {
     throw new Error(`Failed to start dashboard server after ${this.options.maxPortTries} attempts`);
   }
 
-  /**
-   * Stop the dashboard server
-   */
-  stop(): void {
-    if (this.webSocketManager) {
-      this.webSocketManager.close();
-    }
-
-    if (this.metricsCollector) {
-      this.metricsCollector.stop();
-    }
-
+  async stop(): Promise<void> {
     if (this.server) {
-      this.server.close();
-      this.server = null;
+      if (this.options.enableWebSockets) {
+        this.webSocketManager.close();
+      }
+      return new Promise((resolve) => {
+        this.server!.close(() => {
+          console.log('[Dashboard] Server stopped');
+          resolve();
+        });
+      });
     }
   }
 
-  /**
-   * Get current server info
-   */
-  getServerInfo(): { port: number; host: string; url: string } | null {
-    if (!this.server || !this.server.listening) {
+  getServerInfo(): ServerInfo | null {
+    if (!this.server?.listening) {
       return null;
     }
 
     const address = this.server.address();
-    if (!address || typeof address !== 'object') {
+    if (!address || typeof address === 'string') {
       return null;
     }
 
     return {
       port: address.port,
       host: this.options.host,
-      url: `http://${this.options.host}:${address.port}/`,
+      /* eslint-disable-next-line */
+      url: `http://${this.options.host}:${address.port}`
     };
   }
 
-  private async tryStartServer(host: string, port: number): Promise<DashboardServerResult> {
+  private async startServer(port: number): Promise<void> {
     return new Promise((resolve, reject) => {
       this.server = createServer(this.app);
-
-      // Initialize WebSocket server if enabled
-      if (this.options.enableWebSockets) {
-        this.webSocketManager.initialize(this.server);
-      }
+      
+      this.server.listen(port, this.options.host, () => {
+        resolve();
+      });
 
       this.server.on('error', (error) => {
         reject(error);
-      });
-
-      this.server.listen(port, host, () => {
-        const actualPort = port === 0 ? 
-          ((this.server!.address() as { port: number })?.port || port) : port;
-        // Local HTTP (dashboard) intentionally non-TLS for dev; restrict host to loopback by default.
-        const proto = 'http:'; // dev-only
-        const url = `${proto}//${host}:${actualPort}/`;
-
-        // Setup graceful shutdown
-        process.on('exit', () => {
-          this.stop();
-        });
-
-        resolve({
-          url,
-          port: actualPort,
-          close: () => this.stop(),
-        });
       });
     });
   }
 
   private setupMiddleware(): void {
-    // Trust proxy (for reverse proxy setups)
-    this.app.set('trust proxy', 1);
-
-    // Security headers
-    this.app.use((_req, res, next) => {
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('X-Frame-Options', 'DENY');
-      res.setHeader('X-XSS-Protection', '1; mode=block');
-      next();
-    });
-
-    // Request logging
-    this.app.use((req, _res, next) => {
-      console.log(`[Dashboard] ${req.method} ${req.url}`);
-      next();
-    });
-
-    // Static file serving
-    if (this.options.staticPath) {
-      this.app.use(express.static(this.options.staticPath));
+    if (this.options.enableCors) {
+      this.app.use((req, res, next) => {
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+        
+        if (req.method === 'OPTIONS') {
+          res.sendStatus(200);
+          return;
+        }
+        
+        next();
+      });
     }
 
-    // JSON body parser
-    this.app.use(express.json({ limit: '1mb' }));
-    this.app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+    this.app.use(express.json());
+    this.app.use(express.static(path.join(__dirname, '..', 'client')));
   }
 
   private setupRoutes(): void {
-    // API routes
-    this.app.use('/api', createApiRoutes({
-      enableCors: this.options.enableCors,
-    }));
-
-    // Root route - enhanced dashboard
+    // Main dashboard route
     this.app.get('/', (_req, res) => {
       res.send(this.generateDashboardHtml());
     });
 
-    // Legacy routes for backward compatibility
-    this.app.get('/index.html', (_req, res) => {
-      res.redirect('/');
+    // Serve compiled dashboard client
+    this.app.get('/js/dashboard-client.js', async (_req, res) => {
+      res.setHeader('Content-Type', 'application/javascript');
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const clientPath = path.join(process.cwd(), 'dist', 'dashboard', 'client', 'DashboardClient.js');
+        
+        if (fs.existsSync(clientPath)) {
+          const content = fs.readFileSync(clientPath, 'utf8');
+          res.send(content);
+        } else {
+          res.status(404).send('// Dashboard client not found at: ' + clientPath);
+        }
+      } catch (error) {
+        console.error('[Dashboard] Error serving client script:', error);
+        res.status(500).send('// Error loading dashboard client');
+      }
     });
 
-    // Tools JSON endpoint for legacy compatibility
-    this.app.get('/tools.json', async (_req, res) => {
+    // Phase 4.1 Admin Panel
+    this.app.get('/admin', async (_req, res) => {
       try {
-        // Local HTTP (dashboard) intentionally non-TLS for dev; restrict host to loopback by default.
-        const proto = 'http:'; // dev-only
-        const response = await fetch(`${proto}//${this.options.host}:${this.getServerInfo()?.port}/api/tools`);
-        const data = await response.json() as { tools: Array<{ name: string }> };
-        res.json({ tools: data.tools.map(t => t.name) });
+        const adminHtmlPath = path.join(__dirname, '..', 'client', 'admin.html');
+        const adminHtml = await readFile(adminHtmlPath, 'utf-8');
+        res.type('html').send(adminHtml);
       } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch tools' });
+        console.error('[Dashboard] Admin panel load error:', error);
+        res.status(500).send('<h1>500 - Admin Panel Error</h1><p>Failed to load admin panel</p>');
       }
+    });
+
+    // Health check
+    this.app.get('/health', (_req, res) => {
+      const snapshot = this.metricsCollector.getCurrentSnapshot();
+      res.json({
+        status: 'healthy',
+        timestamp: Date.now(),
+        uptime: snapshot.server.uptime,
+        version: snapshot.server.version
+      });
+    });
+
+    // API routes
+    this.app.use('/api', createApiRoutes({
+      enableCors: this.options.enableCors ?? true
+    }));
+
+    // WebSocket info
+    this.app.get('/ws-info', (_req, res) => {
+      const serverInfo = this.getServerInfo();
+      res.json({
+        enabled: this.options.enableWebSockets,
+        url: serverInfo ? `ws://${serverInfo.host}:${serverInfo.port}/ws` : null
+      });
     });
 
     // 404 handler
@@ -217,19 +225,28 @@ export class DashboardServer {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MCP Index Server - Enhanced Dashboard</title>
+    <title>MCP Index Server - Enhanced Dashboard v2.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <style>
+        /* Phase 2 Enhanced Styles */
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
             --success-color: #27ae60;
             --warning-color: #f39c12;
-            --danger-color: #e74c3c;
-            --bg-color: #f8f9fa;
+            --error-color: #e74c3c;
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #e9ecef;
             --card-bg: #ffffff;
             --border-color: #dee2e6;
             --text-primary: #2c3e50;
             --text-secondary: #6c757d;
+            --text-muted: #adb5bd;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+            --shadow-lg: 0 4px 15px rgba(0,0,0,0.08);
+            --shadow-xl: 0 10px 25px rgba(0,0,0,0.12);
         }
 
         * {
@@ -240,7 +257,7 @@ export class DashboardServer {
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--bg-color);
+            background-color: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.6;
         }
@@ -248,27 +265,122 @@ export class DashboardServer {
         .header {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
-            padding: 1.5rem 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
         }
 
         .header h1 {
-            font-size: 2rem;
-            font-weight: 600;
+            font-size: 2.5rem;
+            font-weight: 700;
             margin-bottom: 0.5rem;
         }
 
         .header .subtitle {
-            opacity: 0.9;
             font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .header .version {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
         }
 
+        /* Dashboard Controls */
+        .dashboard-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .control-button {
+            padding: 0.5rem 1rem;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        /* Connection Status */
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .connection-status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .connection-status.connected {
+            background: rgba(34, 197, 94, 0.1);
+            color: #16a34a;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .connection-status.connected::before {
+            background: #16a34a;
+        }
+
+        .connection-status.disconnected {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .connection-status.disconnected::before {
+            background: #dc2626;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Status Cards */
         .status-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -280,275 +392,837 @@ export class DashboardServer {
             background: var(--card-bg);
             border-radius: 12px;
             padding: 1.5rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            box-shadow: var(--shadow-lg);
             border: 1px solid var(--border-color);
-            transition: transform 0.2s ease;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
 
         .status-card:hover {
             transform: translateY(-2px);
+            box-shadow: var(--shadow-xl);
         }
 
-        .status-card h3 {
+        .status-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-color);
+        }
+
+        .status-label {
+            font-size: 0.875rem;
             color: var(--text-secondary);
-            font-size: 0.9rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
             margin-bottom: 0.5rem;
+            font-weight: 500;
         }
 
         .status-value {
             font-size: 2rem;
             font-weight: 700;
             color: var(--primary-color);
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
         }
 
         .status-online { color: var(--success-color); }
         .status-warning { color: var(--warning-color); }
-        .status-error { color: var(--danger-color); }
+        .status-error { color: var(--error-color); }
 
-        .tools-section {
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
             background: var(--card-bg);
             border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-lg);
             border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
         }
 
-        .tools-section h2 {
-            margin-bottom: 1.5rem;
-            color: var(--primary-color);
+        .chart-container:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-xl);
         }
 
-        .tools-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1rem;
-        }
-
-        .tool-item {
-            background: var(--bg-color);
-            border-radius: 8px;
-            padding: 1rem;
-            border: 1px solid var(--border-color);
-        }
-
-        .tool-name {
-            font-family: 'Monaco', 'Courier New', monospace;
+        .chart-title {
+            font-size: 1.1rem;
             font-weight: 600;
-            color: var(--secondary-color);
-            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-align: center;
         }
 
-        .tool-metrics {
-            font-size: 0.9rem;
+        .chart-wrapper {
+            position: relative;
+            height: 280px;
+            width: 100%;
+        }
+
+        /* Phase 3 Chart Controls */
+        .charts-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .time-range-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .time-range-selector label {
+            font-weight: 500;
             color: var(--text-secondary);
         }
 
-        .websocket-status {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--card-bg);
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        .time-range-select {
+            padding: 0.5rem 1rem;
             border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-color);
+            color: var(--text-primary);
             font-size: 0.9rem;
         }
 
-        .ws-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 0.5rem;
+        .chart-actions {
+            display: flex;
+            gap: 0.5rem;
         }
 
-        .ws-connected { background-color: var(--success-color); }
-        .ws-disconnected { background-color: var(--danger-color); }
-        .ws-connecting { background-color: var(--warning-color); }
+        .action-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            background: var(--primary-color);
+            color: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
 
+        .action-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .chart-status {
+            float: right;
+            font-size: 0.8rem;
+            color: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Performance Metrics */
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-item {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .metric-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 8px 8px 0 0;
+            background: var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .metric-item.metric-success::before {
+            background: var(--success-color);
+        }
+
+        .metric-item.metric-warning::before {
+            background: var(--warning-color);
+        }
+
+        .metric-item.metric-danger::before {
+            background: var(--error-color);
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+        }
+
+        /* Tools Section */
+        .tools-section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .tools-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+        }
+
+        .tools-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .tools-filter {
+            flex: 1;
+            max-width: 300px;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .tools-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .tools-table th {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tools-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .tools-table tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        .tool-name {
+            font-weight: 500;
+            color: var(--accent-color);
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+        }
+
+        .tool-calls,
+        .tool-success {
+            color: var(--success-color);
+            font-weight: 500;
+        }
+
+        .tool-errors {
+            color: var(--error-color);
+            font-weight: 500;
+        }
+
+        .tool-response-time {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+        }
+
+        .tool-last-called {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        /* Responsive Design */
         @media (max-width: 768px) {
-            .container { padding: 1rem; }
-            .status-grid { grid-template-columns: 1fr; }
-            .tools-grid { grid-template-columns: 1fr; }
+            .container {
+                padding: 1rem;
+            }
+            
+            .dashboard-controls {
+                flex-direction: column;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .charts-grid .chart-container {
+                height: 300px;
+                padding: 1rem;
+            }
+            
+            .tools-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .tools-filter {
+                max-width: none;
+            }
+            
+            .performance-metrics {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🚀 MCP Index Server</h1>
-        <div class="subtitle">Enhanced Dashboard v2.0 - Real-time Monitoring</div>
+        <h1>MCP Index Server Dashboard</h1>
+        <div class="subtitle">Enhanced Real-time Monitoring v2.0</div>
+        <div class="version">Server v${snapshot.server.version} | Start Time ${new Date(snapshot.server.startTime).toLocaleString()}</div>
     </div>
 
     <div class="container">
-        <div class="status-grid" id="statusGrid">
+        <!-- Dashboard Controls -->
+        <div class="dashboard-controls">
+            <div class="control-group">
+                <label class="control-label">WebSocket Status</label>
+                <div id="connection-status" class="connection-status ${webSocketUrl ? 'connected' : 'disconnected'}">
+                    ${webSocketUrl ? 'Connected' : 'Disabled'}
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Actions</label>
+                <button id="refresh-btn" class="control-button">Refresh Metrics</button>
+            </div>
+            ${!webSocketUrl ? `<div class="control-group">
+                <label class="control-label">Manual Refresh</label>
+                <button id="reconnect-btn" class="control-button">Enable Real-time</button>
+            </div>` : ''}
+        </div>
+
+        <!-- Status Cards -->
+        <div class="status-grid">
             <div class="status-card">
-                <h3>Server Status</h3>
-                <div class="status-value status-online" id="serverStatus">● ONLINE</div>
+                <div class="status-label">Server Uptime</div>
+                <div id="uptime-value" class="status-value status-online">${this.formatUptime(snapshot.server.uptime)}</div>
             </div>
             <div class="status-card">
-                <h3>Version</h3>
-                <div class="status-value" id="serverVersion">${snapshot.server.version}</div>
+                <div class="status-label">Total Tool Calls</div>
+                <div id="total-requests-value" class="status-value">${Object.values(snapshot.tools).reduce((sum, tool) => sum + tool.callCount, 0).toLocaleString()}</div>
             </div>
             <div class="status-card">
-                <h3>Uptime</h3>
-                <div class="status-value" id="serverUptime">${this.formatUptime(snapshot.server.uptime)}</div>
+                <div class="status-label">Success Rate</div>
+                <div id="success-rate-value" class="status-value status-online">${(snapshot.performance.successRate * 100).toFixed(1)}%</div>
             </div>
             <div class="status-card">
-                <h3>Active Tools</h3>
-                <div class="status-value" id="toolCount">${Object.keys(snapshot.tools).length}</div>
+                <div class="status-label">Avg Response Time</div>
+                <div id="avg-response-time-value" class="status-value">${snapshot.performance.avgResponseTime.toFixed(0)}ms</div>
             </div>
             <div class="status-card">
-                <h3>Success Rate</h3>
-                <div class="status-value status-online" id="successRate">${snapshot.performance.successRate.toFixed(1)}%</div>
-            </div>
-            <div class="status-card">
-                <h3>Avg Response</h3>
-                <div class="status-value" id="avgResponse">${snapshot.performance.avgResponseTime.toFixed(0)}ms</div>
+                <div class="status-label">Active Connections</div>
+                <div id="connections-value" class="status-value">${snapshot.connections.totalConnections}</div>
             </div>
         </div>
 
+        <!-- Performance Metrics -->
+        <div class="performance-metrics">
+            <div class="metric-item">
+                <div class="metric-label">Requests/Min</div>
+                <div id="requests-per-minute" class="metric-value">${snapshot.performance.requestsPerMinute.toFixed(1)}</div>
+            </div>
+            <div class="metric-item ${snapshot.performance.errorRate > 0.05 ? 'metric-danger' : snapshot.performance.errorRate > 0.01 ? 'metric-warning' : 'metric-success'}">
+                <div class="metric-label">Error Rate</div>
+                <div id="error-rate-percent" class="metric-value">${(snapshot.performance.errorRate * 100).toFixed(2)}%</div>
+            </div>
+        </div>
+
+        <!-- Phase 3 Enhanced Charts with Time Range Selection -->
+        <div class="charts-controls">
+            <div class="time-range-selector">
+                <label for="time-range">Time Range:</label>
+                <select id="time-range" class="time-range-select">
+                    <option value="60">Last Hour</option>
+                    <option value="360">Last 6 Hours</option>
+                    <option value="1440" selected>Last 24 Hours</option>
+                    <option value="10080">Last 7 Days</option>
+                    <option value="43200">Last 30 Days</option>
+                </select>
+            </div>
+            <div class="chart-actions">
+                <button id="refresh-charts" class="action-btn">🔄 Refresh</button>
+                <button id="export-charts" class="action-btn">📊 Export</button>
+                <button id="fullscreen-toggle" class="action-btn">⛶ Fullscreen</button>
+            </div>
+        </div>
+        
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-title">
+                    Requests per Minute
+                    <span class="chart-status" id="requests-status">●</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="requestsChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">
+                    Tool Usage Distribution
+                    <span class="chart-status" id="usage-status">●</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="toolUsageChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">
+                    Response Time Trends
+                    <span class="chart-status" id="response-status">●</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="responseTimeChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">
+                    Error Rate Over Time
+                    <span class="chart-status" id="error-status">●</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="errorRateChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Tools Section -->
         <div class="tools-section">
-            <h2>📋 Registered Tools</h2>
-            <div class="tools-grid" id="toolsGrid">
-                <!-- Tools will be populated here -->
+            <div class="tools-header">
+                <h2 class="tools-title">Tool Registry</h2>
+                <input type="text" id="tools-filter" class="tools-filter" placeholder="Filter tools...">
             </div>
+            <table class="tools-table">
+                <thead>
+                    <tr>
+                        <th>Tool Name</th>
+                        <th>Calls</th>
+                        <th>Success</th>
+                        <th>Errors</th>
+                        <th>Avg Response</th>
+                        <th>Last Called</th>
+                    </tr>
+                </thead>
+                <tbody id="tools-table-body">
+                    ${Object.entries(snapshot.tools).map(([toolName, metrics]) => `
+                        <tr>
+                            <td class="tool-name">${toolName}</td>
+                            <td class="tool-calls">${metrics.callCount}</td>
+                            <td class="tool-success">${metrics.successCount}</td>
+                            <td class="tool-errors">${metrics.errorCount}</td>
+                            <td class="tool-response-time">${(metrics.totalResponseTime / Math.max(metrics.callCount, 1)).toFixed(0)}ms</td>
+                            <td class="tool-last-called">${metrics.lastCalled ? new Date(metrics.lastCalled).toLocaleTimeString() : 'Never'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
         </div>
-    </div>
-
-    ${webSocketUrl ? `
-    <div class="websocket-status" id="wsStatus">
-        <span class="ws-indicator ws-connecting" id="wsIndicator"></span>
-        <span id="wsText">Connecting...</span>
     </div>
 
     <script>
-        // WebSocket connection for real-time updates
-        let ws = null;
-        let reconnectAttempts = 0;
-        const maxReconnectAttempts = 5;
-
-        function connectWebSocket() {
-            try {
-                ws = new WebSocket('${webSocketUrl}');
-                
-                ws.onopen = function() {
-                    console.log('[Dashboard] WebSocket connected');
-                    reconnectAttempts = 0;
-                    updateWebSocketStatus('connected', 'Connected');
-                };
-
-                ws.onmessage = function(event) {
-                    try {
-                        const message = JSON.parse(event.data);
-                        handleWebSocketMessage(message);
-                    } catch (error) {
-                        console.error('[Dashboard] Invalid WebSocket message:', error);
-                    }
-                };
-
-                ws.onclose = function() {
-                    console.log('[Dashboard] WebSocket disconnected');
-                    updateWebSocketStatus('disconnected', 'Disconnected');
-                    
-                    // Attempt reconnection
-                    if (reconnectAttempts < maxReconnectAttempts) {
-                        reconnectAttempts++;
-                        setTimeout(connectWebSocket, 2000 * reconnectAttempts);
-                    }
-                };
-
-                ws.onerror = function(error) {
-                    console.error('[Dashboard] WebSocket error:', error);
-                    updateWebSocketStatus('disconnected', 'Error');
-                };
-            } catch (error) {
-                console.error('[Dashboard] Failed to create WebSocket:', error);
-                updateWebSocketStatus('disconnected', 'Failed');
-            }
-        }
-
-        function updateWebSocketStatus(status, text) {
-            const indicator = document.getElementById('wsIndicator');
-            const statusText = document.getElementById('wsText');
+        // Set global WebSocket URL for client
+        window.DASHBOARD_WS_URL = ${webSocketUrl ? `'${webSocketUrl}'` : 'null'};
+        
+        console.log('[Dashboard] Enhanced dashboard v2.0 loaded');
+        
+        // Basic functionality for non-WebSocket environments
+        if (!window.DASHBOARD_WS_URL) {
+            document.getElementById('refresh-btn')?.addEventListener('click', () => {
+                window.location.reload();
+            });
             
-            indicator.className = 'ws-indicator ws-' + status;
-            statusText.textContent = text;
-        }
-
-        function handleWebSocketMessage(message) {
-            switch (message.type) {
-                case 'metrics_update':
-                    updateDashboard(message.data);
-                    break;
-                case 'welcome':
-                    console.log('[Dashboard] Welcome message:', message.data);
-                    break;
-                default:
-                    console.log('[Dashboard] Unknown message type:', message.type);
-            }
-        }
-
-        function updateDashboard(metrics) {
-            // Update status cards
-            document.getElementById('serverUptime').textContent = formatUptime(metrics.server.uptime);
-            document.getElementById('toolCount').textContent = Object.keys(metrics.tools).length;
-            document.getElementById('successRate').textContent = metrics.performance.successRate.toFixed(1) + '%';
-            document.getElementById('avgResponse').textContent = metrics.performance.avgResponseTime.toFixed(0) + 'ms';
-            
-            // Update tools grid if needed
-            updateToolsGrid(metrics.tools);
-        }
-
-        function updateToolsGrid(tools) {
-            const grid = document.getElementById('toolsGrid');
-            grid.innerHTML = '';
-            
-            Object.entries(tools).forEach(([name, metrics]) => {
-                const toolDiv = document.createElement('div');
-                toolDiv.className = 'tool-item';
-                toolDiv.innerHTML = \`
-                    <div class="tool-name">\${name}</div>
-                    <div class="tool-metrics">
-                        Calls: \${metrics.callCount} | 
-                        Success: \${metrics.successCount} | 
-                        Errors: \${metrics.errorCount}
-                    </div>
-                \`;
-                grid.appendChild(toolDiv);
+            document.getElementById('reconnect-btn')?.addEventListener('click', () => {
+                alert('WebSocket support is disabled. Enable it in server configuration.');
             });
         }
 
-        function formatUptime(ms) {
-            const seconds = Math.floor(ms / 1000);
-            const days = Math.floor(seconds / 86400);
-            const hours = Math.floor((seconds % 86400) / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            
-            if (days > 0) return \`\${days}d \${hours}h \${minutes}m\`;
-            if (hours > 0) return \`\${hours}h \${minutes}m\`;
-            return \`\${minutes}m \${seconds % 60}s\`;
+        // Tools filter functionality
+        const filterInput = document.getElementById('tools-filter');
+        if (filterInput) {
+            filterInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const tbody = document.getElementById('tools-table-body');
+                if (tbody) {
+                    const rows = tbody.getElementsByTagName('tr');
+                    Array.from(rows).forEach(row => {
+                        const toolName = row.querySelector('.tool-name')?.textContent?.toLowerCase() || '';
+                        row.style.display = toolName.includes(searchTerm) ? '' : 'none';
+                    });
+                }
+            });
         }
 
-        // Initialize WebSocket connection
-        connectWebSocket();
+        // Initialize interactions
+        document.querySelectorAll('.status-card, .chart-container').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-2px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
 
-        // Initial tools load
-        fetch('/api/tools')
-            .then(response => response.json())
-            .then(data => {
-                const toolsMap = {};
-                data.tools.forEach(tool => {
-                    toolsMap[tool.name] = tool.metrics;
+        // Phase 3 Enhanced Dashboard with Interactive Features
+        if (window.Chart && window.DASHBOARD_WS_URL) {
+            console.log('[Dashboard] Phase 3 initialization - Chart.js available');
+            
+            // Phase 3 state management
+                        let currentTimeRange = 1440; // 24 hours default
+                        const charts = {}; // will hold Chart.js instances keyed by id
+            let isFullscreen = false;
+                        const chartConfig = {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: false,
+                            interaction: { mode: 'nearest', intersect: false },
+                            plugins: { legend: { position: 'bottom' } },
+                            scales: { x: { ticks: { maxRotation: 0, autoSkip: true } }, y: { beginAtZero: true } }
+                        };
+                        const metricIdAliases = {
+                            'success-rate-percent': ['success-rate-value'],
+                            'avg-response-time': ['avg-response-time-value']
+                        };
+                        ensureStatusBar();
+            
+            // Load dashboard client script
+            fetch('/js/dashboard-client.js')
+                .then(response => response.text())
+                .then(code => {
+                    const script = document.createElement('script');
+                    script.textContent = code + '\\n//# sourceURL=dashboard-client.js';
+                    document.head.appendChild(script);
+                    console.log('[Dashboard] Phase 3 client script loaded');
+                    
+                    // Initialize Phase 3 features
+                    initializePhase3Features();
+                })
+                .catch(error => {
+                    console.error('[Dashboard] Failed to load client:', error);
                 });
-                updateToolsGrid(toolsMap);
-            })
-            .catch(error => console.error('[Dashboard] Failed to load tools:', error));
+        } else {
+            console.log('[Dashboard] Phase 3 disabled - WebSocket not available');
+        }
+
+        // Phase 3 Feature Initialization
+        function initializePhase3Features() {
+            console.log('[Dashboard] Initializing Phase 3 interactive features');
+            
+            // Time range selector
+            const timeRangeSelect = document.getElementById('time-range');
+            if (timeRangeSelect) {
+                timeRangeSelect.addEventListener('change', function() {
+                    currentTimeRange = parseInt(this.value);
+                    updateChartsWithTimeRange(currentTimeRange);
+                    updateChartStatus('updating');
+                });
+            }
+            
+            // Refresh button
+            const refreshBtn = document.getElementById('refresh-charts');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', function() {
+                    refreshAllCharts();
+                    updateChartStatus('refreshing');
+                });
+            }
+            
+            // Export button
+            const exportBtn = document.getElementById('export-charts');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', function() {
+                    exportChartData();
+                });
+            }
+            
+            // Fullscreen toggle
+            const fullscreenBtn = document.getElementById('fullscreen-toggle');
+            if (fullscreenBtn) {
+                fullscreenBtn.addEventListener('click', function() {
+                    toggleFullscreen();
+                });
+            }
+            
+            // Initialize real-time updates
+            startRealtimeUpdates();
+        }
+
+        // Update charts with new time range
+        function updateChartsWithTimeRange(minutes) {
+            console.log('[Dashboard] Updating charts for ' + minutes + ' minutes');
+            
+            // Update tool usage chart
+            fetch('/api/charts/tool-usage?minutes=' + minutes)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateToolUsageChart(data.data);
+                    }
+                })
+                .catch(error => console.error('Failed to update tool usage:', error));
+            
+            // Update performance chart
+            fetch('/api/charts/performance?minutes=' + minutes)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updatePerformanceCharts(data.data);
+                    }
+                })
+                .catch(error => console.error('Failed to update performance:', error));
+        }
+
+        // Refresh all charts
+        function refreshAllCharts() {
+            console.log('[Dashboard] Refreshing all charts');
+            updateChartsWithTimeRange(currentTimeRange);
+            
+            // Refresh realtime metrics
+            fetch('/api/realtime')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateRealtimeWidgets(data.data);
+                    }
+                })
+                .catch(error => console.error('Failed to refresh realtime:', error));
+        }
+
+        // Export chart data
+        function exportChartData() {
+            console.log('[Dashboard] Exporting chart data');
+            const range = getTimeRangeString(currentTimeRange);
+            const exportUrl = '/api/charts/export?format=csv&range=' + range;
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = exportUrl;
+            link.download = 'dashboard-metrics-' + range + '-' + Date.now() + '.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Toggle fullscreen mode
+        function toggleFullscreen() {
+            const chartsGrid = document.querySelector('.charts-grid');
+            if (!chartsGrid) return;
+            
+            if (!isFullscreen) {
+                chartsGrid.style.position = 'fixed';
+                chartsGrid.style.top = '0';
+                chartsGrid.style.left = '0';
+                chartsGrid.style.width = '100vw';
+                chartsGrid.style.height = '100vh';
+                chartsGrid.style.zIndex = '9999';
+                chartsGrid.style.background = 'var(--bg-color)';
+                chartsGrid.style.padding = '2rem';
+                chartsGrid.style.overflow = 'auto';
+                isFullscreen = true;
+                document.getElementById('fullscreen-toggle').textContent = '⛶ Exit Fullscreen';
+            } else {
+                chartsGrid.style.position = '';
+                chartsGrid.style.top = '';
+                chartsGrid.style.left = '';
+                chartsGrid.style.width = '';
+                chartsGrid.style.height = '';
+                chartsGrid.style.zIndex = '';
+                chartsGrid.style.background = '';
+                chartsGrid.style.padding = '';
+                chartsGrid.style.overflow = '';
+                isFullscreen = false;
+                document.getElementById('fullscreen-toggle').textContent = '⛶ Fullscreen';
+            }
+        }
+
+        // Update chart status indicators
+        function updateChartStatus(status) {
+            const statusElements = document.querySelectorAll('.chart-status');
+            statusElements.forEach(el => {
+                el.style.color = status === 'updating' ? '#ffc107' : 
+                                 status === 'refreshing' ? '#17a2b8' : '#28a745';
+            });
+            
+            if (status !== 'normal') {
+                setTimeout(() => updateChartStatus('normal'), 2000);
+            }
+        }
+
+        // Start real-time updates
+        function startRealtimeUpdates() {
+            setInterval(() => {
+                fetch('/api/realtime')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            updateRealtimeWidgets(data.data);
+                        }
+                    })
+                    .catch(error => console.error('Realtime update failed:', error));
+            }, 30000); // Update every 30 seconds
+        }
+
+        // Helper functions
+        function getTimeRangeString(minutes) {
+            if (minutes === 60) return '1h';
+            if (minutes === 360) return '6h';
+            if (minutes === 1440) return '24h';
+            if (minutes === 10080) return '7d';
+            if (minutes === 43200) return '30d';
+            return '1h';
+        }
+
+        function updateToolUsageChart(data) {
+                        if (!data) return;
+                        try {
+                            const canvas = document.getElementById('toolUsageChart');
+                            if (!canvas) return;
+                            const labels = data.timestamps?.map(ts => new Date(ts).toLocaleTimeString()) || [];
+                            const series = (data.series || data.datasets || []);
+                            if (!charts.toolUsageChart) {
+                                charts.toolUsageChart = new Chart(canvas.getContext('2d'), {
+                                    type: 'line',
+                                    data: {
+                                        labels,
+                                        datasets: series.map(s => ({
+                                            label: s.label || s.name || 'Series',
+                                            data: s.data || [],
+                                            fill: false,
+                                            tension: 0.25,
+                                            borderWidth: 2
+                                        }))
+                                    },
+                                    options: chartConfig
+                                });
+                            } else {
+                                charts.toolUsageChart.data.labels = labels;
+                                charts.toolUsageChart.data.datasets.forEach((ds, i) => {
+                                    ds.data = series[i] ? series[i].data : [];
+                                });
+                                charts.toolUsageChart.update();
+                            }
+                        } catch (e) { console.error('toolUsageChart update failed', e); showErrorBanner('Tool usage chart error'); }
+        }
+
+        function updatePerformanceCharts(data) {
+                        if (!data) return;
+                        try {
+                            const labels = data.timestamps?.map(ts => new Date(ts).toLocaleTimeString()) || [];
+                            const perfSeries = data.series || data.datasets || [];
+                            const chartMap = [
+                                { id: 'requestsChart', key: 'requestsPerMinute' },
+                                { id: 'responseTimeChart', key: 'avgResponseTime' },
+                                { id: 'errorRateChart', key: 'errorRate' }
+                            ];
+                            chartMap.forEach(cfg => {
+                                const canvas = document.getElementById(cfg.id);
+                                if (!canvas) return;
+                                // Build/find series with matching key
+                                const s = perfSeries.find(s => s.key === cfg.key || s.label === cfg.key);
+                                const datasetData = s?.data || [];
+                                if (!charts[cfg.id]) {
+                                    charts[cfg.id] = new Chart(canvas.getContext('2d'), {
+                                        type: 'line',
+                                        data: { labels, datasets: [{ label: cfg.key, data: datasetData, borderWidth: 2, tension: 0.25, fill: false }] },
+                                        options: chartConfig
+                                    });
+                                } else {
+                                    charts[cfg.id].data.labels = labels;
+                                    charts[cfg.id].data.datasets[0].data = datasetData;
+                                    charts[cfg.id].update();
+                                }
+                            });
+                        } catch (e) { console.error('performance charts update failed', e); showErrorBanner('Performance chart error'); }
+        }
+
+        function updateRealtimeWidgets(data) {
+            // Update real-time metric widgets
+            console.log('[Dashboard] Updating realtime widgets', data);
+            
+            // Update metric cards if they exist
+            const elements = {
+                'requests-per-minute': data.currentRpm,
+                'active-connections': data.activeConnections,
+                'avg-response-time': data.avgResponseTime + 'ms',
+                'success-rate-percent': (data.successRate * 100).toFixed(2) + '%',
+                'error-rate-percent': (data.errorRate * 100).toFixed(2) + '%'
+            };
+            
+            for (const id in elements) {
+                                let element = document.getElementById(id);
+                                if (!element && metricIdAliases[id]) {
+                                    for (const alias of metricIdAliases[id]) {
+                                        element = document.getElementById(alias);
+                                        if (element) break;
+                                    }
+                                }
+                                if (element) element.textContent = elements[id];
+            }
+        }
+
+                // Error banner utilities
+                function ensureStatusBar() {
+                    if (!document.getElementById('dashboard-status-bar')) {
+                        const bar = document.createElement('div');
+                        bar.id = 'dashboard-status-bar';
+                        bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;font:12px sans-serif;padding:4px 8px;display:flex;gap:12px;align-items:center;background:#222;color:#eee;z-index:99999;';
+                        bar.innerHTML = '<span id="ws-status">WS: pending</span><span id="error-banner" style="display:none;background:#b00020;padding:2px 6px;border-radius:4px;">Error</span>';
+                        document.body.appendChild(bar);
+                    }
+                }
+                function setWsStatus(text, color) {
+                    const el = document.getElementById('ws-status');
+                    if (el) { el.textContent = 'WS: ' + text; el.style.color = color; }
+                }
+                function showErrorBanner(msg) {
+                    const el = document.getElementById('error-banner');
+                    if (el) { el.textContent = msg; el.style.display = 'inline-block'; setTimeout(()=>{ el.style.display='none';}, 5000); }
+                }
     </script>
-    ` : ''}
 </body>
 </html>`;
   }
@@ -565,4 +1239,9 @@ export class DashboardServer {
   }
 }
 
-export default DashboardServer;
+export function createDashboardServer(options: DashboardServerOptions = {}): DashboardServer {
+  return new DashboardServer(options);
+}
+
+export default createDashboardServer;
+

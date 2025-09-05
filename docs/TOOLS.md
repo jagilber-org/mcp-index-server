@@ -1043,6 +1043,10 @@ export class IndexServerClient extends MCPClient {
 | `MCP_TRACE_FILTER` | Category allowlist (comma list). | all |
 | `MCP_TRACE_FILTER_DENY` | Category denylist (comma list). | none |
 | `MCP_AGENT_ID` | Identifier of agent performing mutations. | unset |
+| `MCP_DASHBOARD` | Enable admin dashboard (0=disable, 1=enable). | `0` |
+| `MCP_DASHBOARD_PORT` | Dashboard HTTP port. | `8787` |
+| `MCP_DASHBOARD_HOST` | Dashboard bind address. | `127.0.0.1` |
+| `MCP_DASHBOARD_TRIES` | Max port retry attempts for dashboard. | `10` |
 | `WORKSPACE_ID` / `INSTRUCTIONS_WORKSPACE` | Source workspace for new instruction. | unset |
 | `DIST_WAIT_MS` | Override dist readiness wait in tests. | dynamic |
 | `EXTEND_DIST_WAIT` | Extend default dist wait budget. | `0` |

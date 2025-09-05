@@ -59,7 +59,7 @@ import '../services/handlers.testPrimitive';
 import '../services/handlers.diagnostics';
 import '../services/handlers.feedback';
 import { getCatalogState, diagnoseInstructionsDir } from '../services/catalogContext';
-import DashboardServer from '../dashboard/server/DashboardServer.js';
+import { createDashboardServer } from '../dashboard/server/DashboardServer.js';
 import { getMetricsCollector } from '../dashboard/server/MetricsCollector.js';
 import fs from 'fs';
 import path from 'path';
@@ -184,7 +184,9 @@ async function startDashboard(cfg: CliConfig): Promise<{ url: string; close: () 
   if (!cfg.dashboard) return null;
 
   try {
-    const dashboardServer = new DashboardServer({
+    process.stderr.write(`[startup] Starting dashboard server on ${cfg.dashboardHost}:${cfg.dashboardPort}\n`);
+    
+    const dashboardServer = createDashboardServer({
       port: cfg.dashboardPort,
       host: cfg.dashboardHost,
       maxPortTries: cfg.maxPortTries,
@@ -199,12 +201,10 @@ async function startDashboard(cfg: CliConfig): Promise<{ url: string; close: () 
     
     return {
       url: result.url,
-      close: () => {
-        dashboardServer.stop();
-      },
+      close: result.close
     };
   } catch (error) {
-    process.stderr.write(`Dashboard: failed to start - ${error}\n`);
+    process.stderr.write(`[startup] Dashboard startup failed: ${error}\n`);
     return null;
   }
 }
@@ -284,7 +284,16 @@ export async function main(){
   const cfg = parseArgs(process.argv);
   const dash = await startDashboard(cfg);
   if(dash){
-    process.stderr.write(`Dashboard available at ${dash.url}\n`);
+    process.stderr.write(`[startup] Dashboard server started successfully\n`);
+    process.stderr.write(`[startup] Dashboard URL: ${dash.url}\n`);
+    process.stderr.write(`[startup] Dashboard host: ${cfg.dashboardHost}\n`);
+    process.stderr.write(`[startup] Dashboard port: ${dash.url.split(':').pop()?.replace('/', '') || 'unknown'}\n`);
+    process.stderr.write(`[startup] Dashboard WebSockets: enabled\n`);
+    process.stderr.write(`[startup] Dashboard access: Local admin interface (not for MCP clients)\n`);
+  } else if(cfg.dashboard) {
+    process.stderr.write(`[startup] Dashboard enabled but failed to start (check port ${cfg.dashboardPort})\n`);
+  } else {
+    process.stderr.write(`[startup] Dashboard disabled (set MCP_DASHBOARD=1 to enable)\n`);
   }
   // Extended startup diagnostics (does not emit on stdout)
   if(process.env.MCP_LOG_VERBOSE === '1' || process.env.MCP_LOG_DIAG === '1'){
@@ -330,3 +339,6 @@ if(require.main === module){
 
 // Test-only named exports for coverage of argument parsing & dashboard logic
 export { parseArgs as _parseArgs, findPackageVersion as _findPackageVersion, startDashboard as _startDashboard };
+
+// Public export for dashboard functionality
+export { startDashboard };

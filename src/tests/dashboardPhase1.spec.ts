@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { MetricsCollector } from '../dashboard/server/MetricsCollector.js';
 import { WebSocketManager } from '../dashboard/server/WebSocketManager.js';
-import DashboardServer from '../dashboard/server/DashboardServer.js';
+import { createDashboardServer, DashboardServer } from '../dashboard/server/DashboardServer.js';
 
 describe('Phase 1 Dashboard Infrastructure', () => {
   describe('MetricsCollector', () => {
@@ -150,7 +150,7 @@ describe('Phase 1 Dashboard Infrastructure', () => {
     let server: DashboardServer;
 
     beforeEach(() => {
-      server = new DashboardServer({
+      server = createDashboardServer({
         port: 0, // Use ephemeral port for testing
         host: '127.0.0.1',
         enableWebSockets: false, // Disable for unit tests
@@ -188,7 +188,7 @@ describe('Phase 1 Dashboard Infrastructure', () => {
 
     it('should handle port conflicts gracefully', async () => {
       // Start first server
-      const server1 = new DashboardServer({
+      const server1 = createDashboardServer({
         port: 8900, // Fixed port
         host: '127.0.0.1',
         enableWebSockets: false,
@@ -199,7 +199,7 @@ describe('Phase 1 Dashboard Infrastructure', () => {
       expect(result1.port).toBe(8900);
       
       // Start second server on same port - should auto-increment
-      const server2 = new DashboardServer({
+      const server2 = createDashboardServer({
         port: 8900, // Same port
         host: '127.0.0.1',
         enableWebSockets: false,

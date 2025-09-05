@@ -5,7 +5,18 @@ export const slowTests = [
   'src/tests/feedbackReproduction.crudConsistency.spec.ts',
   'src/tests/instructionsPersistenceDivergence.red.spec.ts',
   'src/tests/instructionsPersistenceIsolated.red.spec.ts',
-  'src/tests/importDuplicateAddVisibility.red.spec.ts'
+  'src/tests/importDuplicateAddVisibility.red.spec.ts',
+  // Newly classified (runtime consistently > ~30s end-to-end)
+  'src/tests/governanceHashIntegrity.spec.ts',
+  // Borderline (~9s) multi-operation visibility scenario; move out of fast loop
+  'src/tests/instructionsAddSkipVisibility.spec.ts',
+  // Medium (~7-8s) duplicate add reproduction; shift to regression set to keep fast loop lean
+  'src/tests/portableDuplicateAddRepro.spec.ts'
+  ,
+  // Added per optimization pass (top offenders in fast suite >5s each)
+  'src/tests/unit/catalogContext.usage.unit.spec.ts', // ~12s (2 heavy rotation tests)
+  'src/tests/createReadSmoke.spec.ts', // ~5-6s full CRUD smoke
+  'src/tests/feedbackReproduction.spec.ts' // ~5-6s persistence & green path validations
 ];
 
 export function isSlowTest(path) {

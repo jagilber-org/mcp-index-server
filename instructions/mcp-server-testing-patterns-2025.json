@@ -14,21 +14,21 @@
   ],
   "sourceHash": "e9c6de3475eabb604ca91baebaac872237fe93e5f20b6daa925137a993cbf9bf",
   "schemaVersion": "2",
-  "createdAt": "2025-09-04T21:35:38.739Z",
-  "updatedAt": "2025-09-04T21:35:53.715Z",
+  "createdAt": "2025-09-05T11:31:25.904Z",
+  "updatedAt": "2025-09-05T11:33:28.834Z",
   "riskScore": 62,
   "version": "1.0.0",
   "status": "approved",
   "owner": "quality-engineering",
   "priorityTier": "P2",
   "classification": "internal",
-  "lastReviewedAt": "2025-09-04T21:35:38.739Z",
-  "nextReviewDue": "2025-09-04T21:35:38.739Z",
+  "lastReviewedAt": "2025-09-05T11:31:25.904Z",
+  "nextReviewDue": "2025-09-05T11:31:25.904Z",
   "reviewIntervalDays": 60,
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-09-04T21:35:38.739Z",
+      "changedAt": "2025-09-05T11:31:25.904Z",
       "summary": "initial import"
     }
   ],

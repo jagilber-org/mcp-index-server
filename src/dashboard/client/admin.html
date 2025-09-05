@@ -525,7 +525,8 @@
                     displayMaintenanceInfo(maintenanceData.maintenance);
                 }
 
-                if ((healthData?.success || healthData?.status === 'ok') && healthData) {
+                // Accept multiple health status variants: legacy 'ok' plus basic endpoint 'healthy'/'degraded'
+                if (healthData && (healthData.success || ['ok','healthy','degraded'].includes(healthData.status))) {
                     displaySystemHealth(healthData.systemHealth || healthData.maintenance?.systemHealth || healthData);
                 }
             } catch (error) {

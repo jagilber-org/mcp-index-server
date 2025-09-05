@@ -9,6 +9,8 @@ import express, { Router, Request, Response } from 'express';
 import { getMetricsCollector, ToolMetrics } from './MetricsCollector.js';
 import { listRegisteredMethods } from '../../server/registry.js';
 import { getAdminPanel } from './AdminPanel.js';
+import fs from 'fs';
+import path from 'path';
 
 export interface ApiRoutesOptions {
   enableCors?: boolean;
@@ -856,6 +858,102 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
         error: 'Failed to clear caches',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
+    }
+  });
+
+  // ===== Instruction Management Routes =====
+  const instructionsDir = process.env.MCP_INSTRUCTIONS_DIR || path.join(process.cwd(), 'instructions');
+
+  function ensureInstructionsDir() {
+    try {
+      if (!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir, { recursive: true });
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  /**
+   * GET /api/instructions - list instruction JSON files
+   */
+  router.get('/instructions', (_req: Request, res: Response) => {
+    try {
+      ensureInstructionsDir();
+      const files = fs.readdirSync(instructionsDir)
+        .filter(f => f.toLowerCase().endsWith('.json'))
+        .map(f => {
+          const stat = fs.statSync(path.join(instructionsDir, f));
+          return { name: f.replace(/\.json$/i, ''), size: stat.size, mtime: stat.mtimeMs };
+        });
+      res.json({ success: true, instructions: files, count: files.length, timestamp: Date.now() });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to list instructions', message: error instanceof Error? error.message:'Unknown error' });
+    }
+  });
+
+  /**
+   * GET /api/instructions/:name - get single instruction content
+   */
+  router.get('/instructions/:name', (req: Request, res: Response) => {
+    try {
+      ensureInstructionsDir();
+      const file = path.join(instructionsDir, req.params.name + '.json');
+      if (!fs.existsSync(file)) return res.status(404).json({ success:false, error:'Not found' });
+      const content = JSON.parse(fs.readFileSync(file, 'utf8'));
+      res.json({ success: true, content, timestamp: Date.now() });
+    } catch (error) {
+      res.status(500).json({ success:false, error:'Failed to load instruction', message: error instanceof Error? error.message:'Unknown error' });
+    }
+  });
+
+  /**
+   * POST /api/instructions - create new instruction
+   * body: { name, content }
+   */
+  router.post('/instructions', (req: Request, res: Response) => {
+    try {
+      ensureInstructionsDir();
+      const { name, content } = req.body || {};
+      if (!name || !content) return res.status(400).json({ success:false, error:'Missing name or content' });
+      const safeName = String(name).replace(/[^a-zA-Z0-9-_]/g,'-');
+      const file = path.join(instructionsDir, safeName + '.json');
+      if (fs.existsSync(file)) return res.status(409).json({ success:false, error:'Instruction already exists' });
+      fs.writeFileSync(file, JSON.stringify(content, null, 2));
+      res.json({ success:true, message:'Instruction created', name: safeName, timestamp: Date.now() });
+    } catch (error) {
+      res.status(500).json({ success:false, error:'Failed to create instruction', message: error instanceof Error? error.message:'Unknown error' });
+    }
+  });
+
+  /**
+   * PUT /api/instructions/:name - update existing instruction
+   */
+  router.put('/instructions/:name', (req: Request, res: Response) => {
+    try {
+      ensureInstructionsDir();
+      const { content } = req.body || {};
+      const name = req.params.name;
+      if (!content) return res.status(400).json({ success:false, error:'Missing content' });
+      const file = path.join(instructionsDir, name + '.json');
+      if (!fs.existsSync(file)) return res.status(404).json({ success:false, error:'Not found' });
+      fs.writeFileSync(file, JSON.stringify(content, null, 2));
+      res.json({ success:true, message:'Instruction updated', timestamp: Date.now() });
+    } catch (error) {
+      res.status(500).json({ success:false, error:'Failed to update instruction', message: error instanceof Error? error.message:'Unknown error' });
+    }
+  });
+
+  /**
+   * DELETE /api/instructions/:name - delete instruction
+   */
+  router.delete('/instructions/:name', (req: Request, res: Response) => {
+    try {
+      ensureInstructionsDir();
+      const file = path.join(instructionsDir, req.params.name + '.json');
+      if (!fs.existsSync(file)) return res.status(404).json({ success:false, error:'Not found' });
+      fs.unlinkSync(file);
+      res.json({ success:true, message:'Instruction deleted', timestamp: Date.now() });
+    } catch (error) {
+      res.status(500).json({ success:false, error:'Failed to delete instruction', message: error instanceof Error? error.message:'Unknown error' });
     }
   });
 

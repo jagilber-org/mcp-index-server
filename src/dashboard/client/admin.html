@@ -312,6 +312,7 @@
                 <button class="nav-btn" onclick="showSection('sessions')">👥 Sessions</button>
                 <button class="nav-btn" onclick="showSection('maintenance')">🔧 Maintenance</button>
                 <button class="nav-btn" onclick="showSection('monitoring')">📈 Monitoring</button>
+                <button class="nav-btn" onclick="showSection('instructions')">📚 Instructions</button>
             </div>
         </div>
 
@@ -410,6 +411,37 @@
                 <div id="monitoring-data" class="loading">Loading monitoring data...</div>
             </div>
         </div>
+
+        <!-- Instruction Management Section -->
+        <div id="instructions-section" class="admin-section hidden">
+            <div class="admin-card">
+                <div class="card-header">
+                    <div class="card-icon">📚</div>
+                    <div class="card-title">Instruction Catalog</div>
+                </div>
+                <div style="margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="action-btn" onclick="loadInstructions()">🔄 Refresh</button>
+                    <button class="action-btn" onclick="showCreateInstruction()">➕ Create</button>
+                    <input id="instruction-filter" placeholder="Filter by name..." class="form-input" style="flex:1; min-width:200px;" oninput="filterInstructions()" />
+                </div>
+                <div id="instructions-list" class="loading">Loading instructions...</div>
+                <div id="instruction-editor" class="hidden" style="margin-top:20px;">
+                    <h3 id="instruction-editor-title" style="margin-bottom:10px;">New Instruction</h3>
+                    <div class="form-group">
+                        <label class="form-label">File Name (no extension)</label>
+                        <input id="instruction-filename" class="form-input" placeholder="example-instruction" />
+                    </div>
+                    <div class="form-group" style="margin-top:10px;">
+                        <label class="form-label">JSON Content</label>
+                        <textarea id="instruction-content" class="form-input" style="min-height:200px; font-family:monospace; white-space:pre; overflow:auto;"></textarea>
+                    </div>
+                    <div style="margin-top:10px;">
+                        <button class="action-btn" onclick="saveInstruction()">💾 Save</button>
+                        <button class="action-btn warning" onclick="cancelEditInstruction()">✖ Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -461,6 +493,9 @@
                     break;
                 case 'monitoring':
                     loadMonitoringData();
+                    break;
+                case 'instructions':
+                    loadInstructions();
                     break;
             }
         }
@@ -816,18 +851,194 @@
             }
         }
 
-        function loadConfiguration() {
-            document.getElementById('config-form').innerHTML = `
-                <p>Configuration management interface will be available in the next update.</p>
-                <p>Current configuration can be viewed via API endpoints.</p>
-            `;
+                async function loadConfiguration() {
+                        try {
+                                const res = await fetch('/api/admin/config');
+                                const data = await res.json();
+                                if (!data.success) throw new Error('Failed to load config');
+                                const cfg = data.config;
+                                const html = `
+                                    <form onsubmit="return updateConfiguration(event)">
+                                        <div class="form-group">
+                                            <label class="form-label">Max Connections</label>
+                                            <input class="form-input" type="number" id="cfg-maxConnections" value="${cfg.serverSettings.maxConnections}" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Request Timeout (ms)</label>
+                                            <input class="form-input" type="number" id="cfg-requestTimeout" value="${cfg.serverSettings.requestTimeout}" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Verbose Logging</label>
+                                            <select class="form-input" id="cfg-verbose"> <option value="1" ${cfg.serverSettings.enableVerboseLogging ? 'selected':''}>Enabled</option><option value="0" ${!cfg.serverSettings.enableVerboseLogging ? 'selected':''}>Disabled</option></select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Enable Mutation</label>
+                                            <select class="form-input" id="cfg-mutation"> <option value="1" ${cfg.serverSettings.enableMutation ? 'selected':''}>Enabled</option><option value="0" ${!cfg.serverSettings.enableMutation ? 'selected':''}>Disabled</option></select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Rate Limit Window (ms)</label>
+                                            <input class="form-input" type="number" id="cfg-windowMs" value="${cfg.serverSettings.rateLimit.windowMs}" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Rate Limit Max Requests</label>
+                                            <input class="form-input" type="number" id="cfg-maxRequests" value="${cfg.serverSettings.rateLimit.maxRequests}" />
+                                        </div>
+                                        <div style="margin-top:10px;">
+                                            <button class="action-btn" type="submit">💾 Save Config</button>
+                                        </div>
+                                    </form>`;
+                                document.getElementById('config-form').innerHTML = html;
+                        } catch (e) {
+                                document.getElementById('config-form').innerHTML = '<div class="error">Failed to load configuration</div>';
+                        }
+                }
+
+                async function updateConfiguration(ev) {
+                        ev.preventDefault();
+                        const updates = {
+                                serverSettings: {
+                                        maxConnections: parseInt(document.getElementById('cfg-maxConnections').value),
+                                        requestTimeout: parseInt(document.getElementById('cfg-requestTimeout').value),
+                                        enableVerboseLogging: document.getElementById('cfg-verbose').value === '1',
+                                        enableMutation: document.getElementById('cfg-mutation').value === '1',
+                                        rateLimit: {
+                                                windowMs: parseInt(document.getElementById('cfg-windowMs').value),
+                                                maxRequests: parseInt(document.getElementById('cfg-maxRequests').value)
+                                        }
+                                }
+                        };
+                        try {
+                                const res = await fetch('/api/admin/config', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(updates)});
+                                const data = await res.json();
+                                if (data.success) { showSuccess('Configuration updated'); loadConfiguration(); } else { showError(data.error || 'Update failed'); }
+                        } catch (e) { showError('Update failed'); }
+                        return false;
+                }
+
+        async function loadMonitoringData() {
+            try {
+                const [perfRes, sysRes, alertsRes] = await Promise.all([
+                    fetch('/api/performance/detailed').catch(e=>e),
+                    fetch('/api/system/health').catch(e=>e),
+                    fetch('/api/alerts/active').catch(e=>e)
+                ]);
+                const [perfData, sysData, alertsData] = await Promise.all([
+                    perfRes?.json ? perfRes.json().catch(()=>({})) : {},
+                    sysRes?.json ? sysRes.json().catch(()=>({})) : {},
+                    alertsRes?.json ? alertsRes.json().catch(()=>({})) : {}
+                ]);
+                const perf = perfData.data || {};
+                const sys = sysData.data || {};
+                const alerts = (alertsData.data || []).slice(0,5);
+                const html = `
+                  <div class="stat-row"><span class="stat-label">Throughput (rpm)</span><span class="stat-value">${perf.requestThroughput ?? '—'}</span></div>
+                  <div class="stat-row"><span class="stat-label">Avg Response</span><span class="stat-value">${perf.averageResponseTime?.toFixed ? perf.averageResponseTime.toFixed(1)+'ms':'—'}</span></div>
+                  <div class="stat-row"><span class="stat-label">P95</span><span class="stat-value">${perf.p95ResponseTime ?? '—'}ms</span></div>
+                  <div class="stat-row"><span class="stat-label">Error Rate</span><span class="stat-value">${perf.errorRate?.toFixed ? perf.errorRate.toFixed(2)+'%':'—'}</span></div>
+                  <div class="stat-row"><span class="stat-label">Active Connections</span><span class="stat-value">${perf.concurrentConnections ?? '—'}</span></div>
+                  <div class="stat-row"><span class="stat-label">System Health</span><span class="stat-value">${sys.status || '—'}</span></div>
+                  <div style="margin-top:10px;">
+                    <strong>Active Alerts (${alerts.length})</strong>
+                    <ul style="margin-left:20px;">${alerts.map(a=>`<li>${a.type} (${a.severity}) - ${a.message}</li>`).join('') || '<li>No active alerts</li>'}</ul>
+                  </div>`;
+                document.getElementById('monitoring-data').innerHTML = html;
+            } catch (e) {
+                document.getElementById('monitoring-data').innerHTML = '<div class="error">Failed to load monitoring data</div>';
+            }
         }
 
-        function loadMonitoringData() {
-            document.getElementById('monitoring-data').innerHTML = `
-                <p>Real-time monitoring dashboard will be available in the next update.</p>
-                <p>Basic monitoring data is available in the Overview section.</p>
-            `;
+        // ===== Instruction Management =====
+        let instructionEditing = null;
+
+        async function loadInstructions() {
+            const listEl = document.getElementById('instructions-list');
+            listEl.innerHTML = 'Loading...';
+            try {
+                const res = await fetch('/api/instructions');
+                const data = await res.json();
+                if (!data.success) throw new Error();
+                renderInstructionList(data.instructions);
+            } catch (e) {
+                listEl.innerHTML = '<div class="error">Failed to load instructions</div>';
+            }
+        }
+
+        function renderInstructionList(instructions) {
+            const filter = (document.getElementById('instruction-filter').value || '').toLowerCase();
+            const filtered = instructions.filter(i => i.name.toLowerCase().includes(filter));
+            if (filtered.length === 0) {
+                document.getElementById('instructions-list').innerHTML = '<p>No instructions found</p>';
+                return;
+            }
+            const rows = filtered.map(instr => `
+                <div class="session-item" style="background:#fff;">
+                    <div class="session-header">
+                        <span class="session-id" style="background:#dfe6f1;">${instr.name}</span>
+                        <div>
+                           <button class="action-btn" onclick="editInstruction('${instr.name}')">✏ Edit</button>
+                           <button class="action-btn danger" onclick="deleteInstruction('${instr.name}')">🗑 Delete</button>
+                        </div>
+                    </div>
+                    <div class="stat-row"><span class="stat-label">Size</span><span class="stat-value">${instr.size} bytes</span></div>
+                    <div class="stat-row"><span class="stat-label">Modified</span><span class="stat-value">${new Date(instr.mtime).toLocaleString()}</span></div>
+                </div>`).join('');
+            document.getElementById('instructions-list').innerHTML = rows;
+        }
+
+        function filterInstructions() {
+            loadInstructions();
+        }
+
+        function showCreateInstruction() {
+            instructionEditing = null;
+            document.getElementById('instruction-editor-title').textContent = 'New Instruction';
+            document.getElementById('instruction-filename').value = '';
+            document.getElementById('instruction-filename').disabled = false;
+            document.getElementById('instruction-content').value = '{\n  "description": "New instruction"\n}';
+            document.getElementById('instruction-editor').classList.remove('hidden');
+            document.getElementById('instruction-filename').focus();
+        }
+
+        async function editInstruction(name) {
+            try {
+                const res = await fetch('/api/instructions/' + encodeURIComponent(name));
+                const data = await res.json();
+                if (!data.success) throw new Error();
+                instructionEditing = name;
+                document.getElementById('instruction-editor-title').textContent = 'Edit Instruction: ' + name;
+                document.getElementById('instruction-filename').value = name;
+                document.getElementById('instruction-filename').disabled = true;
+                document.getElementById('instruction-content').value = JSON.stringify(data.content, null, 2);
+                document.getElementById('instruction-editor').classList.remove('hidden');
+            } catch (e) {
+                showError('Failed to load instruction');
+            }
+        }
+
+        function cancelEditInstruction() {
+            document.getElementById('instruction-editor').classList.add('hidden');
+        }
+
+        async function saveInstruction() {
+            const name = document.getElementById('instruction-filename').value.trim();
+            if (!name) { showError('File name required'); return; }
+            let content; 
+            try { content = JSON.parse(document.getElementById('instruction-content').value); } catch { showError('Invalid JSON'); return; }
+            const method = instructionEditing ? 'PUT' : 'POST';
+            try {
+                const res = await fetch('/api/instructions' + (instructionEditing ? '/' + encodeURIComponent(name) : ''), { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, content }) });
+                const data = await res.json();
+                if (data.success) { showSuccess('Instruction saved'); cancelEditInstruction(); loadInstructions(); } else { showError(data.error || 'Save failed'); }
+            } catch { showError('Save failed'); }
+        }
+
+        async function deleteInstruction(name) {
+            if (!confirm('Delete instruction ' + name + '?')) return;
+            try {
+                const res = await fetch('/api/instructions/' + encodeURIComponent(name), { method:'DELETE' });
+                const data = await res.json();
+                if (data.success) { showSuccess('Deleted'); loadInstructions(); } else { showError(data.error || 'Delete failed'); }
+            } catch { showError('Delete failed'); }
         }
 
         function startAutoRefresh() {

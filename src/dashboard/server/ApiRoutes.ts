@@ -214,20 +214,42 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
     try {
       const snapshot = metricsCollector.getCurrentSnapshot();
       const memUsage = snapshot.server.memoryUsage;
-      
-      // Simple health indicators
-      const isHealthy = {
-        uptime: snapshot.server.uptime > 1000, // At least 1 second uptime
-        memory: memUsage.heapUsed < memUsage.heapTotal * 0.9, // Less than 90% heap usage
-        errors: snapshot.performance.errorRate < 10, // Less than 10% error rate
-      };
+      // Thresholds (configurable via env vars for tuning)
+      const memoryThreshold = parseFloat(process.env.MCP_HEALTH_MEMORY_THRESHOLD || '0.95'); // ratio
+      const errorRateThreshold = parseFloat(process.env.MCP_HEALTH_ERROR_THRESHOLD || '10'); // percent
+      const minUptimeMs = parseInt(process.env.MCP_HEALTH_MIN_UPTIME || '1000', 10);
 
-      const overallHealth = Object.values(isHealthy).every(Boolean);
+      // Simple health indicators (boolean flags)
+      const isHealthy = {
+        uptime: snapshot.server.uptime >= minUptimeMs,
+        memory: (memUsage.heapUsed / Math.max(1, memUsage.heapTotal)) < memoryThreshold,
+        errors: snapshot.performance.errorRate < errorRateThreshold,
+      } as const;
+
+      const failingChecks = Object.entries(isHealthy)
+        .filter(([, ok]) => !ok)
+        .map(([k]) => k);
+
+      const overallHealth = failingChecks.length === 0;
 
       res.status(overallHealth ? 200 : 503).json({
         status: overallHealth ? 'healthy' : 'degraded',
         checks: isHealthy,
-        uptime: snapshot.server.uptime,
+        failingChecks,
+        thresholds: {
+          memoryRatio: memoryThreshold,
+            errorRatePercent: errorRateThreshold,
+            minUptimeMs
+        },
+        metrics: {
+          uptimeMs: snapshot.server.uptime,
+          memory: {
+            heapUsed: memUsage.heapUsed,
+            heapTotal: memUsage.heapTotal,
+            ratio: memUsage.heapTotal ? memUsage.heapUsed / memUsage.heapTotal : 0
+          },
+          errorRate: snapshot.performance.errorRate
+        },
         timestamp: Date.now(),
       });
     } catch (error) {

@@ -521,8 +521,11 @@
                     if (statsEl) statsEl.innerHTML = '<div class="error-message">Stats unavailable</div>';
                 }
 
+                // Maintenance summary (safe-guarded: function may be a no-op if not yet implemented)
                 if (maintenanceData?.success && maintenanceData.maintenance) {
-                    displayMaintenanceInfo(maintenanceData.maintenance);
+                    if (typeof displayMaintenanceInfo === 'function') {
+                        try { displayMaintenanceInfo(maintenanceData.maintenance); } catch(e) { console.warn('displayMaintenanceInfo failed:', e); }
+                    }
                 }
 
                 // Accept multiple health status variants: legacy 'ok' plus basic endpoint 'healthy'/'degraded'
@@ -593,41 +596,86 @@
                 </div>
                 <div class="stat-row">
                     <span class="stat-label">Last Updated</span>
-                    <span class="stat-value">${new Date(stats.catalogStats.lastUpdated).toLocaleString()}</span>
+                    <span class="stat-value">${stats.catalogStats.lastUpdated ? new Date(stats.catalogStats.lastUpdated).toLocaleString() : 'N/A'}</span>
                 </div>
             `;
-            document.getElementById('catalog-stats').innerHTML = catalogHtml;
+            const catalogEl = document.getElementById('catalog-stats');
+            if (catalogEl) catalogEl.innerHTML = catalogHtml;
+        }
+
+        // Lightweight overview-level maintenance display (optional)
+        // Intentionally minimal to avoid blocking overview rendering.
+        // If an element with id 'maintenance-overview' exists, populate it; otherwise no-op.
+        function displayMaintenanceInfo(maintenance) {
+            try {
+                const el = document.getElementById('maintenance-overview');
+                if (!el || !maintenance) return; // Safe no-op if overview element not present
+                const mode = maintenance.maintenanceMode ? 'ENABLED' : 'Disabled';
+                el.innerHTML = `
+                    <div class="stat-row">
+                        <span class="stat-label">Maintenance Mode</span>
+                        <span class="stat-value ${maintenance.maintenanceMode ? 'maintenance-enabled' : 'maintenance-disabled'}">${mode}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Last Backup</span>
+                        <span class="stat-value">${maintenance.lastBackup ? new Date(maintenance.lastBackup).toLocaleString() : 'Never'}</span>
+                    </div>`;
+            } catch (err) {
+                console.warn('displayMaintenanceInfo error:', err);
+            }
         }
 
         function displaySystemHealth(health) {
-            const statusClass = `status-${health.status}`;
+            // Defensive normalization: /api/health returns { status, checks, uptime, timestamp } (no issues/recommendations)
+            // while richer maintenance/system health objects may include arrays. Avoid assuming presence.
+            if(!health || typeof health !== 'object') {
+                document.getElementById('system-health').innerHTML = '<div class="error-message">Health data unavailable</div>';
+                return;
+            }
+            const normalized = {
+                status: (health.status || 'unknown').toString(),
+                issues: Array.isArray(health.issues) ? health.issues : [],
+                recommendations: Array.isArray(health.recommendations) ? health.recommendations : [],
+                uptime: typeof health.uptime === 'number' ? health.uptime : (typeof health.server?.uptime === 'number' ? health.server.uptime : undefined),
+                checks: health.checks || {}
+            };
+            const statusClass = `status-${normalized.status}`;
             let html = `
                 <div class="stat-row">
                     <span class="stat-label">Overall Status</span>
                     <span class="stat-value">
-                        ${health.status.toUpperCase()}
+                        ${normalized.status.toUpperCase()}
                         <span class="${statusClass} status-indicator"></span>
                     </span>
                 </div>
             `;
 
-            if (health.issues.length > 0) {
+            // Show basic check breakdown if present
+            try {
+                const checkKeys = Object.keys(normalized.checks);
+                if(checkKeys.length){
+                    html += '<div style="margin-top:10px;"><strong>Checks:</strong><ul style="margin-left:20px; margin-top:5px;">' +
+                        checkKeys.map(k => `<li style=\"color:${normalized.checks[k]?'#2ecc71':'#e74c3c'};\">${k}: ${normalized.checks[k]?'ok':'fail'}</li>`).join('') + '</ul></div>';
+                }
+            } catch { /* ignore */ }
+
+            if (normalized.issues.length > 0) {
                 html += `
                     <div style="margin-top: 15px;">
                         <strong>Issues:</strong>
                         <ul style="margin-left: 20px; margin-top: 5px;">
-                            ${health.issues.map(issue => `<li style="color: #e74c3c;">${issue}</li>`).join('')}
+                            ${normalized.issues.map(issue => `<li style="color: #e74c3c;">${issue}</li>`).join('')}
                         </ul>
                     </div>
                 `;
             }
 
-            if (health.recommendations.length > 0) {
+            if (normalized.recommendations.length > 0) {
                 html += `
                     <div style="margin-top: 15px;">
                         <strong>Recommendations:</strong>
                         <ul style="margin-left: 20px; margin-top: 5px;">
-                            ${health.recommendations.map(rec => `<li style="color: #f39c12;">${rec}</li>`).join('')}
+                            ${normalized.recommendations.map(rec => `<li style="color: #f39c12;">${rec}</li>`).join('')}
                         </ul>
                     </div>
                 `;

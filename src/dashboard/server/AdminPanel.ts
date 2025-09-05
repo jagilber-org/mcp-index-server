@@ -47,6 +47,17 @@ interface AdminSession {
   permissions: string[];
 }
 
+interface AdminSessionHistoryEntry {
+  id: string;
+  userId: string;
+  startTime: Date;
+  endTime?: Date;
+  ipAddress: string;
+  userAgent: string;
+  terminated?: boolean;
+  terminationReason?: string;
+}
+
 interface SystemMaintenance {
   lastBackup: Date | null;
   nextScheduledMaintenance: Date | null;
@@ -61,6 +72,8 @@ interface SystemMaintenance {
 interface AdminStats {
   totalConnections: number;
   activeConnections: number;
+  /** Count of active admin panel sessions (logical authenticated/admin sessions) */
+  adminActiveSessions: number;
   totalRequests: number;
   errorRate: number;
   avgResponseTime: number;
@@ -83,6 +96,13 @@ export class AdminPanel {
   private maintenanceInfo: SystemMaintenance;
   // Cache catalog stats so lastUpdated only changes when instruction count changes
   private catalogStatsCache: { totalInstructions: number; lastUpdated: Date; version: string } | null = null;
+  // Track last observed uptime (seconds) to detect regression / restarts
+  private lastUptimeSeconds = 0;
+  // Historical session log (most recent first)
+  private sessionHistory: AdminSessionHistoryEntry[] = [];
+  private readonly maxSessionHistory = parseInt(process.env.MCP_ADMIN_MAX_SESSION_HISTORY || '200');
+  // Quick index for history lookup
+  private sessionHistoryIndex: Map<string, AdminSessionHistoryEntry> = new Map();
 
   constructor() {
     this.config = this.loadDefaultConfig();
@@ -186,6 +206,20 @@ export class AdminPanel {
     };
 
     this.activeSessions.set(session.id, session);
+    // Record in history (un-terminated yet)
+    const hist: AdminSessionHistoryEntry = {
+      id: session.id,
+      userId: session.userId,
+      startTime: session.startTime,
+      ipAddress: session.ipAddress,
+      userAgent: session.userAgent
+    };
+    this.sessionHistory.unshift(hist); // newest first
+    this.sessionHistoryIndex.set(hist.id, hist);
+    if (this.sessionHistory.length > this.maxSessionHistory) {
+      const removed = this.sessionHistory.pop();
+      if (removed) this.sessionHistoryIndex.delete(removed.id);
+    }
     return session;
   }
 
@@ -193,7 +227,16 @@ export class AdminPanel {
    * Terminate admin session
    */
   terminateSession(sessionId: string): boolean {
-    return this.activeSessions.delete(sessionId);
+    const existed = this.activeSessions.delete(sessionId);
+    if (existed) {
+      const hist = this.sessionHistoryIndex.get(sessionId);
+      if (hist && !hist.terminated) {
+        hist.endTime = new Date();
+        hist.terminated = true;
+        hist.terminationReason = 'manual';
+      }
+    }
+    return existed;
   }
 
   private cleanupExpiredSessions(): void {
@@ -203,6 +246,12 @@ export class AdminPanel {
     for (const [id, session] of this.activeSessions.entries()) {
       if (now.getTime() - session.lastActivity.getTime() > timeout) {
         this.activeSessions.delete(id);
+        const hist = this.sessionHistoryIndex.get(id);
+        if (hist && !hist.terminated) {
+          hist.endTime = new Date();
+          hist.terminated = true;
+          hist.terminationReason = 'expired';
+        }
       }
     }
   }
@@ -306,8 +355,14 @@ export class AdminPanel {
     const memUsage = snapshot.server.memoryUsage; // already captured in snapshot
 
     return {
-      totalConnections: snapshot.connections.totalConnections,
-      activeConnections: this.activeSessions.size, // admin vs websocket connections distinction
+  // Total historical websocket connections (connected + disconnected)
+  totalConnections: snapshot.connections.totalConnections,
+  // Active websocket connections (live WS clients). Previously this returned only admin sessions size,
+  // which caused the UI to show 0 even when multiple WS clients were connected. This now reflects
+  // real-time active websocket connections from metrics.
+  activeConnections: snapshot.connections.activeConnections,
+  // Preserve visibility into admin (logical) sessions separately.
+  adminActiveSessions: this.activeSessions.size,
       totalRequests,
       errorRate: snapshot.performance.errorRate,
       avgResponseTime: snapshot.performance.avgResponseTime,
@@ -334,11 +389,17 @@ export class AdminPanel {
       recommendations.push('Consider restarting the server or increasing memory limits');
     }
     
-    // Check uptime
-    const uptimeHours = process.uptime() / 3600;
-    if (uptimeHours > 72) {
+    // Check uptime (regression & long-running)
+    const currentUptimeSeconds = Math.floor(process.uptime());
+    const uptimeHours = currentUptimeSeconds / 3600;
+    if (this.lastUptimeSeconds > 0 && currentUptimeSeconds < this.lastUptimeSeconds) {
+      // Uptime decreased => restart/regression
+      issues.push('Uptime regression detected (server restart)');
+      recommendations.push('Review restart reason and ensure intentional');
+    } else if (uptimeHours > 72) {
       recommendations.push('Consider scheduled restart for optimal performance');
     }
+    this.lastUptimeSeconds = currentUptimeSeconds;
     
     // Check error rate
     const errorRate = this.getErrorRate();
@@ -354,6 +415,13 @@ export class AdminPanel {
     }
     
     this.maintenanceInfo.systemHealth = { status, issues, recommendations };
+  }
+
+  /** Return immutable copy of session history */
+  getSessionHistory(limit?: number): AdminSessionHistoryEntry[] {
+    const slice = typeof limit === 'number' ? this.sessionHistory.slice(0, Math.max(0, limit)) : this.sessionHistory;
+    // Deep clone dates
+    return slice.map(h => ({ ...h }));
   }
 
   private getTotalConnections(): number {

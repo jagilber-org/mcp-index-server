@@ -593,8 +593,12 @@
                     <span class="stat-value">${formatUptime(stats.uptime)}</span>
                 </div>
                 <div class="stat-row">
-                    <span class="stat-label">Active Connections</span>
+                    <span class="stat-label">Active Connections (WS)</span>
                     <span class="stat-value">${stats.activeConnections}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Admin Sessions</span>
+                    <span class="stat-value">${stats.adminActiveSessions ?? '0'}</span>
                 </div>
                 <div class="stat-row">
                     <span class="stat-label">Total Requests</span>

@@ -55,6 +55,15 @@ const allowedAdditional = [
   'portableCrudHarness.spec.ts',
   'portableCrudParameterized.spec.ts',
   'governanceHashIntegrity.spec.ts',
+  // Newly allow-listed (2025-09-05) for noise suppression only (NOT minimal invariant expansion):
+  // - httpMetrics.spec.ts (dashboard HTTP instrumentation)
+  // - instructionsPersistenceDivergence.spec.ts (adaptive GREEN overwrite vs create logic)
+  // - dashboardPhase1.spec.ts (infrastructure wiring)
+  // - dashboardRpmStability.spec.ts (RPM stability metrics)
+  'httpMetrics.spec.ts',
+  'instructionsPersistenceDivergence.spec.ts',
+  'dashboardPhase1.spec.ts',
+  'dashboardRpmStability.spec.ts',
   // Expanded stable suite (noise suppression)
   'addContract.meta.spec.ts',
   'addOverwriteMissingGetRepro.spec.ts',

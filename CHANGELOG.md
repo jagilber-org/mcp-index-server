@@ -16,6 +16,15 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 - Added adaptive assertions: if IDs are new, count/hash must change; pure overwrite path allows stable hash but guarantees visibility.
 - Removed heavy multi-flag RED gating for this scenario (now validated by normal suite).
 
+### Governance (baseline noise suppression)
+
+- Updated `scripts/guard-baseline.mjs` allow-list (noise suppression only) to include:
+  - `httpMetrics.spec.ts` (HTTP instrumentation coverage)
+  - `instructionsPersistenceDivergence.spec.ts` (adaptive GREEN replacement test)
+  - `dashboardPhase1.spec.ts` (dashboard infra wiring)
+  - `dashboardRpmStability.spec.ts` (RPM metrics stability)
+  (No minimal invariant expansion; internal baseline policy unchanged.)
+
 ## [1.2.1] - 2025-09-05
 
 ### Changed (test stability)

@@ -1,6 +1,6 @@
 /**
  * Phase 4.1 Admin Panel - Enterprise Administration Interface
- * 
+ *
  * Provides comprehensive administrative controls for the MCP Index Server:
  * - Server configuration management
  * - User session monitoring
@@ -9,6 +9,9 @@
  * - Security management
  * - Instruction catalog administration
  */
+import fs from 'fs';
+import path from 'path';
+import { getMetricsCollector } from './MetricsCollector';
 
 interface AdminConfig {
   serverSettings: {
@@ -78,6 +81,8 @@ export class AdminPanel {
   private config: AdminConfig;
   private activeSessions: Map<string, AdminSession> = new Map();
   private maintenanceInfo: SystemMaintenance;
+  // Cache catalog stats so lastUpdated only changes when instruction count changes
+  private catalogStatsCache: { totalInstructions: number; lastUpdated: Date; version: string } | null = null;
 
   constructor() {
     this.config = this.loadDefaultConfig();
@@ -271,25 +276,48 @@ export class AdminPanel {
    * Get comprehensive admin statistics
    */
   getAdminStats(): AdminStats {
-    const memUsage = process.memoryUsage();
-    
+    // Use real metrics snapshot (deterministic values)
+    const collector = getMetricsCollector();
+    const snapshot = collector.getCurrentSnapshot();
+
+    // Aggregate total requests from tool metrics
+    let totalRequests = 0;
+    Object.values(snapshot.tools).forEach(t => { totalRequests += t.callCount; });
+
+    // Count instruction JSON files deterministically
+    const catalogDir = process.env.MCP_INSTRUCTIONS_DIR || path.join(process.cwd(), 'instructions');
+    let instructionCount = 0;
+    try {
+      if (fs.existsSync(catalogDir)) {
+        instructionCount = fs.readdirSync(catalogDir).filter(f => f.toLowerCase().endsWith('.json')).length;
+      }
+    } catch {
+      // ignore filesystem errors
+    }
+
+    if (!this.catalogStatsCache || this.catalogStatsCache.totalInstructions !== instructionCount) {
+      this.catalogStatsCache = {
+        totalInstructions: instructionCount,
+        lastUpdated: new Date(),
+        version: snapshot.server.version
+      };
+    }
+
+    const memUsage = snapshot.server.memoryUsage; // already captured in snapshot
+
     return {
-      totalConnections: this.getTotalConnections(),
-      activeConnections: this.activeSessions.size,
-      totalRequests: this.getTotalRequests(),
-      errorRate: this.getErrorRate(),
-      avgResponseTime: this.getAvgResponseTime(),
-      uptime: process.uptime(),
+      totalConnections: snapshot.connections.totalConnections,
+      activeConnections: this.activeSessions.size, // admin vs websocket connections distinction
+      totalRequests,
+      errorRate: snapshot.performance.errorRate,
+      avgResponseTime: snapshot.performance.avgResponseTime,
+      uptime: Math.floor(snapshot.server.uptime / 1000), // seconds
       memoryUsage: {
         heapUsed: memUsage.heapUsed,
         heapTotal: memUsage.heapTotal,
-        external: memUsage.external
+        external: (memUsage as unknown as { external?: number })?.external ?? 0
       },
-      catalogStats: {
-        totalInstructions: this.getCatalogInstructionCount(),
-        lastUpdated: new Date(),
-        version: '1.1.3'
-      }
+      catalogStats: this.catalogStatsCache
     };
   }
 
@@ -329,28 +357,32 @@ export class AdminPanel {
   }
 
   private getTotalConnections(): number {
-    // In real implementation, this would track actual connections
-    return Math.floor(Math.random() * 1000) + 500;
+    return getMetricsCollector().getCurrentSnapshot().connections.totalConnections;
   }
 
   private getTotalRequests(): number {
-    // In real implementation, this would track actual requests
-    return Math.floor(Math.random() * 50000) + 10000;
+    const snap = getMetricsCollector().getCurrentSnapshot();
+    return Object.values(snap.tools).reduce((sum, t) => sum + t.callCount, 0);
   }
 
   private getErrorRate(): number {
-    // In real implementation, this would calculate actual error rate
-    return Math.random() * 3; // 0-3% error rate
+    return getMetricsCollector().getCurrentSnapshot().performance.errorRate;
   }
 
   private getAvgResponseTime(): number {
-    // In real implementation, this would calculate actual response times
-    return Math.random() * 50 + 10; // 10-60ms response time
+    return getMetricsCollector().getCurrentSnapshot().performance.avgResponseTime;
   }
 
   private getCatalogInstructionCount(): number {
-    // In real implementation, this would count actual instructions
-    return Math.floor(Math.random() * 200) + 100;
+    const catalogDir = process.env.MCP_INSTRUCTIONS_DIR || path.join(process.cwd(), 'instructions');
+    try {
+      if (fs.existsSync(catalogDir)) {
+        return fs.readdirSync(catalogDir).filter(f => f.toLowerCase().endsWith('.json')).length;
+      }
+    } catch {
+      // ignore
+    }
+    return 0;
   }
 
   /**

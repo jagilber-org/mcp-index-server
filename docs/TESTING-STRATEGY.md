@@ -27,6 +27,7 @@ This document describes the layered test approach to continuously expand coverag
 ## Expansion Playbook
  
 For every new defect class discovered:
+
 1. Reproduce minimal failing scenario manually or via script.  
 2. Add failing test in the lowest viable layer (unit < service < protocol).  
 3. Fix the code.  
@@ -37,6 +38,44 @@ For every new defect class discovered:
 - All tests: `npm test` (CI).  
 - Contract / schema-only quick check: `npm run test:contracts`.  
 - Coverage gate: `npm run coverage:ci` (threshold lines / branches).
+- Fast feedback (default build): `npm run test:fast` – excludes high-cost reproduction / RED suites.
+- Pre-push extended regression: `npm run test:slow` (or automatic via git pre-push hook) – runs multi-client + persistence divergence reproductions.
+
+### Fast vs Slow Suite Classification (2025-09-05)
+
+Rationale: Keep `build:verify` wall-clock low while preserving deep regression signal before code leaves the workstation.
+
+Fast suite (executed in `build:verify`):
+
+- All stable/unit/service/protocol tests excluding explicitly listed slow/RED files.
+
+Slow / Pre-Push suite (`scripts/test-slow.mjs`):
+
+- `feedbackReproduction.multiClient.spec.ts`
+- `feedbackReproduction.crudConsistency.spec.ts`
+- `instructionsPersistenceDivergence.red.spec.ts`
+- `instructionsPersistenceIsolated.red.spec.ts`
+- `importDuplicateAddVisibility.red.spec.ts`
+
+Selection Criteria:
+
+1. Runtime > ~10s or high I/O amplification (large catalog sampling, multi-client coordination).
+2. RED / reproduction tests intentionally exercising known gaps (may fail intermittently while diagnosing).
+3. Adds marginal coverage beyond fast suite invariants (list/get atomicity, persistence divergence) not needed every build.
+
+Governance:
+
+- New slow candidates must document: estimated runtime, unique invariant covered, why not enforce in fast path.
+- Periodically re-evaluate: if a slow test becomes fast (<5s), migrate back to fast suite.
+- If a RED test turns GREEN (fixed), consider refactoring a minimal deterministic version into fast suite.
+
+Developer Workflow:
+
+1. During inner-loop: rely on `npm run build:verify` (fast tests) for quick signal.
+2. Before push: allow pre-push hook to run (or manually `npm run test:slow`).
+3. CI can optionally add a scheduled job executing both suites + stress (`test:stress`).
+
+Bypass (emergency only): set `BYPASS_PRE_PUSH=1` env var before `git push` (future enhancement) – not yet implemented; intentional friction maintained.
 
 ## Property-Based Guidance
 

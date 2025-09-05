@@ -1290,18 +1290,73 @@ export class DashboardServer {
                     const el = document.getElementById('error-banner');
                     if (el) { el.textContent = msg; el.style.display = 'inline-block'; setTimeout(()=>{ el.style.display='none';}, 5000); }
                 }
-                                // Establish lightweight WS connection purely for status indication (does not replace advanced Phase clients)
-                                (function initStatusWebSocket(){
-                                    if(!"WebSocket" in window || !webSocketUrl) { setWsStatus('unavailable','gray'); return; }
-                                    try {
-                                        const ws = new WebSocket(webSocketUrl);
-                                        let opened = false;
-                                        ws.addEventListener('open', ()=>{ opened = true; setWsStatus('connected','#16a34a'); });
-                                        ws.addEventListener('message', ()=>{ if(opened) setWsStatus('active','#16a34a'); });
-                                        ws.addEventListener('close', ()=>{ setWsStatus('closed','#dc2626'); /* attempt single retry */ setTimeout(()=>{ initStatusWebSocket(); }, 2000); });
-                                        ws.addEventListener('error', ()=>{ setWsStatus('error','#f97316'); try { ws.close(); } catch {/* ignore */} });
-                                    } catch(e){ console.error('ws status init failed', e); setWsStatus('error','#f97316'); }
-                                })();
+                // Live metric buffers for incremental chart updates (last 120 points)
+                const liveBuffers = { labels: [], rpm: [], avg: [], err: [] };
+                const MAX_POINTS = 120;
+
+                function handleMetricsUpdate(snapshot) {
+                    if(!snapshot || !snapshot.performance) return;
+                    const tsLabel = new Date(snapshot.timestamp || Date.now()).toLocaleTimeString();
+                    liveBuffers.labels.push(tsLabel);
+                    liveBuffers.rpm.push(snapshot.performance.requestsPerMinute || 0);
+                    liveBuffers.avg.push(snapshot.performance.avgResponseTime || 0);
+                    liveBuffers.err.push(snapshot.performance.errorRate || 0);
+                    if(liveBuffers.labels.length > MAX_POINTS) {
+                        ['labels','rpm','avg','err'].forEach(k=>liveBuffers[k].splice(0, liveBuffers[k].length - MAX_POINTS));
+                    }
+                    // Update existing charts if they exist
+                    try {
+                        if (typeof charts !== 'undefined') {
+                            if (charts.requestsChart) {
+                                charts.requestsChart.data.labels = liveBuffers.labels.slice();
+                                charts.requestsChart.data.datasets[0].data = liveBuffers.rpm.slice();
+                                charts.requestsChart.update();
+                            }
+                            if (charts.responseTimeChart) {
+                                charts.responseTimeChart.data.labels = liveBuffers.labels.slice();
+                                charts.responseTimeChart.data.datasets[0].data = liveBuffers.avg.slice();
+                                charts.responseTimeChart.update();
+                            }
+                            if (charts.errorRateChart) {
+                                charts.errorRateChart.data.labels = liveBuffers.labels.slice();
+                                charts.errorRateChart.data.datasets[0].data = liveBuffers.err.slice();
+                                charts.errorRateChart.update();
+                            }
+                        }
+                    } catch(e){ console.warn('live chart update failed', e); }
+
+                    // Derive realtime widget shape (normalize successRate to 0-1)
+                    try {
+                        const perf = snapshot.performance;
+                        const derived = {
+                            currentRpm: perf.requestsPerMinute || 0,
+                            activeConnections: snapshot.connections?.activeConnections || 0,
+                            avgResponseTime: perf.avgResponseTime || 0,
+                            successRate: (perf.successRate > 1 ? perf.successRate/100 : perf.successRate),
+                            errorRate: (perf.errorRate > 1 ? perf.errorRate/100 : perf.errorRate)
+                        };
+                        updateRealtimeWidgets(derived);
+                    } catch(e){ console.warn('realtime widget update from metrics_update failed', e); }
+                }
+
+                // Establish WebSocket connection for status + metrics streaming
+                (function initStatusWebSocket(){
+                    if(!("WebSocket" in window) || !window.DASHBOARD_WS_URL) { setWsStatus('unavailable','gray'); return; }
+                    try {
+                        const ws = new WebSocket(window.DASHBOARD_WS_URL);
+                        let opened = false;
+                        ws.addEventListener('open', ()=>{ opened = true; setWsStatus('connected','#16a34a'); });
+                        ws.addEventListener('message', (ev)=>{ 
+                            if(opened) setWsStatus('active','#16a34a'); 
+                            try {
+                                const msg = JSON.parse(ev.data);
+                                if(msg && msg.type === 'metrics_update') { handleMetricsUpdate(msg.data); }
+                            } catch { /* non-JSON or ignored */ }
+                        });
+                        ws.addEventListener('close', ()=>{ setWsStatus('closed','#dc2626'); setTimeout(()=>{ initStatusWebSocket(); }, 2000); });
+                        ws.addEventListener('error', ()=>{ setWsStatus('error','#f97316'); try { ws.close(); } catch {/* ignore */} });
+                    } catch(e){ console.error('ws status init failed', e); setWsStatus('error','#f97316'); }
+                })();
     </script>
 </body>
 </html>`;

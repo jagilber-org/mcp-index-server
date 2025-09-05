@@ -6,8 +6,9 @@
  */
 
 import express, { Router, Request, Response } from 'express';
+import { getWebSocketManager } from './WebSocketManager.js';
 import { getMetricsCollector, ToolMetrics } from './MetricsCollector.js';
-import { listRegisteredMethods } from '../../server/registry.js';
+import { listRegisteredMethods, getHandler } from '../../server/registry.js';
 import { getAdminPanel } from './AdminPanel.js';
 import fs from 'fs';
 import path from 'path';
@@ -24,6 +25,34 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
   const router = Router();
   const metricsCollector = getMetricsCollector();
 
+  // Helper: derive short git commit (best-effort; never throws)
+  function getGitCommit(): string | null {
+    try {
+      const head = path.join(process.cwd(), '.git', 'HEAD');
+      if (!fs.existsSync(head)) return null;
+      let ref = fs.readFileSync(head, 'utf8').trim();
+      if (ref.startsWith('ref:')) {
+        const refPath = path.join(process.cwd(), '.git', ref.split(' ')[1]);
+        if (fs.existsSync(refPath)) {
+          ref = fs.readFileSync(refPath, 'utf8').trim();
+        }
+      }
+      return ref.substring(0, 12);
+    } catch { return null; }
+  }
+
+  // Helper: approximate build time via dist/server/index.js mtime (falls back to now)
+  function getBuildTime(): string | null {
+    try {
+      const candidate = path.join(process.cwd(), 'dist', 'server', 'index.js');
+      if (fs.existsSync(candidate)) {
+        const stat = fs.statSync(candidate);
+        return new Date(stat.mtimeMs).toISOString();
+      }
+    } catch {/* ignore */}
+    return null;
+  }
+
   // CORS middleware (if enabled)
   if (options.enableCors) {
     router.use((_req: Request, res: Response, next: () => void) => {
@@ -37,16 +66,48 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
   // JSON middleware
   router.use(express.json());
 
+  // --- HTTP Metrics Instrumentation ---------------------------------------
+  // Previously only MCP tool invocations (via registerHandler wrapper) fed the
+  // MetricsCollector, so dashboard performance counters (requestsPerMinute,
+  // successRate, avgResponseTime, errorRate) stayed at zero when users only
+  // interacted with the REST API. We add lightweight instrumentation here so
+  // HTTP requests also contribute. To avoid exploding the per-tool cardinality
+  // we aggregate all HTTP traffic under a single pseudo tool id: 'http/request'.
+  // This can be disabled by setting MCP_HTTP_METRICS=0.
+  try {
+    const enableHttpMetrics = process.env.MCP_HTTP_METRICS !== '0';
+    if (enableHttpMetrics) {
+      router.use((req: Request, res: Response, next: () => void) => {
+        const startNs = typeof process.hrtime === 'function' ? process.hrtime.bigint() : BigInt(Date.now()) * 1_000_000n;
+        res.on('finish', () => {
+          try {
+            const endNs = typeof process.hrtime === 'function' ? process.hrtime.bigint() : BigInt(Date.now()) * 1_000_000n;
+            const ms = Number(endNs - startNs) / 1_000_000;
+            const success = res.statusCode < 500;
+            // Single aggregated bucket; status >=500 classified as error with http_<code> type
+            metricsCollector.recordToolCall('http/request', success, ms, success ? undefined : `http_${res.statusCode}`);
+          } catch { /* never block response path */ }
+        });
+        next();
+      });
+    }
+  } catch { /* ignore instrumentation failures */ }
+  // -------------------------------------------------------------------------
+
   /**
    * GET /api/status - Server status and basic info
    */
   router.get('/status', (_req: Request, res: Response) => {
     try {
       const snapshot = metricsCollector.getCurrentSnapshot();
+      const git = getGitCommit();
+      const buildTime = getBuildTime();
       
       res.json({
         status: 'online',
         version: snapshot.server.version,
+        build: git || undefined,
+        buildTime: buildTime || undefined,
         uptime: snapshot.server.uptime,
         startTime: snapshot.server.startTime,
         timestamp: Date.now(),
@@ -660,6 +721,27 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
   });
 
   /**
+   * GET /api/admin/connections - Get active websocket connections (Phase 4.1 enhancement)
+   * Returns a lightweight list derived from metrics snapshot. This intentionally avoids
+   * retaining per-connection PII beyond an anonymized id and duration.
+   */
+  router.get('/admin/connections', (_req: Request, res: Response) => {
+    try {
+      const wsMgr = getWebSocketManager();
+      const connections = wsMgr.getActiveConnectionSummaries();
+      res.json({
+        success: true,
+        connections: connections.sort((a: { connectedAt: number }, b: { connectedAt: number }) => a.connectedAt - b.connectedAt),
+        count: connections.length,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      console.error('[API] Get active connections error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get active connections' });
+    }
+  });
+
+  /**
    * POST /api/admin/sessions - Create new admin session
    */
   router.post('/admin/sessions', (req: Request, res: Response) => {
@@ -817,6 +899,120 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
         success: false,
         error: 'Failed to get admin statistics',
         message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  });
+
+  /**
+   * GET /api/admin/sessions/history - Historical admin sessions (bounded)
+   */
+  router.get('/admin/sessions/history', (req: Request, res: Response) => {
+    try {
+      const limitParam = req.query.limit as string | undefined;
+      const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+      const history = adminPanel.getSessionHistory(limit);
+      res.json({
+        success: true,
+        history,
+        count: history.length,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      console.error('[API] Get session history error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get session history',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  /**
+   * POST /api/admin/synthetic/activity - Generate synthetic tool activity to exercise metrics
+   * body: { iterations?: number, concurrency?: number }
+   */
+  router.post('/admin/synthetic/activity', async (req: Request, res: Response) => {
+    try {
+      const iterations = Math.min(Math.max(parseInt(req.body.iterations || '10', 10), 1), 500);
+      const concurrency = Math.min(Math.max(parseInt(req.body.concurrency || '2', 10), 1), 25);
+      const start = Date.now();
+
+      // Whitelist of safe, read-only or idempotent methods + minimal params
+      const PARAM_MAP: Record<string, unknown> = {
+        'health/check': {},
+        'metrics/snapshot': {},
+        'meta/tools': {},
+        'instructions/governanceHash': {},
+        'gates/evaluate': {},
+        // usage/track increments counters but is harmless; provides variety
+        'usage/track': { id: 'synthetic.activity' }
+      };
+
+      const allRegistered = listRegisteredMethods();
+      const available = allRegistered.filter(m => PARAM_MAP[m]);
+      if (!available.length) {
+        return res.status(503).json({
+          success: false,
+          error: 'No safe tools available for synthetic activity',
+          registeredCount: allRegistered.length,
+            // surface first few for quick visual triage without flooding
+          registeredSample: allRegistered.slice(0, 15),
+          expectedAnyOf: Object.keys(PARAM_MAP),
+          hint: 'If this persists, ensure handlers.* imports occur before dashboard start (see server/index.ts import order).',
+          timestamp: Date.now()
+        });
+      }
+
+      let executed = 0;
+      let errors = 0;
+
+      const runOne = async () => {
+        const method = available[Math.floor(Math.random() * available.length)];
+        const handler = getHandler(method);
+        try {
+          if (handler) {
+            await Promise.resolve(handler(PARAM_MAP[method]));
+          }
+        } catch {
+          errors++;
+        }
+        executed++;
+      };
+
+      // Concurrency control
+      const inFlight: Promise<void>[] = [];
+      for (let i = 0; i < iterations; i++) {
+        if (inFlight.length >= concurrency) {
+          await Promise.race(inFlight);
+        }
+        const p = runOne().finally(() => {
+          const idx = inFlight.indexOf(p);
+          if (idx >= 0) inFlight.splice(idx, 1);
+        });
+        inFlight.push(p);
+      }
+      await Promise.all(inFlight);
+
+      const durationMs = Date.now() - start;
+      const debug = req.query.debug === '1' || req.body?.debug === true;
+      res.json({
+        success: true,
+        message: 'Synthetic activity completed',
+        executed,
+        errors,
+        durationMs,
+        iterationsRequested: iterations,
+        concurrency,
+        availableCount: available.length,
+        ...(debug ? { available } : {}),
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      console.error('[API] Synthetic activity error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to run synthetic activity',
+        message: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });

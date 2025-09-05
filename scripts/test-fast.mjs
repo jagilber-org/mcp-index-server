@@ -31,5 +31,12 @@ if (fastSpecs.length === 0) {
 // Provide summary output
 console.log(`Discovered ${allSpecs.length} spec files; excluding ${slowTests.length} slow => running ${fastSpecs.length} fast specs.`);
 
+// Safety net: ensure none of the enumerated fast specs are actually tagged slow (defensive in case list drift)
+const leaked = fastSpecs.filter(f => slowTests.includes(f));
+if (leaked.length) {
+  console.error('[test:fast] Detected slow tests leaking into fast set:', leaked);
+  process.exit(1);
+}
+
 const child = spawn('npx', ['vitest', 'run', ...fastSpecs], { stdio: 'inherit', shell: process.platform === 'win32' });
 child.on('exit', code => process.exit(code));

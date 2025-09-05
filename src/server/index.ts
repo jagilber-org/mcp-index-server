@@ -64,14 +64,45 @@ import { getMetricsCollector } from '../dashboard/server/MetricsCollector.js';
 import fs from 'fs';
 import path from 'path';
 
-// Global fatal error diagnostics (test-only aid; safe no-op in normal operation)
-if(!process.listeners('uncaughtException').some(l => (l as unknown as { name?:string }).name === 'mcpIndexFatalHandler')){
-  process.on('uncaughtException', (err) => {
-    try { process.stderr.write(`[fatal] uncaught_exception ${(err && (err as Error).stack) || err}\n`); } catch { /* ignore */ }
+// ---------------------------------------------------------------------------
+// Unified global diagnostics guard (installs once) for uncaught errors, promise
+// rejections, runtime warnings, and termination signals. Prevents duplicate
+// handlers that previously existed in multiple modules and ensures consistent
+// structured log prefixes that downstream log processors can key on.
+// ---------------------------------------------------------------------------
+if(!process.listeners('uncaughtException').some(l => (l as unknown as { name?:string }).name === 'mcpGlobalGuard')){
+  const write = (line: string) => { try { process.stderr.write(line + '\n'); } catch { /* ignore */ } };
+  const formatErr = (e: unknown) => {
+    if(e instanceof Error) return `${e.name||'Error'}: ${e.message} stack=${e.stack?.replace(/\s+/g,' ')}`;
+    return typeof e === 'object' ? JSON.stringify(e) : String(e);
+  };
+  const stamp = () => new Date().toISOString();
+  const tag = (t: string) => `[diag] [${stamp()}] [${t}]`;
+
+  const fatalExitDelayMs = parseInt(process.env.MCP_FATAL_EXIT_DELAY_MS || '15',10);
+  const graceful = () => setTimeout(() => process.exit(1), fatalExitDelayMs);
+
+  const uncaughtHandler = function mcpGlobalGuard(err: unknown){
+    write(`${tag('uncaught_exception')} ${formatErr(err)}`);
+    graceful();
+  };
+  const rejectionHandler = function mcpGlobalGuard(reason: unknown){
+    write(`${tag('unhandled_rejection')} ${formatErr(reason)}`);
+  };
+  process.on('uncaughtException', uncaughtHandler);
+  process.on('unhandledRejection', rejectionHandler);
+
+  // Surface Node.js process warnings (deprecations, experimental flags, etc.)
+  process.on('warning', (w: Error) => {
+    write(`${tag('process_warning')} ${formatErr(w)}`);
   });
-  process.on('unhandledRejection', (reason) => {
-    try { process.stderr.write(`[fatal] unhandled_rejection ${String(reason)}\n`); } catch { /* ignore */ }
-  });
+
+  // Graceful shutdown on common termination signals: log intent then exit(0)
+  const sigHandler = (sig: NodeJS.Signals) => {
+    write(`${tag('signal')} received=${sig}`);
+    setTimeout(() => process.exit(0), 5);
+  };
+  ['SIGINT','SIGTERM'].forEach(s => { try { process.once(s as NodeJS.Signals, sigHandler); } catch { /* ignore */ } });
 }
 
 // Low-level ingress tracing: echo raw stdin frames when verbose enabled (diagnostic only)

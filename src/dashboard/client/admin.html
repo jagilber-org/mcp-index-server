@@ -432,6 +432,17 @@
                         <button class="action-btn warning" onclick="clearCaches()">🗑️ Clear Caches</button>
                         <button class="action-btn danger" onclick="restartServer()">🔄 Restart Server</button>
                     </div>
+                    <div style="margin-top:14px;">
+                        <div style="font-weight:600; font-size:13px; margin-bottom:6px; display:flex; align-items:center; gap:6px;">Restore Backup <button onclick="loadBackups()" class="action-btn" style="padding:4px 8px; font-size:11px;">Refresh</button></div>
+                        <div id="backup-restore-area" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                            <select id="backup-select" class="form-input" style="min-width:260px; max-width:320px;">
+                                <option value="">(no backups)</option>
+                            </select>
+                            <button class="action-btn" onclick="restoreSelectedBackup()">♻️ Restore</button>
+                            <span id="backup-restore-status" style="font-size:11px; opacity:0.75;"></span>
+                        </div>
+                        <div id="backup-list-meta" style="margin-top:6px; font-size:11px; opacity:0.6; min-height:14px;"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -534,10 +545,20 @@
                     </div>
                     <div class="form-group" style="margin-top:10px;">
                         <label class="form-label">JSON Content</label>
-                        <textarea id="instruction-content" class="form-input" style="min-height:200px; font-family:monospace; white-space:pre; overflow:auto;"></textarea>
+                        <textarea id="instruction-content" class="form-input" style="min-height:260px; font-family:monospace; white-space:pre; overflow:auto;" oninput="updateInstructionEditorDiagnostics()"></textarea>
+                        <div id="instruction-diagnostics" style="margin-top:8px; font-size:12px; line-height:1.4; background:#f4f6fb; padding:8px 10px; border:1px solid #dbe2ec; border-radius:6px;">
+                            <em>Editor idle.</em>
+                        </div>
+                        <div id="instruction-diff-container" class="hidden" style="margin-top:10px; max-height:240px; overflow:auto; border:1px solid #eee; border-radius:6px; background:#222; color:#ddd; font-family:monospace; font-size:12px; padding:8px;">
+                            <div style="margin-bottom:6px; font-weight:600;">Diff (original vs current)</div>
+                            <pre id="instruction-diff" style="white-space:pre; margin:0;"></pre>
+                        </div>
                     </div>
                     <div style="margin-top:10px;">
                         <button class="action-btn" onclick="saveInstruction()">💾 Save</button>
+                        <button class="action-btn" style="background:linear-gradient(45deg,#3498db,#2980b9)" onclick="formatInstructionJson()">🧹 Format</button>
+                        <button class="action-btn" style="background:linear-gradient(45deg,#8e44ad,#6c3483)" onclick="toggleInstructionDiff()">🔍 Diff</button>
+                        <button class="action-btn" style="background:linear-gradient(45deg,#16a085,#13856c)" onclick="applyInstructionTemplate()">📐 Template</button>
                         <button class="action-btn warning" onclick="cancelEditInstruction()">✖ Cancel</button>
                     </div>
                 </div>
@@ -552,6 +573,49 @@
     // Track if /api/admin/stats responded successfully on most recent loadOverviewData()
     // Used to downgrade health display (memory/errors) when stats are missing.
     let statsAvailable = false;
+    // WebSocket for live events (metrics + synthetic trace streaming)
+    let dashboardSocket = null;
+    let lastSyntheticRunId = null;
+    function initDashboardSocket(){
+        try {
+            if (dashboardSocket && dashboardSocket.readyState === WebSocket.OPEN) return;
+            const proto = (location.protocol === 'https:') ? 'wss' : 'ws';
+            dashboardSocket = new WebSocket(`${proto}://${location.host}/ws`);
+            dashboardSocket.onopen = ()=>{/* noop */};
+            dashboardSocket.onmessage = ev => {
+                try {
+                    const msg = JSON.parse(ev.data);
+                    if (msg.type === 'synthetic_trace' && msg.data) {
+                        handleSyntheticTrace(msg.data);
+                    }
+                } catch {/* ignore */}
+            };
+            dashboardSocket.onclose = ()=>{ setTimeout(initDashboardSocket, 4000); };
+        } catch(e){ console.warn('ws init failed', e); }
+    }
+    function handleSyntheticTrace(data){
+        if (!data || !data.runId) return;
+        // If new run starts while traces visible, auto-clear
+        if (lastSyntheticRunId && data.runId !== lastSyntheticRunId) {
+            const body = document.getElementById('synthetic-traces-body');
+            if (body) body.innerHTML='';
+        }
+        lastSyntheticRunId = data.runId;
+        const body = document.getElementById('synthetic-traces-body');
+        if (!body) return;
+        const clr = data.success ? '#0a0' : '#a00';
+        const err = data.error ? String(data.error).slice(0,80) : '';
+        const skipped = data.skipped ? ' (skipped)' : '';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td style="padding:2px 4px; border-bottom:1px solid #eee;">${data.seq}</td>
+            <td style="padding:2px 4px; border-bottom:1px solid #eee; font-family:monospace;">${data.method}${skipped}</td>
+            <td style="padding:2px 4px; border-bottom:1px solid #eee; color:${clr};">${data.success?'✓':'✗'}</td>
+            <td style="padding:2px 4px; border-bottom:1px solid #eee;">${data.durationMs}ms</td>
+            <td style="padding:2px 4px; border-bottom:1px solid #eee; color:${data.error?'#b55':'#666'};">${err}</td>`;
+        body.appendChild(tr);
+        const wrap = document.getElementById('synthetic-traces-wrapper');
+        if (wrap && wrap.style.display === 'none') wrap.style.display='block';
+    }
 
         // Initialize admin panel
         document.addEventListener('DOMContentLoaded', function() {
@@ -559,6 +623,7 @@
             startAutoRefresh();
             // Attempt to auto-create a dashboard admin session if none exists for this browser tab
             try { maybeEnsureAdminSession(); } catch(e) { console.warn('auto session create failed', e); }
+            initDashboardSocket();
         });
 
         function showSection(section) {
@@ -596,6 +661,7 @@
                     break;
                 case 'maintenance':
                     loadMaintenanceStatus();
+                    loadBackups();
                     break;
                 case 'monitoring':
                     loadMonitoringData();
@@ -708,6 +774,10 @@
                     <span class="stat-value">${stats.catalogStats.version}</span>
                 </div>
                 <div class="stat-row">
+                    <span class="stat-label">Schema Version</span>
+                    <span class="stat-value">${stats.catalogStats.schemaVersion || 'unknown'}</span>
+                </div>
+                <div class="stat-row">
                     <span class="stat-label">Last Updated</span>
                     <span class="stat-value">${stats.catalogStats.lastUpdated ? new Date(stats.catalogStats.lastUpdated).toLocaleString() : 'N/A'}</span>
                 </div>
@@ -818,6 +888,58 @@
             }
 
             document.getElementById('system-health').innerHTML = html;
+        }
+
+        // --- Backup / Restore ---
+        async function loadBackups() {
+            try {
+                const sel = document.getElementById('backup-select');
+                const meta = document.getElementById('backup-list-meta');
+                if (!sel) return;
+                sel.innerHTML = '<option value="">Loading...</option>';
+                const res = await fetch('/api/admin/maintenance/backups');
+                if (!res.ok) throw new Error('list failed');
+                const data = await res.json();
+                const backups = (data.backups || []).slice(0, 200);
+                if (!backups.length) {
+                    sel.innerHTML = '<option value="">(no backups)</option>';
+                    if (meta) meta.textContent = 'No backups available';
+                    return;
+                }
+                sel.innerHTML = backups.map(b => {
+                    const label = `${b.id}  •  ${b.instructionCount} files  •  ${b.schemaVersion || 'schema?'}  •  ${new Date(b.createdAt).toLocaleString()}`;
+                    return `<option value="${b.id}">${label}</option>`;
+                }).join('');
+                if (meta) meta.textContent = `${backups.length} backup(s)`;
+            } catch (err) {
+                console.warn('loadBackups error', err);
+                const sel = document.getElementById('backup-select');
+                if (sel) sel.innerHTML = '<option value="">(error loading)</option>';
+            }
+        }
+
+        async function restoreSelectedBackup() {
+            try {
+                const sel = document.getElementById('backup-select');
+                const statusEl = document.getElementById('backup-restore-status');
+                if (!sel || !sel.value) { if (statusEl) statusEl.textContent = 'Select a backup first'; return; }
+                const choice = sel.value;
+                if (!confirm(`Restore backup ${choice}? Current instructions will be safety-backed up first.`)) return;
+                statusEl.textContent = 'Restoring...';
+                const res = await fetch('/api/admin/maintenance/restore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ backupId: choice }) });
+                const data = await res.json();
+                if (data.success) {
+                    statusEl.textContent = `Restored ${choice} (${data.restored || 0} files)`;
+                    // Re-load stats & instructions to reflect changes
+                    loadOverviewData();
+                    if (currentSection === 'instructions') loadInstructions();
+                } else {
+                    statusEl.textContent = `Restore failed: ${data.error || data.message || 'unknown'}`;
+                }
+            } catch (err) {
+                const statusEl = document.getElementById('backup-restore-status');
+                if (statusEl) statusEl.textContent = 'Error restoring backup';
+            }
         }
 
                 async function loadSessions() {
@@ -979,8 +1101,17 @@
                     output.textContent = 'Executing synthetic activity...';
                     const tracesBody = document.getElementById('synthetic-traces-body');
                     if(tracesBody) tracesBody.innerHTML = '';
+                    // Accelerate monitoring poll during run
+                    let previousInterval = monitoringInterval;
+                    if (monitoringInterval) { clearInterval(monitoringInterval); monitoringInterval=null; }
+                    monitoringInterval = setInterval(()=>{
+                        if (document.getElementById('monitoring-section')?.classList.contains('hidden')) return;
+                        loadMonitoringData();
+                        updateActiveSyntheticRequests();
+                    }, 1000); // fast poll while running
+                    let statusTimer = setInterval(updateActiveSyntheticRequests, 1000);
                     try {
-                        const url = '/api/admin/synthetic/activity?debug=1'+(wantTrace?'&trace=1':'');
+                        const url = '/api/admin/synthetic/activity?debug=1'+(wantTrace?'&trace=1&stream=1':'');
                         const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ iterations: iter, concurrency: conc }) });
                         const rawText = await res.text();
                         let data = null; try { data = JSON.parse(rawText); } catch { /* ignore */ }
@@ -994,19 +1125,25 @@
                         output.textContent = metaLine + (data.available ? `\nSample: ${data.available.slice(0,5).join(', ')}` : '');
                         const lastMeta = document.getElementById('synthetic-last-meta');
                         if (lastMeta) lastMeta.textContent = `Last run: ${new Date().toLocaleTimeString()} ${metaLine}`;
-                        if (wantTrace && Array.isArray(data.traces) && tracesBody) {
-                            const rows = data.traces.map((t,i)=>{
-                                const clr = t.success ? '#0a0' : '#a00';
-                                const err = t.error ? String(t.error).slice(0,80) : '';
-                                return `<tr>
-                                    <td style="padding:2px 4px; border-bottom:1px solid #eee;">${i+1}</td>
-                                    <td style="padding:2px 4px; border-bottom:1px solid #eee; font-family:monospace;">${t.method}</td>
-                                    <td style="padding:2px 4px; border-bottom:1px solid #eee; color:${clr};">${t.success?'✓':'✗'}</td>
-                                    <td style="padding:2px 4px; border-bottom:1px solid #eee;">${t.durationMs}ms</td>
-                                    <td style="padding:2px 4px; border-bottom:1px solid #eee; color:${t.error?'#b55':'#666'};">${err}</td>
-                                </tr>`;
-                            }).join('');
-                            tracesBody.innerHTML = rows || '<tr><td colspan="5" style="padding:4px; font-style:italic;">No traces captured</td></tr>';
+                        if (wantTrace && tracesBody) {
+                            if (Array.isArray(data.traces) && data.traces.length) {
+                                const rows = data.traces.map((t,i)=>{
+                                    const clr = t.success ? '#0a0' : '#a00';
+                                    const err = t.error ? String(t.error).slice(0,80) : '';
+                                    const skipped = t.skipped ? ' (skipped)' : '';
+                                    return `<tr>
+                                        <td style="padding:2px 4px; border-bottom:1px solid #eee;">${i+1}</td>
+                                        <td style="padding:2px 4px; border-bottom:1px solid #eee; font-family:monospace;">${t.method}${skipped}</td>
+                                        <td style="padding:2px 4px; border-bottom:1px solid #eee; color:${clr};">${t.success?'✓':'✗'}</td>
+                                        <td style="padding:2px 4px; border-bottom:1px solid #eee;">${t.durationMs}ms</td>
+                                        <td style="padding:2px 4px; border-bottom:1px solid #eee; color:${t.error?'#b55':'#666'};">${err}</td>
+                                    </tr>`;
+                                }).join('');
+                                tracesBody.innerHTML = rows;
+                            } else {
+                                const reason = data.traceReason || 'no traces captured';
+                                tracesBody.innerHTML = `<tr><td colspan="5" style="padding:4px; font-style:italic;">${reason}</td></tr>`;
+                            }
                             document.getElementById('synthetic-traces-wrapper').style.display = 'block';
                         }
                         // Refresh overview + monitoring for updated metrics
@@ -1020,7 +1157,41 @@
                         }
                     } finally {
                         btn.disabled = false; btn.textContent = 'Run Synthetic Activity';
+                        // Restore slower poll cadence
+                        if (monitoringInterval) { clearInterval(monitoringInterval); monitoringInterval=null; }
+                        if (statusTimer) { clearInterval(statusTimer); statusTimer=null; }
+                        if (!previousInterval) { // restart default if monitoring tab visible
+                            ensureMonitoringPoll();
+                        }
+                        // One last status refresh to clear active counter
+                        updateActiveSyntheticRequests();
                     }
+                }
+
+                // Fetch active synthetic request count and inject into monitoring panel if present
+                async function updateActiveSyntheticRequests(){
+                    try {
+                        const res = await fetch('/api/admin/synthetic/status');
+                        const data = await res.json();
+                        if (!data.success) return;
+                        const active = data.activeRequests || 0;
+                        // Find monitoring panel metric list and append/update a synthetic active row
+                        const container = document.getElementById('monitoring-data');
+                        if (container && container.innerHTML.includes('Throughput')) {
+                            const id = 'active-synth-requests-row';
+                            let el = document.getElementById(id);
+                            if (!el) {
+                                const div = document.createElement('div');
+                                div.className='stat-row';
+                                div.id = id;
+                                div.innerHTML = '<span class="stat-label">Active Synthetic Requests</span><span class="stat-value">0</span>';
+                                container.insertBefore(div, container.firstChild.nextSibling); // after first row
+                                el = div;
+                            }
+                            const valSpan = el.querySelector('.stat-value');
+                            if (valSpan) valSpan.textContent = String(active);
+                        }
+                    } catch { /* ignore */ }
                 }
 
         function displaySessions(sessions) {
@@ -1473,6 +1644,8 @@
             document.getElementById('instruction-content').value = '{\n  "description": "New instruction"\n}';
             document.getElementById('instruction-editor').classList.remove('hidden');
             document.getElementById('instruction-filename').focus();
+            instructionOriginalContent = document.getElementById('instruction-content').value;
+            updateInstructionEditorDiagnostics();
         }
 
         async function editInstruction(name) {
@@ -1486,6 +1659,8 @@
                 document.getElementById('instruction-filename').disabled = true;
                 document.getElementById('instruction-content').value = JSON.stringify(data.content, null, 2);
                 document.getElementById('instruction-editor').classList.remove('hidden');
+                instructionOriginalContent = JSON.stringify(data.content, null, 2);
+                updateInstructionEditorDiagnostics();
             } catch (e) {
                 showError('Failed to load instruction');
             }
@@ -1493,6 +1668,9 @@
 
         function cancelEditInstruction() {
             document.getElementById('instruction-editor').classList.add('hidden');
+            const diff = document.getElementById('instruction-diff-container');
+            if(diff) diff.classList.add('hidden');
+            instructionOriginalContent='';
         }
 
         async function saveInstruction() {
@@ -1506,6 +1684,101 @@
                 const data = await res.json();
                 if (data.success) { showSuccess('Instruction saved'); cancelEditInstruction(); loadInstructions(); } else { showError(data.error || 'Save failed'); }
             } catch { showError('Save failed'); }
+        }
+
+        // === Instruction Editor Enrichment ===
+        let instructionOriginalContent = '';
+
+        function formatInstructionJson(){
+            const ta = document.getElementById('instruction-content');
+            try {
+                const parsed = JSON.parse(ta.value);
+                ta.value = JSON.stringify(parsed, null, 2);
+                updateInstructionEditorDiagnostics();
+            } catch { showError('Cannot format: invalid JSON'); }
+        }
+
+        function applyInstructionTemplate(){
+            const ta = document.getElementById('instruction-content');
+            // Provide a minimal enriched template; preserve user edits if already non-empty & ask confirmation.
+            if(ta.value.trim() && !confirm('Replace current content with template?')) return;
+            const template = {
+                schemaVersion: '1.0.0',
+                title: 'Sample Instruction',
+                description: 'Describe purpose and scope.',
+                category: 'general',
+                owner: 'you@example.com',
+                tags: ['sample','template'],
+                body: 'Detailed instruction content here.',
+                governance: { version: 1 },
+                metadata: { createdBy: 'admin-ui', createdAt: new Date().toISOString() }
+            };
+            ta.value = JSON.stringify(template, null, 2);
+            updateInstructionEditorDiagnostics();
+        }
+
+        function toggleInstructionDiff(){
+            const container = document.getElementById('instruction-diff-container');
+            if(container.classList.contains('hidden')){
+                buildInstructionDiff();
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function buildInstructionDiff(){
+            const original = (instructionOriginalContent||'').split(/\r?\n/);
+            const current = document.getElementById('instruction-content').value.split(/\r?\n/);
+            // Simple line diff (LCS not required for lightweight enrichment)
+            const max = Math.max(original.length, current.length);
+            const out = [];
+            for(let i=0;i<max;i++){
+                const o = original[i];
+                const c = current[i];
+                if(o===c){
+                    if(o!==undefined) out.push('  '+o);
+                } else {
+                    if(o!==undefined) out.push('- '+o);
+                    if(c!==undefined) out.push('+ '+c);
+                }
+            }
+            document.getElementById('instruction-diff').textContent = out.join('\n');
+        }
+
+        function hashString(str){
+            // FNV-1a 32-bit for quick client hash
+            let h=0x811c9dc5;
+            for(let i=0;i<str.length;i++){
+                h ^= str.charCodeAt(i);
+                h = (h + (h<<1) + (h<<4) + (h<<7) + (h<<8) + (h<<24))>>>0; // *16777619
+            }
+            return ('0000000'+h.toString(16)).slice(-8);
+        }
+
+        function updateInstructionEditorDiagnostics(){
+            const diag = document.getElementById('instruction-diagnostics');
+            const ta = document.getElementById('instruction-content');
+            if(!diag || !ta) return;
+            const raw = ta.value;
+            const bytes = new Blob([raw]).size; // approximate size
+            let valid=false; let parsed; let errorMsg='';
+            try { parsed = JSON.parse(raw); valid=true; } catch(e){ errorMsg = (e&&e.message)||'Invalid JSON'; }
+            const hash = valid ? hashString(raw) : '--------';
+            // Basic field guidance
+            const required = ['title','description'];
+            const missing = []; if(valid){ for(const f of required){ if(!(f in parsed)) missing.push(f); } }
+            let html = `<strong>Status:</strong> ${valid?'<span style="color:#2c7;">Valid JSON</span>':'<span style="color:#e74c3c;">Invalid</span>'}`;
+            html += ` • <strong>Size:</strong> ${bytes} bytes`;
+            html += ` • <strong>Hash:</strong> ${hash}`;
+            if(valid && missing.length) html += ` • <strong>Missing fields:</strong> ${missing.join(', ')}`;
+            if(!valid) html += `<br/><code style="color:#e74c3c;">${escapeHtml(errorMsg)}</code>`;
+            if(instructionEditing && instructionOriginalContent){
+                if(raw!==instructionOriginalContent) html += ' • <em>Modified</em>'; else html += ' • <em>Unchanged</em>';
+            }
+            diag.innerHTML = html;
+            const diffVisible = !document.getElementById('instruction-diff-container').classList.contains('hidden');
+            if(diffVisible) buildInstructionDiff();
         }
 
         async function deleteInstruction(name) {

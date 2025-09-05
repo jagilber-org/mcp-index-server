@@ -7,7 +7,8 @@
 
 import { WebSocket, WebSocketServer } from 'ws';
 import { Server as HttpServer } from 'http';
-import { MetricsSnapshot } from './MetricsCollector.js';
+import { randomUUID } from 'crypto';
+import { MetricsSnapshot, getMetricsCollector } from './MetricsCollector.js';
 
 export interface DashboardMessage {
   type: string;
@@ -62,16 +63,36 @@ export interface GenericMessage extends DashboardMessage {
   data?: unknown;
 }
 
+// Streaming synthetic activity trace message (live per-call updates)
+export interface SyntheticTraceMessage extends DashboardMessage {
+  type: 'synthetic_trace';
+  data: {
+    runId: string;
+    seq: number;
+    total?: number; // iterations requested (optional)
+    method: string;
+    success: boolean;
+    durationMs: number;
+    started: number;
+    ended: number;
+    error?: string;
+    skipped?: boolean;
+  };
+}
+
 export type DashboardEventMessage = 
   | MetricsUpdateMessage
   | ToolCallMessage
   | ClientConnectMessage
   | ClientDisconnectMessage
   | ErrorMessage
-  | GenericMessage;
+  | GenericMessage
+  | SyntheticTraceMessage;
 
 interface ExtendedWebSocket extends WebSocket {
   isAlive?: boolean;
+  clientId?: string;
+  connectedAt?: number;
 }
 
 export interface WebSocketManagerOptions {
@@ -206,6 +227,29 @@ export class WebSocketManager {
     // Add to client set
     this.clients.add(ws);
 
+    // Assign client identity & timestamps
+    try {
+      ws.clientId = this.safeGenerateClientId();
+    } catch {
+      // Fallback simple id
+      ws.clientId = `client-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+    }
+    ws.connectedAt = Date.now();
+
+    // Record connection in metrics
+    try {
+      getMetricsCollector().recordConnection(ws.clientId);
+    } catch (err) {
+      console.error('[WebSocket] metrics recordConnection failed:', err);
+    }
+
+    // Broadcast connection event
+    this.broadcast({
+      type: 'client_connect',
+      timestamp: Date.now(),
+      data: { clientId: ws.clientId, timestamp: ws.connectedAt }
+    });
+
     // Setup client event handlers
     ws.on('message', (data: Buffer) => {
       try {
@@ -219,7 +263,23 @@ export class WebSocketManager {
 
     ws.on('close', (code: number, reason: Buffer) => {
       this.clients.delete(ws);
-      console.log(`[WebSocket] Client disconnected: ${code} ${reason.toString()}`);
+      const disconnectTs = Date.now();
+      const duration = ws.connectedAt ? disconnectTs - ws.connectedAt : 0;
+      console.log(`[WebSocket] Client disconnected: ${code} ${reason.toString()} id=${ws.clientId} duration=${duration}ms`);
+      if (ws.clientId) {
+        try {
+          getMetricsCollector().recordDisconnection(ws.clientId);
+        } catch (err) {
+          console.error('[WebSocket] metrics recordDisconnection failed:', err);
+        }
+        this.broadcast({
+          type: 'client_disconnect',
+          timestamp: disconnectTs,
+          data: { clientId: ws.clientId, timestamp: disconnectTs, duration }
+        });
+      }
+      // Push fresh metrics snapshot after disconnect
+      this.broadcastMetricsSnapshot();
     });
 
     ws.on('error', (error: Error) => {
@@ -244,6 +304,11 @@ export class WebSocketManager {
     });
 
     console.log(`[WebSocket] Client connected. Total clients: ${this.clients.size}`);
+
+  // Send immediate metrics snapshot to the new client
+  this.sendCurrentMetrics(ws);
+  // And broadcast updated snapshot to all clients (active connection count changed)
+  this.broadcastMetricsSnapshot();
   }
 
   private handleClientMessage(client: ExtendedWebSocket, message: { type: string; data?: unknown }): void {
@@ -269,8 +334,7 @@ export class WebSocketManager {
         }
 
         case 'get_metrics':
-          // Future: Send current metrics snapshot
-          // This will be implemented when metrics integration is added
+          this.sendCurrentMetrics(client);
           break;
 
         default:
@@ -301,6 +365,15 @@ export class WebSocketManager {
           // Client didn't respond to ping, terminate
           ws.terminate();
           this.clients.delete(ws);
+          if (ws.clientId) {
+            try { getMetricsCollector().recordDisconnection(ws.clientId); } catch (err) { console.error('[WebSocket] heartbeat disconnect metrics error:', err); }
+            this.broadcast({
+              type: 'client_disconnect',
+              timestamp: Date.now(),
+              data: { clientId: ws.clientId, timestamp: Date.now(), duration: ws.connectedAt ? Date.now() - ws.connectedAt : 0 }
+            });
+            this.broadcastMetricsSnapshot();
+          }
           return;
         }
 
@@ -315,6 +388,56 @@ export class WebSocketManager {
         }
       });
     }, this.options.pingInterval);
+  }
+
+  /** Generate a UUID using crypto.randomUUID if available */
+  private safeGenerateClientId(): string {
+    if (typeof randomUUID === 'function') return randomUUID();
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return 'client-' + Math.random().toString(36).slice(2);
+  }
+
+  /** Send current metrics snapshot to a specific client */
+  private sendCurrentMetrics(client: ExtendedWebSocket): void {
+    try {
+      const snapshot = getMetricsCollector().getCurrentSnapshot();
+      this.sendToClient(client, {
+        type: 'metrics_update',
+        timestamp: Date.now(),
+        data: snapshot,
+      });
+    } catch (err) {
+      console.error('[WebSocket] Failed to send metrics snapshot:', err);
+    }
+  }
+
+  /** Broadcast fresh metrics snapshot to all clients */
+  private broadcastMetricsSnapshot(): void {
+    try {
+      const snapshot = getMetricsCollector().getCurrentSnapshot();
+      this.broadcast({
+        type: 'metrics_update',
+        timestamp: Date.now(),
+        data: snapshot,
+      });
+    } catch (err) {
+      console.error('[WebSocket] Failed to broadcast metrics snapshot:', err);
+    }
+  }
+
+  /**
+   * Return lightweight summaries of active websocket connections with real IDs and durations.
+   * Exposed via /api/admin/connections for dashboard consumption.
+   */
+  getActiveConnectionSummaries(): { id: string; connectedAt: number; durationMs: number }[] {
+    const now = Date.now();
+    return this.getClients().map(c => ({
+      id: c.clientId || 'unknown',
+      connectedAt: c.connectedAt || now,
+      durationMs: c.connectedAt ? now - c.connectedAt : 0
+    }));
   }
 }
 

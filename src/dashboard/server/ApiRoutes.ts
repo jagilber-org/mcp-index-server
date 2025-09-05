@@ -25,6 +25,12 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
   const router = Router();
   const metricsCollector = getMetricsCollector();
 
+  // Synthetic activity runtime state (exposed for active in-flight request tracking)
+  let syntheticActiveRequests = 0; // number of in-flight synthetic tool calls
+  interface SyntheticSummary { runId: string; executed: number; errors: number; durationMs: number; iterationsRequested: number; concurrency: number; availableCount: number; missingHandlerCount: number; traceReason?: string; timestamp: number; }
+  let lastSyntheticSummary: SyntheticSummary | null = null; // persisted summary of last run for status endpoint
+  let lastSyntheticRunId: string | null = null;
+
   // Helper: derive short git commit (best-effort; never throws)
   function getGitCommit(): string | null {
     try {
@@ -103,6 +109,11 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
       const git = getGitCommit();
       const buildTime = getBuildTime();
       
+  // Prevent stale caching of build/version metadata in browsers / proxies
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
       res.json({
         status: 'online',
         version: snapshot.server.version,
@@ -883,6 +894,38 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
   });
 
   /**
+   * GET /api/admin/maintenance/backups - List available backups
+   */
+  router.get('/admin/maintenance/backups', (_req: Request, res: Response) => {
+    try {
+      const backups = adminPanel.listBackups();
+      res.json({ success: true, backups, count: backups.length, timestamp: Date.now() });
+    } catch (error) {
+      console.error('[API] List backups error:', error);
+      res.status(500).json({ success: false, error: 'Failed to list backups', message: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  /**
+   * POST /api/admin/maintenance/restore - Restore a backup
+   * body: { backupId: string }
+   */
+  router.post('/admin/maintenance/restore', (req: Request, res: Response) => {
+    try {
+      const { backupId } = req.body || {};
+      const result = adminPanel.restoreBackup(backupId);
+      if (result.success) {
+        res.json({ success: true, message: result.message, restored: result.restored, timestamp: Date.now() });
+      } else {
+        res.status(400).json({ success: false, error: result.message, timestamp: Date.now() });
+      }
+    } catch (error) {
+      console.error('[API] Restore backup error:', error);
+      res.status(500).json({ success: false, error: 'Failed to restore backup', message: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  /**
    * GET /api/admin/stats - Get comprehensive admin statistics
    */
   router.get('/admin/stats', (_req: Request, res: Response) => {
@@ -936,20 +979,34 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
       const iterations = Math.min(Math.max(parseInt(req.body.iterations || '10', 10), 1), 500);
       const concurrency = Math.min(Math.max(parseInt(req.body.concurrency || '2', 10), 1), 25);
       const start = Date.now();
+  const runId = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
+  const wantTrace = req.query.trace === '1' || req.body?.trace === true || req.query.debug === '1' || req.body?.debug === true;
+  const wantStream = wantTrace && (req.query.stream === '1' || req.body?.stream === true); // explicit opt-in for streaming
 
       // Whitelist of safe, read-only or idempotent methods + minimal params
       const PARAM_MAP: Record<string, unknown> = {
         'health/check': {},
         'metrics/snapshot': {},
         'meta/tools': {},
-        'instructions/governanceHash': {},
         'gates/evaluate': {},
-        // usage/track increments counters but is harmless; provides variety
+        // instruction CRUD via dispatch (kept minimal and id-namespaced)
+        'instructions/dispatch:add': { action: 'add', entry: { id: `synthetic-${runId}`, title: 'Synthetic Instruction', body: 'Temporary synthetic entry', audience: 'all', requirement: 'optional', priority: 'low', categories: ['synthetic'], owner: 'synthetic' }, overwrite: true, lax: true },
+        'instructions/dispatch:get': { action: 'get', id: `synthetic-${runId}` },
+        'instructions/dispatch:list': { action: 'list' },
+        'instructions/dispatch:query': { action: 'query', keyword: 'Synthetic', categoriesAll: [], requirement: undefined },
+        'instructions/dispatch:update': { action: 'add', entry: { id: `synthetic-${runId}`, title: 'Synthetic Instruction Updated', body: 'Updated body', audience: 'all', requirement: 'optional', priority: 'medium', categories: ['synthetic','updated'], owner: 'synthetic' }, overwrite: true, lax: true },
+        'instructions/dispatch:remove': { action: 'remove', id: `synthetic-${runId}` },
+        // usage tracking for variety
         'usage/track': { id: 'synthetic.activity' }
       };
 
       const allRegistered = listRegisteredMethods();
-      const available = allRegistered.filter(m => PARAM_MAP[m]);
+      // Expand synthetic dispatch action keys to actual tool name for resolution
+      const expandedParamEntries = Object.entries(PARAM_MAP).map(([k,v]) => {
+        if (k.startsWith('instructions/dispatch:')) return ['instructions/dispatch', v] as const;
+        return [k,v] as const;
+      });
+      const available = allRegistered.filter(m => expandedParamEntries.some(([name]) => name === m));
       if (!available.length) {
         return res.status(503).json({
           success: false,
@@ -963,20 +1020,49 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
         });
       }
 
-      let executed = 0;
-      let errors = 0;
+  let executed = 0;
+  let errors = 0;
+  let missingHandlerCount = 0;
+  const traces: Array<{ method: string; success: boolean; durationMs: number; started: number; ended: number; error?: string; skipped?: boolean; }> = [];
 
+      let seq = 0;
+      const wsManager = wantStream ? getWebSocketManager() : null;
       const runOne = async () => {
-        const method = available[Math.floor(Math.random() * available.length)];
+        // Pick one expanded entry (so dispatch variants get distinct params)
+        const picked = expandedParamEntries[Math.floor(Math.random() * expandedParamEntries.length)];
+        const method = picked[0];
+        if (!available.includes(method)) return; // skip if not actually registered
+        const payload = picked[1];
         const handler = getHandler(method);
+        const started = Date.now();
         try {
+          syntheticActiveRequests++;
           if (handler) {
-            await Promise.resolve(handler(PARAM_MAP[method]));
+            await Promise.resolve(handler(payload));
+            const ended = Date.now();
+            if (wantTrace && traces.length < iterations) traces.push({ method, success: true, durationMs: ended - started, started, ended });
+            if (wantStream && wsManager) {
+              try { wsManager.broadcast({ type: 'synthetic_trace', timestamp: Date.now(), data: { runId, seq: ++seq, total: iterations, method, success: true, durationMs: ended - started, started, ended } }); } catch {/* ignore */}
+            }
+          } else {
+            // Record a synthetic trace so the UI can surface why nothing appeared
+            missingHandlerCount++;
+            const ended = Date.now();
+            if (wantTrace && traces.length < iterations) traces.push({ method, success: false, durationMs: ended - started, started, ended, error: 'handler_not_registered', skipped: true });
+            if (wantStream && wsManager) {
+              try { wsManager.broadcast({ type: 'synthetic_trace', timestamp: Date.now(), data: { runId, seq: ++seq, total: iterations, method, success: false, durationMs: ended - started, started, ended, error: 'handler_not_registered', skipped: true } }); } catch {/* ignore */}
+            }
           }
-        } catch {
+        } catch (err) {
           errors++;
+          const ended = Date.now();
+          if (wantTrace && traces.length < iterations) traces.push({ method, success: false, durationMs: ended - started, started, ended, error: err instanceof Error ? err.message : String(err) });
+          if (wantStream && wsManager) {
+            try { wsManager.broadcast({ type: 'synthetic_trace', timestamp: Date.now(), data: { runId, seq: ++seq, total: iterations, method, success: false, durationMs: ended - started, started, ended, error: err instanceof Error ? err.message : String(err) } }); } catch {/* ignore */}
+          }
         }
         executed++;
+        syntheticActiveRequests--;
       };
 
       // Concurrency control
@@ -995,16 +1081,41 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
 
       const durationMs = Date.now() - start;
       const debug = req.query.debug === '1' || req.body?.debug === true;
-      res.json({
-        success: true,
-        message: 'Synthetic activity completed',
+      const traceReason = wantTrace && traces.length === 0
+        ? (available.length === 0
+            ? 'no_safe_tools_registered'
+            : missingHandlerCount === iterations
+              ? 'all_selected_handlers_missing'
+              : 'no_traces_captured')
+        : undefined;
+      lastSyntheticRunId = runId;
+      lastSyntheticSummary = {
+        runId,
         executed,
         errors,
         durationMs,
         iterationsRequested: iterations,
         concurrency,
         availableCount: available.length,
+        missingHandlerCount,
+        traceReason,
+        timestamp: Date.now()
+      };
+      syntheticActiveRequests = 0; // safety reset
+      res.json({
+        success: true,
+        message: 'Synthetic activity completed',
+        runId,
+        executed,
+        errors,
+        durationMs,
+        iterationsRequested: iterations,
+        concurrency,
+        availableCount: available.length,
+        missingHandlerCount,
+        ...(traceReason ? { traceReason } : {}),
         ...(debug ? { available } : {}),
+        ...(wantTrace ? { traces } : {}),
         timestamp: Date.now()
       });
     } catch (error) {
@@ -1014,6 +1125,49 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
         error: 'Failed to run synthetic activity',
         message: error instanceof Error ? error.message : 'Unknown error'
       });
+    }
+  });
+
+  /**
+   * GET /api/admin/synthetic/status - real-time synthetic run status (active in-flight requests)
+   */
+  router.get('/admin/synthetic/status', (_req: Request, res: Response) => {
+    res.json({
+      success: true,
+      activeRequests: syntheticActiveRequests,
+      lastRunId: lastSyntheticRunId,
+      lastSummary: lastSyntheticSummary,
+      timestamp: Date.now()
+    });
+  });
+
+  /**
+   * GET /api/performance/detailed - Extended performance metrics (UI convenience endpoint)
+   * Supplies the fields the dashboard Monitoring panel expects without the client
+   * needing to stitch multiple endpoints. P95/P99 are approximations until full
+   * latency histogram support is implemented.
+   */
+  router.get('/performance/detailed', (_req: Request, res: Response) => {
+    try {
+      const snap = metricsCollector.getCurrentSnapshot();
+      // Approximate p95 by avgResponseTime + (errorRate factor) as a placeholder; real implementation would use distribution.
+      const avg = snap.performance.avgResponseTime;
+      const p95 = avg ? Math.round(avg * 1.35) : 0;
+    res.json({
+        success: true,
+        data: {
+          requestThroughput: snap.performance.requestsPerMinute,
+          averageResponseTime: avg,
+          p95ResponseTime: p95,
+          errorRate: snap.performance.errorRate,
+          concurrentConnections: snap.connections.activeConnections,
+      successRate: snap.performance.successRate ?? (100 - snap.performance.errorRate),
+      activeSyntheticRequests: typeof syntheticActiveRequests === 'number' ? syntheticActiveRequests : 0
+        },
+        timestamp: Date.now()
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, error: 'Failed to compute performance metrics', message: err instanceof Error ? err.message : String(err) });
     }
   });
 
@@ -1096,11 +1250,25 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
   router.get('/instructions', (_req: Request, res: Response) => {
     try {
       ensureInstructionsDir();
+      const classify = (basename: string): { category: string; sizeCategory: string } => {
+        const lower = basename.toLowerCase();
+        let category = 'general';
+        if (lower.startsWith('alpha')) category = 'alpha';
+        else if (lower.startsWith('beta')) category = 'beta';
+        else if (lower.includes('seed')) category = 'seed';
+        else if (lower.includes('enterprise')) category = 'enterprise';
+        else if (lower.includes('dispatcher')) category = 'dispatcher';
+        // size buckets decided after stat
+        return { category, sizeCategory: 'small' };
+      };
       const files = fs.readdirSync(instructionsDir)
         .filter(f => f.toLowerCase().endsWith('.json'))
         .map(f => {
           const stat = fs.statSync(path.join(instructionsDir, f));
-          return { name: f.replace(/\.json$/i, ''), size: stat.size, mtime: stat.mtimeMs };
+            const base = f.replace(/\.json$/i, '');
+            const meta = classify(base);
+            const sizeCategory = stat.size < 1024 ? 'small' : (stat.size < 5 * 1024 ? 'medium' : 'large');
+            return { name: base, size: stat.size, mtime: stat.mtimeMs, category: meta.category, sizeCategory };
         });
       res.json({ success: true, instructions: files, count: files.length, timestamp: Date.now() });
     } catch (error) {

@@ -86,7 +86,8 @@ interface AdminStats {
   catalogStats: {
     totalInstructions: number;
     lastUpdated: Date;
-    version: string;
+  version: string; // build/server version at snapshot time
+  schemaVersion: string; // aggregated instruction schema version(s)
   };
 }
 
@@ -95,7 +96,7 @@ export class AdminPanel {
   private activeSessions: Map<string, AdminSession> = new Map();
   private maintenanceInfo: SystemMaintenance;
   // Cache catalog stats so lastUpdated only changes when instruction count changes
-  private catalogStatsCache: { totalInstructions: number; lastUpdated: Date; version: string } | null = null;
+  private catalogStatsCache: { totalInstructions: number; lastUpdated: Date; version: string; schemaVersion: string } | null = null;
   // Track last observed uptime (seconds) to detect regression / restarts
   private lastUptimeSeconds = 0;
   // Historical session log (most recent first)
@@ -297,27 +298,119 @@ export class AdminPanel {
   /**
    * Perform system backup
    */
-  async performBackup(): Promise<{ success: boolean; message: string; backupId?: string }> {
+  async performBackup(): Promise<{ success: boolean; message: string; backupId?: string; files?: number }> {
     try {
-      const backupId = `backup_${Date.now()}`;
-      
-      // Simulate backup process (in real implementation, this would backup instructions, config, etc.)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      this.maintenanceInfo.lastBackup = new Date();
-      
-      process.stderr.write(`[admin] System backup completed: ${backupId}\n`);
-      
-      return { 
-        success: true, 
-        message: 'System backup completed successfully',
-        backupId
+      const backupRoot = process.env.MCP_BACKUPS_DIR || path.join(process.cwd(), 'backups');
+      if (!fs.existsSync(backupRoot)) fs.mkdirSync(backupRoot, { recursive: true });
+  // Include milliseconds to allow multiple backups within the same second
+  const now = new Date();
+  const iso = now.toISOString();
+  const baseTs = iso.replace(/[-:]/g,'').replace(/\..+/, '');
+  const ms = String(now.getMilliseconds()).padStart(3,'0');
+  const backupId = `backup_${baseTs}_${ms}`; // e.g. backup_20250905T123456_123
+      const backupDir = path.join(backupRoot, backupId);
+      fs.mkdirSync(backupDir);
+
+      const instructionsDir = process.env.MCP_INSTRUCTIONS_DIR || path.join(process.cwd(), 'instructions');
+      let copied = 0;
+      if (fs.existsSync(instructionsDir)) {
+        for (const file of fs.readdirSync(instructionsDir)) {
+          if (file.toLowerCase().endsWith('.json')) {
+            const src = path.join(instructionsDir, file);
+            const dest = path.join(backupDir, file);
+            fs.copyFileSync(src, dest);
+            copied++;
+          }
+        }
+      }
+      // Write small manifest
+      const manifest = {
+        backupId,
+        createdAt: new Date().toISOString(),
+        instructionCount: copied,
+        schemaVersion: this.catalogStatsCache?.schemaVersion || 'unknown'
       };
+      fs.writeFileSync(path.join(backupDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
+
+      this.maintenanceInfo.lastBackup = new Date();
+      process.stderr.write(`[admin] System backup completed: ${backupId} (${copied} files)\n`);
+      return { success: true, message: 'System backup completed successfully', backupId, files: copied };
     } catch (error) {
       return { 
         success: false, 
         message: `Backup failed: ${error instanceof Error ? error.message : String(error)}` 
       };
+    }
+  }
+
+  listBackups(): { id: string; createdAt: string; instructionCount: number; schemaVersion?: string; sizeBytes: number }[] {
+    const backupRoot = process.env.MCP_BACKUPS_DIR || path.join(process.cwd(), 'backups');
+    if (!fs.existsSync(backupRoot)) return [];
+    const results: { id: string; createdAt: string; instructionCount: number; schemaVersion?: string; sizeBytes: number }[] = [];
+    for (const dir of fs.readdirSync(backupRoot)) {
+      const full = path.join(backupRoot, dir);
+      try {
+        if (fs.statSync(full).isDirectory()) {
+          const manifestPath = path.join(full, 'manifest.json');
+            let createdAt = new Date(fs.statSync(full).mtime).toISOString();
+            let instructionCount = 0;
+            let schemaVersion: string | undefined;
+          if (fs.existsSync(manifestPath)) {
+            try {
+              const mf = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+              createdAt = mf.createdAt || createdAt;
+              instructionCount = mf.instructionCount || 0;
+              schemaVersion = mf.schemaVersion;
+            } catch {/* ignore */}
+          } else {
+            instructionCount = fs.readdirSync(full).filter(f => f.toLowerCase().endsWith('.json')).length;
+          }
+          const sizeBytes = fs.readdirSync(full).reduce((sum, f) => {
+            try { return sum + fs.statSync(path.join(full, f)).size; } catch { return sum; }
+          }, 0);
+          results.push({ id: dir, createdAt, instructionCount, schemaVersion, sizeBytes });
+        }
+      } catch {/* ignore individual dir errors */}
+    }
+    // newest first
+    results.sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+    return results;
+  }
+
+  restoreBackup(backupId: string): { success: boolean; message: string; restored?: number } {
+    try {
+      if (!backupId) return { success: false, message: 'backupId required' };
+      const backupRoot = process.env.MCP_BACKUPS_DIR || path.join(process.cwd(), 'backups');
+      const backupDir = path.join(backupRoot, backupId);
+      if (!fs.existsSync(backupDir)) return { success: false, message: `Backup not found: ${backupId}` };
+      const instructionsDir = process.env.MCP_INSTRUCTIONS_DIR || path.join(process.cwd(), 'instructions');
+      if (!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir, { recursive: true });
+      // Pre-restore safety backup (lightweight) if there are existing files
+      const existing = fs.readdirSync(instructionsDir).filter(f => f.toLowerCase().endsWith('.json'));
+      if (existing.length) {
+        const safetyId = `pre_restore_${Date.now()}`;
+        const safetyDir = path.join(backupRoot, safetyId);
+        fs.mkdirSync(safetyDir, { recursive: true });
+        for (const f of existing) {
+          try { fs.copyFileSync(path.join(instructionsDir, f), path.join(safetyDir, f)); } catch {/* ignore */}
+        }
+        fs.writeFileSync(path.join(safetyDir, 'manifest.json'), JSON.stringify({ type: 'pre-restore', createdAt: new Date().toISOString(), source: backupId, originalCount: existing.length }, null, 2));
+        process.stderr.write(`[admin] Pre-restore safety backup created: ${safetyId}\n`);
+      }
+      // Copy backup files in (overwrite existing)
+      let restored = 0;
+      for (const f of fs.readdirSync(backupDir)) {
+        if (f.toLowerCase().endsWith('.json') && f !== 'manifest.json') {
+          fs.copyFileSync(path.join(backupDir, f), path.join(instructionsDir, f));
+          restored++;
+        }
+      }
+      // Invalidate catalog cache so schemaVersion recalculates
+      this.catalogStatsCache = null;
+      process.stderr.write(`[admin] Restored backup ${backupId} (${restored} instruction files)\n`);
+      return { success: true, message: `Backup ${backupId} restored`, restored };
+    } catch (error) {
+      return { success: false, message: `Restore failed: ${error instanceof Error ? error.message : String(error)}` };
     }
   }
 
@@ -345,10 +438,27 @@ export class AdminPanel {
     }
 
     if (!this.catalogStatsCache || this.catalogStatsCache.totalInstructions !== instructionCount) {
+      // Derive aggregated schemaVersion(s) by scanning a sample of instruction files (bounded for perf)
+      const catalogDir = process.env.MCP_INSTRUCTIONS_DIR || path.join(process.cwd(), 'instructions');
+      const schemaVersions = new Set<string>();
+      try {
+        if (fs.existsSync(catalogDir)) {
+          const files = fs.readdirSync(catalogDir).filter(f => f.toLowerCase().endsWith('.json')).slice(0, 200); // cap scan
+          for (const f of files) {
+            try {
+              const raw = fs.readFileSync(path.join(catalogDir, f), 'utf-8');
+              const json = JSON.parse(raw);
+              if (typeof json.schemaVersion === 'string') schemaVersions.add(json.schemaVersion);
+            } catch { /* ignore parse */ }
+          }
+        }
+      } catch { /* ignore */ }
+      const schemaVersion = schemaVersions.size === 0 ? 'unknown' : (schemaVersions.size === 1 ? Array.from(schemaVersions)[0] : `mixed(${Array.from(schemaVersions).join(',')})`);
       this.catalogStatsCache = {
         totalInstructions: instructionCount,
         lastUpdated: new Date(),
-        version: snapshot.server.version
+        version: snapshot.server.version,
+        schemaVersion
       };
     }
 

@@ -1,15 +1,16 @@
-# MCP Instr- - **[📋 Product Requirements (PROJECT_PRD.md)](./docs/PROJECT_PRD.md)** - Authoritative binding requirements and governance
-- **[🔧 API Reference (TOOLS.md)](./docs/TOOLS.md)** - Complete MCP protocol-compliant tool documentation  
-- **[⚙️ Configuration Guide (MCP-CONFIGURATION.md)](./docs/MCP-CONFIGURATION.md)** - Comprehensive MCP setup patterns for all environments
-- **[🔧 Server Configuration (CONFIGURATION.md)](./docs/CONFIGURATION.md)** - Environment variables and CLI options reference
-- **[📊 Dashboard Development Plan (DASHBOARD-DEVELOPMENT-PLAN.md)](./docs/DASHBOARD-DEVELOPMENT-PLAN.md)** - Multi-phase dashboard enhancement roadmap
-- **[📝 Content Guidance (CONTENT-GUIDANCE.md)](./docs/CONTENT-GUIDANCE.md)** - What to include in local vs. central instruction servers
-- **[🧠 Prompt Optimization (PROMPT-OPTIMIZATION.md)](./docs/PROMPT-OPTIMIZATION.md)** - AI prompt handling and optimization guide
-- **[🔍 Portable Test Client (PORTABLE-MCP-TEST-CLIENT.md)](./docs/PORTABLE-MCP-TEST-CLIENT.md)** - Critical testing tool for MCP troubleshooting
-- **[🏗️ Architecture (ARCHITECTURE.md)](./docs/ARCHITECTURE.md)** - System design and component overview
-- **[🔒 Security (SECURITY.md)](./SECURITY.md)** - Security policies and compliance*[🔧 Server Configuration (CONFIGURATION.md)](./docs/CONFIGURATION.md)** - Environment variables and CLI options reference
-- **[📊 Dashboard Development Plan (DASHBOARD-DEVELOPMENT-PLAN.md)](./docs/DASHBOARD-DEVELOPMENT-PLAN.md)** - Multi-phase dashboard enhancement roadmap
-- **[📝 Content Guidance (CONTENT-GUIDANCE.md)](./docs/CONTENT-GUIDANCE.md)** - What to include in local vs. central instruction serverstion Server
+# MCP Index Server
+
+**[📋 Product Requirements (PROJECT_PRD.md)](./docs/PROJECT_PRD.md)** – Authoritative binding requirements and governance
+
+* **[🔧 API Reference (TOOLS.md)](./docs/TOOLS.md)** - Complete MCP protocol-compliant tool documentation  
+* **[⚙️ Configuration Guide (MCP-CONFIGURATION.md)](./docs/MCP-CONFIGURATION.md)** - Comprehensive MCP setup patterns for all environments
+* **[🔧 Server Configuration (CONFIGURATION.md)](./docs/CONFIGURATION.md)** - Environment variables and CLI options reference
+* **[📊 Dashboard Development Plan (DASHBOARD-DEVELOPMENT-PLAN.md)](./docs/DASHBOARD-DEVELOPMENT-PLAN.md)** - Multi-phase dashboard enhancement roadmap
+* **[📝 Content Guidance (CONTENT-GUIDANCE.md)](./docs/CONTENT-GUIDANCE.md)** - What to include in local vs. central instruction servers
+* **[🧠 Prompt Optimization (PROMPT-OPTIMIZATION.md)](./docs/PROMPT-OPTIMIZATION.md)** - AI prompt handling and optimization guide
+* **[🔍 Portable Test Client (PORTABLE-MCP-TEST-CLIENT.md)](./docs/PORTABLE-MCP-TEST-CLIENT.md)** - Critical testing tool for MCP troubleshooting
+* **[🏗️ Architecture (ARCHITECTURE.md)](./docs/ARCHITECTURE.md)** - System design and component overview
+* **[🔒 Security (SECURITY.md)](./SECURITY.md)** - Security policies and compliance
 
 Enterprise-grade local Model Context Protocol server providing a governed, classified, auditable instruction catalog with analytics and optional admin dashboard.
 
@@ -17,21 +18,22 @@ Enterprise-grade local Model Context Protocol server providing a governed, class
 
 This project provides comprehensive enterprise-grade documentation:
 
-- **[📋 Product Requirements (PROJECT_PRD.md)](./docs/PROJECT_PRD.md)** - Authoritative binding requirements and governance
-- **[🔧 API Reference (TOOLS.md)](./docs/TOOLS.md)** - Complete MCP protocol-compliant tool documentation  
-- **[⚙️ Configuration Guide (MCP-CONFIGURATION.md)](./docs/MCP-CONFIGURATION.md)** - Comprehensive MCP setup patterns for all environments
-- **[� Server Configuration (CONFIGURATION.md)](./docs/CONFIGURATION.md)** - Environment variables and CLI options reference
-- **[�📝 Content Guidance (CONTENT-GUIDANCE.md)](./docs/CONTENT-GUIDANCE.md)** - What to include in local vs. central instruction servers
-- **[🧠 Prompt Optimization (PROMPT-OPTIMIZATION.md)](./docs/PROMPT-OPTIMIZATION.md)** - AI prompt handling and optimization guide
-- **[🔍 Portable Test Client (PORTABLE-MCP-TEST-CLIENT.md)](./docs/PORTABLE-MCP-TEST-CLIENT.md)** - Critical testing tool for MCP troubleshooting
-- **[🏗️ Architecture (ARCHITECTURE.md)](./docs/ARCHITECTURE.md)** - System design and component overview
-- **[🔒 Security (SECURITY.md)](./SECURITY.md)** - Security policies and compliance
-- **Instruction Usage Plan (INSTRUCTION-USAGE-PLAN.md)** - Active instrumentation & grooming enablement plan
+* **[📋 Product Requirements (PROJECT_PRD.md)](./docs/PROJECT_PRD.md)** – Authoritative binding requirements and governance
+* **[🔧 API Reference (TOOLS.md)](./docs/TOOLS.md)** – Complete MCP protocol-compliant tool documentation  
+* **[⚙️ Configuration Guide (MCP-CONFIGURATION.md)](./docs/MCP-CONFIGURATION.md)** – Comprehensive MCP setup patterns for all environments
+* **[🔧 Server Configuration (CONFIGURATION.md)](./docs/CONFIGURATION.md)** – Environment variables and CLI options reference
+* **[📝 Content Guidance (CONTENT-GUIDANCE.md)](./docs/CONTENT-GUIDANCE.md)** – What to include in local vs. central instruction servers
+* **[🧠 Prompt Optimization (PROMPT-OPTIMIZATION.md)](./docs/PROMPT-OPTIMIZATION.md)** – AI prompt handling and optimization guide
+* **[🔍 Portable Test Client (PORTABLE-MCP-TEST-CLIENT.md)](./docs/PORTABLE-MCP-TEST-CLIENT.md)** – Critical testing tool for MCP troubleshooting
+* **[🏗️ Architecture (ARCHITECTURE.md)](./docs/ARCHITECTURE.md)** – System design and component overview
+* **[🔒 Security (SECURITY.md)](./SECURITY.md)** – Security policies and compliance
+* **Instruction Usage Plan (INSTRUCTION-USAGE-PLAN.md)** – Active instrumentation & grooming enablement plan
+* **[🛡️ Runtime Diagnostics (RUNTIME-DIAGNOSTICS.md)](./docs/RUNTIME-DIAGNOSTICS.md)** – Global error, rejection, warning & signal handling
 
 ### Recently Formalized (Pending PRD 1.2.0)
 
-- **Feedback System** – 6 MCP tools (submit/list/get/update/stats/health) with audit & security logging
-- **Portable CRUD & Governance Baseline** – Minimal always-green suite (CRUD + 6 governance scenarios) guarding regression and hash determinism
+* **Feedback System** – 6 MCP tools (submit/list/get/update/stats/health) with audit & security logging
+* **Portable CRUD & Governance Baseline** – Minimal always-green suite (CRUD + 6 governance scenarios) guarding regression and hash determinism
 
 ### 🔐 Baseline Restoration & Guardrails
 
@@ -104,12 +106,12 @@ Create or update your MCP configuration:
 
 Notes:
 
-- Ensure the `dist/server/index.js` file exists (run `npm run build` first).
-- Set `MCP_INSTRUCTIONS_DIR` to the absolute path of your instructions folder (defaults to `./instructions` relative to server working directory).
-- Use forward slashes or double-escaped backslashes in JSON.
-- Remove any old workspace-level `.vscode/mcp.json` to prevent duplication.
-- The first argument after `command` is executed by Node; with `cwd` set you can use a relative path (`dist/server/index.js`). Using an absolute path AND a `cwd` is redundant, not harmful.
-- If you prefer absolute paths you may omit `cwd`.
+* Ensure the `dist/server/index.js` file exists (run `npm run build` first).
+* Set `MCP_INSTRUCTIONS_DIR` to the absolute path of your instructions folder (defaults to `./instructions` relative to server working directory).
+* Use forward slashes or double-escaped backslashes in JSON.
+* Remove any old workspace-level `.vscode/mcp.json` to prevent duplication.
+* The first argument after `command` is executed by Node; with `cwd` set you can use a relative path (`dist/server/index.js`). Using an absolute path AND a `cwd` is redundant, not harmful.
+* If you prefer absolute paths you may omit `cwd`.
 
 ### (Alternative) Workspace Configuration (Deprecated)
 
@@ -169,10 +171,10 @@ Add to a workspace `.vscode/mcp.json` (file intentionally removed from repo to a
 
 Earlier examples showed an absolute path inside `args` while also specifying a `cwd`. This works, but it is unnecessary duplication:
 
-- `cwd` sets the working directory for the launched process.
-- Node receives the script path from `args[0]`.
-- If `cwd` is set, you can safely use a relative path (`dist/server/index.js`).
-- Keeping both absolute path and `cwd` can obscure portability (moving the clone requires editing two places).
+* `cwd` sets the working directory for the launched process.
+* Node receives the script path from `args[0]`.
+* If `cwd` is set, you can safely use a relative path (`dist/server/index.js`).
+* Keeping both absolute path and `cwd` can obscure portability (moving the clone requires editing two places).
 
 Recommended patterns:
 
@@ -201,11 +203,11 @@ Both are valid; choose one for consistency.
 
 ### Critical MCP Functions
 
-- **`tools/list`**: Enumerates all tools (SDK handler)
-- **`tools/call`**: Executes tools with schema validation (SDK handler)
-- **`ping`**: Lightweight latency / reachability probe (after successful initialize)
-- **Initialize `instructions`**: Human-readable quick start guidance included in initialize result
-- **Protocol compliance**: Provide `protocolVersion`, `clientInfo`, and `capabilities` in `initialize`; expect `server/ready` notification
+* **`tools/list`**: Enumerates all tools (SDK handler)
+* **`tools/call`**: Executes tools with schema validation (SDK handler)
+* **`ping`**: Lightweight latency / reachability probe (after successful initialize)
+* **Initialize `instructions`**: Human-readable quick start guidance included in initialize result
+* **Protocol compliance**: Provide `protocolVersion`, `clientInfo`, and `capabilities` in `initialize`; expect `server/ready` notification
 
 ## Troubleshooting VS Code Connection
 
@@ -227,13 +229,13 @@ If VS Code shows "Configured but Not Connected":
 
 ## Key Features
 
-- ✅ **MCP Protocol Compliance**: Full JSON-RPC 2.0 over stdio transport
-- ✅ **Tool Discovery**: 17+ tools with JSON schemas for client validation
-- ✅ **Instruction Management**: list/get/search/diff/import/export/repair/reload
-- ✅ **Usage Analytics**: track/hotset/flush with persistent storage
-- ✅ **Governance**: integrity/verify, gates/evaluate, prompt/review
-- ✅ **Security**: Input validation, mutation gating, audit logging
-- ✅ **Performance**: Optimized for <50ms response times
+* ✅ **MCP Protocol Compliance**: Full JSON-RPC 2.0 over stdio transport
+* ✅ **Tool Discovery**: 17+ tools with JSON schemas for client validation
+* ✅ **Instruction Management**: list/get/search/diff/import/export/repair/reload
+* ✅ **Usage Analytics**: track/hotset/flush with persistent storage
+* ✅ **Governance**: integrity/verify, gates/evaluate, prompt/review
+* ✅ **Security**: Input validation, mutation gating, audit logging
+* ✅ **Performance**: Optimized for <50ms response times
 
 ### Available Tools
 
@@ -245,17 +247,17 @@ Alpha semantics (current): The server now preserves any governance fields you ex
 
 Supporting automation:
 
-- Lint: `npm run lint:instructions`
-- Governance CI workflow: `.github/workflows/instruction-governance.yml`
-- Daily snapshot archival: `.github/workflows/instruction-snapshot.yml` (outputs `snapshots/catalog-*.json` + checksum)
+* Lint: `npm run lint:instructions`
+* Governance CI workflow: `.github/workflows/instruction-governance.yml`
+* Daily snapshot archival: `.github/workflows/instruction-snapshot.yml` (outputs `snapshots/catalog-*.json` + checksum)
 
 Primary tool groups:
 
-- **Instructions**: `list`, `get`, `search`, `export`, `diff`, `import`, `add`, `repair`, `reload`, `remove`, `enrich`
-- **Governance Patch**: `governanceUpdate` (controlled mutation of owner, status, review timestamps + optional version bump)
-- **Usage Tracking**: `track`, `hotset`, `flush`
-- **Governance Analysis**: `integrity/verify`, `gates/evaluate`, `prompt/review`, `governanceHash`
-- **System**: `health/check`, `metrics/snapshot`, `meta/tools`
+* **Instructions**: `list`, `get`, `search`, `export`, `diff`, `import`, `add`, `repair`, `reload`, `remove`, `enrich`
+* **Governance Patch**: `governanceUpdate` (controlled mutation of owner, status, review timestamps + optional version bump)
+* **Usage Tracking**: `track`, `hotset`, `flush`
+* **Governance Analysis**: `integrity/verify`, `gates/evaluate`, `prompt/review`, `governanceHash`
+* **System**: `health/check`, `metrics/snapshot`, `meta/tools`
 
 ### Simplified Authoring Schema (Tier 1)
 
@@ -341,28 +343,28 @@ Steps:
 
 Notes:
 
-- The deploy script skips copying transient or fuzz / concurrent temp instruction files.
-- Re-run the deploy with `-Overwrite` to refresh dist/runtime files (instructions never deleted).
-- Automatic backup: `backups/instructions-YYYYMMDD-HHMMSS/` (retention default 10; configure with `-BackupRetention N` or disable via `-NoBackup`).
-- Restore latest backup:
+* The deploy script skips copying transient or fuzz / concurrent temp instruction files.
+* Re-run the deploy with `-Overwrite` to refresh dist/runtime files (instructions never deleted).
+* Automatic backup: `backups/instructions-YYYYMMDD-HHMMSS/` (retention default 10; configure with `-BackupRetention N` or disable via `-NoBackup`).
+* Restore latest backup:
 
   ```powershell
   pwsh scripts/restore-instructions.ps1 -Destination C:\mcp\mcp-index-server
   ```
   
-- Restore specific backup (overwriting existing):
+* Restore specific backup (overwriting existing):
 
   ```powershell
   pwsh scripts/restore-instructions.ps1 -Destination C:\mcp\mcp-index-server -BackupName instructions-20250828-153011 -Force
   ```
   
-- Fast code-only sync (no rebuild/tests, assumes local dist is current):
+* Fast code-only sync (no rebuild/tests, assumes local dist is current):
 
   ```powershell
   pwsh scripts/sync-dist.ps1 -Destination C:\mcp\mcp-index-server -UpdatePackage
   ```
   
-- Governance & usage data live inside the instruction JSON files; keeping backups provides full recoverability.
+* Governance & usage data live inside the instruction JSON files; keeping backups provides full recoverability.
 
 Optional: Create a scheduled task or Windows Service wrapper invoking `pwsh -File C:\mcp\mcp-index-server\start.ps1 -EnableMutation` for auto-start.
 
@@ -447,14 +449,14 @@ Unified failure response:
 
 Failure reasons (non-exhaustive):
 
-- `missing entry`
-- `missing id`
-- `missing required fields`
-- `P1 requires category & owner`
-- `mandatory/critical require owner`
-- `write-failed`
-- `atomic_readback_failed`
-- `readback_invalid_shape`
+* `missing entry`
+* `missing id`
+* `missing required fields`
+* `P1 requires category & owner`
+* `mandatory/critical require owner`
+* `write-failed`
+* `atomic_readback_failed`
+* `readback_invalid_shape`
 
 Client guidance:
 
@@ -465,9 +467,9 @@ Client guidance:
 
 Common troubleshooting:
 
-- **"missing entry" error**: Ensure parameters are `{ "entry": { ... instruction ... } }`, not the instruction object directly
-- **Backup restoration**: Extract individual instruction objects from backup files before calling add
-- **Bulk import**: Use `instructions/import` for multiple entries, not repeated `instructions/add` calls
+* **"missing entry" error**: Ensure parameters are `{ "entry": { ... instruction ... } }`, not the instruction object directly
+* **Backup restoration**: Extract individual instruction objects from backup files before calling add
+* **Bulk import**: Use `instructions/import` for multiple entries, not repeated `instructions/add` calls
 
 ##### Schema-Aided Failure Guidance (1.1.0+)
 
@@ -509,9 +511,10 @@ Client remediation strategy:
 4. Continue to call `tools/list` for canonical schemas; the inline schema is a convenience, not a replacement for standard discovery.
 
 Notes:
-- Inline schema only appears for early shape gaps; governance / semantic failures (e.g. `mandatory/critical require owner`) do not echo the full schema.
-- Fields may gain additive properties; treat unknown properties as forward-compatible.
-- `schemaRef` is stable; you can key a local schema cache with it.
+
+* Inline schema only appears for early shape gaps; governance / semantic failures (e.g. `mandatory/critical require owner`) do not echo the full schema.
+* Fields may gain additive properties; treat unknown properties as forward-compatible.
+* `schemaRef` is stable; you can key a local schema cache with it.
 
 Backward compatibility: The additional fields (`verified`, `feedbackHint`, `reproEntry`) are additive; existing clients ignoring unknown keys continue working.
 
@@ -519,9 +522,9 @@ Process lifecycle: See `docs/FEEDBACK-DEFECT-LIFECYCLE.md` for the end-to-end fe
 
 ## Security & Mutation Control
 
-- **MCP_ENABLE_MUTATION=1**: Enables write operations (import, repair, reload, flush)
-- **MCP_LOG_VERBOSE=1**: Detailed logging for debugging
-- **Input validation**: AJV-based schema validation with fail-open fallback
+* **MCP_ENABLE_MUTATION=1**: Enables write operations (import, repair, reload, flush)
+* **MCP_LOG_VERBOSE=1**: Detailed logging for debugging
+* **Input validation**: AJV-based schema validation with fail-open fallback
 
 ### Ownership Auto-Assignment
 
@@ -562,8 +565,8 @@ Rationale: a single execution pathway (tools/call) eliminates duplicate validati
 
 `node scripts/validate-governance.mjs` ensures all instruction JSON files include required governance + semantic fields. Added to bootstrap guard workflow.
 
-- **Gated mutations**: Write operations require explicit environment flag
-- **Process isolation**: MCP clients communicate via stdio only (no network access)
+* **Gated mutations**: Write operations require explicit environment flag
+* **Process isolation**: MCP clients communicate via stdio only (no network access)
 
 ### Environment Flags
 
@@ -584,23 +587,23 @@ Rationale: a single execution pathway (tools/call) eliminates duplicate validati
 
 Operational guidance:
 
-- Keep all diagnostic flags OFF for production unless actively debugging an issue.
-- Dashboard environment variables are overridden by command line arguments.
-- For security, dashboard should only be enabled on localhost (127.0.0.1) for local administration.
-- Enable `MCP_STRESS_DIAG=1` locally or in a dedicated CI job (e.g., nightly) to exercise adversarial workloads without destabilizing standard PR validations.
-- Never enable `MCP_INIT_FALLBACK_ALLOW` in production; it is purely for reproducing initialize starvation scenarios and is guarded by compliance tests.
+* Keep all diagnostic flags OFF for production unless actively debugging an issue.
+* Dashboard environment variables are overridden by command line arguments.
+* For security, dashboard should only be enabled on localhost (127.0.0.1) for local administration.
+* Enable `MCP_STRESS_DIAG=1` locally or in a dedicated CI job (e.g., nightly) to exercise adversarial workloads without destabilizing standard PR validations.
+* Never enable `MCP_INIT_FALLBACK_ALLOW` in production; it is purely for reproducing initialize starvation scenarios and is guarded by compliance tests.
 
 ### Stress / Adversarial Test Suite
 
 The following spec files (and selective cases inside some files) are gated behind `MCP_STRESS_DIAG=1` to keep the default test run deterministic and fast:
 
-- `handshakeFlakeRepro.spec.ts`
-- `healthMixedReproLoop.spec.ts`
-- `healthHangExploration.spec.ts` (mixed workload + escalated scenarios only)
-- `healthMultiProcessStress.spec.ts`
-- `dispatcherStress.spec.ts`
-- `dispatcherFlakeStress.spec.ts`
-- `concurrencyFuzz.spec.ts`
+* `handshakeFlakeRepro.spec.ts`
+* `healthMixedReproLoop.spec.ts`
+* `healthHangExploration.spec.ts` (mixed workload + escalated scenarios only)
+* `healthMultiProcessStress.spec.ts`
+* `dispatcherStress.spec.ts`
+* `dispatcherFlakeStress.spec.ts`
+* `concurrencyFuzz.spec.ts`
 
 Run only the core deterministic suite (default):
 
@@ -645,13 +648,13 @@ Diagnostic flags affecting handshake (`MCP_INIT_FALLBACK_ALLOW`, `MCP_DISABLE_IN
 
 Comprehensive green test suite (no skipped tests) covering:
 
-- MCP protocol compliance & transport (initialize, tools/list, tools/call, ping, server/ready notification)
-- Dispatcher actions (list, listScoped, get, search, diff, export, query, batch, capabilities, governanceHash, grooming, enrichment, governanceUpdate)
-- Input validation & error paths (unknown action/method, malformed JSON-RPC envelope)
-- Governance hashing, integrity verification, and persistence/restart continuity
-- Usage tracking/rate limiting, feature gating, metrics snapshot
-- Enrichment / grooming behaviors & property-based idempotence (seeded for determinism)
-- Security hardening (prompt size limits, null byte sanitation) & prompt review criteria
+* MCP protocol compliance & transport (initialize, tools/list, tools/call, ping, server/ready notification)
+* Dispatcher actions (list, listScoped, get, search, diff, export, query, batch, capabilities, governanceHash, grooming, enrichment, governanceUpdate)
+* Input validation & error paths (unknown action/method, malformed JSON-RPC envelope)
+* Governance hashing, integrity verification, and persistence/restart continuity
+* Usage tracking/rate limiting, feature gating, metrics snapshot
+* Enrichment / grooming behaviors & property-based idempotence (seeded for determinism)
+* Security hardening (prompt size limits, null byte sanitation) & prompt review criteria
 
 Run tests: `npm test` (updated for 1.0.0 – legacy alias & direct method tests removed)
 
@@ -659,33 +662,33 @@ Contract-only schema verification: `npm run test:contracts` (3 focused contract 
 
 ## Architecture
 
-- **MCP Transport**: JSON-RPC 2.0 over stdio (client communication)
-- **HTTP Dashboard**: Optional localhost web interface (admin monitoring)
-- **Validation**: AJV-based input schema validation with fail-open fallback
-- **Registry**: Centralized tool metadata with input/output schemas for client validation
-- **Persistence**: File-based instruction storage with usage analytics
-- **Gating**: Environment-controlled mutation access with audit logging
+* **MCP Transport**: JSON-RPC 2.0 over stdio (client communication)
+* **HTTP Dashboard**: Optional localhost web interface (admin monitoring)
+* **Validation**: AJV-based input schema validation with fail-open fallback
+* **Registry**: Centralized tool metadata with input/output schemas for client validation
+* **Persistence**: File-based instruction storage with usage analytics
+* **Gating**: Environment-controlled mutation access with audit logging
 
 ## Status
 
 ✅ **Phase 1 Complete**: Full MCP protocol implementation with VS Code integration support
 
-- Core JSON-RPC 2.0 transport over stdio
-- Standard MCP protocol handlers (`initialize`, `tools/list`, `tools/call`)
-- Tool registry with input/output schemas for client validation
-- **Feedback/Emit System**: Enterprise-grade client communication system (6 tools)
-- Comprehensive test suite (181+ tests, 93+ test files)
-- Optional admin dashboard with read-only interface
+* Core JSON-RPC 2.0 transport over stdio
+* Standard MCP protocol handlers (`initialize`, `tools/list`, `tools/call`)
+* Tool registry with input/output schemas for client validation
+* **Feedback/Emit System**: Enterprise-grade client communication system (6 tools)
+* Comprehensive test suite (181+ tests, 93+ test files)
+* Optional admin dashboard with read-only interface
 
 ### 📢 **Feedback System Features**
 
 The server includes a comprehensive feedback/emit system for client-server communication:
 
-- **6 MCP Tools**: `feedback/submit`, `feedback/list`, `feedback/get`, `feedback/update`, `feedback/stats`, `feedback/health`
-- **Rich Feedback Types**: Issues, bug reports, feature requests, security reports, performance feedback
-- **Status Workflow**: new → acknowledged → in-progress → resolved → closed
-- **Enterprise Features**: Audit logging, persistence, filtering, pagination (up to 200 entries)
-- **Security**: Critical/security items logged separately with alerts
+* **6 MCP Tools**: `feedback/submit`, `feedback/list`, `feedback/get`, `feedback/update`, `feedback/stats`, `feedback/health`
+* **Rich Feedback Types**: Issues, bug reports, feature requests, security reports, performance feedback
+* **Status Workflow**: new → acknowledged → in-progress → resolved → closed
+* **Enterprise Features**: Audit logging, persistence, filtering, pagination (up to 200 entries)
+* **Security**: Critical/security items logged separately with alerts
 
 Hooks: Pre-commit runs typecheck, lint, tests, and security scan. Manual scan: `npm run scan:security`.
 

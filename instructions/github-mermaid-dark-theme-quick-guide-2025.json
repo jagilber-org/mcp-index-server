@@ -1,7 +1,7 @@
 {
   "id": "github-mermaid-dark-theme-quick-guide-2025",
   "title": "GitHub Mermaid Dark Theme Quick Guide",
-  "body": "Minimal body for persistence divergence reproduction. Focus on ID visibility only.",
+  "body": "Minimal body for persistence verification (GREEN).",
   "priority": 50,
   "audience": "all",
   "requirement": "optional",
@@ -11,23 +11,23 @@
     "markdown",
     "visualization"
   ],
-  "sourceHash": "8d265bdb1888ac9933fa8db2502d3673299e1e21f2b94b5ca479985d2852b591",
+  "sourceHash": "8c90feab00cfe822d308ae2172d02c966411b70e548add36c9525ef99fcd43d4",
   "schemaVersion": "2",
-  "createdAt": "2025-09-05T12:20:08.462Z",
-  "updatedAt": "2025-09-05T12:22:53.078Z",
+  "createdAt": "2025-09-05T21:15:40.997Z",
+  "updatedAt": "2025-09-05T21:20:00.897Z",
   "riskScore": 55,
   "version": "1.0.0",
   "status": "approved",
   "owner": "unowned",
   "priorityTier": "P4",
   "classification": "internal",
-  "lastReviewedAt": "2025-09-05T12:20:08.462Z",
-  "nextReviewDue": "2026-01-03T12:20:08.462Z",
+  "lastReviewedAt": "2025-09-05T21:15:40.998Z",
+  "nextReviewDue": "2026-01-03T21:15:40.998Z",
   "reviewIntervalDays": 120,
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-09-05T12:20:08.462Z",
+      "changedAt": "2025-09-05T21:15:40.997Z",
       "summary": "initial import"
     }
   ],

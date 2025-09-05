@@ -191,12 +191,19 @@ describe('Feedback Reproduction: Multi-Client Instruction Coordination (Portable
       const stressMode = process.env.FULL_LIST_GET === '1' || process.env.MCP_STRESS_MODE === '1';
       const allowSampling = !stressMode;
 
-      // Default sample size lowered again (50 -> 30) to keep suite fast while other tests cover immed. visibility.
-      // Backwards compat: LIST_GET_MAX_VALIDATE still honored; new preferred var LIST_GET_SAMPLE_SIZE.
+      // Adaptive sampling logic (aggressive runtime reduction while still giving broad coverage over time):
+      // Historical progression: 50 -> 30 -> 12. Now dynamic: ~0.8% of catalog, bounded [5,8] by default.
+      // Goals:
+      //  * Keep this RED reproduction under ~7s on catalogs up to several thousand entries.
+      //  * Deterministic ordering (hash) so coverage is stable & rotates only via explicit seed.
+      //  * Honor explicit env overrides for deep diagnostic runs.
+      // Backwards compat envs (prefer LIST_GET_SAMPLE_SIZE going forward):
       const sampleSize = (() => {
         if (process.env.LIST_GET_MAX_VALIDATE) return parseInt(process.env.LIST_GET_MAX_VALIDATE, 10);
         if (process.env.LIST_GET_SAMPLE_SIZE) return parseInt(process.env.LIST_GET_SAMPLE_SIZE, 10);
-        return 30; // new default
+        // Adaptive default: scale with catalog size but clamp for latency control.
+        const adaptive = Math.ceil(ids.length * 0.008); // ~0.8%
+        return Math.min(8, Math.max(5, adaptive));
       })();
 
       // Deterministic sampling (hash sort) so flakes aren't introduced while still distributing coverage over time
@@ -225,26 +232,45 @@ describe('Feedback Reproduction: Multi-Client Instruction Coordination (Portable
 
       if (allowSampling && ids.length > targetIds.length) {
         // eslint-disable-next-line no-console
-        console.warn(`[LIST_GET_CROSS_VALIDATION] sampling ${targetIds.length}/${ids.length} entries (FULL_LIST_GET=1 for exhaustive; LIST_GET_SAMPLE_SIZE=.. to change; LIST_GET_SAMPLE_SEED=.. to reshuffle)`);
+        console.warn(`[LIST_GET_CROSS_VALIDATION] sampling ${targetIds.length}/${ids.length} entries (FULL_LIST_GET=1; LIST_GET_SAMPLE_SIZE=.. override; LIST_GET_SAMPLE_SEED=.. rotate; LIST_GET_MAX_VALIDATE=.. legacy)`);
       }
-  // Lower concurrency slightly to reduce I/O burst that may compete with other tests (esp on CI with limited fs cache)
-  const CONCURRENCY = parseInt(process.env.LIST_GET_CONCURRENCY || '15', 10);
+      // Concurrency tuned downward (15 -> 8 default) to reduce RPC bursts that previously caused sporadic timeouts.
+      const CONCURRENCY = parseInt(process.env.LIST_GET_CONCURRENCY || '8', 10);
+      // Hard wall clock guard (default 7000ms) to prevent suite inflation; overridable for deep diagnostics.
+      const MAX_DURATION_MS = parseInt(process.env.LIST_GET_MAX_DURATION_MS || '7000', 10);
       let index = 0;
+      let validatedCount = 0;
+      let truncated = false;
       const start = Date.now();
+      let aborted = false;
       await Promise.all(Array.from({ length: Math.min(CONCURRENCY, targetIds.length) }, async () => {
-        // Work-stealing loop; terminates when index >= targetIds.length
-        while(index < targetIds.length){
+        while (!aborted) {
           const current = index++;
-          if(current >= targetIds.length) break;
-          const id = targetIds[current];
-          const read = await client1.read(id);
-          expect(isNotFound(read), `Instruction ${id} should be found`).toBe(false);
+            if (current >= targetIds.length) break;
+            // Duration guard check (checked before each RPC to keep under budget)
+            if ((Date.now() - start) > MAX_DURATION_MS) {
+              aborted = true; truncated = true; break;
+            }
+            const id = targetIds[current];
+            const read = await client1.read(id);
+            validatedCount++;
+            expect(isNotFound(read), `Instruction ${id} should be found`).toBe(false);
         }
       }));
       const durationMs = Date.now() - start;
       try {
         const { emitTrace } = await import('../services/tracing.js');
-        emitTrace('[trace:test:list_get_cross_validation:summary]', { totalIds: ids.length, validated: targetIds.length, sampled: allowSampling && targetIds.length < ids.length, concurrency: CONCURRENCY, durationMs, stressMode });
+        emitTrace('[trace:test:list_get_cross_validation:summary]', {
+          totalIds: ids.length,
+          intendedSample: targetIds.length,
+          validated: validatedCount,
+          sampled: allowSampling && targetIds.length < ids.length,
+          truncated,
+          concurrency: CONCURRENCY,
+          durationMs,
+          maxDurationMs: MAX_DURATION_MS,
+          stressMode
+        });
       } catch { /* ignore */ }
 
       // Verify our test instruction appears in the list

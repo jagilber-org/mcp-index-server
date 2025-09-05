@@ -205,6 +205,9 @@ export class MetricsCollector {
   // Phase 4: Advanced features
   private recentAlerts: Alert[] = [];
   private activeConnections = 0;
+  // Rolling timestamp buffer for recent tool calls (used for stable RPM calculation)
+  private recentCallTimestamps: number[] = [];
+  private static readonly MAX_RECENT_CALLS = 10000; // cap to avoid unbounded growth
 
   constructor(options: MetricsCollectorOptions = {}) {
     this.options = {
@@ -242,6 +245,22 @@ export class MetricsCollector {
       metrics.errorCount++;
       if (errorType) {
         metrics.errorTypes[errorType] = (metrics.errorTypes[errorType] || 0) + 1;
+      }
+    }
+
+    // Track call timestamp for rolling RPM calculation (last 60s window)
+    const now = Date.now();
+    this.recentCallTimestamps.push(now);
+    // Prune anything older than 5 minutes to constrain memory
+    const cutoff = now - 5 * 60 * 1000;
+    if (this.recentCallTimestamps.length > MetricsCollector.MAX_RECENT_CALLS || (this.recentCallTimestamps.length % 100) === 0) {
+      // Periodically prune (on every 100th push or when over cap)
+      let firstValidIdx = 0;
+      while (firstValidIdx < this.recentCallTimestamps.length && this.recentCallTimestamps[firstValidIdx] < cutoff) firstValidIdx++;
+      if (firstValidIdx > 0) this.recentCallTimestamps.splice(0, firstValidIdx);
+      // Hard cap safeguard
+      if (this.recentCallTimestamps.length > MetricsCollector.MAX_RECENT_CALLS) {
+        this.recentCallTimestamps.splice(0, this.recentCallTimestamps.length - MetricsCollector.MAX_RECENT_CALLS);
       }
     }
   }
@@ -283,7 +302,15 @@ export class MetricsCollector {
     const totalErrors = Array.from(this.tools.values()).reduce((sum, tool) => sum + tool.errorCount, 0);
     const totalResponseTime = Array.from(this.tools.values()).reduce((sum, tool) => sum + tool.totalResponseTime, 0);
 
-    const requestsPerMinute = totalCalls > 0 ? (totalCalls / (uptime / 60000)) : 0;
+    // Stable rolling Requests Per Minute based on last 60s calls (not lifetime average)
+    const oneMinuteCutoff = now - 60 * 1000;
+    let recentCount = 0;
+    // Iterate from end backwards until we exit window (timestamps are append-only & ascending)
+    for (let i = this.recentCallTimestamps.length - 1; i >= 0; i--) {
+      const ts = this.recentCallTimestamps[i];
+      if (ts >= oneMinuteCutoff) recentCount++; else break;
+    }
+    const requestsPerMinute = recentCount;
     const successRate = totalCalls > 0 ? (totalSuccesses / totalCalls) * 100 : 100;
     const avgResponseTime = totalCalls > 0 ? (totalResponseTime / totalCalls) : 0;
     const errorRate = totalCalls > 0 ? (totalErrors / totalCalls) * 100 : 0;
@@ -361,6 +388,7 @@ export class MetricsCollector {
     this.totalSessionTime = 0;
     this.sessionStartTimes.clear();
     this.startTime = Date.now();
+  this.recentCallTimestamps.length = 0;
   }
 
   /**
@@ -462,14 +490,8 @@ export class MetricsCollector {
    */
   getRealtimeMetrics(): RealtimeMetrics {
     const latest = this.getCurrentSnapshot();
-    const lastMinuteSnapshots = this.snapshots.filter(s => 
-      s.timestamp >= Date.now() - 60000
-    );
-
-    // Calculate current RPM from recent snapshots
-    const currentRpm = lastMinuteSnapshots.length > 1 
-      ? this.calculateRPMFromSnapshots(lastMinuteSnapshots)
-      : latest.performance.requestsPerMinute;
+  // Use rolling buffer based RPM directly
+  const currentRpm = latest.performance.requestsPerMinute;
 
     // Get top 5 most used tools
     const topTools = Array.from(this.tools.entries())

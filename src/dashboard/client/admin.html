@@ -2084,38 +2084,38 @@
         }
 
         async function loadInstructions() {
-                const listEl = document.getElementById('instructions-list');
-                listEl.innerHTML = 'Loading...';
-                try {
-                    // Load categories first to populate the dropdown (ignore errors; we'll derive later if needed)
-                    const catNames = await loadInstructionCategories();
-                    const res = await fetch('/api/instructions');
-                    if(!res.ok) throw new Error('http '+res.status);
-                    const data = await res.json();
-                    if (!data.success && !data.data) throw new Error();
-                    // Accept shapes: {instructions:[...]}, {data:{instructions:[...]}}
-                    const rawList = data.instructions || data.data?.instructions || [];
-                    allInstructions = Array.isArray(rawList) ? rawList : [];
-                    // If categories endpoint failed / returned empty, derive from instruction list
-                    if(!catNames.length) {
-                        try {
-                            const select = document.getElementById('instruction-category-filter');
-                            if(select){
-                                const derived = Array.from(new Set(allInstructions.map(i=>i.category).filter(Boolean))).sort();
-                                derived.forEach(n=>{
-                                    const opt = document.createElement('option');
-                                    opt.value = n; opt.textContent = n; select.appendChild(opt);
-                                });
-                            }
-                        } catch(_) { /* ignore */ }
-                    }
-                    instructionPage = 1; // reset page whenever we reload
-                    renderInstructionList(allInstructions);
-                } catch (e) {
-                    console.warn('loadInstructions error', e);
-                    listEl.innerHTML = '<div class="error">Failed to load instructions</div>';
+            const listEl = document.getElementById('instructions-list');
+            listEl.innerHTML = 'Loading...';
+            try {
+                // Load categories first to populate the dropdown (ignore errors; we'll derive later if needed)
+                const catNames = await loadInstructionCategories();
+                const res = await fetch('/api/instructions');
+                if(!res.ok) throw new Error('http '+res.status);
+                const data = await res.json();
+                // Accept shapes: {success:true,instructions:[...]}, {data:{instructions:[...]}}, or legacy {instructions:[...]}
+                if (!('success' in data) && !('data' in data) && !('instructions' in data)) throw new Error('unrecognized instructions payload');
+                const rawList = data.instructions || data.data?.instructions || [];
+                allInstructions = Array.isArray(rawList) ? rawList : [];
+                // If categories endpoint failed / returned empty, derive from instruction list
+                if(!catNames.length) {
+                    try {
+                        const select = document.getElementById('instruction-category-filter');
+                        if(select){
+                            const derived = Array.from(new Set(allInstructions.map(i=>i.category).filter(Boolean))).sort();
+                            derived.forEach(n=>{
+                                const opt = document.createElement('option');
+                                opt.value = n; opt.textContent = n; select.appendChild(opt);
+                            });
+                        }
+                    } catch(_) { /* ignore */ }
                 }
+                instructionPage = 1; // reset page whenever we reload
+                renderInstructionList(allInstructions);
+            } catch (e) {
+                console.warn('loadInstructions error', e);
+                listEl.innerHTML = '<div class="error">Failed to load instructions</div>';
             }
+        }
         
             // Re-introduced after patch: formatInstructionJson utility (was accidentally truncated)
             function formatInstructionJson(){

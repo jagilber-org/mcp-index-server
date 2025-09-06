@@ -374,7 +374,7 @@
             <div class="admin-nav">
                 <button class="nav-btn active" onclick="showSection('overview')">📊 Overview</button>
                 <button class="nav-btn" onclick="showSection('config')">⚙️ Configuration</button>
-                <button id="nav-sessions-btn" class="nav-btn" onclick="showSection('sessions')">👥 Sessions</button>
+                <button id="nav-sessions" class="nav-btn" onclick="showSection('sessions')">👥 Sessions</button>
                 <button class="nav-btn" onclick="showSection('maintenance')">🔧 Maintenance</button>
                 <button class="nav-btn" onclick="showSection('monitoring')">📈 Monitoring</button>
                 <button class="nav-btn" onclick="showSection('instructions')">📚 Instructions</button>
@@ -557,46 +557,12 @@
                                                     <th style="text-align:left; padding:4px; border-bottom:1px solid #ddd;">#</th>
                                                     <th style="text-align:left; padding:4px; border-bottom:1px solid #ddd;">Tool</th>
                                                     <th style="text-align:left; padding:4px; border-bottom:1px solid #ddd;">Success</th>
-                                                    let categories = json?.data?.categories || [];
-                                                    if(!Array.isArray(categories)) {
-                                                        console.warn('[categories] unexpected payload shape', json);
-                                                        categories = [];
-                                                    }
+                                                    <th style="text-align:left; padding:4px; border-bottom:1px solid #ddd;">Duration</th>
                                                     <th style="text-align:left; padding:4px; border-bottom:1px solid #ddd;">Error</th>
                                                 </tr>
                                             </thead>
-                                                    if(categories.length === 0) {
-                                                        // fallback: derive categories from current instructions list if loaded
-                                                        try {
-                                                            const listRes = await fetch('/api/instructions');
-                                                            if(listRes.ok) {
-                                                                const listJson = await listRes.json();
-                                                                const entries = listJson?.data?.instructions || [];
-                                                                const derived = Array.from(new Set(entries.map(i=>i.category).filter(Boolean))).sort();
-                                                                categories = derived;
-                                                            }
-                                                        } catch(_e) { /* ignore */ }
-                                                    }
-                                                    if(categories.length === 0) {
-                                                        console.warn('[categories] empty after fallback');
-                                                    }
-                                                    categories.forEach(cat => {
-                                                        const opt = document.createElement('option');
-                                                        opt.value = cat;
-                                                        opt.textContent = cat;
-                                                        opt.setAttribute('data-dynamic','1');
-                                                        select.appendChild(opt);
-                                                    });
                                             <tbody id="synthetic-traces-body"></tbody>
-                                                    console.warn('Failed to load categories', e);
-                                                    const select = document.getElementById('instruction-category-filter');
-                                                    if(select && !select.querySelector('option[data-error]')) {
-                                                        const opt = document.createElement('option');
-                                                        opt.value = '';
-                                                        opt.textContent = '[categories load failed]';
-                                                        opt.setAttribute('data-error','1');
-                                                        select.appendChild(opt);
-                                                    }
+                                        </table>
                                     </div>
                                 </div>
             </div>
@@ -2017,25 +1983,29 @@
         async function loadInstructionCategories() {
             try {
                 const res = await fetch('/api/instructions/categories');
+                if(!res.ok) throw new Error('http '+res.status);
                 const data = await res.json();
-                if (data.success && data.categories) {
-                    const select = document.getElementById('instruction-category-filter');
-                    if (select) {
-                        // Clear existing options except "All Categories"
-                        select.innerHTML = '<option value="">All Categories</option>';
-                        
-                        // Add dynamic categories
-                        data.categories.forEach(cat => {
-                            const option = document.createElement('option');
-                            option.value = cat.name;
-                            option.textContent = `${cat.name} (${cat.count})`;
-                            select.appendChild(option);
-                        });
-                    }
+                // Accept shapes: {success:true,categories:[{name,count}]}, {success:true,data:{categories:[...]}}
+                let cats = data.categories || data.data?.categories || [];
+                if(Array.isArray(cats) && cats.length && typeof cats[0] === 'string') {
+                    cats = cats.map(n=>({ name:n, count: undefined }));
                 }
+                if(!Array.isArray(cats)) cats = [];
+                const select = document.getElementById('instruction-category-filter');
+                if(select){
+                    select.innerHTML = '<option value="">All Categories</option>';
+                    cats.forEach(cat => {
+                        if(!cat || !cat.name) return;
+                        const option = document.createElement('option');
+                        option.value = cat.name;
+                        option.textContent = cat.count != null ? `${cat.name} (${cat.count})` : cat.name;
+                        select.appendChild(option);
+                    });
+                }
+                return cats.map(c=>c.name);
             } catch (e) {
                 console.warn('Failed to load instruction categories:', e);
-                // Fall back to empty categories list if API fails
+                return [];
             }
         }
 
@@ -2113,30 +2083,50 @@
             instructionOriginalContent='';
         }
 
-        async function saveInstruction() {
-            const name = document.getElementById('instruction-filename').value.trim();
-            if (!name) { showError('File name required'); return; }
-            let content; 
-            try { content = JSON.parse(document.getElementById('instruction-content').value); } catch { showError('Invalid JSON'); return; }
-            const method = instructionEditing ? 'PUT' : 'POST';
-            try {
-                const res = await fetch('/api/instructions' + (instructionEditing ? '/' + encodeURIComponent(name) : ''), { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, content }) });
-                const data = await res.json();
-                if (data.success) { showSuccess('Instruction saved'); cancelEditInstruction(); loadInstructions(); } else { showError(data.error || 'Save failed'); }
-            } catch { showError('Save failed'); }
-        }
-
-        // === Instruction Editor Enrichment ===
-        let instructionOriginalContent = '';
-
-        function formatInstructionJson(){
-            const ta = document.getElementById('instruction-content');
-            try {
-                const parsed = JSON.parse(ta.value);
-                ta.value = JSON.stringify(parsed, null, 2);
-                updateInstructionEditorDiagnostics();
-            } catch { showError('Cannot format: invalid JSON'); }
-        }
+        async function loadInstructions() {
+                const listEl = document.getElementById('instructions-list');
+                listEl.innerHTML = 'Loading...';
+                try {
+                    // Load categories first to populate the dropdown (ignore errors; we'll derive later if needed)
+                    const catNames = await loadInstructionCategories();
+                    const res = await fetch('/api/instructions');
+                    if(!res.ok) throw new Error('http '+res.status);
+                    const data = await res.json();
+                    if (!data.success && !data.data) throw new Error();
+                    // Accept shapes: {instructions:[...]}, {data:{instructions:[...]}}
+                    const rawList = data.instructions || data.data?.instructions || [];
+                    allInstructions = Array.isArray(rawList) ? rawList : [];
+                    // If categories endpoint failed / returned empty, derive from instruction list
+                    if(!catNames.length) {
+                        try {
+                            const select = document.getElementById('instruction-category-filter');
+                            if(select){
+                                const derived = Array.from(new Set(allInstructions.map(i=>i.category).filter(Boolean))).sort();
+                                derived.forEach(n=>{
+                                    const opt = document.createElement('option');
+                                    opt.value = n; opt.textContent = n; select.appendChild(opt);
+                                });
+                            }
+                        } catch(_) { /* ignore */ }
+                    }
+                    instructionPage = 1; // reset page whenever we reload
+                    renderInstructionList(allInstructions);
+                } catch (e) {
+                    console.warn('loadInstructions error', e);
+                    listEl.innerHTML = '<div class="error">Failed to load instructions</div>';
+                }
+            }
+        
+            // Re-introduced after patch: formatInstructionJson utility (was accidentally truncated)
+            function formatInstructionJson(){
+                const ta = document.getElementById('instruction-content');
+                if(!ta) return;
+                try {
+                    const parsed = JSON.parse(ta.value);
+                    ta.value = JSON.stringify(parsed, null, 2);
+                    updateInstructionEditorDiagnostics();
+                } catch { showError('Cannot format: invalid JSON'); }
+            }
 
         function applyInstructionTemplate(){
             const ta = document.getElementById('instruction-content');

@@ -2,11 +2,13 @@
  * MetricsCollector - Phase 1 Dashboard Foundation
  * 
  * Collects and aggregates real-time server metrics for dashboard display.
- * Provides in-memory storage with configurable retention periods.
+ * Uses file-based storage to prevent memory accumulation.
  */
 
 import fs from 'fs';
 import path from 'path';
+import { getFileMetricsStorage, FileMetricsStorage } from './FileMetricsStorage.js';
+import { getBooleanEnv } from '../../utils/envUtils.js';
 
 export interface ToolMetrics {
   callCount: number;
@@ -193,7 +195,7 @@ export interface MetricsCollectorOptions {
 
 export class MetricsCollector {
   private tools: Map<string, ToolMetrics> = new Map();
-  private snapshots: MetricsSnapshot[] = [];
+  private snapshots: MetricsSnapshot[] = []; // Keep small in-memory cache for real-time queries
   private connections: Set<string> = new Set();
   private disconnectedCount = 0;
   private totalSessionTime = 0;
@@ -208,6 +210,10 @@ export class MetricsCollector {
   // Rolling timestamp buffer for recent tool calls (used for stable RPM calculation)
   private recentCallTimestamps: number[] = [];
   private static readonly MAX_RECENT_CALLS = 10000; // cap to avoid unbounded growth
+  private static readonly MAX_MEMORY_SNAPSHOTS = 60; // Keep only 1 hour in memory
+  // File storage for historical data (optional)
+  private fileStorage: FileMetricsStorage | null = null;
+  private useFileStorage: boolean;
 
   constructor(options: MetricsCollectorOptions = {}) {
     this.options = {
@@ -215,6 +221,21 @@ export class MetricsCollector {
       maxSnapshots: options.maxSnapshots ?? 720, // 12 hours at 1-minute intervals
       collectInterval: options.collectInterval ?? 60000, // 1 minute
     };
+
+    // Check if file storage should be enabled (accept "true", "1", "yes", "on")
+    this.useFileStorage = getBooleanEnv('MCP_METRICS_FILE_STORAGE');
+    
+    if (this.useFileStorage) {
+      // Initialize file storage
+      this.fileStorage = getFileMetricsStorage({
+        storageDir: process.env.MCP_METRICS_DIR || path.join(process.cwd(), 'metrics'),
+        maxFiles: this.options.maxSnapshots,
+        retentionMinutes: this.options.retentionMinutes,
+      });
+      console.log('📊 MetricsCollector: File storage enabled');
+    } else {
+      console.log('📊 MetricsCollector: Memory-only mode (set MCP_METRICS_FILE_STORAGE=1|true|yes|on for file persistence)');
+    }
 
     // Start periodic collection
     this.startCollection();
@@ -358,13 +379,72 @@ export class MetricsCollector {
   }
 
   /**
-   * Get historical snapshots
+   * Get historical snapshots (from memory for recent, or from files for historical)
    */
   getSnapshots(count?: number): MetricsSnapshot[] {
     if (count) {
       return this.snapshots.slice(-count);
     }
     return [...this.snapshots];
+  }
+
+  /**
+   * Get snapshots from file storage (for historical analysis)
+   */
+  async getHistoricalSnapshots(count: number = 720): Promise<MetricsSnapshot[]> {
+    if (!this.fileStorage) {
+      console.warn('File storage not enabled, returning memory snapshots only');
+      return this.getSnapshots(count);
+    }
+    
+    try {
+      return await this.fileStorage.getRecentSnapshots(count);
+    } catch (error) {
+      console.error('Failed to load historical snapshots:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get snapshots within a specific time range from files
+   */
+  async getSnapshotsInRange(startTime: number, endTime: number): Promise<MetricsSnapshot[]> {
+    if (!this.fileStorage) {
+      console.warn('File storage not enabled, filtering memory snapshots');
+      return this.snapshots.filter(s => s.timestamp >= startTime && s.timestamp <= endTime);
+    }
+    
+    try {
+      return await this.fileStorage.getSnapshotsInRange(startTime, endTime);
+    } catch (error) {
+      console.error('Failed to load snapshots in range:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get file storage statistics
+   */
+  async getStorageStats(): Promise<{
+    fileCount: number;
+    totalSizeKB: number;
+    oldestTimestamp?: number;
+    newestTimestamp?: number;
+    memorySnapshots: number;
+  }> {
+    if (!this.fileStorage) {
+      return {
+        fileCount: 0,
+        totalSizeKB: 0,
+        memorySnapshots: this.snapshots.length,
+      };
+    }
+    
+    const fileStats = await this.fileStorage.getStorageStats();
+    return {
+      ...fileStats,
+      memorySnapshots: this.snapshots.length,
+    };
   }
 
   /**
@@ -378,9 +458,10 @@ export class MetricsCollector {
   }
 
   /**
-   * Clear all metrics data
+   * Clear all metrics data (memory and files)
    */
-  clearMetrics(): void {
+  async clearMetrics(): Promise<void> {
+    // Clear in-memory data
     this.tools.clear();
     this.snapshots.length = 0;
     this.connections.clear();
@@ -388,7 +469,30 @@ export class MetricsCollector {
     this.totalSessionTime = 0;
     this.sessionStartTimes.clear();
     this.startTime = Date.now();
-  this.recentCallTimestamps.length = 0;
+    this.recentCallTimestamps.length = 0;
+    
+    // Clear file storage if enabled
+    if (this.fileStorage) {
+      try {
+        await this.fileStorage.clearAll();
+      } catch (error) {
+        console.error('Failed to clear file storage:', error);
+      }
+    }
+  }
+
+  /**
+   * Clear only memory data (keep files)
+   */
+  clearMemoryMetrics(): void {
+    this.tools.clear();
+    this.snapshots.length = 0;
+    this.connections.clear();
+    this.disconnectedCount = 0;
+    this.totalSessionTime = 0;
+    this.sessionStartTimes.clear();
+    this.startTime = Date.now();
+    this.recentCallTimestamps.length = 0;
   }
 
   /**
@@ -413,18 +517,33 @@ export class MetricsCollector {
 
   private takeSnapshot(): void {
     const snapshot = this.getCurrentSnapshot();
+    
+    // Store to file immediately (async, non-blocking) if file storage enabled
+    if (this.fileStorage) {
+      this.fileStorage.storeSnapshot(snapshot).catch(error => {
+        console.error('Failed to store metrics snapshot to file:', error);
+      });
+    }
+    
+    // Keep limited snapshots in memory for real-time queries
     this.snapshots.push(snapshot);
-
-    // Trim old snapshots
-    if (this.snapshots.length > this.options.maxSnapshots) {
-      this.snapshots.splice(0, this.snapshots.length - this.options.maxSnapshots);
+    
+    // Trim in-memory snapshots to prevent memory accumulation
+    const maxMemorySnapshots = this.useFileStorage 
+      ? MetricsCollector.MAX_MEMORY_SNAPSHOTS 
+      : this.options.maxSnapshots;
+      
+    if (this.snapshots.length > maxMemorySnapshots) {
+      this.snapshots.splice(0, this.snapshots.length - maxMemorySnapshots);
     }
 
-    // Remove snapshots older than retention period
-    const cutoff = Date.now() - (this.options.retentionMinutes * 60 * 1000);
-    const firstValidIndex = this.snapshots.findIndex(s => s.timestamp >= cutoff);
-    if (firstValidIndex > 0) {
-      this.snapshots.splice(0, firstValidIndex);
+    // If not using file storage, apply original retention logic
+    if (!this.useFileStorage) {
+      const cutoff = Date.now() - (this.options.retentionMinutes * 60 * 1000);
+      const firstValidIndex = this.snapshots.findIndex(s => s.timestamp >= cutoff);
+      if (firstValidIndex > 0) {
+        this.snapshots.splice(0, firstValidIndex);
+      }
     }
   }
 

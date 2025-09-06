@@ -13,9 +13,10 @@ import { resolveOwner } from './ownershipService';
 import { atomicWriteJson } from './atomicFs';
 import { logAudit } from './auditLog';
 import { getToolRegistry } from './toolRegistry';
+import { getBooleanEnv } from '../utils/envUtils';
 
 // Evaluate mutation flag dynamically each invocation so tests that set env before calls (even after import) still work.
-function isMutationEnabled(){ return process.env.MCP_ENABLE_MUTATION === '1'; }
+function isMutationEnabled(){ return getBooleanEnv('MCP_ENABLE_MUTATION'); }
 
 // CI Environment Detection and Response Size Limiting
 function isCI(): boolean {

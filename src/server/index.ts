@@ -33,7 +33,7 @@ function __earlyCapture(chunk: Buffer){
   if(!__sdkReady && __bufferEnabled){
     __earlyInitChunks.push(Buffer.from(chunk));
     // Light diagnostic: log only on first capture & optionally every 10th if deep buffering occurs.
-    if(process.env.MCP_LOG_DIAG === '1'){
+    if(getBooleanEnv('MCP_LOG_DIAG')){
       if(!__earlyInitFirstLogged){
         __earlyInitFirstLogged = true;
         try { process.stderr.write(`[handshake-buffer] first early chunk captured size=${chunk.length}\n`); } catch { /* ignore */ }
@@ -61,6 +61,8 @@ import '../services/handlers.feedback';
 import { getCatalogState, diagnoseInstructionsDir } from '../services/catalogContext';
 import { createDashboardServer } from '../dashboard/server/DashboardServer.js';
 import { getMetricsCollector } from '../dashboard/server/MetricsCollector.js';
+import { getMemoryMonitor } from '../utils/memoryMonitor';
+import { getBooleanEnv } from '../utils/envUtils';
 import fs from 'fs';
 import path from 'path';
 
@@ -107,7 +109,7 @@ if(!process.listeners('uncaughtException').some(l => (l as unknown as { name?:st
 
 // Low-level ingress tracing: echo raw stdin frames when verbose enabled (diagnostic only)
 try {
-  if(process.env.MCP_LOG_VERBOSE === '1' && !process.stdin.listenerCount('data')){
+  if(getBooleanEnv('MCP_LOG_VERBOSE') && !process.stdin.listenerCount('data')){
     process.stdin.on('data', chunk => {
       try { process.stderr.write(`[in] ${chunk.toString().replace(/\n/g,'\\n')}\n`); } catch { /* ignore */ }
     });
@@ -126,7 +128,7 @@ function parseArgs(argv: string[]): CliConfig {
   const config: CliConfig = { dashboard: false, dashboardPort: 8787, dashboardHost: '127.0.0.1', maxPortTries: 10, legacy: false };
   
   // Apply environment variable defaults first (command line args override env vars)
-  if(process.env.MCP_DASHBOARD === '1') config.dashboard = true;
+  if(getBooleanEnv('MCP_DASHBOARD')) config.dashboard = true;
   if(process.env.MCP_DASHBOARD === '0') config.dashboard = false;
   if(process.env.MCP_DASHBOARD_PORT) config.dashboardPort = parseInt(process.env.MCP_DASHBOARD_PORT, 10) || config.dashboardPort;
   if(process.env.MCP_DASHBOARD_HOST) config.dashboardHost = process.env.MCP_DASHBOARD_HOST;
@@ -326,13 +328,26 @@ export async function main(){
   } else {
     process.stderr.write(`[startup] Dashboard disabled (set MCP_DASHBOARD=1 to enable)\n`);
   }
+
+  // Initialize memory monitoring if debug mode is enabled
+  if (getBooleanEnv('MCP_DEBUG') || getBooleanEnv('MCP_MEMORY_MONITOR')) {
+    try {
+      const memMonitor = getMemoryMonitor();
+      memMonitor.startMonitoring(10000); // Monitor every 10 seconds
+      process.stderr.write(`[startup] Memory monitoring enabled (interval: 10s)\n`);
+      process.stderr.write(`[startup] Memory monitor commands: memStatus(), startMemWatch(), stopMemWatch(), memReport(), forceGC(), checkListeners()\n`);
+    } catch (error) {
+      process.stderr.write(`[startup] Memory monitoring failed: ${error}\n`);
+    }
+  }
+
   // Extended startup diagnostics (does not emit on stdout)
-  if(process.env.MCP_LOG_VERBOSE === '1' || process.env.MCP_LOG_DIAG === '1'){
+  if(getBooleanEnv('MCP_LOG_VERBOSE') || getBooleanEnv('MCP_LOG_DIAG')){
     try {
   const methods = listRegisteredMethods();
       // Force catalog load to report initial count/hash
       const catalog = getCatalogState();
-      const mutation = process.env.MCP_ENABLE_MUTATION === '1';
+      const mutation = getBooleanEnv('MCP_ENABLE_MUTATION');
   const dirDiag = diagnoseInstructionsDir();
   process.stderr.write(`[startup] toolsRegistered=${methods.length} mutationEnabled=${mutation} catalogCount=${catalog.list.length} catalogHash=${catalog.hash} instructionsDir="${dirDiag.dir}" exists=${dirDiag.exists} writable=${dirDiag.writable}${dirDiag.error?` dirError=${dirDiag.error.replace(/\s+/g,' ')}`:''}\n`);
       try {
@@ -344,7 +359,7 @@ export async function main(){
       process.stderr.write(`[startup] diagnostics_error ${(e instanceof Error)? e.message: String(e)}\n`);
     }
   }
-  if(__bufferEnabled && process.env.MCP_LOG_DIAG === '1'){
+  if(__bufferEnabled && getBooleanEnv('MCP_LOG_DIAG')){
     try { process.stderr.write(`[handshake-buffer] pre-start buffered=${__earlyInitChunks.length}\n`); } catch { /* ignore */ }
   }
   await startSdkServer();
@@ -357,7 +372,7 @@ export async function main(){
         for(const c of __earlyInitChunks){ process.stdin.emit('data', c); }
       } catch { /* ignore */ }
       // eslint-disable-next-line no-console
-      if(process.env.MCP_LOG_DIAG === '1') console.error(`[handshake-buffer] replayed ${__earlyInitChunks.length} early chunk(s)`);
+      if(getBooleanEnv('MCP_LOG_DIAG')) console.error(`[handshake-buffer] replayed ${__earlyInitChunks.length} early chunk(s)`);
       __earlyInitChunks.length = 0;
     }
   }

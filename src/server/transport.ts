@@ -11,6 +11,7 @@
  */
 import { createInterface } from 'readline';
 import { validateParams } from '../services/validationService';
+import { getBooleanEnv } from '../utils/envUtils';
 import fs from 'fs';
 import path from 'path';
 
@@ -102,7 +103,7 @@ export function startTransport(opts: TransportOptions = {}){
       pid: process.pid,
       node: process.version,
       cwd: process.cwd(),
-      mutationEnabled: process.env.MCP_ENABLE_MUTATION === '1',
+      mutationEnabled: getBooleanEnv('MCP_ENABLE_MUTATION'),
       verbose,
       protocolLog,
       diagEnv: !!process.env.MCP_LOG_DIAG

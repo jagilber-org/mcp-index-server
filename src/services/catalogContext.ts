@@ -8,6 +8,7 @@ import { atomicWriteJson } from './atomicFs';
 import { ClassificationService } from './classificationService';
 import { resolveOwner } from './ownershipService';
 import { getUsageBucketsService } from './usageBuckets';
+import { getBooleanEnv } from '../utils/envUtils';
 
 export interface CatalogState { loadedAt: string; hash: string; byId: Map<string, InstructionEntry>; list: InstructionEntry[]; latestMTime: number; fileSignature: string; fileCount: number; versionMTime: number; versionToken: string }
 let state: CatalogState | null = null;
@@ -100,7 +101,7 @@ const USAGE_RATE_LIMIT_PER_SECOND = 10; // max increments per id per second
 const usageRateLimiter = new Map<string, { count: number; windowStart: number }>();
 function checkUsageRateLimit(id: string): boolean {
   // Test/diagnostic override: allow disabling rate limiting entirely for deterministic tests.
-  if(process.env.MCP_DISABLE_USAGE_RATE_LIMIT === '1') return true;
+  if(getBooleanEnv('MCP_DISABLE_USAGE_RATE_LIMIT')) return true;
   const now = Date.now();
   const windowStart = Math.floor(now / 1000) * 1000; // 1-second windows
   

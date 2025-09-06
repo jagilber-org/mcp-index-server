@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { getBooleanEnv } from '../utils/envUtils';
 
 // Trace level hierarchy: off < core < perf < files < verbose
 export type TraceLevel = 0|1|2|3|4;
@@ -14,11 +15,11 @@ function mapEnvToLevel(): TraceLevel {
     if(lvl!=null) return lvl;
   }
   let level: TraceLevel = 0;
-  if(process.env.MCP_VISIBILITY_DIAG==='1') level = Math.max(level,1) as TraceLevel;
-  if(process.env.MCP_TRACE_ALL==='1') level = Math.max(level,4) as TraceLevel;
-  if(process.env.MCP_CATALOG_FILE_TRACE==='1') level = Math.max(level,3) as TraceLevel;
+  if(getBooleanEnv('MCP_VISIBILITY_DIAG')) level = Math.max(level,1) as TraceLevel;
+  if(getBooleanEnv('MCP_TRACE_ALL')) level = Math.max(level,4) as TraceLevel;
+  if(getBooleanEnv('MCP_CATALOG_FILE_TRACE')) level = Math.max(level,3) as TraceLevel;
   // Implicit enablement: if persistence requested but no level flags provided, default to 'core'
-  if(level===0 && (process.env.MCP_TRACE_PERSIST==='1' || process.env.MCP_TRACE_FILE)){
+  if(level===0 && (getBooleanEnv('MCP_TRACE_PERSIST') || process.env.MCP_TRACE_FILE)){
     level = 1 as TraceLevel;
   }
   return level;

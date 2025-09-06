@@ -135,6 +135,14 @@ const allowedAdditional = [
   'usageTracking.spec.ts'
 ];
 
+// Noise suppression allow-list (2025-09-06 BASELINE-CR 14.3): BufferRing + governance hash hardening
+allowedAdditional.push(
+  'bufferRing.spec.ts', // legacy placeholder
+  'bufferRingSimple.spec.ts',
+  'bufferRingMetricsIntegration.spec.ts',
+  'governanceHashHardening.spec.ts'
+);
+
 // Enforce no unexpected test expansion when BASELINE_ENFORCE=1
 if (process.env.BASELINE_ENFORCE === '1') {
   const allowed = new Set([...minimalTests, ...allowedAdditional]);

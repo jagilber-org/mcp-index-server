@@ -252,6 +252,28 @@ Status: ACTIVE. Table in §6 updated; sentinel hash updated accordingly.
 
 **Do not modify outside defined process.**
 
+### 14.3 Approved Change Request (2025-09-06) – Noise Suppression Allow‑List (BufferRing + Governance Hardening)
+
+```text
+CHANGE REQUEST: Allow-list BufferRing focused test trio + governance hash hardening suite (non-minimal) to suppress baseline guard noise.
+Justification: These tests provide:
+   • BufferRing operational + persistence verification (core observability substrate now stable).
+   • MetricsCollector integration validation (ensures ring-backed telemetry paths remain intact during refactors).
+   • Governance hash extended regression scenarios (canonicalization, semanticSummary/changeLog/governance batch, import order invariance) executed with SOFT assertions pending future hardening.
+Scope Clarification: This does NOT expand the Minimal Invariant Suite (§6). Entries are strictly noise-suppression allow‑list additions. Failure of any of these tests does not (yet) constitute baseline break; they are early warning signals.
+Tests Added To Allow-List:
+   - bufferRing.spec.ts (legacy placeholder to block monolith resurrection)
+   - bufferRingSimple.spec.ts (core ring behaviors & persistence)
+   - bufferRingMetricsIntegration.spec.ts (MetricsCollector integration)
+   - governanceHashHardening.spec.ts (extended hash regression – soft expectations)
+Risk: Soft assertions could mask emerging semanticSummary/changeLog drift; tracked for future tightening via separate BASELINE-CR.
+Rollback Plan: Delete the four spec files (or park), remove their entries from scripts/guard-baseline.mjs allowedAdditional array, remove this §14.3 block, run `npm run baseline:sentinel:update` to refresh sentinel, commit with BASELINE-CR marker.
+Approval: Maintainers consensus (inline documentation suffices per §14.1 policy for low-risk noise suppression CRs).
+Status: ACTIVE – Sentinel updated in this commit.
+```
+
+NOTE: Future hardening will introduce a follow-up BASELINE-CR converting soft expectations in `governanceHashHardening.spec.ts` to strict invariants once semanticSummary + changeLog hash transitions are deterministic across all execution modes.
+
 ## 15. Execution Log (Authoritative)
 
 | Timestamp (UTC) | Phase | Action | Result | Hash / Notes |

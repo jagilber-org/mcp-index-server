@@ -557,12 +557,46 @@
                                                     <th style="text-align:left; padding:4px; border-bottom:1px solid #ddd;">#</th>
                                                     <th style="text-align:left; padding:4px; border-bottom:1px solid #ddd;">Tool</th>
                                                     <th style="text-align:left; padding:4px; border-bottom:1px solid #ddd;">Success</th>
-                                                    <th style="text-align:left; padding:4px; border-bottom:1px solid #ddd;">Duration</th>
+                                                    let categories = json?.data?.categories || [];
+                                                    if(!Array.isArray(categories)) {
+                                                        console.warn('[categories] unexpected payload shape', json);
+                                                        categories = [];
+                                                    }
                                                     <th style="text-align:left; padding:4px; border-bottom:1px solid #ddd;">Error</th>
                                                 </tr>
                                             </thead>
+                                                    if(categories.length === 0) {
+                                                        // fallback: derive categories from current instructions list if loaded
+                                                        try {
+                                                            const listRes = await fetch('/api/instructions');
+                                                            if(listRes.ok) {
+                                                                const listJson = await listRes.json();
+                                                                const entries = listJson?.data?.instructions || [];
+                                                                const derived = Array.from(new Set(entries.map(i=>i.category).filter(Boolean))).sort();
+                                                                categories = derived;
+                                                            }
+                                                        } catch(_e) { /* ignore */ }
+                                                    }
+                                                    if(categories.length === 0) {
+                                                        console.warn('[categories] empty after fallback');
+                                                    }
+                                                    categories.forEach(cat => {
+                                                        const opt = document.createElement('option');
+                                                        opt.value = cat;
+                                                        opt.textContent = cat;
+                                                        opt.setAttribute('data-dynamic','1');
+                                                        select.appendChild(opt);
+                                                    });
                                             <tbody id="synthetic-traces-body"></tbody>
-                                        </table>
+                                                    console.warn('Failed to load categories', e);
+                                                    const select = document.getElementById('instruction-category-filter');
+                                                    if(select && !select.querySelector('option[data-error]')) {
+                                                        const opt = document.createElement('option');
+                                                        opt.value = '';
+                                                        opt.textContent = '[categories load failed]';
+                                                        opt.setAttribute('data-error','1');
+                                                        select.appendChild(opt);
+                                                    }
                                     </div>
                                 </div>
             </div>
@@ -583,7 +617,8 @@
                     <button class="action-btn" onclick="clearLogViewer()">🗑️ Clear</button>
                     <div id="log-status" style="font-size:12px; opacity:0.7; font-style:italic;"></div>
                 </div>
-                <div id="log-viewer" style="
+                <!-- Log content container id expected by scripts (was log-viewer) -->
+                <div id="log-content" style="
                     background: #f8f9fa; 
                     border: 1px solid #dee2e6; 
                     border-radius: 6px; 
@@ -1701,7 +1736,7 @@
         let logEventSource = null;
         let logTailing = false;
 
-        async function loadLogs() {
+    async function loadLogs() {
             try {
                 const lines = document.getElementById('log-lines').value || 100;
                 // Prefer JSON shape; fall back to raw if server older
@@ -1747,7 +1782,8 @@
         }
 
         function toggleLogTail() {
-            const button = document.getElementById('tail-logs-btn');
+            // ID in markup is log-tail-btn (previous mismatch prevented toggling)
+            const button = document.getElementById('log-tail-btn');
             
             if (logTailing) {
                 // Stop tailing
@@ -1818,6 +1854,66 @@
             div.textContent = text;
             return div.innerHTML;
         }
+
+        // ===== Resource Trend (CPU/Mem) Long-Term History =====
+        // Lightweight front-end integration for /api/system/resources
+        (function initResourceTrends(){
+            const overview = document.querySelector('#overview-section');
+            if(!overview) return;
+            // Avoid duplicate insertion
+            if(document.getElementById('resource-trends-card')) return;
+            const card = document.createElement('div');
+            card.className = 'admin-card';
+            card.id = 'resource-trends-card';
+            card.innerHTML = `
+                <div class="card-header">
+                  <div class="card-icon">🧠</div>
+                  <div class="card-title">Resource Trends</div>
+                </div>
+                <div id="resource-trends-body" style="font-size:12px; line-height:1.4;">
+                  <em>Collecting samples...</em>
+                </div>`;
+            // Insert after existing performance card if present
+            overview.appendChild(card);
+
+            async function fetchResourceTrends(){
+                try {
+                    const res = await fetch('/api/system/resources?limit=300');
+                    if(!res.ok) throw new Error('http '+res.status);
+                    const json = await res.json();
+                    const samples = json?.data?.samples || [];
+                    const trend = json?.data?.trend || { cpuSlope:0, memSlope:0 };
+                    if(samples.length === 0){
+                        document.getElementById('resource-trends-body').innerHTML = '<span style="opacity:.7">No samples yet.</span>';
+                        return;
+                    }
+                    const latest = samples[samples.length-1];
+                    const first = samples[0];
+                    const durationSec = ((latest.timestamp - first.timestamp)/1000).toFixed(0);
+                    // Convert memSlope (bytes/sec) to KB/sec for readability
+                    const memSlopeKb = (trend.memSlope/1024).toFixed(2);
+                    // Simple sparkline (last up to 40 samples) using unicode blocks based on cpu percent
+                    const tail = samples.slice(-40);
+                    const spark = tail.map(s=>{
+                        const v = Math.min(100, Math.max(0, s.cpuPercent));
+                        const idx = Math.round(v/12.5); // 0-8
+                        const blocks = ['▁','▂','▃','▄','▅','▆','▇','█'];
+                        return blocks[Math.min(blocks.length-1, idx)];
+                    }).join('');
+                    document.getElementById('resource-trends-body').innerHTML = `
+                        <div style="display:flex; flex-direction:column; gap:4px;">
+                          <div><strong>Window:</strong> ${durationSec}s (${samples.length} samples)</div>
+                          <div><strong>Latest CPU:</strong> ${latest.cpuPercent.toFixed(1)}% &nbsp; <strong>Latest Heap:</strong> ${(latest.heapUsed/1024/1024).toFixed(2)} MB</div>
+                          <div><strong>CPU Slope:</strong> ${trend.cpuSlope.toFixed(3)} %/s &nbsp; <strong>Mem Slope:</strong> ${memSlopeKb} KB/s</div>
+                          <div style="font-family:monospace; font-size:14px;">${spark}</div>
+                        </div>`;
+                } catch(e){
+                    document.getElementById('resource-trends-body').innerHTML = '<span class="error">Failed to load resource history</span>';
+                }
+            }
+            fetchResourceTrends();
+            setInterval(fetchResourceTrends, 10000); // update every 10s
+        })();
 
         // ===== Instruction Management =====
         let instructionEditing = null;

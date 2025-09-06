@@ -6,6 +6,7 @@
 			"cwd": "C:/github/jagilber/mcp-index-server",
 			"command": "node",
 			"args": [
+				"--inspect=9229",
 				"dist/server/index.js"
 			],
 			"env": {
@@ -23,6 +24,11 @@
 				"MCP_TRACE_LEVEL": "1",
 				"MCP_CATALOG_FILE_TRACE": "1",
 				"MCP_DASHBOARD": "1",
+				"MCP_MEMORY_MONITOR": "1",
+				"MCP_LOG_FILE": "1",
+				"MCP_METRICS_FILE_STORAGE": "1",
+				// "MCP_METRICS_DIR": "./metrics",  // optional
+				"MCP_METRICS_MAX_FILES": "720",
 				// Optional future safeguard: require a guard token before mutating prod.
 				// "MCP_MUTATION_GUARD": "expected-checksum-or-token"
 				// ===================== FEEDBACK STORAGE ========================

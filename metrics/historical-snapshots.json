@@ -1804,12 +1804,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -1854,12 +1854,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -1904,12 +1904,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -1954,12 +1954,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2004,12 +2004,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2054,12 +2054,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2104,12 +2104,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2154,12 +2154,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2204,12 +2204,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2254,12 +2254,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2304,12 +2304,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2354,12 +2354,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2404,12 +2404,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2454,12 +2454,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2504,12 +2504,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2554,12 +2554,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2604,12 +2604,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2654,12 +2654,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2704,12 +2704,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2754,12 +2754,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2804,12 +2804,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2854,12 +2854,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2904,12 +2904,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -2954,12 +2954,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3004,12 +3004,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3054,12 +3054,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3104,12 +3104,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3154,12 +3154,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3204,12 +3204,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3254,12 +3254,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3304,12 +3304,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3354,12 +3354,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3404,12 +3404,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3454,12 +3454,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3504,12 +3504,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3554,12 +3554,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3604,12 +3604,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3654,12 +3654,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3704,12 +3704,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3754,12 +3754,12 @@
         },
         "tools": {
           "http/request": {
-            "callCount": 266,
-            "successCount": 266,
+            "callCount": 341,
+            "successCount": 341,
             "errorCount": 0,
-            "totalResponseTime": 239.33400000000015,
+            "totalResponseTime": 267.3061000000001,
             "errorTypes": {},
-            "lastCalled": 1757190011393
+            "lastCalled": 1757191511415
           }
         },
         "connections": {
@@ -3781,20 +3781,3320 @@
         "errorCount": 0,
         "connectionCount": 2
       }
+    },
+    {
+      "timestamp": 1757190096283,
+      "snapshot": {
+        "timestamp": 1757190096283,
+        "server": {
+          "uptime": 2467302,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 57724928,
+            "heapTotal": 19447808,
+            "heapUsed": 18479144,
+            "external": 2621729,
+            "arrayBuffers": 279061
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 1638877
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8955007434944243,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8955007434944243,
+        "requestCount": 269,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757190156289,
+      "snapshot": {
+        "timestamp": 1757190156289,
+        "server": {
+          "uptime": 2527308,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 57462784,
+            "heapTotal": 19447808,
+            "heapUsed": 18066832,
+            "external": 2629921,
+            "arrayBuffers": 287259
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 1678881
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8888643382352948,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8888643382352948,
+        "requestCount": 272,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757190216300,
+      "snapshot": {
+        "timestamp": 1757190216300,
+        "server": {
+          "uptime": 2587319,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 57954304,
+            "heapTotal": 19447808,
+            "heapUsed": 18553712,
+            "external": 2630133,
+            "arrayBuffers": 287265
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 1718888.3333333333
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8840134545454552,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8840134545454552,
+        "requestCount": 275,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757190276310,
+      "snapshot": {
+        "timestamp": 1757190276310,
+        "server": {
+          "uptime": 2647329,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 57679872,
+            "heapTotal": 19709952,
+            "heapUsed": 18160592,
+            "external": 2638125,
+            "arrayBuffers": 295463
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 1758895
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8777514388489214,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8777514388489214,
+        "requestCount": 278,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757190336323,
+      "snapshot": {
+        "timestamp": 1757190336323,
+        "server": {
+          "uptime": 2707342,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 55648256,
+            "heapTotal": 19709952,
+            "heapUsed": 18675352,
+            "external": 2639137,
+            "arrayBuffers": 295469
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 1798903.6666666667
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8722693950177942,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8722693950177942,
+        "requestCount": 281,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757190396327,
+      "snapshot": {
+        "timestamp": 1757190396327,
+        "server": {
+          "uptime": 2767346,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 54640640,
+            "heapTotal": 19709952,
+            "heapUsed": 18031296,
+            "external": 2646329,
+            "arrayBuffers": 303667
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 1838906.3333333333
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8714577464788739,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8714577464788739,
+        "requestCount": 284,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757190456331,
+      "snapshot": {
+        "timestamp": 1757190456331,
+        "server": {
+          "uptime": 2827350,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 55341056,
+            "heapTotal": 19709952,
+            "heapUsed": 18533696,
+            "external": 2646335,
+            "arrayBuffers": 303673
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 1878909
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8656010452961679,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8656010452961679,
+        "requestCount": 287,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757190516333,
+      "snapshot": {
+        "timestamp": 1757190516333,
+        "server": {
+          "uptime": 2887352,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 55128064,
+            "heapTotal": 19709952,
+            "heapUsed": 18333512,
+            "external": 2654533,
+            "arrayBuffers": 311871
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 1918910.3333333333
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8598458620689661,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8598458620689661,
+        "requestCount": 290,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757190576344,
+      "snapshot": {
+        "timestamp": 1757190576344,
+        "server": {
+          "uptime": 2947363,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 55726080,
+            "heapTotal": 19972096,
+            "heapUsed": 18841800,
+            "external": 2654945,
+            "arrayBuffers": 311877
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 1958917.6666666667
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8543924914675773,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8543924914675773,
+        "requestCount": 293,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757190636357,
+      "snapshot": {
+        "timestamp": 1757190636357,
+        "server": {
+          "uptime": 3007376,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 55160832,
+            "heapTotal": 19972096,
+            "heapUsed": 18420776,
+            "external": 2662737,
+            "arrayBuffers": 320075
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 1998926.3333333333
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.849755067567568,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.849755067567568,
+        "requestCount": 296,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757190696365,
+      "snapshot": {
+        "timestamp": 1757190696365,
+        "server": {
+          "uptime": 3067384,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 55021568,
+            "heapTotal": 20234240,
+            "heapUsed": 19158240,
+            "external": 2663149,
+            "arrayBuffers": 320081
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2038931.6666666667
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8449511705685624,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8449511705685624,
+        "requestCount": 299,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757190756378,
+      "snapshot": {
+        "timestamp": 1757190756378,
+        "server": {
+          "uptime": 3127397,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 54448128,
+            "heapTotal": 20234240,
+            "heapUsed": 18760840,
+            "external": 2670941,
+            "arrayBuffers": 328279
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2078940.3333333333
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8405466887417223,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8405466887417223,
+        "requestCount": 302,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757190816393,
+      "snapshot": {
+        "timestamp": 1757190816393,
+        "server": {
+          "uptime": 3187412,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 54431744,
+            "heapTotal": 20234240,
+            "heapUsed": 18589472,
+            "external": 2670947,
+            "arrayBuffers": 328285
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2118950.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.835195409836066,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.835195409836066,
+        "requestCount": 305,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757190876403,
+      "snapshot": {
+        "timestamp": 1757190876403,
+        "server": {
+          "uptime": 3247422,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 55144448,
+            "heapTotal": 20234240,
+            "heapUsed": 19281712,
+            "external": 2679145,
+            "arrayBuffers": 336483
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2158957
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8302097402597407,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8302097402597407,
+        "requestCount": 308,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757190936417,
+      "snapshot": {
+        "timestamp": 1757190936417,
+        "server": {
+          "uptime": 3307436,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 53972992,
+            "heapTotal": 20496384,
+            "heapUsed": 18890040,
+            "external": 2679151,
+            "arrayBuffers": 336489
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2198966.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8261723472668815,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8261723472668815,
+        "requestCount": 311,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757190996425,
+      "snapshot": {
+        "timestamp": 1757190996425,
+        "server": {
+          "uptime": 3367444,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 53760000,
+            "heapTotal": 20496384,
+            "heapUsed": 18722760,
+            "external": 2687349,
+            "arrayBuffers": 344687
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2238971.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8212391719745227,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8212391719745227,
+        "requestCount": 314,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191056431,
+      "snapshot": {
+        "timestamp": 1757191056431,
+        "server": {
+          "uptime": 3427450,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 54493184,
+            "heapTotal": 20496384,
+            "heapUsed": 19451472,
+            "external": 2687355,
+            "arrayBuffers": 344693
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2278975.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8166274447949529,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8166274447949529,
+        "requestCount": 317,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191116436,
+      "snapshot": {
+        "timestamp": 1757191116436,
+        "server": {
+          "uptime": 3487455,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 54185984,
+            "heapTotal": 20496384,
+            "heapUsed": 19009504,
+            "external": 2695553,
+            "arrayBuffers": 352891
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2318979
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8124128125000001,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8124128125000001,
+        "requestCount": 320,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191176447,
+      "snapshot": {
+        "timestamp": 1757191176447,
+        "server": {
+          "uptime": 3547466,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 53858304,
+            "heapTotal": 20496384,
+            "heapUsed": 18857504,
+            "external": 2695559,
+            "arrayBuffers": 352897
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2358986.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8078479876160991,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8078479876160991,
+        "requestCount": 323,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191236447,
+      "snapshot": {
+        "timestamp": 1757191236447,
+        "server": {
+          "uptime": 3607466,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 53649408,
+            "heapTotal": 20496384,
+            "heapUsed": 18804528,
+            "external": 2703757,
+            "arrayBuffers": 361095
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2398986.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.8035392638036811,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.8035392638036811,
+        "requestCount": 326,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191296454,
+      "snapshot": {
+        "timestamp": 1757191296454,
+        "server": {
+          "uptime": 3667473,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 54353920,
+            "heapTotal": 20496384,
+            "heapUsed": 19408592,
+            "external": 2703763,
+            "arrayBuffers": 361101
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2438991
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.7988027355623103,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7988027355623103,
+        "requestCount": 329,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191356456,
+      "snapshot": {
+        "timestamp": 1757191356456,
+        "server": {
+          "uptime": 3727475,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 54013952,
+            "heapTotal": 20496384,
+            "heapUsed": 18999064,
+            "external": 2711961,
+            "arrayBuffers": 369299
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2478992.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.7941048192771086,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7941048192771086,
+        "requestCount": 332,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191416460,
+      "snapshot": {
+        "timestamp": 1757191416460,
+        "server": {
+          "uptime": 3787479,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 54562816,
+            "heapTotal": 20758528,
+            "heapUsed": 19502624,
+            "external": 2711967,
+            "arrayBuffers": 369305
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2518995
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.7897223880597017,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7897223880597017,
+        "requestCount": 335,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191476471,
+      "snapshot": {
+        "timestamp": 1757191476471,
+        "server": {
+          "uptime": 3847490,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 54329344,
+            "heapTotal": 20758528,
+            "heapUsed": 19092672,
+            "external": 2720165,
+            "arrayBuffers": 377503
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2559002.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.7867165680473376,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7867165680473376,
+        "requestCount": 338,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191536470,
+      "snapshot": {
+        "timestamp": 1757191536470,
+        "server": {
+          "uptime": 3907489,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 54337536,
+            "heapTotal": 21020672,
+            "heapUsed": 19599840,
+            "external": 2720171,
+            "arrayBuffers": 377509
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2599001.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 3,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191596470,
+      "snapshot": {
+        "timestamp": 1757191596470,
+        "server": {
+          "uptime": 3967489,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 54116352,
+            "heapTotal": 21020672,
+            "heapUsed": 19373432,
+            "external": 2729375,
+            "arrayBuffers": 386713
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2639001.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191656475,
+      "snapshot": {
+        "timestamp": 1757191656475,
+        "server": {
+          "uptime": 4027494,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 54050816,
+            "heapTotal": 21020672,
+            "heapUsed": 19312856,
+            "external": 2729181,
+            "arrayBuffers": 386519
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2679005
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191716486,
+      "snapshot": {
+        "timestamp": 1757191716486,
+        "server": {
+          "uptime": 4087505,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 54018048,
+            "heapTotal": 21020672,
+            "heapUsed": 19223472,
+            "external": 2728375,
+            "arrayBuffers": 385713
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 16000
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2719012.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191776494,
+      "snapshot": {
+        "timestamp": 1757191776494,
+        "server": {
+          "uptime": 4147513,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 53977088,
+            "heapTotal": 21020672,
+            "heapUsed": 19174040,
+            "external": 2736567,
+            "arrayBuffers": 393905
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2759017.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191836499,
+      "snapshot": {
+        "timestamp": 1757191836499,
+        "server": {
+          "uptime": 4207518,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 53583872,
+            "heapTotal": 21020672,
+            "heapUsed": 19123592,
+            "external": 2736979,
+            "arrayBuffers": 393899
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2799021
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191896505,
+      "snapshot": {
+        "timestamp": 1757191896505,
+        "server": {
+          "uptime": 4267524,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 53559296,
+            "heapTotal": 21020672,
+            "heapUsed": 19092104,
+            "external": 2736973,
+            "arrayBuffers": 393899
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2839025
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757191956512,
+      "snapshot": {
+        "timestamp": 1757191956512,
+        "server": {
+          "uptime": 4327531,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 54460416,
+            "heapTotal": 21172224,
+            "heapUsed": 20020768,
+            "external": 2745165,
+            "arrayBuffers": 402503
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2879029.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757192016516,
+      "snapshot": {
+        "timestamp": 1757192016516,
+        "server": {
+          "uptime": 4387535,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 54390784,
+            "heapTotal": 21176320,
+            "heapUsed": 19897400,
+            "external": 2745165,
+            "arrayBuffers": 402503
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2919032.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757192076530,
+      "snapshot": {
+        "timestamp": 1757192076530,
+        "server": {
+          "uptime": 4447549,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 55201792,
+            "heapTotal": 22224896,
+            "heapUsed": 19778248,
+            "external": 2745165,
+            "arrayBuffers": 402503
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2959041.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757192136539,
+      "snapshot": {
+        "timestamp": 1757192136539,
+        "server": {
+          "uptime": 4507558,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 52936704,
+            "heapTotal": 21176320,
+            "heapUsed": 19811136,
+            "external": 2755157,
+            "arrayBuffers": 412495
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 2999047.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757192196540,
+      "snapshot": {
+        "timestamp": 1757192196540,
+        "server": {
+          "uptime": 4567559,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 52838400,
+            "heapTotal": 21180416,
+            "heapUsed": 19774624,
+            "external": 2753357,
+            "arrayBuffers": 410695
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 3039048.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757192256550,
+      "snapshot": {
+        "timestamp": 1757192256550,
+        "server": {
+          "uptime": 4627569,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 52862976,
+            "heapTotal": 21180416,
+            "heapUsed": 19799080,
+            "external": 2753957,
+            "arrayBuffers": 411295
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 3079055
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757192316556,
+      "snapshot": {
+        "timestamp": 1757192316556,
+        "server": {
+          "uptime": 4687575,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 52862976,
+            "heapTotal": 21180416,
+            "heapUsed": 19803912,
+            "external": 2761949,
+            "arrayBuffers": 419287
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 3119059
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757192376561,
+      "snapshot": {
+        "timestamp": 1757192376561,
+        "server": {
+          "uptime": 4747580,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 52813824,
+            "heapTotal": 21184512,
+            "heapUsed": 19783600,
+            "external": 2761549,
+            "arrayBuffers": 418887
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 3159062.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757192436566,
+      "snapshot": {
+        "timestamp": 1757192436566,
+        "server": {
+          "uptime": 4807585,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 52531200,
+            "heapTotal": 21184512,
+            "heapUsed": 19753344,
+            "external": 2761549,
+            "arrayBuffers": 418887
+          },
+          "cpuUsage": {
+            "user": 16000,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 3199065.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757192496567,
+      "snapshot": {
+        "timestamp": 1757192496567,
+        "server": {
+          "uptime": 4867586,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 52285440,
+            "heapTotal": 21020672,
+            "heapUsed": 19417112,
+            "external": 2769741,
+            "arrayBuffers": 427079
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 3239066.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757192556581,
+      "snapshot": {
+        "timestamp": 1757192556581,
+        "server": {
+          "uptime": 4927600,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 52240384,
+            "heapTotal": 21020672,
+            "heapUsed": 19330848,
+            "external": 2769735,
+            "arrayBuffers": 427073
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 2,
+          "totalConnections": 3,
+          "disconnectedConnections": 1,
+          "avgSessionDuration": 3279075.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 2
+      }
+    },
+    {
+      "timestamp": 1757192616588,
+      "snapshot": {
+        "timestamp": 1757192616588,
+        "server": {
+          "uptime": 4987607,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 51757056,
+            "heapTotal": 21020672,
+            "heapUsed": 19158032,
+            "external": 2770135,
+            "arrayBuffers": 426667
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3299372
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757192676597,
+      "snapshot": {
+        "timestamp": 1757192676597,
+        "server": {
+          "uptime": 5047616,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 51720192,
+            "heapTotal": 21020672,
+            "heapUsed": 19119928,
+            "external": 2777921,
+            "arrayBuffers": 434859
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3319375
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757192736607,
+      "snapshot": {
+        "timestamp": 1757192736607,
+        "server": {
+          "uptime": 5107626,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 52150272,
+            "heapTotal": 21192704,
+            "heapUsed": 20088496,
+            "external": 2777921,
+            "arrayBuffers": 435259
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3339378.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757192796610,
+      "snapshot": {
+        "timestamp": 1757192796610,
+        "server": {
+          "uptime": 5167629,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 51761152,
+            "heapTotal": 21192704,
+            "heapUsed": 19937400,
+            "external": 2777921,
+            "arrayBuffers": 435259
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3359379.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757192856625,
+      "snapshot": {
+        "timestamp": 1757192856625,
+        "server": {
+          "uptime": 5227644,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 52187136,
+            "heapTotal": 21192704,
+            "heapUsed": 20060344,
+            "external": 2779921,
+            "arrayBuffers": 437259
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3379384.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757192916634,
+      "snapshot": {
+        "timestamp": 1757192916634,
+        "server": {
+          "uptime": 5287653,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 52146176,
+            "heapTotal": 21458944,
+            "heapUsed": 19958592,
+            "external": 2786113,
+            "arrayBuffers": 443451
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3399387.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757192976635,
+      "snapshot": {
+        "timestamp": 1757192976635,
+        "server": {
+          "uptime": 5347654,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 52858880,
+            "heapTotal": 22331392,
+            "heapUsed": 19592024,
+            "external": 2786113,
+            "arrayBuffers": 443451
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 15000
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3419387.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193036645,
+      "snapshot": {
+        "timestamp": 1757193036645,
+        "server": {
+          "uptime": 5407664,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 52318208,
+            "heapTotal": 21282816,
+            "heapUsed": 19469976,
+            "external": 2786113,
+            "arrayBuffers": 443451
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3439391
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193096650,
+      "snapshot": {
+        "timestamp": 1757193096650,
+        "server": {
+          "uptime": 5467669,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 52166656,
+            "heapTotal": 21463040,
+            "heapUsed": 20472632,
+            "external": 2786513,
+            "arrayBuffers": 443851
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3459392.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193156651,
+      "snapshot": {
+        "timestamp": 1757193156651,
+        "server": {
+          "uptime": 5527670,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 51269632,
+            "heapTotal": 21282816,
+            "heapUsed": 19358288,
+            "external": 2795505,
+            "arrayBuffers": 451243
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3479393
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193216662,
+      "snapshot": {
+        "timestamp": 1757193216662,
+        "server": {
+          "uptime": 5587681,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 51294208,
+            "heapTotal": 21282816,
+            "heapUsed": 19374920,
+            "external": 2794305,
+            "arrayBuffers": 451243
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3499396.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193276664,
+      "snapshot": {
+        "timestamp": 1757193276664,
+        "server": {
+          "uptime": 5647683,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 51417088,
+            "heapTotal": 21282816,
+            "heapUsed": 19397592,
+            "external": 2794305,
+            "arrayBuffers": 451243
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3519397.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193336674,
+      "snapshot": {
+        "timestamp": 1757193336674,
+        "server": {
+          "uptime": 5707693,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 50950144,
+            "heapTotal": 21282816,
+            "heapUsed": 19386288,
+            "external": 2802497,
+            "arrayBuffers": 459435
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3539400.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193396675,
+      "snapshot": {
+        "timestamp": 1757193396675,
+        "server": {
+          "uptime": 5767694,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 50921472,
+            "heapTotal": 21282816,
+            "heapUsed": 19404008,
+            "external": 2802497,
+            "arrayBuffers": 459435
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3559401
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193456687,
+      "snapshot": {
+        "timestamp": 1757193456687,
+        "server": {
+          "uptime": 5827706,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 52015104,
+            "heapTotal": 21471232,
+            "heapUsed": 20421656,
+            "external": 2802497,
+            "arrayBuffers": 459835
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3579405
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193516699,
+      "snapshot": {
+        "timestamp": 1757193516699,
+        "server": {
+          "uptime": 5887718,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 50995200,
+            "heapTotal": 21282816,
+            "heapUsed": 19385424,
+            "external": 2802497,
+            "arrayBuffers": 459435
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 15000
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3599409
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193576712,
+      "snapshot": {
+        "timestamp": 1757193576712,
+        "server": {
+          "uptime": 5947731,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 51109888,
+            "heapTotal": 21282816,
+            "heapUsed": 19442904,
+            "external": 2810689,
+            "arrayBuffers": 467627
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3619413.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193636713,
+      "snapshot": {
+        "timestamp": 1757193636713,
+        "server": {
+          "uptime": 6007732,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 48672768,
+            "heapTotal": 21282816,
+            "heapUsed": 19501296,
+            "external": 2810689,
+            "arrayBuffers": 467627
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3639413.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193696714,
+      "snapshot": {
+        "timestamp": 1757193696714,
+        "server": {
+          "uptime": 6067733,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 48467968,
+            "heapTotal": 21282816,
+            "heapUsed": 19503904,
+            "external": 2810689,
+            "arrayBuffers": 467627
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3659414
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193756722,
+      "snapshot": {
+        "timestamp": 1757193756722,
+        "server": {
+          "uptime": 6127741,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 48541696,
+            "heapTotal": 21282816,
+            "heapUsed": 19543088,
+            "external": 2810689,
+            "arrayBuffers": 468027
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3679416.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193816734,
+      "snapshot": {
+        "timestamp": 1757193816734,
+        "server": {
+          "uptime": 6187753,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 48545792,
+            "heapTotal": 21282816,
+            "heapUsed": 19546176,
+            "external": 2818881,
+            "arrayBuffers": 476219
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3699420.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193876740,
+      "snapshot": {
+        "timestamp": 1757193876740,
+        "server": {
+          "uptime": 6247759,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 48549888,
+            "heapTotal": 21282816,
+            "heapUsed": 19549632,
+            "external": 2818881,
+            "arrayBuffers": 476219
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3719422.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193936748,
+      "snapshot": {
+        "timestamp": 1757193936748,
+        "server": {
+          "uptime": 6307767,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 48529408,
+            "heapTotal": 21282816,
+            "heapUsed": 19625096,
+            "external": 2821681,
+            "arrayBuffers": 479019
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3739425.3333333335
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
+    },
+    {
+      "timestamp": 1757193996755,
+      "snapshot": {
+        "timestamp": 1757193996755,
+        "server": {
+          "uptime": 6367774,
+          "version": "1.2.2",
+          "memoryUsage": {
+            "rss": 48635904,
+            "heapTotal": 21282816,
+            "heapUsed": 19563320,
+            "external": 2827073,
+            "arrayBuffers": 484411
+          },
+          "cpuUsage": {
+            "user": 0,
+            "system": 0
+          },
+          "startTime": 1757187628981
+        },
+        "tools": {
+          "http/request": {
+            "callCount": 341,
+            "successCount": 341,
+            "errorCount": 0,
+            "totalResponseTime": 267.3061000000001,
+            "errorTypes": {},
+            "lastCalled": 1757191511415
+          }
+        },
+        "connections": {
+          "activeConnections": 1,
+          "totalConnections": 3,
+          "disconnectedConnections": 2,
+          "avgSessionDuration": 3759427.6666666665
+        },
+        "performance": {
+          "requestsPerMinute": 0,
+          "successRate": 100,
+          "avgResponseTime": 0.7838888563049855,
+          "errorRate": 0
+        }
+      },
+      "performanceData": {
+        "responseTimeMs": 0.7838888563049855,
+        "requestCount": 341,
+        "errorCount": 0,
+        "connectionCount": 1
+      }
     }
   ],
   "stats": {
-    "count": 59,
+    "count": 125,
     "capacity": 720,
-    "totalAdded": 59,
+    "totalAdded": 125,
     "totalDropped": 0,
     "resizeCount": 0,
-    "memoryUsage": 121478,
-    "lastModified": "2025-09-06T20:20:36.284Z",
-    "utilization": 8.194444444444445
+    "memoryUsage": 225372,
+    "lastModified": "2025-09-06T21:26:36.757Z",
+    "utilization": 17.36111111111111
   },
   "version": "1.0.0",
-  "createdAt": "2025-09-06T20:20:36.284Z",
-  "lastSaved": "2025-09-06T20:20:36.284Z",
-  "checksum": "3d70d69f7f7b3627bee8e982fe11d11704fb21e2f320c78bd0e0d494b6f91fcf"
+  "createdAt": "2025-09-06T21:26:36.758Z",
+  "lastSaved": "2025-09-06T21:26:36.758Z",
+  "checksum": "cee9c48cea16a2a3ce39af4763ec077634d1c235a1a6f5862a18d2b1ab8173d8"
 }

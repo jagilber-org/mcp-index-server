@@ -1,8 +1,8 @@
 {
   "id": "github-mermaid-dark-theme-quick-guide-2025",
   "title": "GitHub Mermaid Dark Theme Quick Guide",
-  "body": "Minimal body for persistence verification (GREEN).",
-  "priority": 50,
+  "body": "Complete guide for creating Mermaid diagrams in GitHub markdown with dark theme optimization.\n\n## Quick Start\n```mermaid\ngraph TD\n    A[Start] --> B{Decision}\n    B -->|Yes| C[Action]\n    B -->|No| D[Alternative]\n```\n\n## Dark Theme Best Practices\n- Use light colors for visibility in dark mode\n- Prefer #ffffff, #ffdd44, #44ff44 for nodes\n- Test diagrams in both light and dark GitHub themes\n\n## Advanced Features\n- State diagrams for workflow documentation\n- Class diagrams for code architecture\n- Sequence diagrams for API interactions\n\n## GitHub Integration\n- Diagrams render automatically in README.md\n- Support in issues, PRs, and wiki pages\n- Live preview in GitHub web editor",
+  "priority": 75,
   "audience": "all",
   "requirement": "optional",
   "categories": [
@@ -11,23 +11,23 @@
     "markdown",
     "visualization"
   ],
-  "sourceHash": "8c90feab00cfe822d308ae2172d02c966411b70e548add36c9525ef99fcd43d4",
+  "sourceHash": "8685444ad3549e639c2c1ec36f995a7c933b46c2c94c4485a3475404d3b1c3f6",
   "schemaVersion": "2",
-  "createdAt": "2025-09-05T21:15:40.997Z",
-  "updatedAt": "2025-09-05T21:20:00.897Z",
-  "riskScore": 55,
+  "createdAt": "2025-09-06T21:21:14.670Z",
+  "updatedAt": "2025-09-06T21:21:14.670Z",
+  "riskScore": 30,
   "version": "1.0.0",
   "status": "approved",
   "owner": "unowned",
   "priorityTier": "P4",
   "classification": "internal",
-  "lastReviewedAt": "2025-09-05T21:15:40.998Z",
-  "nextReviewDue": "2026-01-03T21:15:40.998Z",
+  "lastReviewedAt": "2025-09-06T21:21:14.670Z",
+  "nextReviewDue": "2026-01-04T21:21:14.670Z",
   "reviewIntervalDays": 120,
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-09-05T21:15:40.997Z",
+      "changedAt": "2025-09-06T21:21:14.670Z",
       "summary": "initial import"
     }
   ],

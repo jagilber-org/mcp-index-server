@@ -1502,3 +1502,5 @@ export function getMetricsCollector(): MetricsCollector {
 export function setMetricsCollector(collector: MetricsCollector | null): void {
   globalCollector = collector;
 }
+
+// (No changes needed in this file for the current UI fixes)

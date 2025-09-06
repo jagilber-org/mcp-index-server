@@ -1,5 +1,5 @@
 /**
- * Phase 4.1 Admin Panel - Enterprise Administration Interface
+ * MCP Index Server Admin - Enterprise Administration Interface
  *
  * Provides comprehensive administrative controls for the MCP Index Server:
  * - Server configuration management
@@ -11,7 +11,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { getMetricsCollector } from './MetricsCollector';
+import { getMetricsCollector, ToolMetrics } from './MetricsCollector';
 
 interface AdminConfig {
   serverSettings: {
@@ -83,6 +83,12 @@ interface AdminStats {
     heapTotal: number;
     external: number;
   };
+  cpuUsage: {
+    user: number;
+    system: number;
+    percent: number;
+  };
+  toolMetrics: { [toolName: string]: ToolMetrics };
   catalogStats: {
     totalInstructions: number;
     lastUpdated: Date;
@@ -104,6 +110,11 @@ export class AdminPanel {
   private readonly maxSessionHistory = parseInt(process.env.MCP_ADMIN_MAX_SESSION_HISTORY || '200');
   // Quick index for history lookup
   private sessionHistoryIndex: Map<string, AdminSessionHistoryEntry> = new Map();
+  
+  // CPU tracking for leak detection
+  private cpuHistory: Array<{ timestamp: number; user: number; system: number; percent: number }> = [];
+  private lastCpuUsage: NodeJS.CpuUsage | null = null;
+  private readonly maxCpuHistoryEntries = 100; // Keep last 100 entries for trend analysis
 
   constructor() {
     this.config = this.loadDefaultConfig();
@@ -415,6 +426,80 @@ export class AdminPanel {
   }
 
   /**
+   * Calculate current CPU usage with historical tracking
+   */
+  private calculateCpuUsage(): { user: number; system: number; percent: number } {
+    const currentCpuUsage = process.cpuUsage();
+    let cpuPercent = 0;
+    let userTime = 0;
+    let systemTime = 0;
+
+    if (this.lastCpuUsage) {
+      // Calculate delta since last measurement
+      const userDelta = currentCpuUsage.user - this.lastCpuUsage.user;
+      const systemDelta = currentCpuUsage.system - this.lastCpuUsage.system;
+      const totalDelta = userDelta + systemDelta;
+      
+      // Convert microseconds to percentage (assuming 1 second interval)
+      // For more accurate results, you'd want to track the actual time interval
+      cpuPercent = Math.min((totalDelta / 1000000) * 100, 100);
+      userTime = userDelta / 1000000; // Convert to seconds
+      systemTime = systemDelta / 1000000; // Convert to seconds
+    }
+
+    this.lastCpuUsage = currentCpuUsage;
+
+    // Add to history for leak detection
+    const historyEntry = {
+      timestamp: Date.now(),
+      user: userTime,
+      system: systemTime,
+      percent: cpuPercent
+    };
+
+    this.cpuHistory.push(historyEntry);
+    
+    // Keep only recent entries
+    if (this.cpuHistory.length > this.maxCpuHistoryEntries) {
+      this.cpuHistory.shift();
+    }
+
+    return {
+      user: userTime,
+      system: systemTime,
+      percent: cpuPercent
+    };
+  }
+
+  /**
+   * Analyze CPU trends for potential leaks
+   */
+  private analyzeCpuTrends(): { trend: 'stable' | 'increasing' | 'decreasing'; avgUsage: number; peakUsage: number } {
+    if (this.cpuHistory.length < 10) {
+      return { trend: 'stable', avgUsage: 0, peakUsage: 0 };
+    }
+
+    const recent = this.cpuHistory.slice(-10);
+    const avgUsage = recent.reduce((sum, entry) => sum + entry.percent, 0) / recent.length;
+    const peakUsage = Math.max(...recent.map(entry => entry.percent));
+
+    // Simple trend analysis - compare first half vs second half
+    const firstHalf = recent.slice(0, 5);
+    const secondHalf = recent.slice(5);
+    const firstAvg = firstHalf.reduce((sum, entry) => sum + entry.percent, 0) / firstHalf.length;
+    const secondAvg = secondHalf.reduce((sum, entry) => sum + entry.percent, 0) / secondHalf.length;
+
+    let trend: 'stable' | 'increasing' | 'decreasing' = 'stable';
+    const difference = secondAvg - firstAvg;
+    
+    if (Math.abs(difference) > 5) {
+      trend = difference > 0 ? 'increasing' : 'decreasing';
+    }
+
+    return { trend, avgUsage, peakUsage };
+  }
+
+  /**
    * Get comprehensive admin statistics
    */
   getAdminStats(): AdminStats {
@@ -463,6 +548,7 @@ export class AdminPanel {
     }
 
     const memUsage = snapshot.server.memoryUsage; // already captured in snapshot
+    const cpuUsage = this.calculateCpuUsage(); // Calculate current CPU usage
 
     return {
   // Total historical websocket connections (connected + disconnected)
@@ -482,6 +568,8 @@ export class AdminPanel {
         heapTotal: memUsage.heapTotal,
         external: (memUsage as unknown as { external?: number })?.external ?? 0
       },
+      cpuUsage,
+      toolMetrics: snapshot.tools,
       catalogStats: this.catalogStatsCache
     };
   }
@@ -497,6 +585,23 @@ export class AdminPanel {
     if (memPercent > 80) {
       issues.push('High memory usage detected');
       recommendations.push('Consider restarting the server or increasing memory limits');
+    }
+    
+    // Check CPU usage and trends
+    const cpuTrends = this.analyzeCpuTrends();
+    if (cpuTrends.avgUsage > 80) {
+      issues.push('High CPU usage detected');
+      recommendations.push('Review server load and consider scaling');
+    }
+    
+    if (cpuTrends.trend === 'increasing' && cpuTrends.avgUsage > 50) {
+      issues.push('CPU usage trend increasing');
+      recommendations.push('Monitor for potential CPU leaks or resource contention');
+    }
+    
+    if (cpuTrends.peakUsage > 95) {
+      issues.push('CPU usage spikes detected');
+      recommendations.push('Investigate CPU-intensive operations');
     }
     
     // Check uptime (regression & long-running)
@@ -521,7 +626,8 @@ export class AdminPanel {
     // Determine overall health status
     let status: 'healthy' | 'warning' | 'critical' = 'healthy';
     if (issues.length > 0) {
-      status = memPercent > 90 || errorRate > 10 ? 'critical' : 'warning';
+      const cpuTrends = this.analyzeCpuTrends();
+      status = (memPercent > 90 || errorRate > 10 || cpuTrends.avgUsage > 90) ? 'critical' : 'warning';
     }
     
     this.maintenanceInfo.systemHealth = { status, issues, recommendations };

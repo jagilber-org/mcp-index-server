@@ -283,6 +283,11 @@ param(
   [switch]$TraceRequire
 )
 Set-StrictMode -Version Latest
+# Default enable dashboard unless explicitly disabled by environment. This makes
+# production deployments immediately expose the admin UI without requiring users
+# to remember MCP_DASHBOARD=1 each launch. Opt-out by setting MCP_DASHBOARD=0
+# before invoking start.ps1 or by exporting it prior to launch.
+if(-not $env:MCP_DASHBOARD){ $env:MCP_DASHBOARD = '1' }
 if($VerboseLogging){ $env:MCP_LOG_VERBOSE = '1' } elseif(-not $env:MCP_LOG_VERBOSE){ $env:MCP_LOG_VERBOSE = '' }
 if($EnableMutation){ $env:MCP_ENABLE_MUTATION = '1' }
 [Console]::Error.WriteLine('[start] Launching MCP Index Server...')

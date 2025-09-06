@@ -1,0 +1,107 @@
+{
+  "timestamp": 1757187461743,
+  "server": {
+    "uptime": 720989,
+    "version": "1.2.2",
+    "memoryUsage": {
+      "rss": 76062720,
+      "heapTotal": 27049984,
+      "heapUsed": 25200816,
+      "external": 2580545,
+      "arrayBuffers": 237883
+    },
+    "cpuUsage": {
+      "user": 0,
+      "system": 0
+    },
+    "startTime": 1757186740754
+  },
+  "tools": {
+    "http/request": {
+      "callCount": 227,
+      "successCount": 226,
+      "errorCount": 1,
+      "totalResponseTime": 12671.621799999994,
+      "errorTypes": {
+        "http_503": 1
+      },
+      "lastCalled": 1757187426399
+    },
+    "health/check": {
+      "callCount": 1,
+      "successCount": 1,
+      "errorCount": 0,
+      "totalResponseTime": 1236.3972,
+      "errorTypes": {},
+      "lastCalled": 1757186803376
+    },
+    "instructions/dispatch": {
+      "callCount": 16,
+      "successCount": 16,
+      "errorCount": 0,
+      "totalResponseTime": 19031.089300000003,
+      "errorTypes": {},
+      "lastCalled": 1757186996489
+    },
+    "meta/tools": {
+      "callCount": 4,
+      "successCount": 4,
+      "errorCount": 0,
+      "totalResponseTime": 4139.725,
+      "errorTypes": {},
+      "lastCalled": 1757186813323
+    },
+    "instructions/add": {
+      "callCount": 1,
+      "successCount": 1,
+      "errorCount": 0,
+      "totalResponseTime": 1388.0386,
+      "errorTypes": {},
+      "lastCalled": 1757186806410
+    },
+    "instructions/remove": {
+      "callCount": 3,
+      "successCount": 3,
+      "errorCount": 0,
+      "totalResponseTime": 3560.7609,
+      "errorTypes": {},
+      "lastCalled": 1757186813706
+    },
+    "metrics/snapshot": {
+      "callCount": 3,
+      "successCount": 3,
+      "errorCount": 0,
+      "totalResponseTime": 784.1716,
+      "errorTypes": {},
+      "lastCalled": 1757186811682
+    },
+    "gates/evaluate": {
+      "callCount": 1,
+      "successCount": 1,
+      "errorCount": 0,
+      "totalResponseTime": 727.0737,
+      "errorTypes": {},
+      "lastCalled": 1757186809248
+    },
+    "usage/track": {
+      "callCount": 1,
+      "successCount": 1,
+      "errorCount": 0,
+      "totalResponseTime": 0.7731,
+      "errorTypes": {},
+      "lastCalled": 1757186811642
+    }
+  },
+  "connections": {
+    "activeConnections": 2,
+    "totalConnections": 3,
+    "disconnectedConnections": 1,
+    "avgSessionDuration": 478955.3333333333
+  },
+  "performance": {
+    "requestsPerMinute": 3,
+    "successRate": 99.61089494163424,
+    "avgResponseTime": 169.41498521400774,
+    "errorRate": 0.38910505836575876
+  }
+}

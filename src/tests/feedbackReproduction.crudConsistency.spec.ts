@@ -9,6 +9,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 // Lazy dynamic import to avoid CJS->ESM static import incompatibility warnings
 let createInstructionClient: any; // populated on first use
 
@@ -26,6 +28,8 @@ function isNotFound(obj: Record<string, unknown> | undefined): boolean {
 describe('Feedback Reproduction: CRUD State Consistency (Portable Client)', () => {
   const TEST_ID = 'crud-consistency-test-instruction';
   let client: Awaited<ReturnType<typeof createInstructionClient>>;
+  // Track the ephemeral instructions dir used for each test so we can clean it up after.
+  let currentInstructionsDir: string | undefined;
 
   beforeEach(async () => {
     if(!createInstructionClient){
@@ -34,14 +38,32 @@ describe('Feedback Reproduction: CRUD State Consistency (Portable Client)', () =
       const mod = await import('../../portable-mcp-client/client-lib.mjs');
       createInstructionClient = mod.createInstructionClient;
     }
-  const explicitDir = process.env.TEST_INSTRUCTIONS_DIR || `${process.cwd().replace(/\\/g,'\\\\')}\\instructions`;
-  client = await createInstructionClient({ forceMutation: true, instructionsDir: explicitDir });
+  // PERFORMANCE / FLAKINESS NOTE:
+  // Earlier timeouts (15s/25s) were caused by pointing the client at the large shared `instructions` directory
+  // ( >1k entries ) which made create/list/read sequences slow under concurrent suite load.
+  // To obtain deterministic sub-second execution we provision a fresh ephemeral directory per test.
+  // If an explicit TEST_INSTRUCTIONS_DIR is supplied we still honor it for diagnostic overrides.
+  if (process.env.TEST_INSTRUCTIONS_DIR) {
+    currentInstructionsDir = process.env.TEST_INSTRUCTIONS_DIR;
+  } else {
+    const isolationRoot = path.join(process.cwd(), 'tmp', 'crud-consistency-isolation');
+    fs.mkdirSync(isolationRoot, { recursive: true });
+    const dirName = `run-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+    currentInstructionsDir = path.join(isolationRoot, dirName);
+    fs.mkdirSync(currentInstructionsDir, { recursive: true });
+  }
+  client = await createInstructionClient({ forceMutation: true, instructionsDir: currentInstructionsDir });
     // Defensive cleanup
     try { await client.remove(TEST_ID); } catch { /* ignore */ }
   });
 
   afterEach(async () => {
     await client.close();
+    // Best-effort cleanup of ephemeral directory (skip if user supplied a custom one for debugging)
+    if (currentInstructionsDir && !process.env.TEST_INSTRUCTIONS_DIR) {
+      try { fs.rmSync(currentInstructionsDir, { recursive: true, force: true }); } catch { /* ignore */ }
+      currentInstructionsDir = undefined;
+    }
   });
 
   describe('Issue #740513ece59b2a0c: Add Skip vs Get Not Found Inconsistency', () => {

@@ -22,6 +22,8 @@
 // success or a version negotiation error – never silent drop.
 // Install global stderr log prefix (timestamps, pid, ppid, seq, tid) before any diagnostic output.
 import '../services/logPrefix';
+// Ensure logger initializes early (file logging environment may auto-resolve)
+import '../services/logger';
 const __earlyInitChunks: Buffer[] = [];
 let __earlyInitFirstLogged = false;
 let __sdkReady = false;
@@ -65,6 +67,7 @@ import { getMemoryMonitor } from '../utils/memoryMonitor';
 import { getBooleanEnv } from '../utils/envUtils';
 import fs from 'fs';
 import path from 'path';
+import { logInfo } from '../services/logger';
 
 // ---------------------------------------------------------------------------
 // Unified global diagnostics guard (installs once) for uncaught errors, promise
@@ -377,6 +380,7 @@ export async function main(){
     }
   }
   process.stderr.write('[startup] SDK server started (stdio only)\n');
+  try { logInfo('server_started', { pid: process.pid, logFile: process.env.MCP_LOG_FILE }); } catch { /* ignore */ }
 }
 
 if(require.main === module){

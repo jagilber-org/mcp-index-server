@@ -19,9 +19,27 @@ export function newCorrelationId(){ return crypto.randomBytes(8).toString('hex')
 const ENABLE_JSON = process.env.MCP_LOG_JSON === '1';
 let logFileHandle: fs.WriteStream | null = null;
 
+// Resolve and normalize MCP_LOG_FILE value (supports sentinel values like '1', 'true')
+function resolveLogFileEnv(): string | null {
+  const raw = process.env.MCP_LOG_FILE;
+  if (!raw) return null;
+  // If user supplied a sentinel boolean-like value, choose a sensible default inside ./logs
+  if (raw === '1' || /^(true|yes|on)$/i.test(raw)) {
+    const defaultDir = path.join(process.cwd(), 'logs');
+    const resolved = path.join(defaultDir, 'mcp-server.log');
+    try {
+      if (!fs.existsSync(defaultDir)) fs.mkdirSync(defaultDir, { recursive: true });
+      // Mutate env so downstream (ApiRoutes) sees the actual resolved file
+      process.env.MCP_LOG_FILE = resolved;
+    } catch { /* ignore – fallback will be caught later */ }
+    return resolved;
+  }
+  return raw;
+}
+
 // Initialize file logging if MCP_LOG_FILE is specified
 function initializeFileLogging(): void {
-  const logFile = process.env.MCP_LOG_FILE;
+  const logFile = resolveLogFileEnv();
   if (!logFile || logFileHandle) return; // Already initialized or not requested
 
   try {
@@ -58,6 +76,18 @@ function initializeFileLogging(): void {
     console.error(`[logger] Failed to initialize file logging to ${logFile}: ${error}`);
   }
 }
+
+// Eager initialization: if user supplied a sentinel value ('1', 'true', etc.)
+// we create the log file immediately so external components (dashboard log
+// viewer polling /api/logs) see the file even before the first structured
+// log line is emitted. Without this, very early polling could race the first
+// emit() call and incorrectly report "no log file". Normal explicit paths
+// remain lazy to avoid unnecessary fd usage when logger never used.
+try {
+  if (process.env.MCP_LOG_FILE && (process.env.MCP_LOG_FILE === '1' || /^(true|yes|on)$/i.test(process.env.MCP_LOG_FILE))) {
+    initializeFileLogging();
+  }
+} catch { /* ignore eager init errors */ }
 
 function emit(rec: LogRecord){
   // Initialize file logging on first emit (lazy initialization)

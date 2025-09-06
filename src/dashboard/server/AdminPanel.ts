@@ -66,6 +66,9 @@ interface SystemMaintenance {
     status: 'healthy' | 'warning' | 'critical';
     issues: string[];
     recommendations: string[];
+    cpuTrend?: 'stable' | 'increasing' | 'decreasing';
+    memoryTrend?: 'stable' | 'increasing' | 'decreasing';
+    memoryGrowthRate?: number; // bytes per minute
   };
 }
 
@@ -115,6 +118,10 @@ export class AdminPanel {
   private cpuHistory: Array<{ timestamp: number; user: number; system: number; percent: number }> = [];
   private lastCpuUsage: NodeJS.CpuUsage | null = null;
   private readonly maxCpuHistoryEntries = 100; // Keep last 100 entries for trend analysis
+
+  // Memory tracking for leak detection
+  private memoryHistory: Array<{ timestamp: number; heapUsed: number; heapTotal: number; external: number; rss: number }> = [];
+  private readonly maxMemoryHistoryEntries = 100; // Keep last 100 entries for trend analysis
 
   constructor() {
     this.config = this.loadDefaultConfig();
@@ -500,6 +507,41 @@ export class AdminPanel {
   }
 
   /**
+   * Analyze memory usage trends for leak detection
+   */
+  private analyzeMemoryTrends(): { trend: 'stable' | 'increasing' | 'decreasing'; avgHeapUsed: number; peakHeapUsed: number; growthRate: number } {
+    if (this.memoryHistory.length < 10) {
+      return { trend: 'stable', avgHeapUsed: 0, peakHeapUsed: 0, growthRate: 0 };
+    }
+
+    const recent = this.memoryHistory.slice(-10);
+    const avgHeapUsed = recent.reduce((sum, entry) => sum + entry.heapUsed, 0) / recent.length;
+    const peakHeapUsed = Math.max(...recent.map(entry => entry.heapUsed));
+
+    // Calculate growth rate (bytes per minute)
+    const firstEntry = recent[0];
+    const lastEntry = recent[recent.length - 1];
+    const timeDiffMinutes = (lastEntry.timestamp - firstEntry.timestamp) / (1000 * 60);
+    const growthRate = timeDiffMinutes > 0 ? (lastEntry.heapUsed - firstEntry.heapUsed) / timeDiffMinutes : 0;
+
+    // Simple trend analysis - compare first half vs second half
+    const firstHalf = recent.slice(0, 5);
+    const secondHalf = recent.slice(5);
+    const firstAvg = firstHalf.reduce((sum, entry) => sum + entry.heapUsed, 0) / firstHalf.length;
+    const secondAvg = secondHalf.reduce((sum, entry) => sum + entry.heapUsed, 0) / secondHalf.length;
+
+    let trend: 'stable' | 'increasing' | 'decreasing' = 'stable';
+    const difference = secondAvg - firstAvg;
+    
+    // Consider memory leak if growth is > 10MB or growth rate > 1MB/min
+    if (Math.abs(difference) > 10 * 1024 * 1024 || Math.abs(growthRate) > 1024 * 1024) {
+      trend = difference > 0 ? 'increasing' : 'decreasing';
+    }
+
+    return { trend, avgHeapUsed, peakHeapUsed, growthRate };
+  }
+
+  /**
    * Get comprehensive admin statistics
    */
   getAdminStats(): AdminStats {
@@ -578,13 +620,39 @@ export class AdminPanel {
     const issues: string[] = [];
     const recommendations: string[] = [];
     
-    // Check memory usage
+    // Check memory usage and track history
     const memUsage = process.memoryUsage();
     const memPercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
+    
+    // Track memory history for leak detection
+    this.memoryHistory.push({
+      timestamp: Date.now(),
+      heapUsed: memUsage.heapUsed,
+      heapTotal: memUsage.heapTotal,
+      external: memUsage.external,
+      rss: memUsage.rss
+    });
+    
+    // Maintain memory history buffer
+    if (this.memoryHistory.length > this.maxMemoryHistoryEntries) {
+      this.memoryHistory.shift();
+    }
     
     if (memPercent > 80) {
       issues.push('High memory usage detected');
       recommendations.push('Consider restarting the server or increasing memory limits');
+    }
+    
+    // Check memory trends for leak detection
+    const memoryTrends = this.analyzeMemoryTrends();
+    if (memoryTrends.trend === 'increasing' && memoryTrends.growthRate > 1024 * 1024) {
+      issues.push('Memory leak detected - heap growing consistently');
+      recommendations.push('Investigate memory usage patterns and potential leaks');
+    }
+    
+    if (memoryTrends.growthRate > 5 * 1024 * 1024) { // > 5MB/min growth
+      issues.push('Rapid memory growth detected');
+      recommendations.push('Monitor memory usage closely and consider restart if growth continues');
     }
     
     // Check CPU usage and trends
@@ -626,11 +694,17 @@ export class AdminPanel {
     // Determine overall health status
     let status: 'healthy' | 'warning' | 'critical' = 'healthy';
     if (issues.length > 0) {
-      const cpuTrends = this.analyzeCpuTrends();
-      status = (memPercent > 90 || errorRate > 10 || cpuTrends.avgUsage > 90) ? 'critical' : 'warning';
+      status = (memPercent > 90 || errorRate > 10 || cpuTrends.avgUsage > 90 || memoryTrends.growthRate > 10 * 1024 * 1024) ? 'critical' : 'warning';
     }
     
-    this.maintenanceInfo.systemHealth = { status, issues, recommendations };
+    this.maintenanceInfo.systemHealth = { 
+      status, 
+      issues, 
+      recommendations,
+      cpuTrend: cpuTrends.trend,
+      memoryTrend: memoryTrends.trend,
+      memoryGrowthRate: memoryTrends.growthRate
+    };
   }
 
   /** Return immutable copy of session history */

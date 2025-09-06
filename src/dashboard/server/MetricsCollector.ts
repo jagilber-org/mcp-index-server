@@ -8,6 +8,7 @@
 import fs from 'fs';
 import path from 'path';
 import { getFileMetricsStorage, FileMetricsStorage } from './FileMetricsStorage.js';
+import { BufferRing, OverflowStrategy, BufferRingStats } from '../../utils/BufferRing.js';
 import { getBooleanEnv } from '../../utils/envUtils.js';
 
 export interface ToolMetrics {
@@ -44,6 +45,44 @@ export interface MetricsSnapshot {
     successRate: number;
     avgResponseTime: number;
     errorRate: number;
+  };
+}
+
+// BufferRing-Enhanced Metrics Interfaces
+export interface MetricsTimeSeriesEntry {
+  timestamp: number;
+  snapshot: MetricsSnapshot;
+  performanceData: {
+    responseTimeMs: number;
+    requestCount: number;
+    errorCount: number;
+    connectionCount: number;
+  };
+}
+
+export interface ToolCallEvent {
+  timestamp: number;
+  toolName: string;
+  success: boolean;
+  responseTimeMs: number;
+  errorType?: string;
+  clientId?: string;
+}
+
+export interface MetricsBufferConfig {
+  historicalSnapshots: {
+    capacity: number;
+    retentionMinutes: number;
+    persistenceFile?: string;
+  };
+  toolCallEvents: {
+    capacity: number;
+    retentionMinutes: number;
+    persistenceFile?: string;
+  };
+  performanceMetrics: {
+    capacity: number;
+    persistenceFile?: string;
   };
 }
 
@@ -195,6 +234,10 @@ export interface MetricsCollectorOptions {
 
 export class MetricsCollector {
   private tools: Map<string, ToolMetrics> = new Map();
+  // Resource usage samples (CPU/Memory) for leak/trend analysis
+  private resourceSamples: BufferRing<{ timestamp: number; cpuPercent: number; heapUsed: number; rss: number }>;  
+  private lastCpuUsageSample: NodeJS.CpuUsage | null = null;
+  private lastCpuSampleTime = 0;
   private snapshots: MetricsSnapshot[] = []; // Keep small in-memory cache for real-time queries
   private connections: Set<string> = new Set();
   private disconnectedCount = 0;
@@ -211,9 +254,16 @@ export class MetricsCollector {
   private recentCallTimestamps: number[] = [];
   private static readonly MAX_RECENT_CALLS = 10000; // cap to avoid unbounded growth
   private static readonly MAX_MEMORY_SNAPSHOTS = 60; // Keep only 1 hour in memory
+  private static readonly MAX_TOOL_METRICS = 1000; // cap tool metrics to prevent memory leaks
   // File storage for historical data (optional)
   private fileStorage: FileMetricsStorage | null = null;
   private useFileStorage: boolean;
+  
+  // BufferRing-Enhanced Storage
+  private historicalSnapshots: BufferRing<MetricsTimeSeriesEntry>;
+  private toolCallEvents: BufferRing<ToolCallEvent>;
+  private performanceMetrics: BufferRing<{ timestamp: number; responseTime: number; throughput: number; errorRate: number }>;
+  private bufferConfig: MetricsBufferConfig;
 
   constructor(options: MetricsCollectorOptions = {}) {
     this.options = {
@@ -221,20 +271,73 @@ export class MetricsCollector {
       maxSnapshots: options.maxSnapshots ?? 720, // 12 hours at 1-minute intervals
       collectInterval: options.collectInterval ?? 60000, // 1 minute
     };
+    // Initialize resource sampling buffer (default capacity ~1h at 5s interval = 720)
+    const resourceCapacity = parseInt(process.env.MCP_RESOURCE_CAPACITY || '720');
+    this.resourceSamples = new BufferRing<{ timestamp: number; cpuPercent: number; heapUsed: number; rss: number }>({
+      capacity: resourceCapacity,
+      overflowStrategy: OverflowStrategy.DROP_OLDEST,
+      autoPersist: false,
+      enableIntegrityCheck: false
+    });
+    try {
+      const intervalMs = parseInt(process.env.MCP_RESOURCE_SAMPLE_INTERVAL_MS || '5000');
+      setInterval(() => this.sampleResources(), intervalMs).unref();
+    } catch { /* ignore */ }
+
+    // Configure BufferRing settings
+    const metricsDir = process.env.MCP_METRICS_DIR || path.join(process.cwd(), 'metrics');
+    this.bufferConfig = {
+      historicalSnapshots: {
+        capacity: this.options.maxSnapshots,
+        retentionMinutes: this.options.retentionMinutes * 12, // Keep 12x longer than original
+        persistenceFile: path.join(metricsDir, 'historical-snapshots.json')
+      },
+      toolCallEvents: {
+        capacity: 10000, // Store last 10k tool calls
+        retentionMinutes: this.options.retentionMinutes * 2, // 2 hours of tool calls
+        persistenceFile: path.join(metricsDir, 'tool-call-events.json')
+      },
+      performanceMetrics: {
+        capacity: 1440, // Store 24 hours worth of minute-by-minute metrics
+        persistenceFile: path.join(metricsDir, 'performance-metrics.json')
+      }
+    };
 
     // Check if file storage should be enabled (accept "true", "1", "yes", "on")
     this.useFileStorage = getBooleanEnv('MCP_METRICS_FILE_STORAGE');
     
+    // Initialize BufferRing storage
+    this.historicalSnapshots = new BufferRing<MetricsTimeSeriesEntry>({
+      capacity: this.bufferConfig.historicalSnapshots.capacity,
+      overflowStrategy: OverflowStrategy.DROP_OLDEST,
+      persistPath: this.useFileStorage ? this.bufferConfig.historicalSnapshots.persistenceFile : undefined,
+      autoPersist: this.useFileStorage
+    });
+
+    this.toolCallEvents = new BufferRing<ToolCallEvent>({
+      capacity: this.bufferConfig.toolCallEvents.capacity,
+      overflowStrategy: OverflowStrategy.DROP_OLDEST,
+      persistPath: this.useFileStorage ? this.bufferConfig.toolCallEvents.persistenceFile : undefined,
+      autoPersist: this.useFileStorage
+    });
+
+    this.performanceMetrics = new BufferRing<{ timestamp: number; responseTime: number; throughput: number; errorRate: number }>({
+      capacity: this.bufferConfig.performanceMetrics.capacity,
+      overflowStrategy: OverflowStrategy.DROP_OLDEST,
+      persistPath: this.useFileStorage ? this.bufferConfig.performanceMetrics.persistenceFile : undefined,
+      autoPersist: this.useFileStorage
+    });
+    
     if (this.useFileStorage) {
-      // Initialize file storage
+      // Initialize legacy file storage for backward compatibility
       this.fileStorage = getFileMetricsStorage({
-        storageDir: process.env.MCP_METRICS_DIR || path.join(process.cwd(), 'metrics'),
+        storageDir: metricsDir,
         maxFiles: this.options.maxSnapshots,
         retentionMinutes: this.options.retentionMinutes,
       });
-      console.log('📊 MetricsCollector: File storage enabled');
+      console.log('📊 MetricsCollector: BufferRing + File storage enabled');
     } else {
-      console.log('📊 MetricsCollector: Memory-only mode (set MCP_METRICS_FILE_STORAGE=1|true|yes|on for file persistence)');
+      console.log('📊 MetricsCollector: BufferRing memory-only mode (set MCP_METRICS_FILE_STORAGE=1|true|yes|on for persistence)');
     }
 
     // Start periodic collection
@@ -244,7 +347,9 @@ export class MetricsCollector {
   /**
    * Record a tool call event
    */
-  recordToolCall(toolName: string, success: boolean, responseTimeMs: number, errorType?: string): void {
+  recordToolCall(toolName: string, success: boolean, responseTimeMs: number, errorType?: string, clientId?: string): void {
+    const now = Date.now();
+    
     if (!this.tools.has(toolName)) {
       this.tools.set(toolName, {
         callCount: 0,
@@ -258,7 +363,7 @@ export class MetricsCollector {
     const metrics = this.tools.get(toolName)!;
     metrics.callCount++;
     metrics.totalResponseTime += responseTimeMs;
-    metrics.lastCalled = Date.now();
+    metrics.lastCalled = now;
 
     if (success) {
       metrics.successCount++;
@@ -269,8 +374,17 @@ export class MetricsCollector {
       }
     }
 
+    // Store detailed tool call event in BufferRing
+    this.toolCallEvents.add({
+      timestamp: now,
+      toolName,
+      success,
+      responseTimeMs,
+      errorType,
+      clientId
+    });
+
     // Track call timestamp for rolling RPM calculation (last 60s window)
-    const now = Date.now();
     this.recentCallTimestamps.push(now);
     // Prune anything older than 5 minutes to constrain memory
     const cutoff = now - 5 * 60 * 1000;
@@ -283,6 +397,11 @@ export class MetricsCollector {
       if (this.recentCallTimestamps.length > MetricsCollector.MAX_RECENT_CALLS) {
         this.recentCallTimestamps.splice(0, this.recentCallTimestamps.length - MetricsCollector.MAX_RECENT_CALLS);
       }
+    }
+
+    // Prevent unbounded tool metrics growth - cleanup old/unused tools after adding the new tool
+    if (this.tools.size > MetricsCollector.MAX_TOOL_METRICS) {
+      this.cleanupOldToolMetrics();
     }
   }
 
@@ -518,6 +637,28 @@ export class MetricsCollector {
   private takeSnapshot(): void {
     const snapshot = this.getCurrentSnapshot();
     
+    // Store enhanced snapshot in BufferRing with performance data
+    const timeSeriesEntry: MetricsTimeSeriesEntry = {
+      timestamp: snapshot.timestamp,
+      snapshot,
+      performanceData: {
+        responseTimeMs: snapshot.performance.avgResponseTime,
+        requestCount: Array.from(this.tools.values()).reduce((sum, tool) => sum + tool.callCount, 0),
+        errorCount: Array.from(this.tools.values()).reduce((sum, tool) => sum + tool.errorCount, 0),
+        connectionCount: snapshot.connections.activeConnections
+      }
+    };
+    
+    this.historicalSnapshots.add(timeSeriesEntry);
+    
+    // Store performance metrics for charting
+    this.performanceMetrics.add({
+      timestamp: snapshot.timestamp,
+      responseTime: snapshot.performance.avgResponseTime,
+      throughput: snapshot.performance.requestsPerMinute,
+      errorRate: snapshot.performance.errorRate
+    });
+    
     // Store to file immediately (async, non-blocking) if file storage enabled
     if (this.fileStorage) {
       this.fileStorage.storeSnapshot(snapshot).catch(error => {
@@ -544,6 +685,11 @@ export class MetricsCollector {
       if (firstValidIndex > 0) {
         this.snapshots.splice(0, firstValidIndex);
       }
+    }
+
+    // Periodically cleanup tool metrics (every 10 snapshots, ~10 minutes)
+    if (this.snapshots.length % 10 === 0) {
+      this.cleanupOldToolMetrics();
     }
   }
 
@@ -888,6 +1034,55 @@ export class MetricsCollector {
       sum + snap.performance.avgResponseTime, 0) / recentSnapshots.length;
   }
 
+  // ===== Resource Sampling / Leak Detection =====
+  private sampleResources(): void {
+    try {
+      const now = Date.now();
+      const mem = process.memoryUsage();
+      let cpuPercent = 0;
+      const curr = process.cpuUsage();
+      if (this.lastCpuUsageSample && this.lastCpuSampleTime) {
+        const userDiff = curr.user - this.lastCpuUsageSample.user; // microseconds
+        const systemDiff = curr.system - this.lastCpuUsageSample.system;
+        const elapsedMs = now - this.lastCpuSampleTime;
+        if (elapsedMs > 0) {
+          // total diff in microseconds / (elapsedMs * 1000) gives fraction of single core; *100 -> percent
+            cpuPercent = ((userDiff + systemDiff) / 1000) / elapsedMs * 100;
+          // Clamp 0-100 (single process perspective)
+          if (cpuPercent < 0) cpuPercent = 0; else if (cpuPercent > 100) cpuPercent = 100;
+        }
+      }
+      this.lastCpuUsageSample = curr;
+      this.lastCpuSampleTime = now;
+      this.resourceSamples.add({ timestamp: now, cpuPercent, heapUsed: mem.heapUsed, rss: mem.rss });
+    } catch { /* ignore sampling errors */ }
+  }
+
+  getResourceHistory(limit = 200): { samples: { timestamp: number; cpuPercent: number; heapUsed: number; rss: number }[]; trend?: { cpuSlope: number; memSlope: number } } {
+  const all = this.resourceSamples.getAll();
+    const samples = limit > 0 ? all.slice(-limit) : all;
+    // Simple linear regression slope for cpu & heapUsed
+    let cpuSlope = 0, memSlope = 0;
+    if (samples.length > 5) {
+      const n = samples.length;
+      const firstTs = samples[0].timestamp;
+      let sumX = 0, sumCpu = 0, sumMem = 0, sumXcpu = 0, sumXmem = 0, sumX2 = 0;
+      for (const s of samples) {
+        const x = (s.timestamp - firstTs) / 1000; // seconds since first
+        sumX += x;
+        sumCpu += s.cpuPercent;
+        sumMem += s.heapUsed;
+        sumXcpu += x * s.cpuPercent;
+        sumXmem += x * s.heapUsed;
+        sumX2 += x * x;
+      }
+      const denom = (n * sumX2 - sumX * sumX) || 1;
+      cpuSlope = (n * sumXcpu - sumX * sumCpu) / denom;
+      memSlope = (n * sumXmem - sumX * sumMem) / denom; // bytes per second
+    }
+    return { samples, trend: { cpuSlope, memSlope } };
+  }
+
   private getRecentActivity(): ActivityEvent[] {
     return Array.from(this.tools.entries())
       .filter(([, metrics]) => metrics.lastCalled && 
@@ -1098,6 +1293,193 @@ export class MetricsCollector {
 
     const timeSpanMinutes = (snapshots[snapshots.length - 1].timestamp - snapshots[0].timestamp) / 60000;
     return timeSpanMinutes > 0 ? totalRequests / timeSpanMinutes : 0;
+  }
+
+  /**
+   * Cleanup old/unused tool metrics to prevent memory leaks
+   * When at capacity, removes lowest-activity tools to make room
+   */
+  private cleanupOldToolMetrics(): void {
+    const now = Date.now();
+    const staleThreshold = now - (60 * 60 * 1000); // 1 hour ago
+    const minCallsToKeep = 10; // Keep tools with at least 10 calls regardless of age
+    
+    // Sort tools by last activity and call count to keep most active ones
+    const toolEntries = Array.from(this.tools.entries())
+      .map(([name, metrics]) => ({ name, metrics, score: (metrics.lastCalled || 0) + (metrics.callCount * 1000) }))
+      .sort((a, b) => b.score - a.score);
+    
+    // Keep top 80% of max capacity as most active tools
+    const keepCount = Math.floor(MetricsCollector.MAX_TOOL_METRICS * 0.8);
+    const toolsToRemove = toolEntries.slice(keepCount);
+    
+    let removedCount = 0;
+    
+    // If we're at capacity, be more aggressive about cleanup
+    if (this.tools.size > MetricsCollector.MAX_TOOL_METRICS) {
+      // Remove lowest-activity tools more aggressively when at capacity
+      for (const { name, metrics } of toolsToRemove) {
+        // Prefer to remove old tools with low activity, but when at capacity, remove any low-activity tools
+        const isStale = (metrics.lastCalled || 0) < staleThreshold;
+        const isLowActivity = metrics.callCount < minCallsToKeep;
+        
+        if ((isStale && isLowActivity) || (!isStale && metrics.callCount < 5)) {
+          this.tools.delete(name);
+          removedCount++;
+        }
+      }
+      
+      // If still over capacity after conservative cleanup, remove more aggressively
+      if (this.tools.size > MetricsCollector.MAX_TOOL_METRICS && toolsToRemove.length > 0) {
+        const remainingToRemove = this.tools.size - keepCount;
+        const additionalRemovals = toolsToRemove.slice(0, remainingToRemove);
+        for (const { name } of additionalRemovals) {
+          if (this.tools.has(name)) {
+            this.tools.delete(name);
+            removedCount++;
+          }
+        }
+      }
+    } else {
+      // Normal cleanup - only remove old, low-activity tools
+      for (const { name, metrics } of toolsToRemove) {
+        if ((metrics.lastCalled || 0) < staleThreshold && metrics.callCount < minCallsToKeep) {
+          this.tools.delete(name);
+          removedCount++;
+        }
+      }
+    }
+    
+    if (removedCount > 0) {
+      console.log(`🧹 MetricsCollector: Cleaned up ${removedCount} stale tool metrics (${this.tools.size} remaining)`);
+    }
+  }
+
+  // ====== BufferRing-Enhanced Methods ======
+
+  /**
+   * Get historical metrics data for charting
+   */
+  getHistoricalMetrics(minutes: number = 60): MetricsTimeSeriesEntry[] {
+    const cutoff = Date.now() - (minutes * 60 * 1000);
+    return this.historicalSnapshots.filter(entry => entry.timestamp >= cutoff);
+  }
+
+  /**
+   * Get recent tool call events for analysis
+   */
+  getRecentToolCallEvents(minutes: number = 30): ToolCallEvent[] {
+    const cutoff = Date.now() - (minutes * 60 * 1000);
+    return this.toolCallEvents.filter(event => event.timestamp >= cutoff);
+  }
+
+  /**
+   * Get performance metrics time series for dashboard charts (BufferRing-enhanced)
+   */
+  getPerformanceTimeSeriesData(minutes: number = 60): PerformanceChartData {
+    const cutoff = Date.now() - (minutes * 60 * 1000);
+    const recentMetrics = this.performanceMetrics.filter(metric => metric.timestamp >= cutoff);
+
+    return {
+      responseTime: recentMetrics.map(m => ({ timestamp: m.timestamp, value: m.responseTime })),
+      requestRate: recentMetrics.map(m => ({ timestamp: m.timestamp, value: m.throughput })),
+      errorRate: recentMetrics.map(m => ({ timestamp: m.timestamp, value: m.errorRate })),
+      successRate: recentMetrics.map(m => ({ timestamp: m.timestamp, value: 100 - m.errorRate }))
+    };
+  }
+
+  /**
+   * Get tool usage analytics from historical data
+   */
+  getToolUsageAnalytics(minutes: number = 60): ToolUsageStats[] {
+    const cutoff = Date.now() - (minutes * 60 * 1000);
+    const recentEvents = this.toolCallEvents.filter(event => event.timestamp >= cutoff);
+    
+    const toolStats = new Map<string, { calls: number; successes: number; totalTime: number; lastUsed: number }>();
+    
+    recentEvents.forEach(event => {
+      const stats = toolStats.get(event.toolName) || { calls: 0, successes: 0, totalTime: 0, lastUsed: 0 };
+      stats.calls++;
+      if (event.success) stats.successes++;
+      stats.totalTime += event.responseTimeMs;
+      stats.lastUsed = Math.max(stats.lastUsed, event.timestamp);
+      toolStats.set(event.toolName, stats);
+    });
+
+    return Array.from(toolStats.entries()).map(([toolName, stats]) => ({
+      toolName,
+      callCount: stats.calls,
+      successRate: stats.calls > 0 ? (stats.successes / stats.calls) * 100 : 100,
+      avgResponseTime: stats.calls > 0 ? stats.totalTime / stats.calls : 0,
+      lastCalled: stats.lastUsed > 0 ? new Date(stats.lastUsed) : null
+    }));
+  }
+
+  /**
+   * Get BufferRing statistics for monitoring
+   */
+  getBufferRingStats(): {
+    historicalSnapshots: BufferRingStats;
+    toolCallEvents: BufferRingStats;
+    performanceMetrics: BufferRingStats;
+  } {
+    return {
+      historicalSnapshots: this.historicalSnapshots.getStats(),
+      toolCallEvents: this.toolCallEvents.getStats(),
+      performanceMetrics: this.performanceMetrics.getStats()
+    };
+  }
+
+  /**
+   * Export metrics data for backup/analysis
+   */
+  exportMetricsData(options: { includeHistorical?: boolean; includeEvents?: boolean; includePerformance?: boolean } = {}): {
+    timestamp: number;
+    currentSnapshot: MetricsSnapshot;
+    bufferStats: {
+      historicalSnapshots: BufferRingStats;
+      toolCallEvents: BufferRingStats;
+      performanceMetrics: BufferRingStats;
+    };
+    historicalSnapshots?: MetricsTimeSeriesEntry[];
+    toolCallEvents?: ToolCallEvent[];
+    performanceMetrics?: Array<{ timestamp: number; responseTime: number; throughput: number; errorRate: number; }>;
+  } {
+    const data = {
+      timestamp: Date.now(),
+      currentSnapshot: this.getCurrentSnapshot(),
+      bufferStats: this.getBufferRingStats()
+    };
+
+    const result: typeof data & {
+      historicalSnapshots?: MetricsTimeSeriesEntry[];
+      toolCallEvents?: ToolCallEvent[];
+      performanceMetrics?: Array<{ timestamp: number; responseTime: number; throughput: number; errorRate: number; }>;
+    } = data;
+
+    if (options.includeHistorical !== false) {
+      result.historicalSnapshots = this.historicalSnapshots.getAll();
+    }
+
+    if (options.includeEvents !== false) {
+      result.toolCallEvents = this.toolCallEvents.getAll();
+    }
+
+    if (options.includePerformance !== false) {
+      result.performanceMetrics = this.performanceMetrics.getAll();
+    }
+
+    return result;
+  }
+
+  /**
+   * Clear all BufferRing data (for maintenance)
+   */
+  clearBufferedData(): void {
+    this.historicalSnapshots.clear();
+    this.toolCallEvents.clear();
+    this.performanceMetrics.clear();
+    console.log('📊 MetricsCollector: Cleared all BufferRing data');
   }
 }
 

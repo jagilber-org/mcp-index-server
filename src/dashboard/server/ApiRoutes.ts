@@ -12,6 +12,7 @@ import { listRegisteredMethods, getHandler } from '../../server/registry.js';
 import { getAdminPanel } from './AdminPanel.js';
 import fs from 'fs';
 import path from 'path';
+import { dumpFlags, updateFlags } from '../../services/featureFlags.js';
 
 export interface ApiRoutesOptions {
   enableCors?: boolean;
@@ -688,9 +689,13 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
   router.get('/admin/config', (_req: Request, res: Response) => {
     try {
       const config = adminPanel.getAdminConfig();
+      // Surface feature flags (environment + file) for visibility
+  let featureFlags: Record<string, boolean> = {};
+  try { featureFlags = dumpFlags(); } catch { /* ignore */ }
       res.json({
         success: true,
         config,
+        featureFlags,
         timestamp: Date.now()
       });
     } catch (error) {
@@ -710,6 +715,10 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
     try {
       const updates = req.body;
       const result = adminPanel.updateAdminConfig(updates);
+      // Feature flag persistence (optional field featureFlags { name:boolean })
+      if (updates.featureFlags && typeof updates.featureFlags === 'object') {
+        try { updateFlags(updates.featureFlags); } catch (e) { console.warn('[API] feature flag update failed:', e instanceof Error ? e.message : e); }
+      }
       
       if (result.success) {
         res.json({
@@ -1283,21 +1292,87 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
         else if (lower.includes('seed')) category = 'seed';
         else if (lower.includes('enterprise')) category = 'enterprise';
         else if (lower.includes('dispatcher')) category = 'dispatcher';
-        // size buckets decided after stat
-        return { category, sizeCategory: 'small' };
+        return { category, sizeCategory: 'small' }; // size bucket adjusted after stat
       };
+
       const files = fs.readdirSync(instructionsDir)
         .filter(f => f.toLowerCase().endsWith('.json'))
         .map(f => {
-          const stat = fs.statSync(path.join(instructionsDir, f));
-            const base = f.replace(/\.json$/i, '');
-            const meta = classify(base);
-            const sizeCategory = stat.size < 1024 ? 'small' : (stat.size < 5 * 1024 ? 'medium' : 'large');
-            return { name: base, size: stat.size, mtime: stat.mtimeMs, category: meta.category, sizeCategory };
+          const abs = path.join(instructionsDir, f);
+          const stat = fs.statSync(abs);
+          const base = f.replace(/\.json$/i, '');
+          const meta = classify(base);
+          const sizeCategory = stat.size < 1024 ? 'small' : (stat.size < 5 * 1024 ? 'medium' : 'large');
+
+          let primaryCategory = meta.category;
+          let categories: string[] = [];
+          try {
+            // Parse file and extract categories/category fields if present.
+            // This enables multi-category filtering in the dashboard. Failures are non-fatal.
+            const raw = fs.readFileSync(abs, 'utf8');
+            // Quick guard: avoid parsing extremely large instruction files (>1MB) for perf.
+            if (raw.length < 1_000_000) {
+              const json = JSON.parse(raw) as unknown;
+              const getProp = (obj: unknown, key: string): unknown => {
+                if (obj && typeof obj === 'object' && key in (obj as Record<string, unknown>)) {
+                  return (obj as Record<string, unknown>)[key];
+                }
+                return undefined;
+              };
+              const rawCats = getProp(json, 'categories');
+              if (Array.isArray(rawCats)) {
+                categories = rawCats
+                  .filter((c: unknown): c is string => typeof c === 'string')
+                  .map(c => c.trim())
+                  .filter(c => !!c);
+              }
+              const rawPrimary = getProp(json, 'category');
+              if (typeof rawPrimary === 'string') {
+                const c = rawPrimary.trim();
+                if (c) primaryCategory = c;
+                if (c && !categories.includes(c)) categories.push(c);
+              }
+              const meta = getProp(json, 'meta');
+              if (meta && typeof meta === 'object') {
+                const metaPrimary = getProp(meta, 'category');
+                if (typeof metaPrimary === 'string') {
+                  const c = metaPrimary.trim();
+                  if (c) primaryCategory = c;
+                  if (c && !categories.includes(c)) categories.push(c);
+                }
+                const metaCats = getProp(meta, 'categories');
+                if (Array.isArray(metaCats)) {
+                  for (const c of metaCats) {
+                    if (typeof c === 'string') {
+                      const norm = c.trim();
+                      if (norm && !categories.includes(norm)) categories.push(norm);
+                    }
+                  }
+                }
+              }
+            }
+          } catch {
+            // ignore parse errors; fall back to heuristic classification only
+          }
+
+          // Normalize final category fields
+          if (!categories.length && primaryCategory) categories = [primaryCategory];
+          // Deduplicate while preserving order
+          categories = Array.from(new Set(categories));
+
+          return {
+            name: base,
+            size: stat.size,
+            mtime: stat.mtimeMs,
+            category: primaryCategory,
+            categories,
+            sizeCategory,
+          };
         });
+
       res.json({ success: true, instructions: files, count: files.length, timestamp: Date.now() });
     } catch (error) {
-      res.status(500).json({ success: false, error: 'Failed to list instructions', message: error instanceof Error? error.message:'Unknown error' });
+      res.status(500).json({ success: false, error: 'Failed to list instructions', message: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 

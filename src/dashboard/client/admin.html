@@ -408,13 +408,7 @@
                     <div id="performance-stats" class="loading">Loading performance data...</div>
                 </div>
 
-                <div class="admin-card">
-                    <div class="card-header">
-                        <div class="card-icon">📚</div>
-                        <div class="card-title">Catalog Status</div>
-                    </div>
-                    <div id="catalog-stats" class="loading">Loading catalog information...</div>
-                </div>
+                <!-- Catalog Status merged into System Statistics card -->
             </div>
             
             <!-- Individual Tool Metrics -->
@@ -815,6 +809,8 @@
         }
 
         function displaySystemStats(stats) {
+            // retain last stats for resource trend re-renders
+            try { window.lastSystemStats = stats; } catch(e) { /* ignore */ }
             const html = `
                 <div class="stat-row">
                     <span class="stat-label">Uptime</span>
@@ -840,19 +836,30 @@
                     <span class="stat-label">Avg Response Time</span>
                     <span class="stat-value">${stats.avgResponseTime.toFixed(1)}ms</span>
                 </div>
+                <hr style="opacity:.15;margin:6px 0;"/>
                 <div class="stat-row">
-                    <span class="stat-label">Memory Usage</span>
-                    <span class="stat-value">${formatBytes(stats.memoryUsage.heapUsed)} / ${formatBytes(stats.memoryUsage.heapTotal)}</span>
+                    <span class="stat-label" style="opacity:.8">Catalog Total</span>
+                    <span class="stat-value">${stats.catalogStats?.totalInstructions ?? '—'}</span>
                 </div>
                 <div class="stat-row">
-                    <span class="stat-label">CPU Usage</span>
-                    <span class="stat-value">${stats.cpuUsage ? stats.cpuUsage.percent.toFixed(1) + '%' : 'N/A'}</span>
+                    <span class="stat-label" style="opacity:.8">Catalog Version</span>
+                    <span class="stat-value">${stats.catalogStats?.version ?? '—'}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label" style="opacity:.8">Schema Version</span>
+                    <span class="stat-value">${stats.catalogStats?.schemaVersion ?? 'unknown'}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label" style="opacity:.8">Last Updated</span>
+                    <span class="stat-value">${stats.catalogStats?.lastUpdated ? new Date(stats.catalogStats.lastUpdated).toLocaleString() : 'N/A'}</span>
                 </div>
             `;
             document.getElementById('system-stats').innerHTML = html;
 
-            // Performance stats
-            const perfHtml = `
+            // Performance + Resource trend stats (merged)
+            // We'll augment with last resource samples (if available via window.__resourceSamples from fetch loop)
+            const perfParts = [];
+            perfParts.push(`
                 <div class="stat-row">
                     <span class="stat-label">Total Connections</span>
                     <span class="stat-value">${stats.totalConnections.toLocaleString()}</span>
@@ -864,31 +871,56 @@
                 <div class="stat-row">
                     <span class="stat-label">Response Time</span>
                     <span class="stat-value">${stats.avgResponseTime.toFixed(1)}ms</span>
-                </div>
-            `;
-            document.getElementById('performance-stats').innerHTML = perfHtml;
+                </div>`);
+            try {
+                if(window.__resourceTrendCache){
+                    const t = window.__resourceTrendCache;
+                    perfParts.push(`
+                        <div class="stat-row">
+                            <span class="stat-label">Window</span>
+                            <span class="stat-value">${t.windowSec}s (${t.sampleCount} samples)</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Memory Usage</span>
+                            <span class="stat-value">${formatBytes(stats.memoryUsage.heapUsed)} / ${formatBytes(stats.memoryUsage.heapTotal)}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Memory Min→Max</span>
+                            <span class="stat-value">${formatBytes(t.minHeap || 0)} → ${formatBytes(t.maxHeap || 0)}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Latest CPU</span>
+                            <span class="stat-value">${t.latestCpu.toFixed(1)}%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">CPU Min→Max</span>
+                            <span class="stat-value">${(t.minCpu??0).toFixed(1)}% → ${(t.maxCpu??0).toFixed(1)}%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Latest Heap</span>
+                            <span class="stat-value">${(t.latestHeap/1024/1024).toFixed(2)} MB</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">CPU Slope</span>
+                            <span class="stat-value">${t.cpuSlope.toFixed(3)} %/s</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Mem Slope</span>
+                            <span class="stat-value">${(t.memSlope/1024).toFixed(2)} KB/s</span>
+                        </div>
+                        <div class="stat-row" style="display:block;">
+                            <span class="stat-label" style="display:block; margin-bottom:2px;">CPU Spark</span>
+                            <span class="stat-value" style="font-family:monospace; font-size:14px;">${t.spark}</span>
+                        </div>
+                        <div class="stat-row" style="display:block; overflow:hidden; white-space:nowrap;">
+                            <span class="stat-label" style="display:block; margin-bottom:2px;">Mem Spark</span>
+                            <span class="stat-value" style="font-family:monospace; font-size:14px;">${t.memSpark || ''}</span>
+                        </div>`);
+                }
+            } catch(e) { /* ignore */ }
+            document.getElementById('performance-stats').innerHTML = perfParts.join('');
 
-            // Catalog stats
-            const catalogHtml = `
-                <div class="stat-row">
-                    <span class="stat-label">Total Instructions</span>
-                    <span class="stat-value">${stats.catalogStats.totalInstructions}</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Version</span>
-                    <span class="stat-value">${stats.catalogStats.version}</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Schema Version</span>
-                    <span class="stat-value">${stats.catalogStats.schemaVersion || 'unknown'}</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Last Updated</span>
-                    <span class="stat-value">${stats.catalogStats.lastUpdated ? new Date(stats.catalogStats.lastUpdated).toLocaleString() : 'N/A'}</span>
-                </div>
-            `;
-            const catalogEl = document.getElementById('catalog-stats');
-            if (catalogEl) catalogEl.innerHTML = catalogHtml;
+            // Catalog stats merged; no separate rendering
 
             // Display individual tool metrics
             displayToolMetrics(stats);
@@ -986,6 +1018,19 @@
                 uptime: typeof health.uptime === 'number' ? health.uptime : (typeof health.server?.uptime === 'number' ? health.server.uptime : undefined),
                 checks: health.checks || {}
             };
+            // Inject CPU check if not present using last resource cache / stats
+            try {
+                if(!normalized.checks.cpu){
+                    let cpuVal = undefined;
+                    if(window.__resourceTrendCache && typeof window.__resourceTrendCache.latestCpu === 'number') cpuVal = window.__resourceTrendCache.latestCpu;
+                    else if(window.lastSystemStats && window.lastSystemStats.cpuUsage && typeof window.lastSystemStats.cpuUsage.percent==='number') cpuVal = window.lastSystemStats.cpuUsage.percent;
+                    if(typeof cpuVal === 'number'){
+                        // simple thresholds: <50 ok, 50-80 warn (ok), >80 fail
+                        normalized.checks.cpu = cpuVal < 85; // treat >85 as fail
+                        if(cpuVal >=85 && !normalized.issues.some(i=>/high cpu/i.test(i))) normalized.issues.push('High CPU usage');
+                    }
+                }
+            } catch{/*ignore*/}
             // Uptime regression styling escalation: if an issue contains 'Uptime regression' force critical indicator
             let statusOverride = normalized.status;
             if (normalized.issues.some(i => /uptime regression/i.test(i))) {
@@ -1595,6 +1640,15 @@
                                 const data = await res.json();
                                 if (!data.success) throw new Error('Failed to load config');
                                 const cfg = data.config;
+                                const flags = data.featureFlags || {};
+                                const flagKeys = Object.keys(flags).sort();
+                                const flagsHtml = flagKeys.length ? flagKeys.map(k=>`<div class="form-group" style="display:flex;align-items:center;gap:12px;">
+                                    <label class="form-label" style="flex:1;">${k}</label>
+                                    <select class="form-input" data-flag="${k}" style="max-width:160px;">
+                                        <option value="1" ${flags[k]?'selected':''}>Enabled</option>
+                                        <option value="0" ${!flags[k]?'selected':''}>Disabled</option>
+                                    </select>
+                                </div>`).join('') : '<div style="opacity:0.7;">No feature flags detected</div>';
                                 const html = `
                                     <form onsubmit="return updateConfiguration(event)">
                                         <div class="form-group">
@@ -1624,27 +1678,34 @@
                                         <div style="margin-top:10px;">
                                             <button class="action-btn" type="submit">💾 Save Config</button>
                                         </div>
-                                    </form>`;
+                                    </form>
+                                    <hr/>
+                                    <h3 style="margin-top:10px;">Feature Flags</h3>
+                                    <div>${flagsHtml}</div>`;
                                 document.getElementById('config-form').innerHTML = html;
                         } catch (e) {
                                 document.getElementById('config-form').innerHTML = '<div class="error">Failed to load configuration</div>';
                         }
                 }
 
-                async function updateConfiguration(ev) {
-                        ev.preventDefault();
-                        const updates = {
-                                serverSettings: {
-                                        maxConnections: parseInt(document.getElementById('cfg-maxConnections').value),
-                                        requestTimeout: parseInt(document.getElementById('cfg-requestTimeout').value),
-                                        enableVerboseLogging: document.getElementById('cfg-verbose').value === '1',
-                                        enableMutation: document.getElementById('cfg-mutation').value === '1',
-                                        rateLimit: {
-                                                windowMs: parseInt(document.getElementById('cfg-windowMs').value),
-                                                maxRequests: parseInt(document.getElementById('cfg-maxRequests').value)
-                                        }
-                                }
-                        };
+        async function updateConfiguration(ev) {
+            ev.preventDefault();
+            const flagSelects = document.querySelectorAll('[data-flag]');
+            const featureFlags = {};
+                        flagSelects.forEach(function(sel){ featureFlags[sel.getAttribute('data-flag')] = sel.value === '1'; });
+            const updates = {
+                serverSettings: {
+                    maxConnections: parseInt(document.getElementById('cfg-maxConnections').value),
+                    requestTimeout: parseInt(document.getElementById('cfg-requestTimeout').value),
+                    enableVerboseLogging: document.getElementById('cfg-verbose').value === '1',
+                    enableMutation: document.getElementById('cfg-mutation').value === '1',
+                    rateLimit: {
+                        windowMs: parseInt(document.getElementById('cfg-windowMs').value),
+                        maxRequests: parseInt(document.getElementById('cfg-maxRequests').value)
+                    }
+                },
+                featureFlags
+            };
                         try {
                                 const res = await fetch('/api/admin/config', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(updates)});
                                 const data = await res.json();
@@ -1821,66 +1882,6 @@
             return div.innerHTML;
         }
 
-        // ===== Resource Trend (CPU/Mem) Long-Term History =====
-        // Lightweight front-end integration for /api/system/resources
-        (function initResourceTrends(){
-            const overview = document.querySelector('#overview-section');
-            if(!overview) return;
-            // Avoid duplicate insertion
-            if(document.getElementById('resource-trends-card')) return;
-            const card = document.createElement('div');
-            card.className = 'admin-card';
-            card.id = 'resource-trends-card';
-            card.innerHTML = `
-                <div class="card-header">
-                  <div class="card-icon">🧠</div>
-                  <div class="card-title">Resource Trends</div>
-                </div>
-                <div id="resource-trends-body" style="font-size:12px; line-height:1.4;">
-                  <em>Collecting samples...</em>
-                </div>`;
-            // Insert after existing performance card if present
-            overview.appendChild(card);
-
-            async function fetchResourceTrends(){
-                try {
-                    const res = await fetch('/api/system/resources?limit=300');
-                    if(!res.ok) throw new Error('http '+res.status);
-                    const json = await res.json();
-                    const samples = json?.data?.samples || [];
-                    const trend = json?.data?.trend || { cpuSlope:0, memSlope:0 };
-                    if(samples.length === 0){
-                        document.getElementById('resource-trends-body').innerHTML = '<span style="opacity:.7">No samples yet.</span>';
-                        return;
-                    }
-                    const latest = samples[samples.length-1];
-                    const first = samples[0];
-                    const durationSec = ((latest.timestamp - first.timestamp)/1000).toFixed(0);
-                    // Convert memSlope (bytes/sec) to KB/sec for readability
-                    const memSlopeKb = (trend.memSlope/1024).toFixed(2);
-                    // Simple sparkline (last up to 40 samples) using unicode blocks based on cpu percent
-                    const tail = samples.slice(-40);
-                    const spark = tail.map(s=>{
-                        const v = Math.min(100, Math.max(0, s.cpuPercent));
-                        const idx = Math.round(v/12.5); // 0-8
-                        const blocks = ['▁','▂','▃','▄','▅','▆','▇','█'];
-                        return blocks[Math.min(blocks.length-1, idx)];
-                    }).join('');
-                    document.getElementById('resource-trends-body').innerHTML = `
-                        <div style="display:flex; flex-direction:column; gap:4px;">
-                          <div><strong>Window:</strong> ${durationSec}s (${samples.length} samples)</div>
-                          <div><strong>Latest CPU:</strong> ${latest.cpuPercent.toFixed(1)}% &nbsp; <strong>Latest Heap:</strong> ${(latest.heapUsed/1024/1024).toFixed(2)} MB</div>
-                          <div><strong>CPU Slope:</strong> ${trend.cpuSlope.toFixed(3)} %/s &nbsp; <strong>Mem Slope:</strong> ${memSlopeKb} KB/s</div>
-                          <div style="font-family:monospace; font-size:14px;">${spark}</div>
-                        </div>`;
-                } catch(e){
-                    document.getElementById('resource-trends-body').innerHTML = '<span class="error">Failed to load resource history</span>';
-                }
-            }
-            fetchResourceTrends();
-            setInterval(fetchResourceTrends, 10000); // update every 10s
-        })();
-
         // ===== Instruction Management =====
         let instructionEditing = null;
                 // Pagination state
@@ -1941,7 +1942,13 @@
                     const categoryFilter = (document.getElementById('instruction-category-filter')?.value || '');
                     const sizeFilter = (document.getElementById('instruction-size-filter')?.value || '');
                     let filtered = list.filter(i => i.name.toLowerCase().includes(nameFilter));
-                    if (categoryFilter) filtered = filtered.filter(i => i.category === categoryFilter);
+                    if (categoryFilter) {
+                        filtered = filtered.filter(i => {
+                            if (i.category === categoryFilter) return true;
+                            if (Array.isArray(i.categories) && i.categories.includes(categoryFilter)) return true;
+                            return false;
+                        });
+                    }
                     if (sizeFilter) filtered = filtered.filter(i => i.sizeCategory === sizeFilter);
                     const sortSelect = document.getElementById('instruction-sort');
                     const sortVal = sortSelect ? sortSelect.value : 'name-asc';
@@ -1962,23 +1969,7 @@
                     return filtered;
                 }
 
-    async function loadInstructions() {
-            const listEl = document.getElementById('instructions-list');
-            listEl.innerHTML = 'Loading...';
-            try {
-                // Load categories first to populate the dropdown
-                await loadInstructionCategories();
-                
-                const res = await fetch('/api/instructions');
-                const data = await res.json();
-                if (!data.success) throw new Error();
-                                allInstructions = data.instructions || [];
-                                instructionPage = 1; // reset page whenever we reload
-                                renderInstructionList(allInstructions);
-            } catch (e) {
-                listEl.innerHTML = '<div class="error">Failed to load instructions</div>';
-            }
-        }
+    /* Removed legacy duplicate loadInstructions; unified enhanced version defined later */
 
         async function loadInstructionCategories() {
             try {
@@ -2096,12 +2087,13 @@
                 if (!('success' in data) && !('data' in data) && !('instructions' in data)) throw new Error('unrecognized instructions payload');
                 const rawList = data.instructions || data.data?.instructions || [];
                 allInstructions = Array.isArray(rawList) ? rawList : [];
+                try { console.log('[dashboard] fetched instructions:', allInstructions.length); } catch {}
                 // If categories endpoint failed / returned empty, derive from instruction list
                 if(!catNames.length) {
                     try {
                         const select = document.getElementById('instruction-category-filter');
                         if(select){
-                            const derived = Array.from(new Set(allInstructions.map(i=>i.category).filter(Boolean))).sort();
+                            const derived = Array.from(new Set(allInstructions.flatMap(i=> [i.category, ...(Array.isArray(i.categories)? i.categories: [])]).filter(Boolean))).sort();
                             derived.forEach(n=>{
                                 const opt = document.createElement('option');
                                 opt.value = n; opt.textContent = n; select.appendChild(opt);
@@ -2147,69 +2139,67 @@
             updateInstructionEditorDiagnostics();
         }
 
-        function toggleInstructionDiff(){
-            const container = document.getElementById('instruction-diff-container');
-            if(container.classList.contains('hidden')){
-                buildInstructionDiff();
-                container.classList.remove('hidden');
-            } else {
-                container.classList.add('hidden');
-            }
-        }
-
-        function buildInstructionDiff(){
-            const original = (instructionOriginalContent||'').split(/\r?\n/);
-            const current = document.getElementById('instruction-content').value.split(/\r?\n/);
-            // Simple line diff (LCS not required for lightweight enrichment)
-            const max = Math.max(original.length, current.length);
-            const out = [];
-            for(let i=0;i<max;i++){
-                const o = original[i];
-                const c = current[i];
-                if(o===c){
-                    if(o!==undefined) out.push('  '+o);
-                } else {
-                    if(o!==undefined) out.push('- '+o);
-                    if(c!==undefined) out.push('+ '+c);
+        // ===== Resource Trend (CPU/Mem) Long-Term History (merged into Performance card) =====
+        (function initResourceTrendMerge(){
+            async function fetchResourceTrends(){
+                try {
+                    const res = await fetch('/api/system/resources?limit=300');
+                    if(!res.ok) throw new Error('http '+res.status);
+                    const json = await res.json();
+                    const samples = json?.data?.samples || [];
+                    const trend = json?.data?.trend || { cpuSlope:0, memSlope:0 };
+                    if(samples.length === 0){
+                        window.__resourceTrendCache = { windowSec:0, sampleCount:0, latestCpu:0, latestHeap:0, cpuSlope:0, memSlope:0, spark:'' };
+                        // trigger re-render next stats update
+                        return;
+                    }
+                    const latest = samples[samples.length-1];
+                    const first = samples[0];
+                    const durationSec = ((latest.timestamp - first.timestamp)/1000).toFixed(0);
+                    const tail = samples.slice(-40);
+                    const spark = tail.map(s=>{
+                        const v = Math.min(100, Math.max(0, s.cpuPercent));
+                        const idx = Math.round(v/12.5);
+                        const blocks = ['▁','▂','▃','▄','▅','▆','▇','█'];
+                        return blocks[Math.min(blocks.length-1, idx)];
+                    }).join('');
+                    const minCpu = tail.reduce((m,s)=> s.cpuPercent<m? s.cpuPercent:m, tail[0].cpuPercent);
+                    const maxCpu = tail.reduce((m,s)=> s.cpuPercent>m? s.cpuPercent:m, tail[0].cpuPercent);
+                    // Memory spark (scale heap delta relative to max in window)
+                    const maxHeap = tail.reduce((m,s)=> s.heapUsed>m?s.heapUsed:m,0) || 1;
+                    const minHeap = tail.reduce((m,s)=> s.heapUsed<m?s.heapUsed:m, tail[0].heapUsed);
+                    const memSpark = tail.map(s=>{
+                        const ratio = Math.min(1, Math.max(0, s.heapUsed / maxHeap));
+                        const idx = Math.round(ratio*7);
+                        const blocks = ['▁','▂','▃','▄','▅','▆','▇','█'];
+                        return blocks[Math.min(blocks.length-1, idx)];
+                    }).join('');
+                    window.__resourceTrendCache = {
+                        windowSec: durationSec,
+                        sampleCount: samples.length,
+                        latestCpu: latest.cpuPercent,
+                        latestHeap: latest.heapUsed,
+                        minCpu,
+                        maxCpu,
+                        minHeap,
+                        maxHeap,
+                        cpuSlope: trend.cpuSlope || 0,
+                        memSlope: trend.memSlope || 0,
+                        spark,
+                        memSpark
+                    };
+                    // Re-render performance card if stats already loaded
+                    try {
+                        if(typeof window.lastSystemStats === 'object') displaySystemStats(window.lastSystemStats);
+                    } catch(e){/*ignore*/}
+                } catch(e){
+                    // ignore failures; card will just show base stats
                 }
             }
-            document.getElementById('instruction-diff').textContent = out.join('\n');
-        }
-
-        function hashString(str){
-            // FNV-1a 32-bit for quick client hash
-            let h=0x811c9dc5;
-            for(let i=0;i<str.length;i++){
-                h ^= str.charCodeAt(i);
-                h = (h + (h<<1) + (h<<4) + (h<<7) + (h<<8) + (h<<24))>>>0; // *16777619
-            }
-            return ('0000000'+h.toString(16)).slice(-8);
-        }
-
-        function updateInstructionEditorDiagnostics(){
-            const diag = document.getElementById('instruction-diagnostics');
-            const ta = document.getElementById('instruction-content');
-            if(!diag || !ta) return;
-            const raw = ta.value;
-            const bytes = new Blob([raw]).size; // approximate size
-            let valid=false; let parsed; let errorMsg='';
-            try { parsed = JSON.parse(raw); valid=true; } catch(e){ errorMsg = (e&&e.message)||'Invalid JSON'; }
-            const hash = valid ? hashString(raw) : '--------';
-            // Basic field guidance
-            const required = ['title','description'];
-            const missing = []; if(valid){ for(const f of required){ if(!(f in parsed)) missing.push(f); } }
-            let html = `<strong>Status:</strong> ${valid?'<span style="color:#2c7;">Valid JSON</span>':'<span style="color:#e74c3c;">Invalid</span>'}`;
-            html += ` • <strong>Size:</strong> ${bytes} bytes`;
-            html += ` • <strong>Hash:</strong> ${hash}`;
-            if(valid && missing.length) html += ` • <strong>Missing fields:</strong> ${missing.join(', ')}`;
-            if(!valid) html += `<br/><code style="color:#e74c3c;">${escapeHtml(errorMsg)}</code>`;
-            if(instructionEditing && instructionOriginalContent){
-                if(raw!==instructionOriginalContent) html += ' • <em>Modified</em>'; else html += ' • <em>Unchanged</em>';
-            }
-            diag.innerHTML = html;
-            const diffVisible = !document.getElementById('instruction-diff-container').classList.contains('hidden');
-            if(diffVisible) buildInstructionDiff();
-        }
+            // periodic fetch
+            fetchResourceTrends();
+            setInterval(fetchResourceTrends, 10000);
+        })();
 
         async function deleteInstruction(name) {
             if (!confirm('Delete instruction ' + name + '?')) return;
@@ -2230,9 +2220,8 @@
                     loadMaintenanceStatus();
                 }
             }, 30000); // Refresh every 30 seconds
-        }
-
-        // Build metadata loader
+    }
+    // Build metadata loader
     (async function fetchBuildMeta(){
             try {
         // Cache bust query param to avoid any intermediary caching of status response

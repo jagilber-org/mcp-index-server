@@ -8,9 +8,11 @@ export type FeatureFlag = 'response_envelope_v1';
 interface FlagConfig { [k: string]: boolean }
 
 let cache: FlagConfig | null = null;
+let lastFilePath: string | null = null;
 
 function loadFile(): FlagConfig {
   const file = process.env.MCP_FLAGS_FILE || path.join(process.cwd(), 'flags.json');
+  lastFilePath = file;
   if(!fs.existsSync(file)) return {};
   try {
     const raw = JSON.parse(fs.readFileSync(file,'utf8'));
@@ -47,3 +49,12 @@ export function flagEnabled(flag: FeatureFlag): boolean {
 }
 
 export function dumpFlags(){ return { ...load() }; }
+
+export function updateFlags(newFlags: FlagConfig){
+  cache = { ...newFlags };
+  try {
+    const file = lastFilePath || process.env.MCP_FLAGS_FILE || path.join(process.cwd(), 'flags.json');
+    fs.writeFileSync(file, JSON.stringify(cache, null, 2));
+  } catch { /* ignore write errors */ }
+  return dumpFlags();
+}

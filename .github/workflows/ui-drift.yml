@@ -25,13 +25,15 @@ jobs:
         run: npm ci
       - name: Build server
         run: npm run build
-      - name: Install Playwright browsers (chromium only)
+      - name: Install Playwright browsers (all)
         run: npm run pw:init
-      - name: Run drift comparison (@baseline tests)
+      - name: Run multi-browser drift comparison + report
         env:
           MCP_DASHBOARD: '1'
-        run: npm run pw:drift
-      - name: Upload Playwright artifacts (screenshots, traces if any)
+          # Limit default CI run to chromium & firefox for time balance; adjust as needed
+          DRIFT_BROWSERS: 'chromium,firefox'
+        run: npm run pw:drift:report
+      - name: Upload Playwright artifacts (snapshots, report, traces)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -39,5 +41,7 @@ jobs:
           path: |
             tests/playwright/baseline.spec.ts-snapshots/
             playwright-report/
+            playwright-report/drift-report.json
+            playwright-report/drift-report.md
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 14

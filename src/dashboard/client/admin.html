@@ -632,6 +632,7 @@
                 </div>
                 <div id="instructions-list" class="loading">Loading instructions...</div>
                 <div id="instruction-pagination" style="margin-top:12px;"></div>
+                <!-- Editor will be dynamically repositioned above the list when activated -->
                 <div id="instruction-editor" class="hidden" style="margin-top:20px;">
                     <h3 id="instruction-editor-title" style="margin-bottom:10px;">New Instruction</h3>
                     <div class="form-group">
@@ -908,14 +909,7 @@
                             <span class="stat-label">Mem Slope</span>
                             <span class="stat-value">${(t.memSlope/1024).toFixed(2)} KB/s</span>
                         </div>
-                        <div class="stat-row" style="display:block;">
-                            <span class="stat-label" style="display:block; margin-bottom:2px;">CPU Spark</span>
-                            <span class="stat-value" style="font-family:monospace; font-size:14px;">${t.spark}</span>
-                        </div>
-                        <div class="stat-row" style="display:block; overflow:hidden; white-space:nowrap;">
-                            <span class="stat-label" style="display:block; margin-bottom:2px;">Mem Spark</span>
-                            <span class="stat-value" style="font-family:monospace; font-size:14px;">${t.memSpark || ''}</span>
-                        </div>`);
+                        <!-- CPU/Mem spark lines moved to System Health card -->`);
                 }
             } catch(e) { /* ignore */ }
             document.getElementById('performance-stats').innerHTML = perfParts.join('');
@@ -1127,7 +1121,32 @@
                 `;
             }
 
+            // Append CPU / Memory spark lines (moved from performance card)
+            try {
+                if (window.__resourceTrendCache) {
+                    const t = window.__resourceTrendCache;
+                    const sparkHtml = `
+                        <div style="margin-top:14px;">
+                            <div style="font-weight:600; font-size:12px; margin-bottom:4px; opacity:.8;">Resource Trend</div>
+                            <div style="display:flex; flex-direction:column; gap:6px;">
+                                <div style="display:flex; flex-direction:column;">
+                                    <span style="font-size:11px; opacity:.65;">CPU Spark (last ${Math.min(40, t.sampleCount || 0)} samples)</span>
+                                    <span style="font-family:monospace; font-size:14px; background:#14171c; padding:4px 6px; border-radius:4px; overflow:hidden;">${t.spark || ''}</span>
+                                    <span style="font-size:11px; opacity:.55;">Latest ${t.latestCpu?.toFixed ? t.latestCpu.toFixed(1) : '0'}% • Min ${(t.minCpu??0).toFixed(1)}% • Max ${(t.maxCpu??0).toFixed(1)}%</span>
+                                </div>
+                                <div style="display:flex; flex-direction:column;">
+                                    <span style="font-size:11px; opacity:.65;">Mem Spark (heap)</span>
+                                    <span style="font-family:monospace; font-size:14px; background:#14171c; padding:4px 6px; border-radius:4px; overflow:hidden;">${t.memSpark || ''}</span>
+                                    <span style="font-size:11px; opacity:.55;">Latest ${(t.latestHeap/1024/1024).toFixed(2)} MB • Min ${(t.minHeap/1024/1024).toFixed(2)} MB • Max ${(t.maxHeap/1024/1024).toFixed(2)} MB</span>
+                                </div>
+                            </div>
+                        </div>`;
+                    html += sparkHtml;
+                }
+            } catch {/* ignore */}
+
             document.getElementById('system-health').innerHTML = html;
+            try { window.lastSystemHealth = health; } catch {/* ignore */}
         }
 
         // --- Backup / Restore ---
@@ -1951,13 +1970,13 @@
                     logEventSource = null;
                 }
                 logTailing = false;
-                button.textContent = 'Start Tail';
-                button.className = 'btn btn-primary';
+                button.textContent = '▶️ Start Tail';
+                button.className = 'action-btn';
             } else {
                 // Start tailing
                 logTailing = true;
-                button.textContent = 'Stop Tail';
-                button.className = 'btn btn-warning';
+                button.textContent = '⏹ Stop Tail';
+                button.className = 'action-btn warning';
                 
                 // Start EventSource for real-time logs
                 logEventSource = new EventSource('/api/logs/stream');
@@ -2146,8 +2165,12 @@
                                 const end = start + instructionPageSize;
                                 pageItems = filtered.slice(start, end);
                         }
-
-                        const rows = pageItems.map(instr => `
+                        const rows = pageItems.map(instr => {
+                            const rawSummary = (instr.semanticSummary || '').trim();
+                            let short = rawSummary.slice(0, 160);
+                            if (rawSummary.length > 160) short += '…';
+                            const safeSummary = escapeHtml(short);
+                            return `
                 <div class="session-item" style="background:#fff;">
                     <div class="session-header">
                         <span class="session-id" style="background:#dfe6f1;">${instr.name}</span>
@@ -2159,7 +2182,14 @@
                     <div class="stat-row"><span class="stat-label">Category</span><span class="stat-value">${instr.category || '—'}</span></div>
                     <div class="stat-row"><span class="stat-label">Size</span><span class="stat-value">${instr.size} bytes (${instr.sizeCategory})</span></div>
                     <div class="stat-row"><span class="stat-label">Modified</span><span class="stat-value">${new Date(instr.mtime).toLocaleString()}</span></div>
-                </div>`).join('');
+                    <div class="stat-row" style="align-items:flex-start;">
+                        <span class="stat-label" style="padding-top:2px;">Summary</span>
+                        <span class="stat-value" style="font-weight:400; white-space:normal; line-height:1.3; max-width:520px;">
+                            ${safeSummary || '<span style=\"opacity:.5;\">—</span>'}
+                        </span>
+                    </div>
+                </div>`;
+                        }).join('');
             document.getElementById('instructions-list').innerHTML = rows;
                         buildInstructionPaginationControls(totalFiltered);
         }
@@ -2175,28 +2205,59 @@
             document.getElementById('instruction-filename').value = '';
             document.getElementById('instruction-filename').disabled = false;
             document.getElementById('instruction-content').value = '{\n  "description": "New instruction"\n}';
-            document.getElementById('instruction-editor').classList.remove('hidden');
+            ensureInstructionEditorAtTop();
+            const ed = document.getElementById('instruction-editor');
+            ed.classList.remove('hidden');
+            // Smooth scroll to make editor visible at top
+            try { ed.scrollIntoView({ behavior:'smooth', block:'start' }); } catch {}
             document.getElementById('instruction-filename').focus();
             instructionOriginalContent = document.getElementById('instruction-content').value;
             updateInstructionEditorDiagnostics();
         }
 
         async function editInstruction(name) {
-            try {
-                const res = await fetch('/api/instructions/' + encodeURIComponent(name));
-                const data = await res.json();
-                if (!data.success) throw new Error();
-                instructionEditing = name;
-                document.getElementById('instruction-editor-title').textContent = 'Edit Instruction: ' + name;
-                document.getElementById('instruction-filename').value = name;
-                document.getElementById('instruction-filename').disabled = true;
-                document.getElementById('instruction-content').value = JSON.stringify(data.content, null, 2);
-                document.getElementById('instruction-editor').classList.remove('hidden');
-                instructionOriginalContent = JSON.stringify(data.content, null, 2);
-                updateInstructionEditorDiagnostics();
-            } catch (e) {
-                showError('Failed to load instruction');
+            const editor = document.getElementById('instruction-editor');
+            const filenameEl = document.getElementById('instruction-filename');
+            const contentEl = document.getElementById('instruction-content');
+            let attempts = 0;
+            const maxAttempts = 2; // one retry after initial attempt
+            let lastError;
+            while (attempts < maxAttempts) {
+                try {
+                    attempts++;
+                    // lightweight loading indicator
+                    if (contentEl && attempts === 1) {
+                        contentEl.value = '// Loading ' + name + '...';
+                    }
+                    const res = await fetch('/api/instructions/' + encodeURIComponent(name));
+                    if (!res.ok) throw new Error('http ' + res.status);
+                    const data = await res.json();
+                    if (data.success === false && !data.content && !data.data?.content) throw new Error('server reported failure');
+                    if (!data.content && data.data?.content) data.content = data.data.content;
+                    if (!data.content) throw new Error('missing content');
+                    instructionEditing = name;
+                    document.getElementById('instruction-editor-title').textContent = 'Edit Instruction: ' + name;
+                    filenameEl.value = name;
+                    filenameEl.disabled = true;
+                    const pretty = JSON.stringify(data.content, null, 2);
+                    contentEl.value = pretty;
+                    ensureInstructionEditorAtTop();
+                    editor.classList.remove('hidden');
+                    try { editor.scrollIntoView({ behavior:'smooth', block:'start' }); } catch {}
+                    instructionOriginalContent = pretty;
+                    updateInstructionEditorDiagnostics();
+                    return; // success
+                } catch (e) {
+                    lastError = e;
+                    // brief delay before retry to allow file system settle or server warm path
+                    if (attempts < maxAttempts) {
+                        await new Promise(r => setTimeout(r, 120));
+                        continue;
+                    }
+                }
             }
+            console.warn('editInstruction failed after retries', lastError);
+            showError('Failed to load instruction');
         }
 
         function cancelEditInstruction() {
@@ -2204,6 +2265,23 @@
             const diff = document.getElementById('instruction-diff-container');
             if(diff) diff.classList.add('hidden');
             instructionOriginalContent='';
+        }
+
+        // Reposition editor just below the toolbar (before the instruction list) when activated
+        function ensureInstructionEditorAtTop(){
+            try {
+                const editor = document.getElementById('instruction-editor');
+                const list = document.getElementById('instructions-list');
+                if(!editor || !list) return;
+                const parent = list.parentElement; // card body
+                // The toolbar is the element immediately before instructions-list (with buttons + filters)
+                if(parent && parent.contains(list)){
+                    // Insert editor right BEFORE instructions-list so it appears at top
+                    if(editor.nextElementSibling !== list){
+                        parent.insertBefore(editor, list);
+                    }
+                }
+            } catch {/* ignore */}
         }
 
         async function loadInstructions() {
@@ -2323,6 +2401,7 @@
                     // Re-render performance card if stats already loaded
                     try {
                         if(typeof window.lastSystemStats === 'object') displaySystemStats(window.lastSystemStats);
+                        if(typeof window.lastSystemHealth === 'object') displaySystemHealth(window.lastSystemHealth);
                     } catch(e){/*ignore*/}
                 } catch(e){
                     // ignore failures; card will just show base stats

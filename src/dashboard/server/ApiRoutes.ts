@@ -960,6 +960,42 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
   });
 
   /**
+   * DELETE /api/admin/maintenance/backup/:id - Delete a specific backup directory
+   */
+  router.delete('/admin/maintenance/backup/:id', (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const result = adminPanel.deleteBackup(id);
+      if (result.success) {
+        res.json({ success: true, message: result.message, removed: result.removed, timestamp: Date.now() });
+      } else {
+        res.status(400).json({ success: false, error: result.message, timestamp: Date.now() });
+      }
+    } catch (error) {
+      console.error('[API] Delete backup error:', error);
+      res.status(500).json({ success: false, error: 'Failed to delete backup', message: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  /**
+   * POST /api/admin/maintenance/backups/prune { retain:number } - retain newest N (0 = delete all)
+   */
+  router.post('/admin/maintenance/backups/prune', (req: Request, res: Response) => {
+    try {
+      const retain = typeof req.body?.retain === 'number' ? req.body.retain : 10;
+      const result = adminPanel.pruneBackups(retain);
+      if (result.success) {
+        res.json({ success: true, message: result.message, pruned: result.pruned, timestamp: Date.now() });
+      } else {
+        res.status(400).json({ success: false, error: result.message, timestamp: Date.now() });
+      }
+    } catch (error) {
+      console.error('[API] Prune backups error:', error);
+      res.status(500).json({ success: false, error: 'Failed to prune backups', message: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  /**
    * GET /api/admin/stats - Get comprehensive admin statistics
    */
   router.get('/admin/stats', (_req: Request, res: Response) => {
@@ -1306,6 +1342,7 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
 
           let primaryCategory = meta.category;
           let categories: string[] = [];
+          let semanticSummary: string | undefined;
           try {
             // Parse file and extract categories/category fields if present.
             // This enables multi-category filtering in the dashboard. Failures are non-fatal.
@@ -1349,6 +1386,30 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
                     }
                   }
                 }
+                // meta-level semantic summary
+                const metaSummary = getProp(meta, 'semanticSummary');
+                if (typeof metaSummary === 'string' && metaSummary.trim()) semanticSummary = metaSummary.trim();
+              }
+              // top-level semantic summary
+              if (!semanticSummary) {
+                const topSummary = getProp(json, 'semanticSummary');
+                if (typeof topSummary === 'string' && topSummary.trim()) semanticSummary = topSummary.trim();
+              }
+              // fallback: description or body first line truncated
+              if (!semanticSummary) {
+                const desc = getProp(json, 'description');
+                if (typeof desc === 'string' && desc.trim()) semanticSummary = desc.trim();
+              }
+              if (!semanticSummary) {
+                const body = getProp(json, 'body');
+                if (typeof body === 'string' && body.trim()) {
+                  const firstLine = body.split(/\r?\n/).map(l=>l.trim()).filter(Boolean)[0];
+                  if (firstLine) semanticSummary = firstLine;
+                }
+              }
+              if (semanticSummary) {
+                // normalize length to avoid huge payloads in list view
+                if (semanticSummary.length > 400) semanticSummary = semanticSummary.slice(0, 400) + '…';
               }
             }
           } catch {
@@ -1367,6 +1428,7 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
             category: primaryCategory,
             categories,
             sizeCategory,
+            semanticSummary,
           };
         });
 

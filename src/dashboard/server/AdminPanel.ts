@@ -432,6 +432,63 @@ export class AdminPanel {
     }
   }
 
+  /** Delete a backup directory (non-recursive safety checks) */
+  deleteBackup(backupId: string): { success: boolean; message: string; removed?: boolean } {
+    try {
+      if (!backupId) return { success: false, message: 'backupId required' };
+      const backupRoot = process.env.MCP_BACKUPS_DIR || path.join(process.cwd(), 'backups');
+      const backupDir = path.join(backupRoot, backupId);
+      if (!fs.existsSync(backupDir)) return { success: false, message: `Backup not found: ${backupId}` };
+      // Basic guard: only allow deletion of directories that start with expected prefixes
+      if (!/^backup_|^instructions-|^pre_restore_/.test(backupId)) {
+        return { success: false, message: 'Refusing to delete unexpected directory name' };
+      }
+      fs.rmSync(backupDir, { recursive: true, force: true });
+      process.stderr.write(`[admin] Deleted backup ${backupId}\n`);
+      return { success: true, message: `Backup ${backupId} deleted`, removed: true };
+    } catch (error) {
+      return { success: false, message: `Delete failed: ${error instanceof Error ? error.message : String(error)}` };
+    }
+  }
+
+  /** Prune backups keeping newest N (by createdAt / mtime). Returns count pruned. */
+  pruneBackups(retain: number): { success: boolean; message: string; pruned?: number } {
+    try {
+      if (retain < 0) return { success: false, message: 'retain must be >= 0' };
+      const backupRoot = process.env.MCP_BACKUPS_DIR || path.join(process.cwd(), 'backups');
+      if (!fs.existsSync(backupRoot)) return { success: true, message: 'No backups to prune', pruned: 0 };
+      const dirs = fs.readdirSync(backupRoot)
+        .map(name => ({ name, full: path.join(backupRoot, name) }))
+        .filter(d => {
+          try { return fs.statSync(d.full).isDirectory(); } catch { return false; }
+        })
+        .filter(d => /^backup_|^instructions-|^pre_restore_/.test(d.name));
+      // sort newest first by mtime
+      dirs.sort((a,b) => {
+        try { return fs.statSync(b.full).mtime.getTime() - fs.statSync(a.full).mtime.getTime(); } catch { return 0; }
+      });
+      if (retain === 0) {
+        // delete all
+        let prunedAll = 0;
+        for (const d of dirs) {
+          try { fs.rmSync(d.full, { recursive: true, force: true }); prunedAll++; } catch { /* ignore */ }
+        }
+        process.stderr.write(`[admin] Pruned all backups (${prunedAll})\n`);
+        return { success: true, message: `Pruned ${prunedAll} backups`, pruned: prunedAll };
+      }
+      const survivors = dirs.slice(0, retain);
+      const toDelete = dirs.slice(retain);
+      let pruned = 0;
+      for (const d of toDelete) {
+        try { fs.rmSync(d.full, { recursive: true, force: true }); pruned++; } catch { /* ignore */ }
+      }
+      process.stderr.write(`[admin] Pruned ${pruned} backup(s); retained ${survivors.length}\n`);
+      return { success: true, message: `Pruned ${pruned} backups (retained ${survivors.length})`, pruned };
+    } catch (error) {
+      return { success: false, message: `Prune failed: ${error instanceof Error ? error.message : String(error)}` };
+    }
+  }
+
   /**
    * Calculate current CPU usage with historical tracking
    */

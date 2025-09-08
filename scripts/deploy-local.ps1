@@ -119,19 +119,28 @@ if(Test-Path $Destination){
   }
 
   if($Overwrite){
-    Write-Host '[deploy] Overwrite requested. Preserving existing instructions folder if present...' -ForegroundColor Cyan
-    $preserveInstructions = $destInstructionsPath
-    $hadInstructions = Test-Path $preserveInstructions
-    if($hadInstructions){ Write-Host '[deploy] Preserving instructions folder.' -ForegroundColor Green }
+  Write-Host '[deploy] Overwrite requested. Preserving existing instructions & backups folders if present...' -ForegroundColor Cyan
+  $preserveInstructions = $destInstructionsPath
+  $hadInstructions = Test-Path $preserveInstructions
+  if($hadInstructions){ Write-Host '[deploy] Preserving instructions folder.' -ForegroundColor Green }
+  # New: also preserve prior backups so historical instruction backups survive repeated deploys
+  $preserveBackups = Join-Path $Destination 'backups'
+  $hadBackups = Test-Path $preserveBackups
+  if($hadBackups){ Write-Host '[deploy] Preserving backups folder (historical instruction backups).' -ForegroundColor Green }
     # Robust removal: under concurrent test runs transient race conditions or non-filesystem
     # objects (e.g. $null placeholders) have caused pipeline objects without a FullName
     # property, aborting the script (and leaving dist/ uncopied). We defensively filter and
     # swallow per-item errors so deployment can proceed with best-effort cleanup.
+    $preserveSet = @()
+    if($hadInstructions){ $preserveSet += $preserveInstructions }
+    if($hadBackups){ $preserveSet += $preserveBackups }
     Get-ChildItem -Force -LiteralPath $Destination -ErrorAction SilentlyContinue | ForEach-Object {
       $item = $_
       if(-not $item){ return }
-      # Skip if not a FileSystemInfo (rare edge) or it's the preserved instructions directory
-      if($hadInstructions -and (Get-Member -InputObject $item -Name FullName -ErrorAction SilentlyContinue) -and $item.FullName -eq $preserveInstructions){ return }
+      # Skip if not a FileSystemInfo (rare edge) or it's one of the preserved directories
+      if( (Get-Member -InputObject $item -Name FullName -ErrorAction SilentlyContinue) ){
+        if($preserveSet -contains $item.FullName){ return }
+      }
       try {
         if((Get-Member -InputObject $item -Name FullName -ErrorAction SilentlyContinue)){
           Remove-Item -Recurse -Force $item.FullName -ErrorAction Stop

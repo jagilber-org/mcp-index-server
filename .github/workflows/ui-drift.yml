@@ -1,0 +1,39 @@
+name: UI Drift Detection
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch: {}
+
+jobs:
+  ui-drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build server
+        run: npm run build
+      - name: Install Playwright browsers (chromium only)
+        run: npm run pw:init
+      - name: Run drift comparison (@baseline tests)
+        env:
+          MCP_DASHBOARD: '1'
+        run: npm run pw:drift
+      - name: Upload Playwright artifacts (screenshots, traces if any)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-drift-artifacts
+          path: |
+            tests/playwright/baseline.spec.ts-snapshots/
+            playwright-report/
+          if-no-files-found: warn

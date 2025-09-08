@@ -30,7 +30,8 @@ This project provides comprehensive enterprise-grade documentation:
 * **[🔍 Portable Test Client (PORTABLE-MCP-TEST-CLIENT.md)](./docs/PORTABLE-MCP-TEST-CLIENT.md)** – Critical testing tool for MCP troubleshooting
 * **[🏗️ Architecture (ARCHITECTURE.md)](./docs/ARCHITECTURE.md)** – System design and component overview
 * **[🔒 Security (SECURITY.md)](./SECURITY.md)** – Security policies and compliance
-* **Instruction Usage Plan (INSTRUCTION-USAGE-PLAN.md)** – Active instrumentation & grooming enablement plan
+* **[📈 Instruction Usage Plan (INSTRUCTION-USAGE-PLAN.md)](./docs/INSTRUCTION-USAGE-PLAN.md)** – Active instrumentation & grooming enablement plan
+* **[📚 Documentation Index (DOCS-INDEX.md)](./docs/DOCS-INDEX.md)** – Active vs archived documentation map
 * **[🛡️ Runtime Diagnostics (RUNTIME-DIAGNOSTICS.md)](./docs/RUNTIME-DIAGNOSTICS.md)** – Global error, rejection, warning & signal handling
 
 ### Recently Formalized (Pending PRD 1.2.0)

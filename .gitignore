@@ -105,6 +105,7 @@ tmp/**
 # Test run sentinel / status markers
 .test-run-complete.*.marker
 .test-run-status.json
+.test-run-complete.latest
 
 # MCP and VS Code workspace configurations
 # Ignore local MCP workspace config (contains machine-specific paths)

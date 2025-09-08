@@ -1,11 +1,14 @@
 # MCP Index Server
 
+![UI Drift Detection](https://github.com/jagilber/mcp-index-server/actions/workflows/ui-drift.yml/badge.svg)
+
 **[📋 Product Requirements (PROJECT_PRD.md)](./docs/PROJECT_PRD.md)** – Authoritative binding requirements and governance
 
 * **[🔧 API Reference (TOOLS.md)](./docs/TOOLS.md)** - Complete MCP protocol-compliant tool documentation  
 * **[⚙️ Configuration Guide (MCP-CONFIGURATION.md)](./docs/MCP-CONFIGURATION.md)** - Comprehensive MCP setup patterns for all environments
 * **[🔧 Server Configuration (CONFIGURATION.md)](./docs/CONFIGURATION.md)** - Environment variables and CLI options reference
-* **[📊 Dashboard Development Plan (DASHBOARD-DEVELOPMENT-PLAN.md)](./docs/DASHBOARD-DEVELOPMENT-PLAN.md)** - Multi-phase dashboard enhancement roadmap
+* **[�️ Admin Dashboard Guide (DASHBOARD.md)](./docs/DASHBOARD.md)** - UI features, screenshots, drift monitoring & maintenance
+* **[�📊 Dashboard Development Plan (DASHBOARD-DEVELOPMENT-PLAN.md)](./docs/DASHBOARD-DEVELOPMENT-PLAN.md)** - Multi-phase dashboard enhancement roadmap
 * **[📝 Content Guidance (CONTENT-GUIDANCE.md)](./docs/CONTENT-GUIDANCE.md)** - What to include in local vs. central instruction servers
 * **[🧠 Prompt Optimization (PROMPT-OPTIMIZATION.md)](./docs/PROMPT-OPTIMIZATION.md)** - AI prompt handling and optimization guide
 * **[🔍 Portable Test Client (PORTABLE-MCP-TEST-CLIENT.md)](./docs/PORTABLE-MCP-TEST-CLIENT.md)** - Critical testing tool for MCP troubleshooting
@@ -501,7 +504,53 @@ Example failure payload:
     }
   }
 }
-```
+
+
+  ## 🖼️ UI Drift Detection & Snapshot Baseline
+
+  Automated Playwright snapshot tests guard critical dashboard regions (system health card, instruction list + semantic summaries). The workflow `UI Drift Detection` runs on every push / PR and nightly to surface unintended structural or visual regressions.
+
+  Maintenance:
+
+  1. Intentional UI change -> run locally:
+
+    ```bash
+    npm run build
+    npm run pw:baseline   # updates baseline snapshots
+    git add tests/playwright/baseline.spec.ts-snapshots
+    git commit -m "test: refresh playwright baseline after <reason>"
+    ```
+  2. CI failure triage:
+    * Download `playwright-drift-artifacts` from the run
+    * Open `playwright-report/index.html` for visual diffs
+    * If change is expected, follow step (1); otherwise fix regression and re-run.
+
+  Environment overrides:
+  * `DASHBOARD_PORT` – choose port for local run-playwright server (default 8787)
+  * `PLAYWRIGHT_UPDATE_SNAPSHOTS` / `--update` flag handled automatically by `pw:baseline` script
+
+  Scope discipline keeps snapshots low-noise—avoid broad full-page screenshots unless necessary.
+
+  ## 🐢 Slow Test Quarantine Strategy
+
+  Some high-value regression tests are currently unstable (multi-client coordination & governance hash timing). They are quarantined from the default `test:slow` run to restore push velocity while stabilization work proceeds.
+
+  Quarantined list lives in `scripts/test-slow.mjs` under `unstable`. Run them explicitly with:
+
+  ```bash
+  INCLUDE_UNSTABLE_SLOW=1 npm run test:slow
+  ```
+
+  Once stabilized, remove from `unstable` to reincorporate into regular slow gate.
+
+### Slow Test Environment Flags
+
+| Variable | Purpose | Typical Usage |
+|----------|---------|---------------|
+| `ALLOW_FAILING_SLOW=1` | Temporarily bypass failing slow suite in pre-push or CI gating while keeping visibility | Set locally to unblock while investigating failures |
+| `INCLUDE_UNSTABLE_SLOW=1` | Force inclusion of quarantined unstable specs listed in `scripts/test-slow.mjs` | Periodic stabilization runs or targeted repro |
+
+Governance: avoid committing code that permanently relies on these flags; they are short-term velocity aids. Document root cause and planned fix when using in PR descriptions.
 
 Client remediation strategy:
 

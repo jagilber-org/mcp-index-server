@@ -5,6 +5,9 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  schedule:
+    # Nightly drift verification (02:30 UTC)
+    - cron: '30 2 * * *'
   workflow_dispatch: {}
 
 jobs:
@@ -37,3 +40,4 @@ jobs:
             tests/playwright/baseline.spec.ts-snapshots/
             playwright-report/
           if-no-files-found: warn
+          retention-days: 7

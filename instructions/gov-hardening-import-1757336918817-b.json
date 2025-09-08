@@ -1,0 +1,30 @@
+{
+  "id": "gov-hardening-import-1757336918817-b",
+  "title": "gov-hardening-import-1757336918817-b",
+  "body": "governance-hardening-body:1",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "39e11eb705ae442f0c656c626e984369b389fc2f071e0d3b64c150113f8d7a49",
+  "schemaVersion": "2",
+  "createdAt": "2025-09-08T13:08:40.808Z",
+  "updatedAt": "2025-09-08T13:08:40.808Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-08T13:08:40.808Z",
+  "nextReviewDue": "2025-12-07T13:08:40.808Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-08T13:08:40.808Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "governance-hardening-body:1"
+}

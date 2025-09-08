@@ -81,6 +81,8 @@ instructions/perf-test-*.json
 instructions/round-*-client-*.json
 instructions/test-longrunning-*.json
 instructions/github-mermaid-dark-theme-quick-guide-2025*.json
+instructions/gov-hardening-*.json
+instructions/gov-hardening-*.json.backup
 backups/
 
 # Temporary instruction files (atomic write operations)

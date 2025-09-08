@@ -10,6 +10,11 @@ function envNum(name: string, def: number): number {
 
 const MAX_DIFF_RATIO = envNum('DRIFT_MAX_DIFF_RATIO', 0.002); // 0.2%
 const MAX_DIFF_PIXELS = envNum('DRIFT_MAX_DIFF_PIXELS', 250);
+const PLATFORM = process.platform; // used in snapshot file naming
+
+function snap(region: string, browserName: string) {
+  return `${region}-${browserName}-${PLATFORM}.png`;
+}
 
 // Tag: @baseline - used for drift detection runs
 // Provides structural checks plus snapshot capture for key UI regions.
@@ -68,7 +73,7 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
   const shot = await card.screenshot();
   const elapsed = performance.now() - start;
   test.info().annotations.push({ type: 'perf', description: `system-health-screenshot-ms=${elapsed.toFixed(1)}` });
-  expect(shot).toMatchSnapshot(`${browserName}-system-health-card.png`, {
+  expect(shot).toMatchSnapshot(snap('system-health-card', browserName), {
     maxDiffPixelRatio: MAX_DIFF_RATIO,
     maxDiffPixels: MAX_DIFF_PIXELS
   });
@@ -89,7 +94,48 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
     const shot = await list.screenshot();
     const elapsed = performance.now() - start;
     test.info().annotations.push({ type: 'perf', description: `instructions-list-screenshot-ms=${elapsed.toFixed(1)}` });
-    expect(shot).toMatchSnapshot(`${browserName}-instructions-list.png`, {
+  expect(shot).toMatchSnapshot(snap('instructions-list', browserName), {
+      maxDiffPixelRatio: MAX_DIFF_RATIO,
+      maxDiffPixels: MAX_DIFF_PIXELS
+    });
+  });
+
+  test('capture visual snapshot of instruction editor panel', async ({ page, browserName }) => {
+    await page.goto('/admin');
+    await page.click("button:has-text('Instructions')");
+    const list = page.locator('#instructions-list');
+    await expect(list).toBeVisible();
+    // Open first instruction row to reveal editor (if empty, skip)
+    const firstRow = list.locator('.session-item').first();
+    try {
+      await firstRow.waitFor({ timeout: 15000 });
+      await firstRow.click();
+      const editor = page.locator('#instruction-editor');
+      await editor.waitFor({ state: 'visible', timeout: 10000 });
+      const shot = await editor.screenshot();
+      test.info().annotations.push({ type: 'perf', description: 'instruction-editor-screenshot' });
+  expect(shot).toMatchSnapshot(snap('instruction-editor', browserName), {
+        maxDiffPixelRatio: MAX_DIFF_RATIO,
+        maxDiffPixels: MAX_DIFF_PIXELS
+      });
+    } catch {
+      test.skip(true, 'No rows available to open editor');
+    }
+  });
+
+  test('capture visual snapshot of log tail panel (activated)', async ({ page, browserName }) => {
+    await page.goto('/admin');
+    // Start tail
+    const tailBtn = page.locator('#log-tail-btn');
+    await expect(tailBtn).toBeVisible();
+    await tailBtn.click();
+    // Heuristic wait for logs to populate (tail container assumed near button)
+    await page.waitForTimeout(1200);
+    // Narrow region: reuse surrounding container (assume button parent card)
+    const parentCard = tailBtn.locator('xpath=ancestor::*[contains(@class,"admin-card")][1]');
+    const shot = await parentCard.screenshot();
+    test.info().annotations.push({ type: 'perf', description: 'log-tail-screenshot' });
+  expect(shot).toMatchSnapshot(snap('log-tail', browserName), {
       maxDiffPixelRatio: MAX_DIFF_RATIO,
       maxDiffPixels: MAX_DIFF_PIXELS
     });

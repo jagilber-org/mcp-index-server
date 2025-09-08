@@ -46,11 +46,13 @@
     "baseline:sentinel:verify": "node scripts/baseline-sentinel.mjs verify",
     "guard:decl": "node scripts/guard-declarations.mjs",
   "guard:decl:fix": "node scripts/purge-extra-decls.mjs && node scripts/guard-declarations.mjs",
-  "pw:init": "npx playwright install --with-deps chromium",
+  "pw:init": "npx playwright install --with-deps chromium firefox webkit",
   "pw:test": "playwright test",
   "playwright:start-server": "cross-env MCP_DASHBOARD=1 node dist/server/index.js",
   "pw:baseline": "node scripts/run-playwright.mjs --grep @baseline --update",
-  "pw:drift": "node scripts/run-playwright.mjs --grep @baseline"
+  "pw:drift": "node scripts/run-playwright.mjs --grep @baseline",
+  "pw:drift:report": "npm run pw:drift && node scripts/generate-drift-report.mjs",
+  "pw:drift:ci": "cross-env DRIFT_BROWSERS=chromium,firefox npm run pw:drift:report"
   },
   "devDependencies": {
   "@playwright/test": "^1.47.2",

@@ -1,5 +1,16 @@
 import { test, expect } from '@playwright/test';
 
+// Utility to get numeric env with fallback
+function envNum(name: string, def: number): number {
+  const v = process.env[name];
+  if (!v) return def;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : def;
+}
+
+const MAX_DIFF_RATIO = envNum('DRIFT_MAX_DIFF_RATIO', 0.002); // 0.2%
+const MAX_DIFF_PIXELS = envNum('DRIFT_MAX_DIFF_PIXELS', 250);
+
 // Tag: @baseline - used for drift detection runs
 // Provides structural checks plus snapshot capture for key UI regions.
 // Assumes dashboard already running at configured baseURL.
@@ -47,16 +58,23 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
     }
   });
 
-  test('capture visual snapshot of system health card', async ({ page }) => {
+  test('capture visual snapshot of system health card', async ({ page, browserName }) => {
   await page.goto('/admin');
   const card = page.locator('#system-health');
   await expect(card).toBeVisible();
   await page.waitForTimeout(1500); // allow spark charts to populate
   // Minor pixel drift (sparks timing) acceptable; rely on snapshot update process
-  expect(await card.screenshot()).toMatchSnapshot('system-health-card.png');
+  const start = performance.now();
+  const shot = await card.screenshot();
+  const elapsed = performance.now() - start;
+  test.info().annotations.push({ type: 'perf', description: `system-health-screenshot-ms=${elapsed.toFixed(1)}` });
+  expect(shot).toMatchSnapshot(`${browserName}-system-health-card.png`, {
+    maxDiffPixelRatio: MAX_DIFF_RATIO,
+    maxDiffPixels: MAX_DIFF_PIXELS
+  });
   });
 
-  test('capture visual snapshot of instruction list region', async ({ page }) => {
+  test('capture visual snapshot of instruction list region', async ({ page, browserName }) => {
   await page.goto('/admin');
   await page.click("button:has-text('Instructions')");
   const list = page.locator('#instructions-list');
@@ -67,6 +85,13 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
       await page.click('#instructions-section button:has-text("Refresh")');
       await list.locator('.session-item').first().waitFor({ timeout: 10000 });
     }
-    expect(await list.screenshot()).toMatchSnapshot('instructions-list.png');
+    const start = performance.now();
+    const shot = await list.screenshot();
+    const elapsed = performance.now() - start;
+    test.info().annotations.push({ type: 'perf', description: `instructions-list-screenshot-ms=${elapsed.toFixed(1)}` });
+    expect(shot).toMatchSnapshot(`${browserName}-instructions-list.png`, {
+      maxDiffPixelRatio: MAX_DIFF_RATIO,
+      maxDiffPixels: MAX_DIFF_PIXELS
+    });
   });
 });

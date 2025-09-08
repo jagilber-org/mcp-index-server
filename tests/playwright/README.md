@@ -1,8 +1,8 @@
-# Playwright UI Drift Baseline
+# Playwright UI Drift Baseline (Full Suite)
 
 ## Purpose
 
-Baseline structural + visual regression guard for the admin dashboard. Focus is on catching unintended layout or content regressions (e.g., missing System Health, lost semantic summaries, instruction list structure changes).
+Comprehensive structural + multi-browser visual regression guard for the admin dashboard. Detects layout, content, and cross-engine rendering regressions (e.g., missing System Health, lost semantic summaries, inconsistent list rendering).
 
 ## Test Tags
 
@@ -13,33 +13,49 @@ Tests containing `@baseline` tag participate in drift detection commands:
 
 ## Snapshot Policy
 
-- Only stable, high‑signal regions captured (system health card, instruction list)
-- Avoids full‑page snapshot noise (timestamps, dynamic metrics variance)
-- Spark line variability minimized with short delay (≈1.2s) before capture
+- High-signal regions: system health card, instruction list
+- Cross-browser naming pattern: `<browser>-<region>.png`
+- Dynamic variance reduced with small settle delay (≈1.5s)
+- Thresholds configurable: `DRIFT_MAX_DIFF_RATIO` (default 0.002), `DRIFT_MAX_DIFF_PIXELS` (default 250)
 
 ## Workflow
 
-1. Start server with dashboard enabled (default port 8787):
-   - Example: `MCP_DASHBOARD=1 npm run start` (adapt to your start script)
-2. Install browsers (first time): `npm run pw:init`
-3. Capture / refresh baseline: `npm run pw:baseline`
-4. Validate drift: `npm run pw:drift`
+1. Install browsers (first run): `npm run pw:init`
+2. Refresh baseline (all browsers): `npm run pw:baseline`
+3. Drift check locally (all configured browsers): `npm run pw:drift`
+4. Generate drift report (JSON + markdown): `npm run pw:drift:report`
+5. CI optimized run (chromium + firefox + report): `npm run pw:drift:ci`
 
 ## Environment Overrides
 
 - `DASHBOARD_PORT` – target non-default port
 - `PLAYWRIGHT_BASE_URL` – override full base URL
+- `DRIFT_BROWSERS` – comma list subset of browsers (e.g. `chromium,firefox`)
+- `DRIFT_MAX_DIFF_RATIO` – snapshot diff tolerance ratio
+- `DRIFT_MAX_DIFF_PIXELS` – absolute pixel diff ceiling
 
 ## Adding New Regions
 
-Keep snapshots: deterministic, semantically meaningful, low churn. Prefer narrow component locators over full page.
+1. Identify stable DOM container (#id or data-test attr).
+2. Add test with: small settle wait, region screenshot, `toMatchSnapshot` using browserName prefix.
+3. Justify region (signal > noise) in commit message.
+4. Run `npm run pw:baseline` to produce new golden images.
 
 ## Maintenance Triggers
 
 Refresh snapshots when intentionally modifying:
 
-- Instruction list row structure or CSS class names
-- System Health card layout or chart styling
+- Instruction list row structure / CSS classes
+- System Health card layout or chart styles
 - Semantic summary rendering logic
 
-Do NOT refresh simply for unrelated content changes—investigate diffs first.
+Investigate before updating if diff cause is unclear (avoid normalizing accidental regressions).
+
+## Drift Report Artifacts
+
+`scripts/generate-drift-report.mjs` emits:
+
+- `playwright-report/drift-report.json` – machine summary
+- `playwright-report/drift-report.md` – human-readable list & perf annotations
+
+Integrate into CI by uploading both plus the standard Playwright HTML report.

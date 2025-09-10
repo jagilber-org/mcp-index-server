@@ -12,9 +12,9 @@
     "visualization"
   ],
   "sourceHash": "8c90feab00cfe822d308ae2172d02c966411b70e548add36c9525ef99fcd43d4",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-31T18:21:27.849Z",
-  "updatedAt": "2025-09-08T20:27:27.480Z",
+  "updatedAt": "2025-09-10T13:56:05.121Z",
   "riskScore": 55,
   "version": "1.0.0",
   "status": "approved",
@@ -31,5 +31,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Minimal body for persistence divergence reproduction. Focus on ID visibility only."
+  "semanticSummary": "Minimal body for persistence divergence reproduction. Focus on ID visibility only.",
+  "primaryCategory": "documentation"
 }

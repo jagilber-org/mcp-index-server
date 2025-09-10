@@ -20,39 +20,15 @@
 				// ===================== MUTATION CONTROL ========================
 				// CAUTION: Mutation enabled for local iterative CRUD & governance tests.
 				"MCP_ENABLE_MUTATION": "1",
-				"INSTRUCTIONS_ALWAYS_RELOAD": "1",
+				// "INSTRUCTIONS_ALWAYS_RELOAD": "1", // disabled to satisfy mcpConfigImperativeDirective test (forbidden active diagnostic flag)
 				"MCP_TRACE_LEVEL": "1",
 				"MCP_CATALOG_FILE_TRACE": "1",
 				"MCP_DASHBOARD": "1",
 				"MCP_MEMORY_MONITOR": "1",
-				"MCP_LOG_FILE": "1",
+				// "MCP_LOG_FILE": "1", // disabled to satisfy mcpConfigImperativeDirective test (forbidden active diagnostic flag)
+				// "MCP_LOG_VERBOSE": "1", // Imperative Directive: forbidden diagnostic flag (documentation only, must remain commented)
 				"MCP_METRICS_FILE_STORAGE": "1",
-				// "MCP_METRICS_DIR": "./metrics",  // optional
 				"MCP_METRICS_MAX_FILES": "720",
-				// Optional future safeguard: require a guard token before mutating prod.
-				// "MCP_MUTATION_GUARD": "expected-checksum-or-token"
-				// ===================== FEEDBACK STORAGE ========================
-				// Use absolute (workspaceFolder) to avoid context drift when editor CWD differs.
-				// "FEEDBACK_DIR": "${workspaceFolder}/feedback",
-				// ===================== LOGGING / DIAGNOSTICS ===================
-				// Enable file logging (logs to both stderr and file)
-				// "MCP_LOG_FILE": "${workspaceFolder}/logs/mcp-server.log",
-				// Verbose diagnostic logging (high volume)
-				// "MCP_LOG_DIAG": "1",
-				// Extended handshake trace (protocol negotiation ordering)
-				// "MCP_HANDSHAKE_TRACE": "1",
-				// General debug verbosity
-				// "MCP_DEBUG": "1",
-				// Ultra-verbose internal logging
-				// "MCP_LOG_VERBOSE": "1",
-				// ===================== GOVERNANCE / HASH TESTING ===============
-				// Force reloading instructions each request to speed drift/hash scenarios.
-				// "INSTRUCTIONS_ALWAYS_RELOAD": "1",
-				// Hash subsystem debug (if supported by server implementation)
-				// "HASH_DEBUG": "1",
-				// ===================== PERSISTENCE / AUTOSAVE ==================
-				// Adjust autosave interval (ms) for stress or rapid mutation tests.
-				// "INDEX_AUTOSAVE_INTERVAL_MS": "3000"
 			}
 		},
 		// "powershell-mcp-server": {

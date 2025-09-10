@@ -1,6 +1,6 @@
 # Migration & Verification Guide
 
-Version: 0.7.0
+Version: 0.7.0 (updated with schema v3 notes – 2025-09-10)
 
 This guide provides an upgrade path from earlier 0.x versions and a deterministic verification checklist suitable for automated tooling.
 
@@ -28,6 +28,53 @@ Optional:
 6. (If you previously depended on a trailing newline in hash input) set `GOV_HASH_TRAILING_NEWLINE=1` consistently across all validating processes.
 
 No manual data migrations are required: enrichment and normalization are automatic and idempotent.
+
+### 2.1 Schema v3 Upgrade (primaryCategory introduction)
+
+Applies when moving from any build that persisted instruction JSON with `schemaVersion` `1` or `2` to builds defining `SCHEMA_VERSION="3"`.
+
+Summary:
+
+- Adds optional `primaryCategory` field derived from the first element of `categories`.
+- Ensures if `primaryCategory` exists it is a member of `categories` (injected if missing).
+- Preserves backward compatibility for legacy instructions with empty `categories` by deferring injection unless runtime fallback supplies `['uncategorized']`.
+
+Automatic Migration Behavior (one-time, per file):
+
+1. Loader reads JSON; if `schemaVersion` < 3 it invokes `migrateInstructionRecord`.
+2. For v1 records missing `reviewIntervalDays`, the v1→v2 logic fills it using tier + requirement.
+3. For v2 records (or v1 upgraded to v2 inside the same pass):
+	- If `primaryCategory` absent and `categories` non-empty → set `primaryCategory = categories[0]`.
+	- If `primaryCategory` present but not in `categories` → it is unshifted into `categories` (deduplicated).
+4. `schemaVersion` field rewritten to `"3"` and file persisted.
+
+Fallback Category Injection:
+
+- Authoring legacy instructions with an empty `categories` array remains tolerated for compatibility.
+- At runtime, unless `MCP_REQUIRE_CATEGORY=1`, an empty array is normalized to `['uncategorized']` prior to persistence or further governance validation. With the flag set, empty categories cause a validation failure.
+
+Verification Checklist (Schema v3 specific):
+
+| Step | Action | Expectation |
+|------|--------|-------------|
+| 1 | Pick a legacy v2 instruction (no `primaryCategory`) | `schemaVersion` shows `2` on disk |
+| 2 | Start server with mutation enabled | File rewritten with `schemaVersion: "3"` & `primaryCategory` present |
+| 3 | Confirm categories membership | `primaryCategory` string is one of `categories` values |
+| 4 | Create new instruction with empty categories (no env flag) | Stored with categories `["uncategorized"]` + `primaryCategory: "uncategorized"` |
+| 5 | Repeat with `MCP_REQUIRE_CATEGORY=1` | Operation rejected (validation error) |
+
+Rollback Safety:
+
+- Older builds (expecting v2) ignore the extra `primaryCategory` field and higher enum value only if their schema validation is lax. Current project versions post-0.7.0 intentionally allow forward-compatible fields; rollback remains non-destructive (fields are simply ignored).
+
+Client Impact:
+
+- No tooling changes required; dispatcher responses now may include `primaryCategory` (treat as optional).
+- Tool schemas updated where relevant to include field; Zod validation is permissive (extra field allowed).
+
+Operational Recommendation:
+
+- Roll out with soft mode first (omit `MCP_REQUIRE_CATEGORY`) to allow background migration; after catalog reaches steady state enable the flag in controlled environments to enforce non-empty categorization.
 
 ## 3. Verification Checklist (Automatable)
 
@@ -102,6 +149,7 @@ Because 0.7.0 only adds fields / tools and performs additive enrichment, rollbac
 | MCP_LOG_VERBOSE | Verbose logging | unset |
 | MCP_LOG_MUTATION | Mutation-only logs | unset |
 | GOV_HASH_TRAILING_NEWLINE | Add trailing newline sentinel before hash | unset (off) |
+| MCP_REQUIRE_CATEGORY | Enforce non-empty categories (reject empty) | unset (soft fallback injects `uncategorized`) |
 
 ---
 

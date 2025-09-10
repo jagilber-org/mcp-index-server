@@ -1,0 +1,13 @@
+# Governance Hash Justification: Schema v3 Canonicalization
+
+Schema v3 canonicalization commit introduced primaryCategory field across existing instruction entries.
+
+Justification:
+
+- Automated migration (schemaVersion 2 -> 3) adds primaryCategory deterministically from first category.
+- Required to enforce governance invariant primaryCategory ∈ categories[] and enable category-based analytics.
+- No semantic content changes beyond structural metadata addition.
+- Future governance hash computations must treat this as approved baseline shift.
+
+Date: 2025-09-10
+Actor: automated assistant (GitHub Copilot)

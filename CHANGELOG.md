@@ -27,6 +27,36 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 ## [1.2.1] - 2025-09-05
 
+## [1.3.0] - 2025-09-10
+
+### Added (schema v3 & governance)
+
+- Introduced on-disk instruction schemaVersion `3` with new `primaryCategory` field enforcing a single canonical category reference.
+- Automatic migration path (v1→v2→v3) updates existing instruction JSON files in-place; adds `primaryCategory` from first existing category and normalizes category list to include it.
+- Added governance justification file `governance/ALLOW_HASH_CHANGE` documenting approved hash shift from structural canonicalization.
+
+### Changed (migration & normalization)
+
+- `migrateInstructionRecord` now injects `primaryCategory` for v2 records and ensures `schemaVersion` bump with descriptive notes.
+- Runtime handlers enforce invariant: `primaryCategory ∈ categories[]`; fallback category `uncategorized` only when MCP_REQUIRE_CATEGORY unset.
+- All committed instructions canonicalized (hash drift resolved) to provide stable CI governance baseline.
+
+### Integrity & Tooling
+
+- Full test suites (fast + slow) green post-migration; quarantined flaky tests unchanged.
+- Governance hash workflow unblocked via explicit justification artifact.
+- Production deployment updated to version `1.3.0` (no behavior regressions detected).
+
+### Compatibility
+
+- Migration is additive; older clients reading instructions ignore unknown `primaryCategory`.
+- Direct downgrade not supported; rollback requires restoring pre-migration backups.
+
+### Documentation (navigation & migration)
+
+- Updated MIGRATION guidance (v2→v3 path) and added docs index + instruction usage plan for navigation.
+
+
 ### Changed (test stability)
 
 - Deprecated legacy RED test `instructionsPersistenceDivergence.red.spec.ts` -> converted to inert placeholder (historical context only).

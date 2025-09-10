@@ -641,7 +641,7 @@
                     </div>
                     <div class="form-group" style="margin-top:10px;">
                         <label class="form-label">JSON Content</label>
-                        <textarea id="instruction-content" class="form-input" style="min-height:260px; font-family:monospace; white-space:pre; overflow:auto;" oninput="updateInstructionEditorDiagnostics()"></textarea>
+                        <textarea id="instruction-content" class="form-input" style="min-height:260px; font-family:monospace; white-space:pre-wrap; word-wrap:break-word; overflow:auto;" oninput="updateInstructionEditorDiagnostics()" placeholder="{\n  \"id\": \"example\",\n  \"title\": \"Example Instruction\"\n}"></textarea>
                         <div id="instruction-diagnostics" style="margin-top:8px; font-size:12px; line-height:1.4; background:#f4f6fb; padding:8px 10px; border:1px solid #dbe2ec; border-radius:6px;">
                             <em>Editor idle.</em>
                         </div>
@@ -2284,6 +2284,104 @@
             } catch {/* ignore */}
         }
 
+        // --- Instruction Editor Helpers (added patch) ---
+        let instructionOriginalContent = '';
+        let instructionDiffVisible = false;
+
+        function safeParseInstruction(raw){
+            try { return JSON.parse(raw); } catch { return null; }
+        }
+
+        function updateInstructionEditorDiagnostics(){
+            const ta = document.getElementById('instruction-content');
+            const diag = document.getElementById('instruction-diagnostics');
+            if(!ta||!diag) return;
+            const raw = ta.value;
+            if(!raw.trim()){ diag.innerHTML = '<em>Empty.</em>'; return; }
+            const parsed = safeParseInstruction(raw);
+            if(!parsed){
+                diag.innerHTML = '<span style="color:#c0392b;">Invalid JSON</span>'; 
+            } else {
+                const size = raw.length;
+                const cats = Array.isArray(parsed.categories)? parsed.categories.length : 0;
+                const schemaVer = parsed.schemaVersion || parsed.schema || '?';
+                const changed = instructionOriginalContent && raw !== instructionOriginalContent;
+                diag.innerHTML = `Size: ${size} chars • Categories: ${cats} • Schema: ${schemaVer} ${changed?'<span style="color:#f39c12;">(modified)</span>':''}`;
+            }
+            if(instructionDiffVisible) refreshInstructionDiff();
+        }
+
+        function refreshInstructionDiff(){
+            const diffWrap = document.getElementById('instruction-diff-container');
+            const diffPre = document.getElementById('instruction-diff');
+            const ta = document.getElementById('instruction-content');
+            if(!diffWrap||!diffPre||!ta) return;
+            if(!instructionOriginalContent){ diffPre.textContent='(no baseline)'; return; }
+            if(ta.value === instructionOriginalContent){ diffPre.textContent='(no changes)'; return; }
+            // Simple line diff (not optimal but lightweight)
+            const before = instructionOriginalContent.split(/\r?\n/);
+            const after = ta.value.split(/\r?\n/);
+            const max = Math.max(before.length, after.length);
+            const out = [];
+            for(let i=0;i<max;i++){
+                const a = before[i];
+                const b = after[i];
+                if(a === b){
+                    if(a !== undefined) out.push('  ' + a);
+                } else {
+                    if(a !== undefined) out.push('- ' + a);
+                    if(b !== undefined) out.push('+ ' + b);
+                }
+            }
+            diffPre.textContent = out.join('\n');
+        }
+
+        function toggleInstructionDiff(){
+            instructionDiffVisible = !instructionDiffVisible;
+            const wrap = document.getElementById('instruction-diff-container');
+            if(!wrap) return; 
+            if(instructionDiffVisible){
+                wrap.classList.remove('hidden');
+                refreshInstructionDiff();
+            } else {
+                wrap.classList.add('hidden');
+            }
+        }
+
+        async function saveInstruction(){
+            const nameEl = document.getElementById('instruction-filename');
+            const ta = document.getElementById('instruction-content');
+            if(!nameEl||!ta) return;
+            const raw = ta.value;
+            const parsed = safeParseInstruction(raw);
+            if(!parsed){ showError('Cannot save: invalid JSON'); return; }
+            // Auto-upgrade template schemaVersion if legacy 1.x
+            if(parsed && parsed.schemaVersion && /^1(\.|$)/.test(String(parsed.schemaVersion))){
+                parsed.schemaVersion = '2';
+            }
+            const body = { content: parsed };
+            let url = '/api/instructions';
+            let method = 'POST';
+            if(instructionEditing){
+                url += '/' + encodeURIComponent(instructionEditing);
+                method = 'PUT';
+            } else {
+                body.name = nameEl.value.trim();
+                if(!body.name){ showError('Provide file name'); return; }
+            }
+            try {
+                const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+                const data = await res.json();
+                if(!res.ok || !data.success){ throw new Error(data.error || data.message || 'Save failed'); }
+                showSuccess(instructionEditing? 'Instruction updated':'Instruction created');
+                instructionOriginalContent = JSON.stringify(parsed, null, 2);
+                ta.value = instructionOriginalContent; // normalized pretty
+                if(!instructionEditing) instructionEditing = body.name;
+                updateInstructionEditorDiagnostics();
+                loadInstructions();
+            } catch(e){ showError(e.message || 'Save failed'); }
+        }
+
         async function loadInstructions() {
             const listEl = document.getElementById('instructions-list');
             listEl.innerHTML = 'Loading...';
@@ -2332,18 +2430,31 @@
 
         function applyInstructionTemplate(){
             const ta = document.getElementById('instruction-content');
-            // Provide a minimal enriched template; preserve user edits if already non-empty & ask confirmation.
+            if(!ta) return;
+            // Preserve user edits unless they confirm replacement
             if(ta.value.trim() && !confirm('Replace current content with template?')) return;
+            const now = new Date().toISOString();
             const template = {
-                schemaVersion: '1.0.0',
+                id: 'sample-instruction',
                 title: 'Sample Instruction',
+                body: 'Detailed instruction content here.\nAdd multi-line guidance and steps.',
+                priority: 50,
+                audience: 'all',
+                requirement: 'optional',
+                categories: ['general'],
+                primaryCategory: 'general',
+                reviewIntervalDays: 180,
+                schemaVersion: '3',
                 description: 'Describe purpose and scope.',
-                category: 'general',
+                meta: {
+                    category: 'general',
+                    categories: ['general'],
+                    semanticSummary: 'Sample scaffold for new instruction schema v2.'
+                },
                 owner: 'you@example.com',
                 tags: ['sample','template'],
-                body: 'Detailed instruction content here.',
                 governance: { version: 1 },
-                metadata: { createdBy: 'admin-ui', createdAt: new Date().toISOString() }
+                metadata: { createdBy: 'admin-ui', createdAt: now, updatedAt: now }
             };
             ta.value = JSON.stringify(template, null, 2);
             updateInstructionEditorDiagnostics();

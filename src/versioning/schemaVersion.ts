@@ -2,7 +2,7 @@
 // Bump this when making a backward-incompatible on-disk schema change that
 // requires a migration rewrite. Migration logic should detect older versions
 // and transform + persist them once.
-export const SCHEMA_VERSION = '2';
+export const SCHEMA_VERSION = '3';
 
 import { RequirementLevel } from '../models/instruction';
 
@@ -31,6 +31,26 @@ export function migrateInstructionRecord(rec: Record<string, unknown>): Migratio
     rec.reviewIntervalDays = computeReviewIntervalDays(tier, requirement);
     changed = true;
     notes.push('added reviewIntervalDays from tier+requirement');
+  }
+
+  // v2 → v3 migration: Introduce primaryCategory (first category if present)
+  if (prevVersion === '2') {
+    const cats = Array.isArray(rec.categories) ? (rec.categories as unknown[]).filter(c=> typeof c==='string' && c.trim()) as string[] : [];
+    if (!('primaryCategory' in rec) && cats.length) {
+      (rec as Record<string, unknown>).primaryCategory = cats[0];
+      changed = true;
+      notes.push('added primaryCategory from first categories element');
+    }
+    if (('primaryCategory' in rec) && cats.length) {
+      const pc = (rec as Record<string, unknown>).primaryCategory as string;
+      if (typeof pc === 'string' && pc && !cats.includes(pc)) {
+        // ensure consistency: inject primaryCategory into categories array
+        cats.unshift(pc);
+        (rec as Record<string, unknown>).categories = Array.from(new Set(cats));
+        changed = true;
+        notes.push('normalized categories to include primaryCategory');
+      }
+    }
   }
   
   // Update schema version if changed

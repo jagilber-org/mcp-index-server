@@ -9,6 +9,9 @@ export interface InstructionEntry {
   audience: AudienceScope;
   requirement: RequirementLevel;
   categories: string[];
+  // Primary category (enterprise governance): canonical single category driving ownership & review.
+  // Must also appear in categories[]. Added in schema v3.
+  primaryCategory?: string;
   sourceHash: string; // content hash for integrity
   schemaVersion: string;
   deprecatedBy?: string;

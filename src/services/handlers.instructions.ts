@@ -255,7 +255,10 @@ registerHandler('instructions/import', guard('instructions/import', (p:{entries:
     const bodyTrimmed = typeof e.body === 'string' ? e.body.trim() : String(e.body);
     const file=path.join(dir, `${e.id}.json`); const fileExists=fs.existsSync(file);
     const now=new Date().toISOString();
-    const categories=Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c):c is string => typeof c==='string').map(c=>c.toLowerCase()))).sort();
+  const categories=Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c):c is string => typeof c==='string' && c.trim()).map(c=>c.toLowerCase()))).sort();
+  const primaryCategoryRaw = (e as Record<string, unknown>).primaryCategory as string | undefined;
+  if(!categories.length){ errors.push({ id:e.id, error:'category_required'}); continue; }
+  const effectivePrimary = (primaryCategoryRaw && categories.includes(primaryCategoryRaw.toLowerCase())) ? primaryCategoryRaw.toLowerCase() : categories[0];
     const newBodyHash=crypto.createHash('sha256').update(bodyTrimmed,'utf8').digest('hex');
     let existing:InstructionEntry|null=null; if(fileExists){ try { existing=JSON.parse(fs.readFileSync(file,'utf8')); } catch { existing=null; } }
     // Governance prerequisite rules BEFORE adjusting counters so failures are excluded from imported/overwritten/skipped
@@ -264,7 +267,7 @@ registerHandler('instructions/import', guard('instructions/import', (p:{entries:
     // Skip/overwrite semantics now that governance validation passed
     if(fileExists && mode==='skip'){ skipped++; continue; }
     if(fileExists && mode==='overwrite') overwritten++; else if(!fileExists) imported++;
-    const base: InstructionEntry = existing ? { ...existing, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, updatedAt: now } as InstructionEntry : { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash:newBodyHash, schemaVersion:SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt:now, updatedAt:now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
+  const base: InstructionEntry = existing ? { ...existing, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, primaryCategory: effectivePrimary, updatedAt: now } as InstructionEntry : { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, primaryCategory: effectivePrimary, sourceHash:newBodyHash, schemaVersion:SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt:now, updatedAt:now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
     const govKeys: (keyof ImportEntry)[] = ['version','owner','status','priorityTier','classification','lastReviewedAt','nextReviewDue','changeLog','semanticSummary'];
     for(const k of govKeys){ const v = e[k]; if(v!==undefined){ (base as unknown as Record<string, unknown>)[k]=v as unknown; } }
     base.sourceHash = newBodyHash;
@@ -364,7 +367,10 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   const rawBody = typeof e.body==='string'? e.body: String(e.body||'');
   const bodyTrimmed = rawBody.trim();
   // Apply canonicalization so sourceHash stable across superficial whitespace edits.
-  const categories = Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c):c is string=> typeof c==='string').map(c=> c.toLowerCase()))).sort();
+  const categories = Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c):c is string=> typeof c==='string' && c.trim().length>0).map(c=> c.toLowerCase()))).sort();
+  if(!categories.length) return fail('category_required', { id:e.id });
+  const suppliedPrimary = (e as unknown as Record<string, unknown>).primaryCategory as string | undefined;
+  const primaryCategory = (suppliedPrimary && categories.includes(suppliedPrimary.toLowerCase())) ? suppliedPrimary.toLowerCase() : categories[0];
   const sourceHash = process.env.MCP_CANONICAL_DISABLE === '1'
     ? crypto.createHash('sha256').update(bodyTrimmed,'utf8').digest('hex')
     : hashBody(rawBody);
@@ -385,16 +391,16 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
       if(typeof e.priority === 'number') base.priority = e.priority;
       if(e.audience) base.audience = e.audience;
       if(e.requirement) base.requirement = e.requirement as InstructionEntry['requirement'];
-      if(categories.length) base.categories = categories;
+  if(categories.length) { base.categories = categories; base.primaryCategory = primaryCategory; }
       base.updatedAt = now;
       if(e.version!==undefined) base.version = e.version;
       if(e.changeLog!==undefined) base.changeLog = e.changeLog as InstructionEntry['changeLog'];
     } catch {
       // Fallback if existing unreadable -> treat as new
-      base = { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash, schemaVersion: SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
+  base = { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, primaryCategory, sourceHash, schemaVersion: SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
     }
   } else {
-    base = { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, sourceHash, schemaVersion: SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
+  base = { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, primaryCategory, sourceHash, schemaVersion: SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
   }
   // Pass-through governance fields
   const govKeys: (keyof ImportEntry)[] = ['version','owner','status','priorityTier','classification','lastReviewedAt','nextReviewDue','changeLog','semanticSummary'];

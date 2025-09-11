@@ -27,7 +27,7 @@ describe('graph/export', () => {
     invalidateFn = cat.invalidate;
   });
 
-  beforeEach(()=>{
+  beforeEach(async () =>{
     // Clean directory between tests to keep scenarios independent
     if(fs.existsSync(dir)){
       for(const f of fs.readdirSync(dir)) fs.unlinkSync(path.join(dir,f));
@@ -42,12 +42,17 @@ describe('graph/export', () => {
     writeInstruction('c','body c',['beta'],'beta');
     // Force catalog invalidation so ensureLoaded observes fresh seed instead of reused prior large state
     invalidateFn?.();
+    // Reset graph export cache (test-only helper) so previous env signature / hash combos don't leak
+    try {
+      const g = await import('../services/handlers.graph.js');
+      if(typeof g.__resetGraphCache === 'function') g.__resetGraphCache();
+    } catch { /* ignore */ }
   });
 
   it('returns deterministic structural graph JSON', async () => {
     const res = await callTool<any>('graph/export', {});
-  // graphSchemaVersion lives under meta
-  expect(res.meta.graphSchemaVersion).toBe(1);
+    // graphSchemaVersion lives under meta (Phase 1 schema contract)
+    expect(res.meta.graphSchemaVersion).toBe(1);
     expect(Array.isArray(res.nodes)).toBe(true);
     expect(Array.isArray(res.edges)).toBe(true);
     // nodes sorted
@@ -94,6 +99,8 @@ describe('graph/export', () => {
     writeInstruction('n1','b',['bigcat']);
     writeInstruction('n2','b',['bigcat']);
     writeInstruction('n3','b',['bigcat']);
+    // Force catalog invalidation so graph handler does not reuse stale large edge set state
+    invalidateFn?.();
     const res = await callTool<any>('graph/export', {});
     // No edges because pairwise skipped; note present
   expect(res.edges.length).toBe(0);

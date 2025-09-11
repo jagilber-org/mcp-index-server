@@ -186,6 +186,7 @@ export async function getResponse(lines: string[], id: number, timeoutMs = 4000)
 // Wait for a file to appear (and optionally satisfy a predicate) up to timeout
 import fs from 'fs';
 import path from 'path';
+import { getHandler } from '../server/registry';
 // Add explicit .js extension for Node16 moduleResolution compliance (TS2835 avoidance)
 import { CatalogLoader } from '../services/catalogLoader.js';
 import type { InstructionEntry } from '../models/instruction';
@@ -363,4 +364,56 @@ export function expectError(env: RpcEnvelope, code: number, msgPattern?: RegExp)
   if(!env.error) throw new Error(`Expected error envelope code=${code} got success`);
   if(env.error.code !== code) throw new Error(`Expected error code ${code} got ${env.error.code}`);
   if(msgPattern && !msgPattern.test(env.error.message || '')) throw new Error(`Error message mismatch pattern=${msgPattern} actual=${env.error.message}`);
+}
+
+// Lightweight direct tool invocation helper (bypasses JSON-RPC transport) used by graph tests.
+// Returns the unwrapped data portion of the handler response envelope.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function callTool<T=any>(name: string, args: Record<string, unknown>): Promise<T>{
+  const handler = getHandler(name);
+  if(!handler) throw new Error(`tool handler not registered: ${name}`);
+  // Handlers are wrapped to return responseEnvelope shape { version, serverVersion, data }
+  const raw = await handler(args) as unknown;
+  // Temporary diagnostic instrumentation for flaky graph/export undefined results.
+  if(name === 'graph/export'){
+    try {
+      // Avoid noisy gigantic logs: summarize shape only.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const summary: Record<string, unknown> = { type: typeof raw };
+      if(raw && typeof raw === 'object'){
+        const o = raw as Record<string, unknown>;
+        summary.keys = Object.keys(o).slice(0,10);
+        // Capture meta schema version if present
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const meta = (o as any).meta;
+        if(meta && typeof meta === 'object'){
+          summary.metaKeys = Object.keys(meta);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          summary.graphSchemaVersion = (meta as any).graphSchemaVersion;
+        }
+        if('version' in o && 'data' in o){
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const d = (o as any).data;
+          if(d && typeof d === 'object'){
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            summary.envelopeDataKeys = Object.keys(d as any).slice(0,10);
+          }
+        }
+      }
+      // Emit single-line JSON so tests can grep if needed.
+      // Intentionally using stderr to avoid interfering with stdout-based parsers.
+      // Prefix aids filtering.
+      // eslint-disable-next-line no-console
+      console.error('[graph-export-diag]', JSON.stringify(summary));
+    } catch { /* ignore diag errors */ }
+  }
+  // Envelope detection: only treat as envelope if object has explicit data property AND version field.
+  if(raw && typeof raw === 'object'){
+    const maybeObj = raw as { data?: unknown; version?: unknown; serverVersion?: unknown };
+    if('data' in maybeObj && typeof maybeObj.version === 'number'){
+      return maybeObj.data as T;
+    }
+  }
+  // Feature flag likely disabled => handler returned bare result directly.
+  return raw as T;
 }

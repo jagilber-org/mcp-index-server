@@ -23,6 +23,15 @@ const stringReq = (name: string) => ({ type: 'object', additionalProperties: fal
 
 // Explicit param schemas derived from handlers in toolHandlers.ts
 const INPUT_SCHEMAS: Record<string, object> = {
+  // graph export (Phase 1 + Phase 2 enrichment). All params optional.
+  'graph/export': { type: 'object', additionalProperties: false, properties: {
+    includeEdgeTypes: { type: 'array', items: { type: 'string', enum: ['primary','category','belongs'] }, maxItems: 3 },
+    maxEdges: { type: 'number', minimum: 0 },
+    format: { type: 'string', enum: ['json','dot'] },
+    enrich: { type: 'boolean' },
+    includeCategoryNodes: { type: 'boolean' },
+    includeUsage: { type: 'boolean' }
+  } },
   'health/check': { type: 'object', additionalProperties: true }, // no params
   'instructions/dispatch': { type: 'object', additionalProperties: true, required: ['action'], properties: { action: { type: 'string' } } },
   'instructions/governanceHash': { type: 'object', additionalProperties: true },
@@ -112,7 +121,7 @@ const INPUT_SCHEMAS: Record<string, object> = {
 };
 
 // Stable & mutation classification lists (mirrors usage in toolHandlers; exported to remove duplication there).
-export const STABLE = new Set(['health/check','instructions/dispatch','instructions/governanceHash','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools','feedback/list','feedback/get','feedback/stats','feedback/health']);
+export const STABLE = new Set(['health/check','graph/export','instructions/dispatch','instructions/governanceHash','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools','feedback/list','feedback/get','feedback/stats','feedback/health']);
 const MUTATION = new Set(['instructions/add','instructions/import','instructions/repair','instructions/reload','instructions/remove','instructions/groom','instructions/enrich','instructions/governanceUpdate','usage/flush','feedback/submit','feedback/update']);
 
 export function getToolRegistry(): ToolRegistryEntry[] {
@@ -138,6 +147,7 @@ export function getToolRegistry(): ToolRegistryEntry[] {
 function describeTool(name: string): string {
   switch(name){
     case 'health/check': return 'Returns server health status & version.';
+  case 'graph/export': return 'Export instruction relationship graph (schema v1 minimal or v2 enriched).';
   case 'instructions/dispatch': return 'Unified dispatcher for instruction catalog actions (list,get,search,diff,export,query,categories,dir & mutations).';
   case 'instructions/governanceHash': return 'Return governance projection & deterministic governance hash.';
   // query & categories now accessed via dispatcher actions.

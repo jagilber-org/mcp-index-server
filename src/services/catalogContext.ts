@@ -186,17 +186,37 @@ process.on('SIGINT', ()=>{ flushUsageSnapshot(); process.exit(0); });
 process.on('SIGTERM', ()=>{ flushUsageSnapshot(); process.exit(0); });
 process.on('beforeExit', ()=>{ flushUsageSnapshot(); });
 
-// Single pinned instructions directory for deterministic load/write.
-// Priority: env INSTRUCTIONS_DIR if set -> process.cwd()/instructions
-const PINNED_INSTRUCTIONS_DIR = (() => {
-  const raw = process.env.INSTRUCTIONS_DIR;
-  const resolved = raw ? path.resolve(raw) : path.join(process.cwd(),'instructions');
-  if(!fs.existsSync(resolved)){
-    try { fs.mkdirSync(resolved,{recursive:true}); } catch {/* ignore */}
+// Dynamically pinned instructions directory.
+// Original implementation captured environment at module load which made later per‑suite
+// INSTRUCTIONS_DIR overrides (set in individual test files *after* other suites imported
+// catalogContext) ineffective. This caused cross‑suite state leakage (graph/export test
+// observing large production catalog). We now repin on demand when the environment value
+// changes. Any directory change triggers a full invalidation so subsequent ensureLoaded()
+// performs a clean scan of the newly pinned directory.
+let PINNED_INSTRUCTIONS_DIR: string | null = null;
+let LAST_ENV_INSTRUCTIONS_DIR: string | null = null;
+export function getInstructionsDir(){
+  const raw = process.env.INSTRUCTIONS_DIR || '';
+  const desired = raw ? path.resolve(raw) : path.join(process.cwd(),'instructions');
+  if(!PINNED_INSTRUCTIONS_DIR){
+    PINNED_INSTRUCTIONS_DIR = desired; LAST_ENV_INSTRUCTIONS_DIR = raw || '';
+    if(!fs.existsSync(PINNED_INSTRUCTIONS_DIR)){
+      try { fs.mkdirSync(PINNED_INSTRUCTIONS_DIR,{recursive:true}); } catch {/* ignore */}
+    }
+  } else if(desired !== PINNED_INSTRUCTIONS_DIR){
+    // Environment updated since initial pin -> repin and invalidate catalog state
+    PINNED_INSTRUCTIONS_DIR = desired; LAST_ENV_INSTRUCTIONS_DIR = raw || '';
+    dirty = true; // force reload on next ensureLoaded
+    state = null; // drop prior state referencing old directory
+    if(!fs.existsSync(PINNED_INSTRUCTIONS_DIR)){
+      try { fs.mkdirSync(PINNED_INSTRUCTIONS_DIR,{recursive:true}); } catch {/* ignore */}
+    }
+  } else if((raw || '') !== (LAST_ENV_INSTRUCTIONS_DIR || '')){
+    // Raw env string changed (e.g. different relative path that resolves to same absolute).
+    LAST_ENV_INSTRUCTIONS_DIR = raw || '';
   }
-  return resolved;
-})();
-export function getInstructionsDir(){ return PINNED_INSTRUCTIONS_DIR; }
+  return PINNED_INSTRUCTIONS_DIR;
+}
 // Centralized tracing utilities
 import { emitTrace, traceEnabled } from './tracing';
 // Throttled file trace emission (avoid per-get amplification). We emit per-file decisions only

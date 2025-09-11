@@ -77,9 +77,20 @@ const zFeedbackUpdate = z.object({
 const zUsageTrack = zStringId;
 const zHotset = z.object({ limit: z.number().int().min(1).max(100).optional() }).strict();
 
+// Graph export (all optional params)
+const zGraphExport = z.object({
+  includeEdgeTypes: z.array(z.enum(['primary','category','belongs'])).max(3).optional(),
+  maxEdges: z.number().int().min(0).optional(),
+  format: z.enum(['json','dot']).optional(),
+  enrich: z.boolean().optional(),
+  includeCategoryNodes: z.boolean().optional(),
+  includeUsage: z.boolean().optional()
+}).strict();
+
 // Map tool name to zod schema
 const zodMap: Record<string, z.ZodTypeAny> = {
   'health/check': zEmpty,
+  'graph/export': zGraphExport,
   'instructions/dispatch': zDispatch,
   'instructions/governanceHash': zEmpty,
   'instructions/governanceUpdate': zGovernanceUpdate,

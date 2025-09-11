@@ -19,11 +19,11 @@ import type { InstructionEntry } from '../models/instruction';
 interface GraphExportParams {
   includeEdgeTypes?: Array<'primary'|'category'|'belongs'>;
   maxEdges?: number;
-  format?: 'json'|'dot';
+  format?: 'json'|'dot'|'mermaid'; // new: mermaid format
   // Phase 2 enrichment (opt-in, backward compatible)
   enrich?: boolean;                // enables enriched node/edge metadata + schema v2
   includeCategoryNodes?: boolean;  // materialize explicit category:* nodes
-  includeUsage?: boolean;          // attach usageCount placeholder on nodes (future integration)
+  includeUsage?: boolean;          // attach usageCount (real when available)
 }
 
 // Legacy (schema v1) node minimal shape
@@ -48,7 +48,7 @@ interface GraphEdgeBase { from: string; to: string; type: 'primary'|'category'|'
 interface GraphEdgeEnriched extends GraphEdgeBase { weight?: number; }
 type GraphEdge = GraphEdgeBase | GraphEdgeEnriched;
 interface GraphMeta { graphSchemaVersion: 1; nodeCount: number; edgeCount: number; truncated?: boolean; notes?: string[] }
-interface GraphResult { meta: GraphMeta; nodes: GraphNode[]; edges: GraphEdge[]; dot?: string }
+interface GraphResult { meta: GraphMeta; nodes: GraphNode[]; edges: GraphEdge[]; dot?: string; mermaid?: string }
 
 // NOTE: For enriched responses we bump schema version to 2 (only when enrich=true)
 const GRAPH_SCHEMA_VERSION_V1 = 1 as const;
@@ -57,9 +57,9 @@ const GRAPH_SCHEMA_VERSION_V2 = 2 as const;
 // Cache now also considers environment-dependent knobs so toggling env vars between tests
 // (e.g. disabling primary edges or applying a large category cap) does not incorrectly
 // reuse a prior result built under different environmental semantics.
-// We keep a single-entry cache for the default param invocation (no format/includeEdgeTypes/maxEdges).
-// Key = governance hash + env signature (includePrimary + largeCap numeric value)
-let cachedDefault: { hash: string; env: string; result: GraphResult } | null = null; // v1 only
+// We keep a small cache map for default param invocations (no format/includeEdgeTypes/maxEdges) keyed by envSig.
+// Each entry invalidated when governance hash changes. Explicit env overrides still bypass caching (determinism focus).
+const cachedDefaults: Map<string, { hash: string; result: GraphResult }> = new Map(); // v1 only cache
 
 function getEnvBoolean(name: string, defaultTrue = true){
   const v = process.env[name];
@@ -91,7 +91,10 @@ function buildGraph(params: GraphExportParams): GraphResult {
       createdAt: inst.createdAt,
       updatedAt: inst.updatedAt,
     };
-    if(includeUsage) n.usageCount = 0; // placeholder (future real metrics integration)
+    if(includeUsage) {
+      const usageVal = (i as InstructionEntry & { usageCount?: number }).usageCount;
+      n.usageCount = usageVal != null ? usageVal : 0; // real value or 0 fallback
+    }
     return n;
   });
 
@@ -190,6 +193,21 @@ function buildGraph(params: GraphExportParams): GraphResult {
     for(const e of finalEdges){ lines.push(`  "${e.from}" -- "${e.to}" [label="${e.type}"];`); }
     lines.push('}');
     result.dot = lines.join('\n');
+  } else if(format === 'mermaid') {
+    // Mermaid undirected graph (flowchart) representation.
+    // We use a simple flowchart with -- links and edge type labels.
+    const lines: string[] = ['flowchart undirected'];
+    for(const n of nodes){
+      // Escape minimal invalid chars (leave colon and hyphen intact)
+      const safeId = n.id.replace(/[^A-Za-z0-9_:.-]/g,'_');
+      lines.push(`  ${safeId}["${n.id}"]`);
+    }
+    for(const e of finalEdges){
+      const fromSafe = e.from.replace(/[^A-Za-z0-9_:.-]/g,'_');
+      const toSafe = e.to.replace(/[^A-Za-z0-9_:.-]/g,'_');
+      lines.push(`  ${fromSafe} ---|${e.type}| ${toSafe}`);
+    }
+    result.mermaid = lines.join('\n');
   }
 
   return result;
@@ -199,22 +217,25 @@ registerHandler<GraphExportParams>('graph/export', (params) => {
   const p: GraphExportParams = params || {};
   const cacheEligible = !p.enrich && !p.format && !p.includeEdgeTypes && (p.maxEdges === undefined);
   // If either env knob is explicitly set we skip caching to avoid cross-test flakiness where
-  // concurrent suites (or sequential ones without full process isolation) toggle these values.
-  // This trades a tiny amount of recomputation (cheap) for determinism.
+  // suites toggle values. Determinism > micro perf for explicit env usage.
   const envExplicit = (process.env.GRAPH_INCLUDE_PRIMARY_EDGES !== undefined) || (process.env.GRAPH_LARGE_CATEGORY_CAP !== undefined);
   const st = ensureLoaded();
   const hash = st.hash || computeGovernanceHash(st.list);
-  // Environment signature captures knobs that influence edge construction for default invocation.
   const envSig = `${getEnvBoolean('GRAPH_INCLUDE_PRIMARY_EDGES', true)?'P1':'P0'}:${process.env.GRAPH_LARGE_CATEGORY_CAP||'INF'}`;
-  if(cacheEligible && !envExplicit && cachedDefault && cachedDefault.hash === hash && cachedDefault.env === envSig){
-    return cachedDefault.result;
+  if(cacheEligible && !envExplicit){
+    const entry = cachedDefaults.get(envSig);
+    if(entry && entry.hash === hash){
+      return entry.result;
+    }
   }
   const graph = buildGraph(p);
-  if(cacheEligible && !envExplicit){ cachedDefault = { hash, env: envSig, result: graph }; }
+  if(cacheEligible && !envExplicit){
+    cachedDefaults.set(envSig, { hash, result: graph });
+  }
   return graph;
 });
 
 // Test-only helper (not registered as a tool) to clear cached default between suites.
 // Exported with a leading double underscore to discourage production usage.
-export function __resetGraphCache(){ cachedDefault = null; }
+export function __resetGraphCache(){ cachedDefaults.clear(); }
 // Future phases: enrich node metadata (categories, priority, usage metrics), provenance, and export adapters.

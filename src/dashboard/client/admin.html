@@ -436,9 +436,10 @@
                         <input id="graph-edgeTypes" class="form-input" placeholder="(all or comma list)" style="width:160px;">
                     </label>
                     <label style="font-size:12px;">Layout
-                        <select id="graph-layout" class="form-input" style="width:120px; padding:4px;">
+                        <select id="graph-layout" class="form-input" style="width:140px; padding:4px;">
                             <option value="default" selected>default</option>
                             <option value="elk">elk</option>
+                            <option value="adaptive">adaptive</option>
                         </select>
                     </label>
                     <button class="action-btn" onclick="reloadGraphMermaid()">🔄 Refresh</button>
@@ -830,7 +831,7 @@
             const categories = categoriesEl && 'checked' in categoriesEl ? categoriesEl.checked : false;
             const usage = usageEl && 'checked' in usageEl ? usageEl.checked : false;
             const edgeTypesRaw = edgeTypesEl && 'value' in edgeTypesEl ? (edgeTypesEl.value || '').trim() : '';
-            const layout = layoutSel && 'value' in layoutSel ? layoutSel.value : 'default';
+            let layout = layoutSel && 'value' in layoutSel ? layoutSel.value : 'default';
             const params = new URLSearchParams();
             if(enrich) params.set('enrich','1');
             if(categories) params.set('categories','1');
@@ -845,8 +846,25 @@
                 if(data?.success && data.mermaid){
                     let mermaidSource = data.mermaid;
                     // If elk layout selected, prepend frontmatter config for copyability.
+                    // Adaptive heuristic: if layout=adaptive choose elk for dense graphs, else choose TB or LR based on aspect
+                    if(layout === 'adaptive'){
+                        const n = data.meta?.nodeCount || 0; const e = data.meta?.edgeCount || 0;
+                        const density = n? (e / n) : 0; // simple density metric
+                        if(n > 25 && density > 1.2){
+                            layout = 'elk';
+                        } else if(n > 15 && density > 0.8){
+                            layout = 'tb';
+                        } else {
+                            layout = 'lr';
+                        }
+                    }
                     if(layout === 'elk'){
                         mermaidSource = `---\nconfig:\n  layout: elk\n---\n` + mermaidSource;
+                    } else if(layout === 'lr') {
+                        // Flowchart direction override by replacing header (first line)
+                        mermaidSource = mermaidSource.replace(/^flowchart\s+TB/, 'flowchart LR');
+                    } else if(layout === 'tb') {
+                        mermaidSource = mermaidSource.replace(/^flowchart\s+TB/, 'flowchart TB');
                     }
                     graphOriginalSource = mermaidSource;
                     if(target) target.textContent = mermaidSource;

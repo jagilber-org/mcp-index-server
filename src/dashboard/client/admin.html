@@ -12,6 +12,11 @@
     #graph-mermaid-svg .mermaid .node polygon,
     #graph-mermaid-svg .mermaid .node path,
     #graph-mermaid-svg .mermaid rect.label-container { fill:#3a4554 !important; stroke:#6b8cff !important; }
+    /* Additional ELK-only hard override: some category nodes render with inline white fills; target via elk-layout-active */
+    .elk-layout-active #graph-mermaid-svg .mermaid .node rect[fill],
+    .elk-layout-active #graph-mermaid-svg .mermaid .node rect[style*='fill:#fff'],
+    .elk-layout-active #graph-mermaid-svg .mermaid .node rect[style*='fill: #fff'],
+    .elk-layout-active #graph-mermaid-svg .mermaid .node rect { fill:#3a4554 !important; }
     #graph-mermaid-svg .mermaid .cluster rect { fill:#273341 !important; stroke:#6b8cff !important; }
     #graph-mermaid-svg .mermaid .edgePaths path { stroke:#5479ff !important; }
     #graph-mermaid-svg .mermaid .edgeLabel rect { fill:#2f3947 !important; stroke:#6b8cff !important; }
@@ -905,6 +910,14 @@
                             }
                             const legacyHost = document.getElementById('graph-mermaid-svg');
                             if(legacyHost){ legacyHost.innerHTML = svg; }
+                            // Toggle elk-specific styling class on the render card
+                            try {
+                                const renderCard = document.getElementById('graph-render-card');
+                                if(renderCard){
+                                    if(effectiveLayout === 'elk') renderCard.classList.add('elk-layout-active');
+                                    else renderCard.classList.remove('elk-layout-active');
+                                }
+                            } catch { /* ignore */ }
                             const renderedWrap = document.getElementById('graph-mermaid-rendered');
                             if(renderedWrap){ renderedWrap.style.display = 'block'; }
                             if(debugEnabled) graphLog('render complete',{ effectiveLayout, elkRegistered: !!window.mermaid?.mcpElkRegistered });

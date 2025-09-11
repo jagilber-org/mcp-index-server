@@ -198,15 +198,19 @@ function buildGraph(params: GraphExportParams): GraphResult {
 registerHandler<GraphExportParams>('graph/export', (params) => {
   const p: GraphExportParams = params || {};
   const cacheEligible = !p.enrich && !p.format && !p.includeEdgeTypes && (p.maxEdges === undefined);
+  // If either env knob is explicitly set we skip caching to avoid cross-test flakiness where
+  // concurrent suites (or sequential ones without full process isolation) toggle these values.
+  // This trades a tiny amount of recomputation (cheap) for determinism.
+  const envExplicit = (process.env.GRAPH_INCLUDE_PRIMARY_EDGES !== undefined) || (process.env.GRAPH_LARGE_CATEGORY_CAP !== undefined);
   const st = ensureLoaded();
   const hash = st.hash || computeGovernanceHash(st.list);
   // Environment signature captures knobs that influence edge construction for default invocation.
   const envSig = `${getEnvBoolean('GRAPH_INCLUDE_PRIMARY_EDGES', true)?'P1':'P0'}:${process.env.GRAPH_LARGE_CATEGORY_CAP||'INF'}`;
-  if(cacheEligible && cachedDefault && cachedDefault.hash === hash && cachedDefault.env === envSig){
+  if(cacheEligible && !envExplicit && cachedDefault && cachedDefault.hash === hash && cachedDefault.env === envSig){
     return cachedDefault.result;
   }
   const graph = buildGraph(p);
-  if(cacheEligible){ cachedDefault = { hash, env: envSig, result: graph }; }
+  if(cacheEligible && !envExplicit){ cachedDefault = { hash, env: envSig, result: graph }; }
   return graph;
 });
 

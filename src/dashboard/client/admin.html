@@ -885,7 +885,7 @@
                     graphOriginalSource = mermaidSource;
                     if(target) target.textContent = mermaidSource;
                     if(metaEl) metaEl.textContent = `schema=v${data.meta?.graphSchemaVersion} nodes=${data.meta?.nodeCount} edges=${data.meta?.edgeCount}`;
-                    if(metaEl2) metaEl2.textContent = `layout=${effectiveLayout}${adaptiveDecision? ' ['+adaptiveDecision+']':''} elkRegistered=${!!window.mermaid?.mcpElkRegistered} debug=${debugEnabled}`;
+                    if(metaEl2) metaEl2.textContent = `layout=${effectiveLayout}${adaptiveDecision? ' ['+adaptiveDecision+']':''} elkRegistered=${!!window.mermaid?.mcpElkRegistered} elkState=${window.mermaid?.__elkDebug?.state||'n/a'} debug=${debugEnabled}`;
                     // Attempt visual render best-effort
                     try {
                         await ensureMermaid();
@@ -1008,30 +1008,51 @@
         // Load @mermaid-js/layout-elk plugin and register. Safe to call multiple times.
         async function ensureMermaidElk(){
             await ensureMermaid();
-            if(window.mermaid?.mcpElkRegistered) return; // custom flag
+            if(window.mermaid?.mcpElkRegistered) return; // already good
             if(mermaidElkLoading) return mermaidElkLoading;
             mermaidElkLoading = new Promise((resolve)=>{
                 const debugEnabled = !!document.getElementById('graph-debug')?.checked;
-                if(debugEnabled) graphLog('loading elk plugin');
-                const s = document.createElement('script');
-                // UMD bundle exposes global 'mermaidLayoutElk' (expected); fallback attempt attaches any exported object.
-                s.src = 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.umd.min.js';
-                s.onload = ()=>{
-                    try {
-                        const candidate = window.mermaidLayoutElk || window.layout || window.elk || window.mermaid?.layout;
-                        if(candidate){
-                            try { window.mermaid.registerLayoutLoaders(candidate); } catch{ /* ignore */ }
-                            // Re-initialize to set defaultRenderer elk (doesn't override user diagrams without elk)
-                            try { window.mermaid.initialize({ startOnLoad:false, defaultRenderer:'elk' }); } catch { /* ignore */ }
-                            window.mermaid.mcpElkRegistered = true;
-                            if(debugEnabled) graphLog('elk plugin registered',{ keys: Object.keys(candidate || {}) });
-                        } else if(debugEnabled){
-                            graphLog('elk plugin load complete but no candidate found');
-                        }
-                    } catch{} finally { resolve(null); }
-                };
-                s.onerror = ()=>{ if(document.getElementById('graph-debug')?.checked) graphLog('elk plugin failed to load'); resolve(null); }; // degrade gracefully
-                document.head.appendChild(s);
+                const urls = [
+                    'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.umd.min.js',
+                    'https://unpkg.com/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.umd.min.js',
+                    'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@latest/dist/mermaid-layout-elk.umd.min.js'
+                ];
+                const elkDebug = (window.mermaid.__elkDebug = window.mermaid.__elkDebug || { attempts:[], state:'init' });
+                function setState(s, extra){ elkDebug.state = s; if(extra) elkDebug.attempts.push(extra); if(debugEnabled) graphLog('elk '+s, extra); }
+                let idx = 0;
+                const preKeys = debugEnabled ? Object.keys(window) : [];
+                function tryNext(){
+                    if(window.mermaid?.mcpElkRegistered){ setState('registered-skip'); return resolve(null); }
+                    if(idx >= urls.length){ setState('exhausted'); return resolve(null); }
+                    const url = urls[idx++];
+                    setState('loading', { url });
+                    const s = document.createElement('script');
+                    s.async = true; s.defer = true; s.crossOrigin = 'anonymous';
+                    s.onload = ()=>{
+                        try {
+                            setState('loaded', { url });
+                            // Diff globals (very rough) to help identify export name
+                            let diff = [];
+                            if(debugEnabled){
+                                try { const afterKeys = Object.keys(window); diff = afterKeys.filter(k=>!preKeys.includes(k)); } catch { /* ignore */ }
+                            }
+                            const candidate = window.mermaidLayoutElk || window.mermaidLayout || window.layout || window.elk || window.mermaid?.layout;
+                            if(!candidate){ setState('candidate-missing', { url, diff }); return tryNext(); }
+                            try { window.mermaid.registerLayoutLoaders(candidate); } catch(e){ setState('register-error', { message: e?.message }); }
+                            try { window.mermaid.initialize({ startOnLoad:false, defaultRenderer:'elk', flowchart:{ layout:'elk' } }); } catch { /* ignore */ }
+                            if(window.mermaid?.registerLayoutLoaders){
+                                window.mermaid.mcpElkRegistered = true;
+                                setState('registered', { keys: Object.keys(candidate||{}), diff });
+                            } else {
+                                setState('post-init-missing-register');
+                            }
+                        } catch(e){ setState('load-handler-error', { message: e?.message }); }
+                        finally { if(window.mermaid?.mcpElkRegistered) resolve(null); else tryNext(); }
+                    };
+                    s.onerror = ()=>{ setState('load-error', { url }); tryNext(); };
+                    document.head.appendChild(s);
+                }
+                tryNext();
             });
             return mermaidElkLoading;
         }

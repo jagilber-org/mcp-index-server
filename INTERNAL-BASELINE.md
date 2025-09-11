@@ -272,6 +272,22 @@ Approval: Maintainers consensus (inline documentation suffices per §14.1 policy
 Status: ACTIVE – Sentinel updated in this commit.
 ```
 
+### 14.4 Approved Change Request (2025-09-11) – Noise Suppression Allow‑List (Graph Export Determinism)
+
+```text
+CHANGE REQUEST: Allow-list `graphExport.spec.ts` (deterministic graph export validation) without expanding minimal invariant suite.
+Justification: Provides early warning for regressions in upcoming instruction relationship visualization feature set. Validates:
+   • Deterministic node ordering and edge capping logic.
+   • `meta.graphSchemaVersion` placement and stability.
+   • Cache invalidation on mutation operations.
+   • Performance regression detection (runtime budget <2s isolated).
+Scope Clarification: This addition is strictly a noise-suppression allow‑list entry. Failures do not constitute baseline break; they inform Phase 9 controlled expansion readiness.
+Risk: Potential false positives if future graph feature flags alter structure; mitigated by isolation (temp INSTRUCTIONS_DIR) and explicit cache invalidation.
+Rollback Plan: Remove `graphExport.spec.ts` from repository (or park), delete its entry from `scripts/guard-baseline.mjs` allow-list, remove this §14.4 block, run `npm run baseline:sentinel:update`, commit with BASELINE-CR marker.
+Approval: Maintainers consensus (inline doc). Sentinel updated in this commit.
+Status: ACTIVE.
+```
+
 NOTE: Future hardening will introduce a follow-up BASELINE-CR converting soft expectations in `governanceHashHardening.spec.ts` to strict invariants once semanticSummary + changeLog hash transitions are deterministic across all execution modes.
 
 ## 15. Execution Log (Authoritative)

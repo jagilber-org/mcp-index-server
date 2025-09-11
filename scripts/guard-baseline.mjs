@@ -143,6 +143,13 @@ allowedAdditional.push(
   'governanceHashHardening.spec.ts'
 );
 
+// Noise suppression allow-list (2025-09-11 BASELINE-CR 14.4): graph export deterministic suite
+// Rationale: The graph export test validates deterministic graph construction, schema version
+// placement under meta, category capping, mutation-driven cache invalidation, and performance
+// characteristics critical for upcoming instruction relationship visualization work. It is NOT
+// part of the minimal invariant suite; failures are early warning only. See INTERNAL-BASELINE.md §14.4.
+allowedAdditional.push('graphExport.spec.ts');
+
 // Enforce no unexpected test expansion when BASELINE_ENFORCE=1
 if (process.env.BASELINE_ENFORCE === '1') {
   const allowed = new Set([...minimalTests, ...allowedAdditional]);

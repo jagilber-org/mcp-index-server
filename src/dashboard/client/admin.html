@@ -442,13 +442,15 @@
                             <option value="adaptive">adaptive</option>
                         </select>
                     </label>
+                    <label style="font-size:12px;">Debug <input id="graph-debug" type="checkbox"></label>
                     <button class="action-btn" onclick="reloadGraphMermaid()">🔄 Refresh</button>
                     <button class="action-btn" onclick="copyMermaidSource()" style="background:linear-gradient(45deg,#3498db,#2980b9)">📋 Copy Source</button>
                     <button id="graph-edit-btn" class="action-btn" onclick="toggleGraphEdit()" style="background:linear-gradient(45deg,#e67e22,#d35400)">✏️ Edit</button>
                     <button id="graph-apply-btn" class="action-btn" onclick="applyGraphEdit()" style="display:none;background:linear-gradient(45deg,#27ae60,#1e8449)">💾 Apply</button>
                     <button id="graph-cancel-btn" class="action-btn" onclick="cancelGraphEdit()" style="display:none;background:linear-gradient(45deg,#c0392b,#922b21)">↩️ Cancel</button>
                 </div>
-                <div id="graph-meta" style="font-size:12px; opacity:0.8; margin-bottom:6px; font-family:monospace;"></div>
+                <div id="graph-meta" style="font-size:12px; opacity:0.8; margin-bottom:2px; font-family:monospace;"></div>
+                <div id="graph-meta2" style="font-size:11px; opacity:0.65; margin-bottom:6px; font-family:monospace;"></div>
                 <div id="graph-mermaid-wrapper" style="background:#0f1624; color:#d0d7e2; border:1px solid #1f2a3a; border-radius:8px; padding:16px; overflow:auto; max-height:320px; position:relative;">
                     <div style="font-size:11px; opacity:0.65; margin-bottom:6px;">Mermaid Source (copy or edit; elk layout prepends frontmatter)</div>
                     <pre id="graph-mermaid" style="margin:0; white-space:pre; font-family:monospace; font-size:12px; line-height:1.25;">(loading graph...)</pre>
@@ -827,6 +829,7 @@
             const usageEl = document.getElementById('graph-usage');
             const edgeTypesEl = document.getElementById('graph-edgeTypes');
             const layoutSel = document.getElementById('graph-layout');
+            const debugEnabled = !!document.getElementById('graph-debug')?.checked;
             const enrich = enrichEl && 'checked' in enrichEl ? enrichEl.checked : false;
             const categories = categoriesEl && 'checked' in categoriesEl ? categoriesEl.checked : false;
             const usage = usageEl && 'checked' in usageEl ? usageEl.checked : false;
@@ -839,24 +842,37 @@
             if(edgeTypesRaw) params.set('edgeTypes', edgeTypesRaw);
             const target = document.getElementById('graph-mermaid');
             const metaEl = document.getElementById('graph-meta');
+            const metaEl2 = document.getElementById('graph-meta2');
             if(target) target.textContent = '(loading graph...)';
             try {
+                if(debugEnabled) graphLog('fetching mermaid graph', { query: params.toString(), requestedLayout: layout });
                 const res = await fetch('/api/graph/mermaid?'+params.toString());
                 const data = await res.json();
                 if(data?.success && data.mermaid){
                     let mermaidSource = data.mermaid;
                     // If elk layout selected, prepend frontmatter config for copyability.
                     // Adaptive heuristic: if layout=adaptive choose elk for dense graphs, else choose TB or LR based on aspect
+                    const adaptiveOriginal = layout;
+                    let adaptiveDecision = null;
                     if(layout === 'adaptive'){
                         const n = data.meta?.nodeCount || 0; const e = data.meta?.edgeCount || 0;
                         const density = n? (e / n) : 0; // simple density metric
                         if(n > 25 && density > 1.2){
                             layout = 'elk';
+                            adaptiveDecision = `elk (n>${25} & density>${1.2})`;
                         } else if(n > 15 && density > 0.8){
                             layout = 'tb';
+                            adaptiveDecision = 'tb (mid complexity)';
                         } else {
                             layout = 'lr';
+                            adaptiveDecision = 'lr (small/simple)';
                         }
+                    }
+                    const effectiveLayout = layout;
+                    if(debugEnabled) graphLog('layout selection', { requested: adaptiveOriginal, effective: effectiveLayout, adaptiveDecision });
+                    // Pre-load ELK plugin early if needed
+                    if(effectiveLayout === 'elk'){
+                        await ensureMermaidElk();
                     }
                     if(layout === 'elk'){
                         mermaidSource = `---\nconfig:\n  layout: elk\n---\n` + mermaidSource;
@@ -869,6 +885,7 @@
                     graphOriginalSource = mermaidSource;
                     if(target) target.textContent = mermaidSource;
                     if(metaEl) metaEl.textContent = `schema=v${data.meta?.graphSchemaVersion} nodes=${data.meta?.nodeCount} edges=${data.meta?.edgeCount}`;
+                    if(metaEl2) metaEl2.textContent = `layout=${effectiveLayout}${adaptiveDecision? ' ['+adaptiveDecision+']':''} elkRegistered=${!!window.mermaid?.mcpElkRegistered} debug=${debugEnabled}`;
                     // Attempt visual render best-effort
                     try {
                         await ensureMermaid();
@@ -880,6 +897,7 @@
                             } catch(inner){
                                 // Fallback legacy init directive if frontmatter unsupported for elk
                                 if(layout === 'elk'){
+                                    if(debugEnabled) graphLog('frontmatter elk failed; attempting legacy init directive');
                                     const alt = `%%{init: { 'flowchart': { 'layout': 'elk' } }}%%\n` + data.mermaid;
                                     ({ svg } = await window.mermaid.render('graphMermaidSvg', alt));
                                 } else throw inner;
@@ -888,16 +906,20 @@
                             if(legacyHost){ legacyHost.innerHTML = svg; }
                             const renderedWrap = document.getElementById('graph-mermaid-rendered');
                             if(renderedWrap){ renderedWrap.style.display = 'block'; }
+                            if(debugEnabled) graphLog('render complete',{ effectiveLayout, elkRegistered: !!window.mermaid?.mcpElkRegistered });
                         }
                     } catch(err){
                         // eslint-disable-next-line no-console
                         console.warn('[admin][mermaid-render-failed]', err);
+                        if(debugEnabled) graphLog('render error', { error: err?.message });
                     }
                 } else {
                     if(target) target.textContent = '(graph unavailable)';
+                    if(debugEnabled) graphLog('graph api returned no data');
                 }
             } catch(e){
                 if(target) target.textContent = '(graph load error)';
+                if(debugEnabled) graphLog('graph load error', { error: e?.message });
             }
         }
 
@@ -989,6 +1011,8 @@
             if(window.mermaid?.mcpElkRegistered) return; // custom flag
             if(mermaidElkLoading) return mermaidElkLoading;
             mermaidElkLoading = new Promise((resolve)=>{
+                const debugEnabled = !!document.getElementById('graph-debug')?.checked;
+                if(debugEnabled) graphLog('loading elk plugin');
                 const s = document.createElement('script');
                 // UMD bundle exposes global 'mermaidLayoutElk' (expected); fallback attempt attaches any exported object.
                 s.src = 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.umd.min.js';
@@ -1000,13 +1024,43 @@
                             // Re-initialize to set defaultRenderer elk (doesn't override user diagrams without elk)
                             try { window.mermaid.initialize({ startOnLoad:false, defaultRenderer:'elk' }); } catch { /* ignore */ }
                             window.mermaid.mcpElkRegistered = true;
+                            if(debugEnabled) graphLog('elk plugin registered',{ keys: Object.keys(candidate || {}) });
+                        } else if(debugEnabled){
+                            graphLog('elk plugin load complete but no candidate found');
                         }
                     } catch{} finally { resolve(null); }
                 };
-                s.onerror = ()=>resolve(null); // degrade gracefully
+                s.onerror = ()=>{ if(document.getElementById('graph-debug')?.checked) graphLog('elk plugin failed to load'); resolve(null); }; // degrade gracefully
                 document.head.appendChild(s);
             });
             return mermaidElkLoading;
+        }
+
+        // Simple debug logger (conditionally outputs & annotates meta2)
+        function graphLog(message, data){
+            try {
+                const enabled = !!document.getElementById('graph-debug')?.checked;
+                if(!enabled) return;
+                // Console output
+                if(data !== undefined) {
+                    // eslint-disable-next-line no-console
+                    console.log('[graph-debug]', message, data);
+                } else {
+                    // eslint-disable-next-line no-console
+                    console.log('[graph-debug]', message);
+                }
+                // Append short line to meta2 (rolling 6 lines)
+                const meta2 = document.getElementById('graph-meta2');
+                if(meta2){
+                    const now = new Date().toISOString().split('T')[1].replace('Z','');
+                    const line = data ? `${now} ${message} ${JSON.stringify(data).slice(0,160)}` : `${now} ${message}`;
+                    const existing = meta2.getAttribute('data-log') ? JSON.parse(meta2.getAttribute('data-log')) : [];
+                    existing.push(line);
+                    while(existing.length > 6) existing.shift();
+                    meta2.setAttribute('data-log', JSON.stringify(existing));
+                    meta2.textContent = (meta2.textContent.split('\n')[0] || meta2.textContent) + '\n' + existing.join('\n');
+                }
+            } catch{ /* ignore */ }
         }
 
         async function loadOverviewData() {

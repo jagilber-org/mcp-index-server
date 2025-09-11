@@ -10,7 +10,8 @@ import { createHash } from 'crypto';
 const srcDir = join(process.cwd(), 'src', 'dashboard', 'client');
 const destDir = join(process.cwd(), 'dist', 'dashboard', 'client');
 
-const allowed = new Set(['.html', '.css']);
+// Allow JS so we can bundle local third-party dashboard helpers (e.g. layout-elk UMD)
+const allowed = new Set(['.html', '.css', '.js']);
 
 function fileHash(p) {
   try {
@@ -71,6 +72,17 @@ function copyAssets() {
   if (!copied) {
     // Provide explicit signal so CI can optionally grep
     console.log('[copy-dashboard-assets] NOTE: 0 assets copied (all unchanged by hash).');
+  }
+
+  // Bundle @mermaid-js/layout-elk UMD for offline / firewall-safe usage.
+  try {
+    // Package 0.2.0 no longer ships UMD; use ESM min build and load via dynamic import shim in admin.html
+    const elkPkgPath = join(process.cwd(), 'node_modules', '@mermaid-js', 'layout-elk', 'dist', 'mermaid-layout-elk.esm.min.mjs');
+    const elkDest = join(destDir, 'mermaid-layout-elk.esm.min.mjs');
+    copyFileSync(elkPkgPath, elkDest);
+    console.log('[copy-dashboard-assets] Added local mermaid-layout-elk.esm.min.mjs');
+  } catch (e) {
+    console.warn('[copy-dashboard-assets] WARN: could not copy layout-elk ESM build (package missing?)', e.message);
   }
 }
 

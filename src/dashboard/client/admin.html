@@ -885,7 +885,12 @@
                     graphOriginalSource = mermaidSource;
                     if(target) target.textContent = mermaidSource;
                     if(metaEl) metaEl.textContent = `schema=v${data.meta?.graphSchemaVersion} nodes=${data.meta?.nodeCount} edges=${data.meta?.edgeCount}`;
-                    if(metaEl2) metaEl2.textContent = `layout=${effectiveLayout}${adaptiveDecision? ' ['+adaptiveDecision+']':''} elkRegistered=${!!window.mermaid?.mcpElkRegistered} elkState=${window.mermaid?.__elkDebug?.state||'n/a'} debug=${debugEnabled}`;
+                    if(metaEl2){
+                        const attempts = window.mermaid?.__elkDebug?.attempts || [];
+                        const last = attempts.length ? attempts[attempts.length-1] : null;
+                        const attemptInfo = last ? `${last.state}:${(last.url||'').split('/').slice(-1)[0]}` : '';
+                        metaEl2.textContent = `layout=${effectiveLayout}${adaptiveDecision? ' ['+adaptiveDecision+']':''} elkRegistered=${!!window.mermaid?.mcpElkRegistered} elkState=${window.mermaid?.__elkDebug?.state||'n/a'}${attemptInfo? ' last='+attemptInfo:''} debug=${debugEnabled}`;
+                    }
                     // Attempt visual render best-effort
                     try {
                         await ensureMermaid();
@@ -1012,13 +1017,18 @@
             if(mermaidElkLoading) return mermaidElkLoading;
             mermaidElkLoading = new Promise((resolve)=>{
                 const debugEnabled = !!document.getElementById('graph-debug')?.checked;
+                // First try locally bundled copy (produced by build script) for air‑gapped/corporate networks.
+                // For 0.2.x we ship ESM build; we'll attempt dynamic import for local copy
+                const localElk = './mermaid-layout-elk.esm.min.mjs';
+                // 0.2.x exposes only ESM builds; use dynamic import for all sources.
                 const urls = [
-                    'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.umd.min.js',
-                    'https://unpkg.com/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.umd.min.js',
-                    'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@latest/dist/mermaid-layout-elk.umd.min.js'
+                    localElk,
+                    'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs',
+                    'https://unpkg.com/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs',
+                    'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@latest/dist/mermaid-layout-elk.esm.min.mjs'
                 ];
                 const elkDebug = (window.mermaid.__elkDebug = window.mermaid.__elkDebug || { attempts:[], state:'init' });
-                function setState(s, extra){ elkDebug.state = s; if(extra) elkDebug.attempts.push(extra); if(debugEnabled) graphLog('elk '+s, extra); }
+                function setState(s, extra){ elkDebug.state = s; if(extra) elkDebug.attempts.push({ state:s, ...extra }); if(debugEnabled) graphLog('elk '+s, extra); }
                 let idx = 0;
                 const preKeys = debugEnabled ? Object.keys(window) : [];
                 function tryNext(){
@@ -1026,31 +1036,32 @@
                     if(idx >= urls.length){ setState('exhausted'); return resolve(null); }
                     const url = urls[idx++];
                     setState('loading', { url });
-                    const s = document.createElement('script');
-                    s.async = true; s.defer = true; s.crossOrigin = 'anonymous';
-                    s.onload = ()=>{
+                    (async ()=>{
+                        const timeoutMs = 6000;
+                        const timeout = setTimeout(()=>{ if(!window.mermaid?.mcpElkRegistered){ setState('load-timeout', { url, timeoutMs }); tryNext(); } }, timeoutMs);
                         try {
-                            setState('loaded', { url });
-                            // Diff globals (very rough) to help identify export name
-                            let diff = [];
-                            if(debugEnabled){
-                                try { const afterKeys = Object.keys(window); diff = afterKeys.filter(k=>!preKeys.includes(k)); } catch { /* ignore */ }
+                            const mod = await import(url);
+                            setState('loaded', { url, esm:true, keys:Object.keys(mod||{}) });
+                            // Export shape: default is an array of { name, loader, algorithm }
+                            let candidate = null;
+                            if(mod){
+                                const arr = (mod.default && Array.isArray(mod.default)) ? mod.default : (Array.isArray(mod) ? mod : null);
+                                if(arr){
+                                    const obj = {};
+                                    for(const item of arr){ if(item?.name && item?.loader){ obj[item.name] = item.loader; } }
+                                    if(Object.keys(obj).length) candidate = obj;
+                                }
                             }
-                            const candidate = window.mermaidLayoutElk || window.mermaidLayout || window.layout || window.elk || window.mermaid?.layout;
-                            if(!candidate){ setState('candidate-missing', { url, diff }); return tryNext(); }
-                            try { window.mermaid.registerLayoutLoaders(candidate); } catch(e){ setState('register-error', { message: e?.message }); }
-                            try { window.mermaid.initialize({ startOnLoad:false, defaultRenderer:'elk', flowchart:{ layout:'elk' } }); } catch { /* ignore */ }
-                            if(window.mermaid?.registerLayoutLoaders){
+                            if(!candidate){ setState('candidate-missing', { url, esm:true }); return tryNext(); }
+                            try { window.mermaid.registerLayoutLoaders(candidate); } catch(e){ setState('register-error', { message:e?.message, esm:true }); }
+                            if(window.mermaid?.registerLayoutLoaders && Object.keys(candidate).length){
                                 window.mermaid.mcpElkRegistered = true;
-                                setState('registered', { keys: Object.keys(candidate||{}), diff });
-                            } else {
-                                setState('post-init-missing-register');
+                                setState('registered', { layouts:Object.keys(candidate), esm:true });
+                                try { window.mermaid.initialize({ startOnLoad:false, defaultRenderer:'elk', flowchart:{ layout:'elk' } }); } catch { /* ignore */ }
                             }
-                        } catch(e){ setState('load-handler-error', { message: e?.message }); }
-                        finally { if(window.mermaid?.mcpElkRegistered) resolve(null); else tryNext(); }
-                    };
-                    s.onerror = ()=>{ setState('load-error', { url }); tryNext(); };
-                    document.head.appendChild(s);
+                        } catch(e){ setState('load-error', { url, message:e?.message, esm:true }); }
+                        finally { clearTimeout(timeout); if(window.mermaid?.mcpElkRegistered) resolve(null); else tryNext(); }
+                    })();
                 }
                 tryNext();
             });

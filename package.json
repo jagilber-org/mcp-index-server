@@ -69,6 +69,7 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
+  "@mermaid-js/layout-elk": "^0.2.0",
     "@modelcontextprotocol/sdk": "^0.6.0",
     "@types/express": "^5.0.3",
     "@types/ws": "^8.18.1",

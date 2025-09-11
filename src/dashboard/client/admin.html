@@ -5,17 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCP Index Server Admin - MCP Index Server</title>
     <style>
-        /* --- Added: High-contrast dark theme overrides for Mermaid ELK --- */
-        #graph-mermaid-svg .mermaid, #graph-mermaid-svg .mermaid svg { background:#0f1624 !important; }
-        #graph-mermaid-svg .mermaid .node rect,
-        #graph-mermaid-svg .mermaid .node polygon,
-        #graph-mermaid-svg .mermaid .node path { fill:#273341 !important; stroke:#6b8cff !important; }
-        #graph-mermaid-svg .mermaid .cluster rect { fill:#1b2530 !important; stroke:#6b8cff !important; }
-        #graph-mermaid-svg .mermaid .edgePaths path { stroke:#5479ff !important; }
-        #graph-mermaid-svg .mermaid .edgeLabel rect { fill:#273341 !important; stroke:#6b8cff !important; }
-        #graph-mermaid-svg .mermaid .label, #graph-mermaid-svg .mermaid text, #graph-mermaid-svg .mermaid .node text { fill:#e3ebf5 !important; font-weight:500; }
-        #graph-mermaid-svg .mermaid .node:hover rect { stroke:#8fb2ff !important; }
-        /* ----------------------------------------------------------------- */
+    /* --- High-contrast dark theme overrides for Mermaid (ELK + default) --- */
+    #graph-mermaid-svg .mermaid, #graph-mermaid-svg .mermaid svg { background:#0f1624 !important; }
+    /* Grey background for nodes (request: replace white boxes) */
+    #graph-mermaid-svg .mermaid .node rect,
+    #graph-mermaid-svg .mermaid .node polygon,
+    #graph-mermaid-svg .mermaid .node path,
+    #graph-mermaid-svg .mermaid rect.label-container { fill:#3a4554 !important; stroke:#6b8cff !important; }
+    #graph-mermaid-svg .mermaid .cluster rect { fill:#273341 !important; stroke:#6b8cff !important; }
+    #graph-mermaid-svg .mermaid .edgePaths path { stroke:#5479ff !important; }
+    #graph-mermaid-svg .mermaid .edgeLabel rect { fill:#2f3947 !important; stroke:#6b8cff !important; }
+    #graph-mermaid-svg .mermaid .label, #graph-mermaid-svg .mermaid text, #graph-mermaid-svg .mermaid .node text { fill:#e3ebf5 !important; font-weight:500; }
+    #graph-mermaid-svg .mermaid .node:hover rect { stroke:#8fb2ff !important; }
+    /* Make small edge label text slightly bolder for readability */
+    #graph-mermaid-svg .mermaid .edgeLabel text { font-weight:600 !important; }
+    /* Toolbar consistency */
+    .graph-toolbar .form-input, .graph-toolbar select { background:#1f2a3a; color:#d0d7e2; border:1px solid #2d3b4f; border-radius:4px; padding:4px 6px; font-size:12px; }
+    .graph-toolbar label { display:flex; align-items:center; gap:4px; background:#1f2a3a; color:#9fb5cc; padding:4px 6px; border:1px solid #2d3b4f; border-radius:4px; font-size:12px; }
+    .graph-toolbar button.action-btn { padding:8px 14px; font-size:12px; }
+    /* --------------------------------------------------------------------- */
         * {
             margin: 0;
             padding: 0;
@@ -439,16 +447,20 @@
                     <div class="card-icon">🗺️</div>
                     <div class="card-title">Instruction Relationship Graph</div>
                 </div>
-                <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:12px;">
-                    <label style="font-size:12px;">Enrich <input id="graph-enrich" type="checkbox" checked></label>
-                    <label style="font-size:12px;">Categories <input id="graph-categories" type="checkbox" checked></label>
-                    <label style="font-size:12px;">Usage <input id="graph-usage" type="checkbox"></label>
-                    <label style="font-size:12px;">Edge Types
-                        <input id="graph-edgeTypes" class="form-input" placeholder="(all or comma list)" style="width:160px;">
+                <div class="graph-toolbar" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:12px;">
+                    <label>Enrich <input id="graph-enrich" type="checkbox" checked></label>
+                    <label>Categories <input id="graph-categories" type="checkbox" checked></label>
+                    <label>Usage <input id="graph-usage" type="checkbox"></label>
+                    <label>Edge Types
+                        <input id="graph-edgeTypes" class="form-input" placeholder="(all or comma list)" style="width:150px;">
                     </label>
-                    <span style="font-size:12px; padding:4px 8px; background:#1f2a3a; border:1px solid #2d3b4f; border-radius:4px; color:#9fb5cc; font-family:monospace;">Layout: elk</span>
-                    <input id="graph-layout" type="hidden" value="elk">
-                    <input id="graph-debug" type="hidden" value="">
+                    <label>Layout
+                        <select id="graph-layout" class="form-input" style="width:110px;">
+                            <option value="elk" selected>elk</option>
+                            <option value="default">default</option>
+                        </select>
+                    </label>
+                    <label>Debug <input id="graph-debug" type="checkbox"></label>
                     <button class="action-btn" onclick="reloadGraphMermaid()">🔄 Refresh</button>
                     <button class="action-btn" onclick="copyMermaidSource()" style="background:linear-gradient(45deg,#3498db,#2980b9)">📋 Copy Source</button>
                     <button id="graph-edit-btn" class="action-btn" onclick="toggleGraphEdit()" style="background:linear-gradient(45deg,#e67e22,#d35400)">✏️ Edit</button>
@@ -835,12 +847,12 @@
             const usageEl = document.getElementById('graph-usage');
             const edgeTypesEl = document.getElementById('graph-edgeTypes');
             const layoutSel = document.getElementById('graph-layout');
-            const debugEnabled = false; // debug UI removed
+            const debugEnabled = !!document.getElementById('graph-debug')?.checked;
             const enrich = enrichEl && 'checked' in enrichEl ? enrichEl.checked : false;
             const categories = categoriesEl && 'checked' in categoriesEl ? categoriesEl.checked : false;
             const usage = usageEl && 'checked' in usageEl ? usageEl.checked : false;
             const edgeTypesRaw = edgeTypesEl && 'value' in edgeTypesEl ? (edgeTypesEl.value || '').trim() : '';
-            let layout = 'elk'; // force elk always
+            let layout = (layoutSel && 'value' in layoutSel) ? layoutSel.value : 'elk';
             const params = new URLSearchParams();
             if(enrich) params.set('enrich','1');
             if(categories) params.set('categories','1');
@@ -856,15 +868,10 @@
                 const data = await res.json();
                 if(data?.success && data.mermaid){
                     let mermaidSource = data.mermaid;
-                    // Always elk
-                    const adaptiveDecision = null;
-                    const adaptiveOriginal = 'elk';
-                    const effectiveLayout = 'elk';
-                    // Pre-load ELK plugin early if needed
-                    if(effectiveLayout === 'elk'){
-                        await ensureMermaidElk();
-                    }
-                    if(true){ // elk forced
+                    const effectiveLayout = layout === 'elk' ? 'elk' : 'default';
+                    if(effectiveLayout === 'elk') await ensureMermaidElk();
+                    if(effectiveLayout === 'elk') {
+                        // frontmatter config for elk
                         mermaidSource = `---\nconfig:\n  layout: elk\n---\n` + mermaidSource;
                     }
                     graphOriginalSource = mermaidSource;
@@ -875,7 +882,7 @@
                         const last = attempts.length ? attempts[attempts.length-1] : null;
                         const attemptInfo = last ? `${last.state}:${(last.url||'').split('/').slice(-1)[0]}` : '';
                         const mermaidVersion = (window.mermaid && (window.mermaid.version || window.mermaid.mermaidAPI?.getConfig?.()?.version)) || 'unknown';
-                        metaEl2.textContent = `layout=elk elkRegistered=${!!window.mermaid?.mcpElkRegistered} elkState=${window.mermaid?.__elkDebug?.state||'n/a'}${attemptInfo? ' last='+attemptInfo:''} mermaid=${mermaidVersion}`;
+                        metaEl2.textContent = `layout=${effectiveLayout} elkRegistered=${!!window.mermaid?.mcpElkRegistered} elkState=${window.mermaid?.__elkDebug?.state||'n/a'}${attemptInfo? ' last='+attemptInfo:''} mermaid=${mermaidVersion}`;
                     }
                     // Attempt visual render best-effort
                     try {
@@ -890,7 +897,7 @@
                                 ({ svg } = await window.mermaid.render('graphMermaidSvg', renderCode));
                             } catch(inner){
                                 // Fallback legacy init directive if frontmatter unsupported for elk
-                                if(layout === 'elk'){
+                                if(effectiveLayout === 'elk'){
                                     if(debugEnabled) graphLog('frontmatter elk failed; attempting legacy init directive');
                                     const alt = `%%{init: { 'flowchart': { 'layout': 'elk' } }}%%\n` + data.mermaid;
                                     ({ svg } = await window.mermaid.render('graphMermaidSvg', alt));
@@ -1019,8 +1026,7 @@
                             lineColor:'#5479ff',
                             secondaryColor:'#1b2530',
                             tertiaryColor:'#273341'
-                        },
-                        flowchart:{ layout:'elk' }
+                        }
                     });
                     resolve(null);
                 } catch(e){ reject(e); } };
@@ -1085,7 +1091,6 @@
                                 if(!elkDebug.state.startsWith('registered')) setState(mode, { layouts: layoutList, esm:true });
                                 try { window.mermaid.initialize({
                                     startOnLoad:false,
-                                    defaultRenderer:'elk',
                                     theme:'dark',
                                     themeVariables:{
                                         primaryColor:'#273341',
@@ -1094,8 +1099,7 @@
                                         lineColor:'#5479ff',
                                         secondaryColor:'#1b2530',
                                         tertiaryColor:'#273341'
-                                    },
-                                    flowchart:{ layout:'elk' }
+                                    }
                                 }); } catch { /* ignore */ }
                             }
                             if(window.mermaid?.registerLayoutLoaders){

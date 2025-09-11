@@ -889,11 +889,15 @@
                         const attempts = window.mermaid?.__elkDebug?.attempts || [];
                         const last = attempts.length ? attempts[attempts.length-1] : null;
                         const attemptInfo = last ? `${last.state}:${(last.url||'').split('/').slice(-1)[0]}` : '';
-                        metaEl2.textContent = `layout=${effectiveLayout}${adaptiveDecision? ' ['+adaptiveDecision+']':''} elkRegistered=${!!window.mermaid?.mcpElkRegistered} elkState=${window.mermaid?.__elkDebug?.state||'n/a'}${attemptInfo? ' last='+attemptInfo:''} debug=${debugEnabled}`;
+                        const mermaidVersion = (window.mermaid && (window.mermaid.version || window.mermaid.mermaidAPI?.getConfig?.()?.version)) || 'unknown';
+                        metaEl2.textContent = `layout=${effectiveLayout}${adaptiveDecision? ' ['+adaptiveDecision+']':''} elkRegistered=${!!window.mermaid?.mcpElkRegistered} elkState=${window.mermaid?.__elkDebug?.state||'n/a'}${attemptInfo? ' last='+attemptInfo:''} mermaid=${mermaidVersion} debug=${debugEnabled}`;
                     }
                     // Attempt visual render best-effort
                     try {
                         await ensureMermaid();
+                        if(effectiveLayout === 'elk' && !window.mermaid?.mcpElkRegistered){
+                            await ensureMermaidElk(); // late retry if initial registration raced
+                        }
                         if(window.mermaid){
                             let renderCode = mermaidSource;
                             let svg;
@@ -994,18 +998,33 @@
             document.getElementById('graph-cancel-btn').style.display='none';
         }
 
-        // Lazy mermaid loader
+        // Lazy mermaid loader (enhanced with cache bust + stale v10 reload safeguard)
         let mermaidLoading = null;
         let mermaidElkLoading = null; // ensures elk layout plugin is loaded & registered
-        async function ensureMermaid(){
-            if(window.mermaid) return;
+        const MERMAID_VERSION_TARGET = '11';
+        function mermaidNeedsReload(force){
+            if(force) return true;
+            if(!window.mermaid) return true;
+            const ver = window.mermaid.version || window.mermaid.mermaidAPI?.getConfig?.()?.version || '';
+            if(ver.startsWith('10.')) return true;
+            return false;
+        }
+        async function ensureMermaid(force){
+            if(mermaidNeedsReload(force)){
+                if(window.mermaid && (force || !window.mermaid.registerLayoutLoaders)){
+                    try { [...document.querySelectorAll('script[src*="mermaid"]')].forEach(s=>s.remove()); } catch{}
+                    try { delete window.mermaid; } catch{}
+                    mermaidLoading = null;
+                }
+            }
+            if(window.mermaid && !force) return;
             if(mermaidLoading) return mermaidLoading;
             mermaidLoading = new Promise((resolve,reject)=>{
                 const s = document.createElement('script');
-                // Updated to v11 for layout loader API (registerLayoutLoaders)
-                s.src = 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js';
+                const cb = Date.now().toString().slice(-7);
+                s.src = `https://cdn.jsdelivr.net/npm/mermaid@${MERMAID_VERSION_TARGET}/dist/mermaid.min.js?cb=${cb}`;
                 s.onload = ()=>{ try { window.mermaid.initialize({ startOnLoad:false }); resolve(null); } catch(e){ reject(e); } };
-                s.onerror = reject;
+                s.onerror = (e)=>reject(e instanceof Error? e : new Error('mermaid load failed'));
                 document.head.appendChild(s);
             });
             return mermaidLoading;
@@ -1014,6 +1033,10 @@
         // Load @mermaid-js/layout-elk plugin and register. Safe to call multiple times.
         async function ensureMermaidElk(){
             await ensureMermaid();
+            if(window.mermaid && !window.mermaid.registerLayoutLoaders && !window.mermaid.__reloadedOnce){
+                window.mermaid.__reloadedOnce = true; // one forced refresh upgrade attempt
+                await ensureMermaid(true);
+            }
             if(window.mermaid?.mcpElkRegistered) return; // already good
             if(mermaidElkLoading) return mermaidElkLoading;
             mermaidElkLoading = new Promise((resolve)=>{

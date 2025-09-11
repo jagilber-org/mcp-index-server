@@ -15,14 +15,11 @@
 import { spawn } from 'child_process';
 import { slowTests } from './slow-tests.mjs';
 
-// Quarantine support: known unstable / flaky cases temporarily excluded from default run.
-// Run with INCLUDE_UNSTABLE_SLOW=1 to execute full set while stabilizing.
-const unstable = [
-	'src/tests/feedbackReproduction.multiClient.spec.ts',
-	'src/tests/governanceHashIntegrity.spec.ts',
-	// Additional high‑variance or timing sensitive specs (expand as needed)
-	'src/tests/instructionsPersistenceDivergence.red.spec.ts'
-];
+// Quarantine support (previously used to exclude flaky suites).
+// All prior unstable suites have passed multiple consecutive runs (see PR body for metrics),
+// so the quarantine list is now intentionally empty. If future instability arises, add
+// specific spec paths back here temporarily with a tracking issue reference.
+const unstable = [];
 
 const selected = slowTests.filter(t => !unstable.includes(t) || process.env.INCLUDE_UNSTABLE_SLOW === '1');
 if (!selected.length) {

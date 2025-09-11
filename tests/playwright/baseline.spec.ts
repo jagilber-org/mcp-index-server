@@ -140,4 +140,62 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
       maxDiffPixels: MAX_DIFF_PIXELS
     });
   });
+
+  test('capture visual snapshot of graph mermaid (raw source)', async ({ page, browserName }) => {
+    await page.goto('/admin');
+    // Navigate to graph section
+    await page.click("button:has-text('Graph')");
+    const raw = page.locator('#graph-mermaid');
+    await expect(raw).toBeVisible();
+    // Wait until mermaid text (after fetch) replaces placeholder
+    await page.waitForFunction(() => {
+      const el = document.getElementById('graph-mermaid');
+      if (!el) return false;
+      const txt = el.textContent || '';
+      return txt.includes('graph ') && !txt.includes('(loading');
+    }, { timeout: 15000 });
+    // Ensure usage overlay remains off (minimizes volatility)
+    const usageToggle = page.locator('#graph-usage');
+    if (await usageToggle.isVisible()) {
+      const checked = await usageToggle.isChecked();
+      if (checked) await usageToggle.click();
+    }
+    const wrapper = page.locator('#graph-mermaid-wrapper');
+    const shot = await wrapper.screenshot();
+    test.info().annotations.push({ type: 'perf', description: 'graph-mermaid-raw-screenshot' });
+    expect(shot).toMatchSnapshot(snap('graph-mermaid-raw', browserName), {
+      maxDiffPixelRatio: MAX_DIFF_RATIO,
+      maxDiffPixels: MAX_DIFF_PIXELS
+    });
+  });
+
+  test('capture visual snapshot of graph mermaid (rendered diagram, best-effort)', async ({ page, browserName }) => {
+    await page.goto('/admin');
+    await page.click("button:has-text('Graph')");
+    // Wait for initial raw load
+    await page.waitForFunction(() => {
+      const el = document.getElementById('graph-mermaid');
+      if (!el) return false;
+      const txt = el.textContent || '';
+      return txt.includes('graph ') && !txt.includes('(loading');
+    }, { timeout: 15000 });
+    // Attempt to wait for rendered SVG (external mermaid script). If not present, skip to avoid flake.
+    try {
+      await page.waitForFunction(() => {
+        const rendered = document.getElementById('graph-mermaid-rendered');
+        const svgHost = document.querySelector('#graph-mermaid-svg svg');
+        return !!rendered && rendered.style.display !== 'none' && !!svgHost;
+      }, { timeout: 15000 });
+    } catch {
+      test.skip(true, 'Rendered mermaid diagram not available (CDN or timing)');
+    }
+    const renderedWrapper = page.locator('#graph-mermaid-rendered');
+    await expect(renderedWrapper).toBeVisible();
+    const shot = await renderedWrapper.screenshot();
+    test.info().annotations.push({ type: 'perf', description: 'graph-mermaid-rendered-screenshot' });
+    expect(shot).toMatchSnapshot(snap('graph-mermaid-rendered', browserName), {
+      maxDiffPixelRatio: MAX_DIFF_RATIO,
+      maxDiffPixels: MAX_DIFF_PIXELS
+    });
+  });
 });

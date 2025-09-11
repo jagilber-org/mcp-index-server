@@ -13,9 +13,10 @@ Tests containing `@baseline` tag participate in drift detection commands:
 
 ## Snapshot Policy
 
-- High-signal regions: system health card, instruction list
-- Cross-browser naming pattern: `<browser>-<region>.png`
-- Dynamic variance reduced with small settle delay (≈1.5s)
+- High-signal regions: system health card, instruction list, instruction editor, log tail panel, graph (mermaid) visualization
+- Graph policy: capture BOTH raw mermaid source (stable textual topology) and rendered SVG (best-effort; test skips if CDN render unavailable) for early detection of relationship/topology regressions.
+- Cross-browser naming pattern: `<region>-<browser>-<platform>.png`
+- Dynamic variance reduced with small settle delay (≈1.5s); graph raw snapshot avoids external layout timing noise.
 - Thresholds configurable: `DRIFT_MAX_DIFF_RATIO` (default 0.002), `DRIFT_MAX_DIFF_PIXELS` (default 250)
 
 ## Workflow
@@ -37,9 +38,10 @@ Tests containing `@baseline` tag participate in drift detection commands:
 ## Adding New Regions
 
 1. Identify stable DOM container (#id or data-test attr).
-2. Add test with: small settle wait, region screenshot, `toMatchSnapshot` using browserName prefix.
-3. Justify region (signal > noise) in commit message.
-4. Run `npm run pw:baseline` to produce new golden images.
+2. Add test with: small settle wait, region screenshot, `toMatchSnapshot` using browserName + platform naming.
+3. For dynamic/remote assets (e.g. CDN-rendered diagrams) include a raw/text fallback snapshot OR guard with `test.skip` on timeout.
+4. Justify region (signal > noise) in commit message.
+5. Run `npm run pw:baseline` to produce new golden images.
 
 ## Maintenance Triggers
 
@@ -48,6 +50,8 @@ Refresh snapshots when intentionally modifying:
 - Instruction list row structure / CSS classes
 - System Health card layout or chart styles
 - Semantic summary rendering logic
+- Graph export topology (node/edge categories) or mermaid formatting
+- Graph dashboard UI controls (enrichment, categories, usage toggles) affecting visual output
 
 Investigate before updating if diff cause is unclear (avoid normalizing accidental regressions).
 

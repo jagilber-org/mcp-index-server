@@ -465,6 +465,15 @@
                             <option value="default">default</option>
                         </select>
                     </label>
+                    <label>Theme
+                        <select id="graph-theme" class="form-input" style="width:120px;" onchange="reloadGraphMermaid()">
+                            <option value="dark" selected>dark</option>
+                            <option value="default">default</option>
+                            <option value="neutral">neutral</option>
+                            <option value="forest">forest</option>
+                            <option value="base">base</option>
+                        </select>
+                    </label>
                     <label>Debug <input id="graph-debug" type="checkbox"></label>
                     <button class="action-btn" onclick="reloadGraphMermaid()">🔄 Refresh</button>
                     <button class="action-btn" onclick="copyMermaidSource()" style="background:linear-gradient(45deg,#3498db,#2980b9)">📋 Copy Source</button>
@@ -852,12 +861,14 @@
             const usageEl = document.getElementById('graph-usage');
             const edgeTypesEl = document.getElementById('graph-edgeTypes');
             const layoutSel = document.getElementById('graph-layout');
+            const themeSel = document.getElementById('graph-theme');
             const debugEnabled = !!document.getElementById('graph-debug')?.checked;
             const enrich = enrichEl && 'checked' in enrichEl ? enrichEl.checked : false;
             const categories = categoriesEl && 'checked' in categoriesEl ? categoriesEl.checked : false;
             const usage = usageEl && 'checked' in usageEl ? usageEl.checked : false;
             const edgeTypesRaw = edgeTypesEl && 'value' in edgeTypesEl ? (edgeTypesEl.value || '').trim() : '';
             let layout = (layoutSel && 'value' in layoutSel) ? layoutSel.value : 'elk';
+            const theme = (themeSel && 'value' in themeSel) ? themeSel.value : 'dark';
             const params = new URLSearchParams();
             if(enrich) params.set('enrich','1');
             if(categories) params.set('categories','1');
@@ -875,9 +886,12 @@
                     let mermaidSource = data.mermaid;
                     const effectiveLayout = layout === 'elk' ? 'elk' : 'default';
                     if(effectiveLayout === 'elk') await ensureMermaidElk();
-                    if(effectiveLayout === 'elk') {
-                        // frontmatter config for elk
-                        mermaidSource = `---\nconfig:\n  layout: elk\n---\n` + mermaidSource;
+                    // Build unified frontmatter config (theme + optional layout)
+                    const configLines = [];
+                    if(theme) configLines.push(`  theme: ${theme}`);
+                    if(effectiveLayout === 'elk') configLines.push('  layout: elk');
+                    if(configLines.length){
+                        mermaidSource = `---\nconfig:\n${configLines.join('\n')}\n---\n` + mermaidSource;
                     }
                     graphOriginalSource = mermaidSource;
                     if(target) target.textContent = mermaidSource;

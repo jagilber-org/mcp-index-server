@@ -969,6 +969,7 @@
 
         // Lazy mermaid loader
         let mermaidLoading = null;
+        let mermaidElkLoading = null; // ensures elk layout plugin is loaded & registered
         async function ensureMermaid(){
             if(window.mermaid) return;
             if(mermaidLoading) return mermaidLoading;
@@ -980,6 +981,32 @@
                 document.head.appendChild(s);
             });
             return mermaidLoading;
+        }
+
+        // Load @mermaid-js/layout-elk plugin and register. Safe to call multiple times.
+        async function ensureMermaidElk(){
+            await ensureMermaid();
+            if(window.mermaid?.mcpElkRegistered) return; // custom flag
+            if(mermaidElkLoading) return mermaidElkLoading;
+            mermaidElkLoading = new Promise((resolve)=>{
+                const s = document.createElement('script');
+                // UMD bundle exposes global 'mermaidLayoutElk' (expected); fallback attempt attaches any exported object.
+                s.src = 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.umd.min.js';
+                s.onload = ()=>{
+                    try {
+                        const candidate = window.mermaidLayoutElk || window.layout || window.elk || window.mermaid?.layout;
+                        if(candidate){
+                            try { window.mermaid.registerLayoutLoaders(candidate); } catch{ /* ignore */ }
+                            // Re-initialize to set defaultRenderer elk (doesn't override user diagrams without elk)
+                            try { window.mermaid.initialize({ startOnLoad:false, defaultRenderer:'elk' }); } catch { /* ignore */ }
+                            window.mermaid.mcpElkRegistered = true;
+                        }
+                    } catch{} finally { resolve(null); }
+                };
+                s.onerror = ()=>resolve(null); // degrade gracefully
+                document.head.appendChild(s);
+            });
+            return mermaidElkLoading;
         }
 
         async function loadOverviewData() {
@@ -1387,7 +1414,7 @@
                 console.warn('loadBackups error', err);
                 const sel = document.getElementById('backup-select');
                 if (sel) sel.innerHTML = '<option value="">(error loading)</option>';
-            }
+                if(needElk) await ensureMermaidElk(); else await ensureMermaid();
         }
 
         async function restoreSelectedBackup() {

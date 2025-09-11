@@ -57,7 +57,12 @@ if($Rebuild){
   $rebuildSucceeded = $false
   try {
     npm ci
+    if($LASTEXITCODE -ne 0){ throw "npm ci failed with exit code $LASTEXITCODE" }
     npm run build
+    if($LASTEXITCODE -ne 0){ throw "npm run build failed with exit code $LASTEXITCODE" }
+    # Verify a core build artifact exists (dist/server/index.js) AND that dashboard assets copied
+    if(-not (Test-Path 'dist/server/index.js')){ throw 'dist/server/index.js missing after build (compile step likely failed silently).' }
+    if(-not (Test-Path 'dist/dashboard/client/admin.html')){ throw 'dist/dashboard/client/admin.html missing (asset copy step skipped – did tsc fail so copy script never ran?).' }
     $rebuildSucceeded = $true
   } catch {
     Write-Host ("[deploy] Rebuild failed: {0}" -f $_.Exception.Message) -ForegroundColor Red

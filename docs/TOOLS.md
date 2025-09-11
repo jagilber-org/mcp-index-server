@@ -376,7 +376,7 @@ Exports a structural or enriched graph representation of the instruction catalog
 |-------|------|---------|-------------|
 | `includeEdgeTypes` | string[] (subset of `primary`,`category`,`belongs`) | all | Edge type allowlist (filter applied before truncation) |
 | `maxEdges` | number >=0 | unlimited | Truncate edge list (stable slice) |
-| `format` | `json` \| `dot` \| `mermaid` | `json` | Output format (DOT & Mermaid are undirected visualizations). Mermaid produces a `flowchart undirected` block suitable for docs or the admin dashboard renderer. |
+| `format` | `json` \| `dot` \| `mermaid` | `json` | Output format (DOT & Mermaid visualizations). Mermaid now emits a `flowchart TB` block (top-bottom); edges use `---` (no arrows) so the layout appears undirected. |
 | `enrich` | boolean | false | Enable schema v2 enrichment (metadata + optional new edge type) |
 | `includeCategoryNodes` | boolean | false | Materialize explicit category nodes `category:<name>` (enriched only) |
 | `includeUsage` | boolean | false | Attach real `usageCount` (falls back to 0 if absent) |
@@ -463,7 +463,7 @@ graph Instructions {
 **Mermaid Output Example:** (enriched with category node and edge labels)
 
 ```mermaid
-flowchart undirected
+flowchart TB
   instr_alpha["instr.alpha"]
   instr_beta["instr.beta"]
   category_ai["category:ai"]
@@ -517,7 +517,7 @@ Response shape:
 {
   "success": true,
   "meta": { "graphSchemaVersion": 1|2, "nodeCount": n, "edgeCount": m, "truncated"?: true },
-  "mermaid": "flowchart undirected\n  ..."
+  "mermaid": "flowchart TB\n  ..."
 }
 ```
 

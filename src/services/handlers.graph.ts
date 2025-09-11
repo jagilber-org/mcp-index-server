@@ -198,7 +198,9 @@ export function buildGraph(params: GraphExportParams): GraphResult {
   } else if(format === 'mermaid') {
     // Mermaid undirected graph (flowchart) representation.
     // We use a simple flowchart with -- links and edge type labels.
-    const lines: string[] = ['flowchart undirected'];
+  // Mermaid v10+ requires a direction (TB/LR/RL/BT); previous placeholder 'undirected' caused syntax errors.
+  // Using 'flowchart TB' (top-bottom) while edges use '---' (no arrow) to visually appear undirected.
+  const lines: string[] = ['flowchart TB'];
     for(const n of nodes){
       // Escape minimal invalid chars (leave colon and hyphen intact)
       const safeId = n.id.replace(/[^A-Za-z0-9_:.-]/g,'_');

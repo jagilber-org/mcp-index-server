@@ -34,7 +34,7 @@ describe('graph/export mermaid format', () => {
     const res = await callTool<any>('graph/export', { format:'mermaid' });
     expect(typeof res.mermaid).toBe('string');
   const lines = res.mermaid.split(/\r?\n/).filter((l:string)=>l.trim().length);
-    expect(lines[0].trim()).toBe('flowchart undirected');
+  expect(lines[0].trim()).toBe('flowchart TB');
   const nodeLines = lines.filter((l:string)=>/\[".+"\]$/.test(l.trim()));
   const edgeLines = lines.filter((l:string)=>/---\|.+\|/.test(l));
     expect(nodeLines.length).toBe(res.nodes.length);
@@ -45,6 +45,6 @@ describe('graph/export mermaid format', () => {
     const res = await callTool<any>('graph/export', { format:'mermaid', enrich:true, includeCategoryNodes:true, includeEdgeTypes:['belongs'] });
     expect(res.meta.graphSchemaVersion).toBe(2);
     expect(res.edges.every((e:any)=> e.type==='belongs')).toBe(true);
-    expect(res.mermaid.startsWith('flowchart undirected')).toBe(true);
+  expect(res.mermaid.startsWith('flowchart TB')).toBe(true);
   });
 });

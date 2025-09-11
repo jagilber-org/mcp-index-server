@@ -1002,7 +1002,8 @@
             if(mermaidLoading) return mermaidLoading;
             mermaidLoading = new Promise((resolve,reject)=>{
                 const s = document.createElement('script');
-                s.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
+                // Updated to v11 for layout loader API (registerLayoutLoaders)
+                s.src = 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js';
                 s.onload = ()=>{ try { window.mermaid.initialize({ startOnLoad:false }); resolve(null); } catch(e){ reject(e); } };
                 s.onerror = reject;
                 document.head.appendChild(s);
@@ -1053,10 +1054,23 @@
                                 }
                             }
                             if(!candidate){ setState('candidate-missing', { url, esm:true }); return tryNext(); }
-                            try { window.mermaid.registerLayoutLoaders(candidate); } catch(e){ setState('register-error', { message:e?.message, esm:true }); }
-                            if(window.mermaid?.registerLayoutLoaders && Object.keys(candidate).length){
+                            let registered = false;
+                            if(window.mermaid?.registerLayoutLoaders){
+                                try { window.mermaid.registerLayoutLoaders(candidate); registered = true; } catch(e){ setState('register-error', { message:e?.message, esm:true }); }
+                            } else if(window.mermaid?.mermaidAPI){
+                                // Legacy fallback: inject into mermaidAPI.layoutLoaders if structure exists (v10 style)
+                                try {
+                                    const api = window.mermaid.mermaidAPI;
+                                    api.layoutLoaders = { ...(api.layoutLoaders||{}), ...candidate };
+                                    registered = true;
+                                    setState('registered-legacy', { layouts:Object.keys(candidate), esm:true });
+                                } catch(e){ setState('register-error-legacy', { message:e?.message, esm:true }); }
+                            } else {
+                                setState('register-missing', { message:'registerLayoutLoaders unavailable', esm:true });
+                            }
+                            if(registered && Object.keys(candidate).length){
                                 window.mermaid.mcpElkRegistered = true;
-                                setState('registered', { layouts:Object.keys(candidate), esm:true });
+                                if(!elkDebug.state.startsWith('registered')) setState('registered', { layouts:Object.keys(candidate), esm:true });
                                 try { window.mermaid.initialize({ startOnLoad:false, defaultRenderer:'elk', flowchart:{ layout:'elk' } }); } catch { /* ignore */ }
                             }
                         } catch(e){ setState('load-error', { url, message:e?.message, esm:true }); }

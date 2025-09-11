@@ -12,12 +12,23 @@ import { describe, it, expect } from 'vitest';
 describe('Portable Duplicate Add Repro (mcp-server-testing-patterns-2025)', () => {
   it('duplicate add must not produce immediate notFound on get', async () => {
     process.env.MCP_ENABLE_MUTATION = '1';
-    // Ensure we point at repo instructions dir (already populated via copy step)
-    process.env.PORTABLE_HARNESS_USE_REPO_DIR = '1';
     const targetId = 'mcp-server-testing-patterns-2025';
-
-  const instructionsDir = process.env.TEST_INSTRUCTIONS_DIR || `${process.cwd()}\\instructions`;
-  process.env.INSTRUCTIONS_DIR = instructionsDir;
+    // Isolation strategy: unless explicitly opting into repo-scale run (PORTABLE_HARNESS_USE_REPO_DIR=1),
+    // create a temp instructions directory to eliminate large catalog scan cost.
+    let instructionsDir = process.env.TEST_INSTRUCTIONS_DIR;
+    if(!instructionsDir){
+      if(process.env.PORTABLE_HARNESS_USE_REPO_DIR === '1'){
+        instructionsDir = `${process.cwd()}\\instructions`;
+      } else {
+        const os = await import('os');
+        const fs = await import('fs');
+        const path = await import('path');
+        const tmpBase = fs.mkdtempSync(path.join(os.tmpdir(), 'dup-add-repro-'));
+        instructionsDir = path.join(tmpBase, 'instructions');
+        fs.mkdirSync(instructionsDir, { recursive:true });
+      }
+    }
+    process.env.INSTRUCTIONS_DIR = instructionsDir;
   // Pre-seed the file with the EXACT payload user provided (full multi-section playbook) to ensure
   // this red test operates on the authoritative content, independent of prior imports.
   const fs = await import('fs');

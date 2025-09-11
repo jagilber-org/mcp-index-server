@@ -3203,7 +3203,8 @@
                         });
                         // Snap categories into uniform horizontal lanes for readability
                         const laneHeight = 70; // vertical space per category lane
-                        const padX = 50; const padY = 40; // outer padding
+                        const gutterWidth = 140; // reserved space on left for labels + connectors
+                        const padX = 40; const padY = 40; // outer vertical padding + x padding after gutter
                         const categoryLaneY = new Map();
                         categories.forEach((c,i)=> categoryLaneY.set(c, padY + i*laneHeight));
                         // Reposition nodes: keep original x, quantize y to lane + small intra-lane spread based on original y ordering
@@ -3211,31 +3212,36 @@
                         instructions.forEach(inst=>{
                             const cat = (inst.categories&&inst.categories[0])||'uncategorized';
                             const baseY = categoryLaneY.get(cat) || padY;
-                            // preserve relative ordering inside lane deterministically by x then id
                             const p = positions.get(inst.id); if(!p) return;
-                            p.y = baseY; // snap exactly (no intra-lane jitter)
-                            // shift x by padX
-                            p.x = p.x + padX;
+                            p.y = baseY; // snap exactly
+                            // shift x by gutter + padX so nodes never overlap labels
+                            p.x = p.x + gutterWidth + padX;
                         });
                         // Compute new bounding box after snapping
                         let maxX=0,maxY=0,minX=Infinity,minY=Infinity;
                         positions.forEach(p=>{ maxX=Math.max(maxX,p.x+nodeWidth); maxY=Math.max(maxY,p.y+nodeHeight); minX=Math.min(minX,p.x); minY=Math.min(minY,p.y); });
-                        const totalWidth = Math.max(800, maxX - minX + padX*2);
+                        const totalWidth = Math.max(900, maxX - minX + padX*2 + gutterWidth);
                         const totalHeight = Math.max(160, (categories.length? (padY + categories.length*laneHeight) : (maxY-minY+padY*2)));
                         svg.setAttribute('width', String(totalWidth));
                         svg.setAttribute('height', String(totalHeight));
                         // Prepare drawing surface
                         svg.innerHTML='';
                         // Lane backgrounds (subtle)
-                        categories.forEach(cat=>{
+                        categories.forEach((cat,i)=>{
                             const y = categoryLaneY.get(cat);
                             if(y==null) return;
                             const laneRect = document.createElementNS('http://www.w3.org/2000/svg','rect');
-                            laneRect.setAttribute('x','0'); laneRect.setAttribute('y', String(y - 10));
-                            laneRect.setAttribute('width', String(totalWidth)); laneRect.setAttribute('height', String(laneHeight));
-                            laneRect.setAttribute('fill','#18222f'); laneRect.setAttribute('opacity','0.25');
+                            laneRect.setAttribute('x', String(gutterWidth - 8)); laneRect.setAttribute('y', String(y - 10));
+                            laneRect.setAttribute('width', String(totalWidth - (gutterWidth - 8))); laneRect.setAttribute('height', String(laneHeight));
+                            laneRect.setAttribute('fill', i % 2 === 0 ? '#1b2734' : '#1d2c3b'); laneRect.setAttribute('opacity','0.55');
                             svg.appendChild(laneRect);
                         });
+                        // Gutter separator line
+                        const gutterSep = document.createElementNS('http://www.w3.org/2000/svg','line');
+                        gutterSep.setAttribute('x1', String(gutterWidth - 12)); gutterSep.setAttribute('x2', String(gutterWidth - 12));
+                        gutterSep.setAttribute('y1','0'); gutterSep.setAttribute('y2', String(totalHeight));
+                        gutterSep.setAttribute('stroke','#253548'); gutterSep.setAttribute('stroke-width','1'); gutterSep.setAttribute('opacity','0.9');
+                        svg.appendChild(gutterSep);
                         // Vertical guideline (optional future: grid) -- skipped for now
                         // Continue with edges & nodes below
                         // NOTE: status text updated later includes '(ELK snapped)'
@@ -3243,14 +3249,15 @@
                         // Draw edges from elkGraph edges using node centers (after snapping)
                         const edgeGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
                         edgeGroup.setAttribute('stroke','#5479ff'); edgeGroup.setAttribute('stroke-width','1.1'); edgeGroup.setAttribute('fill','none'); edgeGroup.setAttribute('opacity','0.9');
+                        let instrEdgeCount = 0;
                         elkGraph.edges.forEach(e=>{
                             const a = positions.get(e.sources[0]); const b = positions.get(e.targets[0]); if(!a||!b) return;
                             const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-                            // Smooth horizontal cubic; control points scaled by horizontal distance
                             const hdx = Math.max(40, (b.x - a.x)/3);
                             const d = `M ${a.x + nodeWidth} ${a.y + nodeHeight/2} C ${a.x + nodeWidth + hdx} ${a.y + nodeHeight/2}, ${b.x - hdx} ${b.y + nodeHeight/2}, ${b.x} ${b.y + nodeHeight/2}`;
                             path.setAttribute('d', d);
                             edgeGroup.appendChild(path);
+                            instrEdgeCount++;
                         });
                         svg.appendChild(edgeGroup);
                         // Arrowhead marker definition (once)
@@ -3259,6 +3266,18 @@
                         marker.setAttribute('id','drill-arrow'); marker.setAttribute('markerWidth','10'); marker.setAttribute('markerHeight','6'); marker.setAttribute('refX','10'); marker.setAttribute('refY','3'); marker.setAttribute('orient','auto');
                         const mpath = document.createElementNS('http://www.w3.org/2000/svg','path'); mpath.setAttribute('d','M0,0 L10,3 L0,6 Z'); mpath.setAttribute('fill','#5479ff'); marker.appendChild(mpath); defs.appendChild(marker); svg.appendChild(defs);
                         edgeGroup.setAttribute('marker-end','url(#drill-arrow)');
+                        // Category membership connectors (pseudo category anchors in gutter)
+                        const membershipGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+                        membershipGroup.setAttribute('stroke','#44566d'); membershipGroup.setAttribute('stroke-width','1'); membershipGroup.setAttribute('opacity','0.8');
+                        instructions.forEach(inst=>{
+                            const p = positions.get(inst.id); if(!p) return;
+                            const yMid = p.y + nodeHeight/2;
+                            const startX = gutterWidth - 15; const endX = p.x; // horizontal connector
+                            const conn = document.createElementNS('http://www.w3.org/2000/svg','path');
+                            conn.setAttribute('d', `M ${startX} ${yMid} L ${endX} ${yMid}`);
+                            membershipGroup.appendChild(conn);
+                        });
+                        svg.appendChild(membershipGroup);
                         // Nodes (interactive)
                         instructions.forEach(inst=>{
                             const pos = positions.get(inst.id); if(!pos) return;

@@ -81,7 +81,8 @@ const zHotset = z.object({ limit: z.number().int().min(1).max(100).optional() })
 const zGraphExport = z.object({
   includeEdgeTypes: z.array(z.enum(['primary','category','belongs'])).max(3).optional(),
   maxEdges: z.number().int().min(0).optional(),
-  format: z.enum(['json','dot']).optional(),
+  // Added 'mermaid' to supported export formats (json is implicit when omitted)
+  format: z.enum(['json','dot','mermaid']).optional(),
   enrich: z.boolean().optional(),
   includeCategoryNodes: z.boolean().optional(),
   includeUsage: z.boolean().optional()

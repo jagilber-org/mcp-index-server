@@ -378,6 +378,7 @@
                 <button class="nav-btn" onclick="showSection('maintenance')">🔧 Maintenance</button>
                 <button class="nav-btn" onclick="showSection('monitoring')">📈 Monitoring</button>
                 <button class="nav-btn" onclick="showSection('instructions')">📚 Instructions</button>
+                <button class="nav-btn" onclick="showSection('graph')">🗺️ Graph</button>
             </div>
         </div>
 
@@ -418,6 +419,37 @@
                     <div class="card-title">Individual Tool Call Metrics</div>
                 </div>
                 <div id="tool-metrics" class="loading">Loading tool metrics...</div>
+            </div>
+        </div>
+        <!-- Graph Section -->
+        <div id="graph-section" class="admin-section hidden">
+            <div class="admin-card">
+                <div class="card-header">
+                    <div class="card-icon">🗺️</div>
+                    <div class="card-title">Instruction Relationship Graph</div>
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:12px;">
+                    <label style="font-size:12px;">Enrich <input id="graph-enrich" type="checkbox" checked></label>
+                    <label style="font-size:12px;">Categories <input id="graph-categories" type="checkbox" checked></label>
+                    <label style="font-size:12px;">Usage <input id="graph-usage" type="checkbox"></label>
+                    <label style="font-size:12px;">Edge Types
+                        <input id="graph-edgeTypes" class="form-input" placeholder="(all or comma list)" style="width:180px;">
+                    </label>
+                    <button class="action-btn" onclick="reloadGraphMermaid()">🔄 Refresh</button>
+                    <button class="action-btn" onclick="copyMermaidSource()" style="background:linear-gradient(45deg,#3498db,#2980b9)">📋 Copy Source</button>
+                </div>
+                <div id="graph-meta" style="font-size:12px; opacity:0.8; margin-bottom:6px; font-family:monospace;"></div>
+                <div id="graph-mermaid-wrapper" style="background:#fff; border:1px solid #e1e4e8; border-radius:8px; padding:16px; overflow:auto; max-height:600px; position:relative;">
+                    <div id="graph-mermaid" style="white-space:pre; font-family:monospace; font-size:12px;">
+                        (loading graph...)
+                    </div>
+                    <div id="graph-mermaid-rendered" style="margin-top:16px; border-top:1px dashed #ccc; padding-top:12px; display:none;">
+                        <div style="font-size:11px; opacity:0.7; margin-bottom:4px;">Rendered Diagram</div>
+                        <div id="graph-mermaid-svg"></div>
+                        <button class="action-btn" style="margin-top:8px; background:linear-gradient(45deg,#8e44ad,#663399);" onclick="toggleGraphRaw()" title="Toggle raw mermaid source / rendered diagram">🧪 Toggle Raw/Mermaid</button>
+                    </div>
+                </div>
+                <div style="margin-top:8px; font-size:11px; opacity:0.7;">Mermaid flowchart (undirected). Copy source and paste into any mermaid renderer or documentation.</div>
             </div>
         </div>
 
@@ -749,6 +781,9 @@
                 case 'overview':
                     loadOverviewData();
                     break;
+                case 'graph':
+                    reloadGraphMermaid();
+                    break;
                 case 'config':
                     loadConfiguration();
                     break;
@@ -767,6 +802,93 @@
                     loadInstructions();
                     break;
             }
+        }
+
+        async function reloadGraphMermaid(){
+            const enrichEl = document.getElementById('graph-enrich');
+            const categoriesEl = document.getElementById('graph-categories');
+            const usageEl = document.getElementById('graph-usage');
+            const edgeTypesEl = document.getElementById('graph-edgeTypes');
+            const enrich = enrichEl && 'checked' in enrichEl ? enrichEl.checked : false;
+            const categories = categoriesEl && 'checked' in categoriesEl ? categoriesEl.checked : false;
+            const usage = usageEl && 'checked' in usageEl ? usageEl.checked : false;
+            const edgeTypesRaw = edgeTypesEl && 'value' in edgeTypesEl ? (edgeTypesEl.value || '').trim() : '';
+            const params = new URLSearchParams();
+            if(enrich) params.set('enrich','1');
+            if(categories) params.set('categories','1');
+            if(usage) params.set('usage','1');
+            if(edgeTypesRaw) params.set('edgeTypes', edgeTypesRaw);
+            const target = document.getElementById('graph-mermaid');
+            const metaEl = document.getElementById('graph-meta');
+            if(target) target.textContent = '(loading graph...)';
+            try {
+                const res = await fetch('/api/graph/mermaid?'+params.toString());
+                const data = await res.json();
+                if(data?.success && data.mermaid){
+                    if(target) target.textContent = data.mermaid;
+                    if(metaEl) metaEl.textContent = `schema=v${data.meta?.graphSchemaVersion} nodes=${data.meta?.nodeCount} edges=${data.meta?.edgeCount}`;
+                    // Attempt visual render best-effort
+                    try {
+                        await ensureMermaid();
+                        if(window.mermaid){
+                            const { svg } = await window.mermaid.render('graphMermaidSvg', data.mermaid);
+                            const svgHost = document.getElementById('graph-mermaid-svg');
+                            if(svgHost){ svgHost.innerHTML = svg; }
+                            const renderedWrap = document.getElementById('graph-mermaid-rendered');
+                            if(renderedWrap){ renderedWrap.style.display = 'block'; }
+                        }
+                    } catch(err){
+                        // eslint-disable-next-line no-console
+                        console.warn('[admin][mermaid-render-failed]', err);
+                    }
+                } else {
+                    if(target) target.textContent = '(graph unavailable)';
+                }
+            } catch(e){
+                if(target) target.textContent = '(graph load error)';
+            }
+        }
+
+        function copyMermaidSource(){
+            const el = document.getElementById('graph-mermaid');
+            if(!el) return;
+            const txt = el.textContent || '';
+            navigator.clipboard.writeText(txt).then(()=>{
+                const metaEl = document.getElementById('graph-meta');
+                if(metaEl){
+                    const prev = metaEl.textContent;
+                    metaEl.textContent = (prev? prev+' | ': '') + 'copied';
+                    setTimeout(()=>{ metaEl.textContent = prev || ''; }, 1500);
+                }
+            }).catch(()=>{});
+        }
+
+        function toggleGraphRaw(){
+            const raw = document.getElementById('graph-mermaid');
+            const rendered = document.getElementById('graph-mermaid-rendered');
+            if(!raw || !rendered) return;
+            if(rendered.style.display === 'none'){
+                rendered.style.display = 'block';
+                raw.style.display = 'none';
+            } else {
+                rendered.style.display = 'none';
+                raw.style.display = 'block';
+            }
+        }
+
+        // Lazy mermaid loader
+        let mermaidLoading = null;
+        async function ensureMermaid(){
+            if(window.mermaid) return;
+            if(mermaidLoading) return mermaidLoading;
+            mermaidLoading = new Promise((resolve,reject)=>{
+                const s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
+                s.onload = ()=>{ try { window.mermaid.initialize({ startOnLoad:false }); resolve(null); } catch(e){ reject(e); } };
+                s.onerror = reject;
+                document.head.appendChild(s);
+            });
+            return mermaidLoading;
         }
 
         async function loadOverviewData() {

@@ -6,6 +6,7 @@
  */
 
 import express, { Router, Request, Response } from 'express';
+import { buildGraph, GraphExportParams } from '../../services/handlers.graph';
 import { getWebSocketManager } from './WebSocketManager.js';
 import { getMetricsCollector, ToolMetrics } from './MetricsCollector.js';
 import { listRegisteredMethods, getHandler } from '../../server/registry.js';
@@ -1013,6 +1014,35 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
         error: 'Failed to get admin statistics',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
+    }
+  });
+
+  /**
+   * GET /api/graph/mermaid - Returns mermaid representation of the instruction graph.
+   * Query params:
+   *   enrich=1        -> include enriched schema (v2) data generation path
+   *   categories=1    -> include explicit category nodes
+   *   usage=1         -> include usageCount when available
+   *   edgeTypes=a,b   -> restrict edge types (comma separated)
+   */
+  router.get('/graph/mermaid', (req: Request, res: Response) => {
+    try {
+  const { enrich, categories, usage, edgeTypes } = req.query as Record<string,string|undefined>;
+  const includeEdgeTypes = edgeTypes ? (edgeTypes.split(',').filter(Boolean) as GraphExportParams['includeEdgeTypes']) : undefined;
+      const graph = buildGraph({
+        enrich: enrich === '1' || enrich === 'true',
+        includeCategoryNodes: categories === '1' || categories === 'true',
+        includeUsage: usage === '1' || usage === 'true',
+        includeEdgeTypes,
+        format: 'mermaid'
+      });
+      if(!graph.mermaid){
+        return res.status(500).json({ success:false, error:'failed_to_generate_mermaid'});
+      }
+      res.json({ success:true, meta: graph.meta, mermaid: graph.mermaid });
+    } catch(err){
+      const e = err as Error;
+      res.status(500).json({ success:false, error: String(e.message||e) });
     }
   });
 

@@ -16,7 +16,7 @@ import { registerHandler } from '../server/registry';
 import { ensureLoaded, computeGovernanceHash } from './catalogContext';
 import type { InstructionEntry } from '../models/instruction';
 
-interface GraphExportParams {
+export interface GraphExportParams {
   includeEdgeTypes?: Array<'primary'|'category'|'belongs'>;
   maxEdges?: number;
   format?: 'json'|'dot'|'mermaid'; // new: mermaid format
@@ -47,7 +47,8 @@ type GraphNode = GraphNodeV1 | GraphNodeV2;
 interface GraphEdgeBase { from: string; to: string; type: 'primary'|'category'|'belongs'; }
 interface GraphEdgeEnriched extends GraphEdgeBase { weight?: number; }
 type GraphEdge = GraphEdgeBase | GraphEdgeEnriched;
-interface GraphMeta { graphSchemaVersion: 1; nodeCount: number; edgeCount: number; truncated?: boolean; notes?: string[] }
+// Allow schema version 1 (legacy minimal) or 2 (enriched) explicitly.
+interface GraphMeta { graphSchemaVersion: 1|2; nodeCount: number; edgeCount: number; truncated?: boolean; notes?: string[] }
 interface GraphResult { meta: GraphMeta; nodes: GraphNode[]; edges: GraphEdge[]; dot?: string; mermaid?: string }
 
 // NOTE: For enriched responses we bump schema version to 2 (only when enrich=true)
@@ -67,7 +68,8 @@ function getEnvBoolean(name: string, defaultTrue = true){
   return ['1','true','yes','on'].includes(v.toLowerCase());
 }
 
-function buildGraph(params: GraphExportParams): GraphResult {
+// Exported for dashboard API usage
+export function buildGraph(params: GraphExportParams): GraphResult {
   const { includeEdgeTypes, maxEdges, format, enrich, includeCategoryNodes, includeUsage } = params;
   const st = ensureLoaded();
   const instructions = [...st.list].sort((a,b)=> a.id.localeCompare(b.id));
@@ -229,6 +231,12 @@ registerHandler<GraphExportParams>('graph/export', (params) => {
     }
   }
   const graph = buildGraph(p);
+  // Defensive: unexpected undefined safeguard (should never happen). Emit diagnostic once.
+  if(!graph){
+    // eslint-disable-next-line no-console
+    console.error('[graph/export] buildGraph returned undefined - returning empty graph (diagnostic)');
+    return { meta:{ graphSchemaVersion:1, nodeCount:0, edgeCount:0 }, nodes:[], edges:[] } as GraphResult;
+  }
   if(cacheEligible && !envExplicit){
     cachedDefaults.set(envSig, { hash, result: graph });
   }

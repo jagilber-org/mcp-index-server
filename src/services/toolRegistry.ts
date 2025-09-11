@@ -27,7 +27,8 @@ const INPUT_SCHEMAS: Record<string, object> = {
   'graph/export': { type: 'object', additionalProperties: false, properties: {
     includeEdgeTypes: { type: 'array', items: { type: 'string', enum: ['primary','category','belongs'] }, maxItems: 3 },
     maxEdges: { type: 'number', minimum: 0 },
-    format: { type: 'string', enum: ['json','dot'] },
+    // Added 'mermaid' format for dashboard visualization / documentation embedding
+    format: { type: 'string', enum: ['json','dot','mermaid'] },
     enrich: { type: 'boolean' },
     includeCategoryNodes: { type: 'boolean' },
     includeUsage: { type: 'boolean' }

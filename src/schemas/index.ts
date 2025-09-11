@@ -179,6 +179,23 @@ export const schemas: Record<string, unknown> = {
     ]
   }
   ,
+  // Graph export (legacy v1 + enriched v2). Optional contract registration enabling future schema locking.
+  'graph/export': {
+    anyOf: [
+      { type: 'object', required: ['meta','nodes','edges'], additionalProperties: true, properties: {
+        meta: { type: 'object', required: ['graphSchemaVersion','nodeCount','edgeCount'], additionalProperties: true, properties: { graphSchemaVersion: { const: 1 }, nodeCount: { type: 'number' }, edgeCount: { type: 'number' } } },
+        nodes: { type: 'array', items: { type: 'object', required: ['id'], additionalProperties: true, properties: { id: { type:'string' } } } },
+        edges: { type: 'array', items: { type: 'object', required: ['from','to','type'], additionalProperties: true, properties: { from: { type:'string' }, to: { type:'string' }, type: { enum: ['primary','category'] } } } }
+      } },
+      { type: 'object', required: ['meta','nodes','edges'], additionalProperties: true, properties: {
+        meta: { type: 'object', required: ['graphSchemaVersion','nodeCount','edgeCount'], additionalProperties: true, properties: { graphSchemaVersion: { const: 2 }, nodeCount: { type: 'number' }, edgeCount: { type: 'number' } } },
+        nodes: { type: 'array', items: { type: 'object', required: ['id'], additionalProperties: true, properties: { id: { type:'string' }, nodeType: { enum: ['instruction','category'] }, categories: { type:'array', items:{ type:'string' } }, primaryCategory: { type:'string' }, usageCount: { type:'number' } } } },
+        edges: { type: 'array', items: { type: 'object', required: ['from','to','type'], additionalProperties: true, properties: { from: { type:'string' }, to: { type:'string' }, type: { enum: ['primary','category','belongs'] } } } },
+        mermaid: { type: 'string' }, dot: { type: 'string' }
+      } }
+    ]
+  }
+  ,
   'meta/tools': {
     type: 'object', additionalProperties: true,
     required: ['stable','dynamic','tools'],

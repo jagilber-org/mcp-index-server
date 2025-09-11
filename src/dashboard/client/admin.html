@@ -433,23 +433,36 @@
                     <label style="font-size:12px;">Categories <input id="graph-categories" type="checkbox" checked></label>
                     <label style="font-size:12px;">Usage <input id="graph-usage" type="checkbox"></label>
                     <label style="font-size:12px;">Edge Types
-                        <input id="graph-edgeTypes" class="form-input" placeholder="(all or comma list)" style="width:180px;">
+                        <input id="graph-edgeTypes" class="form-input" placeholder="(all or comma list)" style="width:160px;">
+                    </label>
+                    <label style="font-size:12px;">Layout
+                        <select id="graph-layout" class="form-input" style="width:120px; padding:4px;">
+                            <option value="default" selected>default</option>
+                            <option value="elk">elk</option>
+                        </select>
                     </label>
                     <button class="action-btn" onclick="reloadGraphMermaid()">🔄 Refresh</button>
                     <button class="action-btn" onclick="copyMermaidSource()" style="background:linear-gradient(45deg,#3498db,#2980b9)">📋 Copy Source</button>
+                    <button id="graph-edit-btn" class="action-btn" onclick="toggleGraphEdit()" style="background:linear-gradient(45deg,#e67e22,#d35400)">✏️ Edit</button>
+                    <button id="graph-apply-btn" class="action-btn" onclick="applyGraphEdit()" style="display:none;background:linear-gradient(45deg,#27ae60,#1e8449)">💾 Apply</button>
+                    <button id="graph-cancel-btn" class="action-btn" onclick="cancelGraphEdit()" style="display:none;background:linear-gradient(45deg,#c0392b,#922b21)">↩️ Cancel</button>
                 </div>
                 <div id="graph-meta" style="font-size:12px; opacity:0.8; margin-bottom:6px; font-family:monospace;"></div>
-                <div id="graph-mermaid-wrapper" style="background:#fff; border:1px solid #e1e4e8; border-radius:8px; padding:16px; overflow:auto; max-height:600px; position:relative;">
-                    <div id="graph-mermaid" style="white-space:pre; font-family:monospace; font-size:12px;">
-                        (loading graph...)
-                    </div>
-                    <div id="graph-mermaid-rendered" style="margin-top:16px; border-top:1px dashed #ccc; padding-top:12px; display:none;">
-                        <div style="font-size:11px; opacity:0.7; margin-bottom:4px;">Rendered Diagram</div>
-                        <div id="graph-mermaid-svg"></div>
-                        <button class="action-btn" style="margin-top:8px; background:linear-gradient(45deg,#8e44ad,#663399);" onclick="toggleGraphRaw()" title="Toggle raw mermaid source / rendered diagram">🧪 Toggle Raw/Mermaid</button>
-                    </div>
+                <div id="graph-mermaid-wrapper" style="background:#0f1624; color:#d0d7e2; border:1px solid #1f2a3a; border-radius:8px; padding:16px; overflow:auto; max-height:320px; position:relative;">
+                    <div style="font-size:11px; opacity:0.65; margin-bottom:6px;">Mermaid Source (copy or edit; elk layout prepends frontmatter)</div>
+                    <pre id="graph-mermaid" style="margin:0; white-space:pre; font-family:monospace; font-size:12px; line-height:1.25;">(loading graph...)</pre>
                 </div>
-                <div style="margin-top:8px; font-size:11px; opacity:0.7;">Mermaid flowchart (undirected). Copy source and paste into any mermaid renderer or documentation.</div>
+                <div style="margin-top:8px; font-size:11px; opacity:0.65;">Mermaid source shown above. Rendered diagram below uses same code.</div>
+            </div>
+            <div class="admin-card" id="graph-render-card" style="margin-top:18px;">
+                <div class="card-header">
+                    <div class="card-icon">🧪</div>
+                    <div class="card-title">Rendered Diagram</div>
+                </div>
+                <div id="graph-mermaid-rendered" style="background:#fff; border:1px solid #e1e4e8; border-radius:8px; padding:12px; overflow:auto; max-height:720px;">
+                    <div id="graph-mermaid-svg" style="min-height:140px;">(diagram not loaded)</div>
+                </div>
+                <div style="margin-top:8px; font-size:11px; opacity:0.7;">Copy source (top) into <a href="https://mermaid.live" target="_blank" rel="noopener" style="color:#3498db;">Mermaid Live Editor</a> for advanced tweaks. Layout 'elk' leverages experimental ELK engine; fallback auto-applies legacy init directive if frontmatter unsupported.</div>
             </div>
         </div>
 
@@ -804,15 +817,20 @@
             }
         }
 
+        let graphOriginalSource = '';
+        let graphEditing = false;
+
         async function reloadGraphMermaid(){
             const enrichEl = document.getElementById('graph-enrich');
             const categoriesEl = document.getElementById('graph-categories');
             const usageEl = document.getElementById('graph-usage');
             const edgeTypesEl = document.getElementById('graph-edgeTypes');
+            const layoutSel = document.getElementById('graph-layout');
             const enrich = enrichEl && 'checked' in enrichEl ? enrichEl.checked : false;
             const categories = categoriesEl && 'checked' in categoriesEl ? categoriesEl.checked : false;
             const usage = usageEl && 'checked' in usageEl ? usageEl.checked : false;
             const edgeTypesRaw = edgeTypesEl && 'value' in edgeTypesEl ? (edgeTypesEl.value || '').trim() : '';
+            const layout = layoutSel && 'value' in layoutSel ? layoutSel.value : 'default';
             const params = new URLSearchParams();
             if(enrich) params.set('enrich','1');
             if(categories) params.set('categories','1');
@@ -825,15 +843,31 @@
                 const res = await fetch('/api/graph/mermaid?'+params.toString());
                 const data = await res.json();
                 if(data?.success && data.mermaid){
-                    if(target) target.textContent = data.mermaid;
+                    let mermaidSource = data.mermaid;
+                    // If elk layout selected, prepend frontmatter config for copyability.
+                    if(layout === 'elk'){
+                        mermaidSource = `---\nconfig:\n  layout: elk\n---\n` + mermaidSource;
+                    }
+                    graphOriginalSource = mermaidSource;
+                    if(target) target.textContent = mermaidSource;
                     if(metaEl) metaEl.textContent = `schema=v${data.meta?.graphSchemaVersion} nodes=${data.meta?.nodeCount} edges=${data.meta?.edgeCount}`;
                     // Attempt visual render best-effort
                     try {
                         await ensureMermaid();
                         if(window.mermaid){
-                            const { svg } = await window.mermaid.render('graphMermaidSvg', data.mermaid);
-                            const svgHost = document.getElementById('graph-mermaid-svg');
-                            if(svgHost){ svgHost.innerHTML = svg; }
+                            let renderCode = mermaidSource;
+                            let svg;
+                            try {
+                                ({ svg } = await window.mermaid.render('graphMermaidSvg', renderCode));
+                            } catch(inner){
+                                // Fallback legacy init directive if frontmatter unsupported for elk
+                                if(layout === 'elk'){
+                                    const alt = `%%{init: { 'flowchart': { 'layout': 'elk' } }}%%\n` + data.mermaid;
+                                    ({ svg } = await window.mermaid.render('graphMermaidSvg', alt));
+                                } else throw inner;
+                            }
+                            const legacyHost = document.getElementById('graph-mermaid-svg');
+                            if(legacyHost){ legacyHost.innerHTML = svg; }
                             const renderedWrap = document.getElementById('graph-mermaid-rendered');
                             if(renderedWrap){ renderedWrap.style.display = 'block'; }
                         }
@@ -864,16 +898,55 @@
         }
 
         function toggleGraphRaw(){
-            const raw = document.getElementById('graph-mermaid');
-            const rendered = document.getElementById('graph-mermaid-rendered');
-            if(!raw || !rendered) return;
-            if(rendered.style.display === 'none'){
-                rendered.style.display = 'block';
-                raw.style.display = 'none';
-            } else {
-                rendered.style.display = 'none';
-                raw.style.display = 'block';
+            // Deprecated: raw & rendered now always visible in split view. Keep no-op for backward compatibility.
+            return;
+        }
+
+        function toggleGraphEdit(){
+            if(graphEditing){
+                cancelGraphEdit();
+                return;
             }
+            const target = document.getElementById('graph-mermaid');
+            if(!target) return;
+            graphEditing = true;
+            target.setAttribute('contenteditable','true');
+            target.style.outline = '1px solid #3498db';
+            document.getElementById('graph-edit-btn').style.display='none';
+            document.getElementById('graph-apply-btn').style.display='inline-block';
+            document.getElementById('graph-cancel-btn').style.display='inline-block';
+        }
+
+        function applyGraphEdit(){
+            const target = document.getElementById('graph-mermaid');
+            if(!target) return;
+            const code = target.textContent || '';
+            (async ()=>{
+                try {
+                    await ensureMermaid();
+                    const { svg } = await window.mermaid.render('graphMermaidSvg', code);
+                    const legacyHost = document.getElementById('graph-mermaid-svg');
+                    if(legacyHost){ legacyHost.innerHTML = svg; }
+                } catch(e){
+                    // eslint-disable-next-line no-alert
+                    alert('Render failed: '+ e.message);
+                }
+            })();
+            cancelGraphEdit(true);
+        }
+
+        function cancelGraphEdit(keep){
+            if(!graphEditing) return;
+            const target = document.getElementById('graph-mermaid');
+            if(target){
+                target.removeAttribute('contenteditable');
+                target.style.outline='none';
+                if(!keep) target.textContent = graphOriginalSource;
+            }
+            graphEditing = false;
+            document.getElementById('graph-edit-btn').style.display='inline-block';
+            document.getElementById('graph-apply-btn').style.display='none';
+            document.getElementById('graph-cancel-btn').style.display='none';
         }
 
         // Lazy mermaid loader

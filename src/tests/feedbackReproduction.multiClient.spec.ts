@@ -10,6 +10,9 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import os from 'node:os';
 // Dynamic import of portable client to avoid CommonJS -> ESM static import warning (TS1479)
 let createInstructionClient: any; // assigned lazily
 
@@ -87,8 +90,14 @@ describe('Feedback Reproduction: Multi-Client Instruction Coordination (Portable
       const mod = await import('../../portable-mcp-client/client-lib.mjs');
       createInstructionClient = mod.createInstructionClient;
     }
-    instructionsDir = process.env.TEST_INSTRUCTIONS_DIR || `${process.cwd().replace(/\\/g,'\\\\')}\\instructions`;
-    // Reuse a single pair of client sessions across tests to eliminate hook startup overhead.
+    if(process.env.TEST_INSTRUCTIONS_DIR){
+      instructionsDir = process.env.TEST_INSTRUCTIONS_DIR;
+    } else {
+      // Create isolated temp instructions directory to avoid cross-suite contention & hash drift
+      const tmpBase = await fs.mkdtemp(path.join(os.tmpdir(), 'mcp-multi-client-'));
+      instructionsDir = tmpBase; // server will create files as needed
+    }
+    // Reuse a single pair of client sessions across tests to eliminate hook startup overhead & file contention.
     client1 = await createInstructionClient({ forceMutation:true, instructionsDir });
     client2 = await createInstructionClient({ forceMutation:true, instructionsDir });
   }, 60000); // allow more time for initial spawn
@@ -123,7 +132,7 @@ describe('Feedback Reproduction: Multi-Client Instruction Coordination (Portable
       expect(results[0]?.title).toContain('Mermaid');
     }, 15000);
 
-    it('SEARCH_RELEVANCE_TECHNICAL_TERMS - Verify search quality', async () => {
+  it('SEARCH_RELEVANCE_TECHNICAL_TERMS - Verify search quality', async () => {
   await addViaClient(client1, GITHUB_MERMAID_INSTRUCTION);
 
   await addViaClient(client1, { id:'unrelated-developer-urls', title:'Comprehensive Developer URLs', body:'General developer resource links and documentation', priority:50, audience:'all', requirement:'optional', categories:['resources'] });
@@ -146,7 +155,7 @@ describe('Feedback Reproduction: Multi-Client Instruction Coordination (Portable
   try { await client1.remove('unrelated-developer-urls'); } catch { /* ignore */ }
     }, 20000);
 
-    it('CATALOG_CONSISTENCY_ACROSS_CLIENTS - Hash and count verification', async () => {
+  it('CATALOG_CONSISTENCY_ACROSS_CLIENTS - Hash and count verification', async () => {
   await addViaClient(client1, GITHUB_MERMAID_INSTRUCTION);
 
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -163,7 +172,7 @@ describe('Feedback Reproduction: Multi-Client Instruction Coordination (Portable
 
   describe('Issue #740513ece59b2a0c: CRUD Operation Inconsistency', () => {
     
-    it('ADD_SKIP_GET_CONSISTENCY - Reproduction Test (RED)', async () => {
+  it('ADD_SKIP_GET_CONSISTENCY - Reproduction Test (RED)', async () => {
   const initialAdd = await addViaClient(client1, GITHUB_MERMAID_INSTRUCTION);
   expect(initialAdd?.created || initialAdd?.overwritten).toBeTruthy();
       

@@ -8,6 +8,9 @@
  *  - All target IDs remain (or become) visible via list/read after operations.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import os from 'node:os';
 
 let createInstructionClient: any; // dynamic import
 
@@ -55,7 +58,13 @@ describe('Instruction Persistence Divergence (resolved GREEN)', ()=>{
       const mod = await import('../../portable-mcp-client/client-lib.mjs');
       createInstructionClient = mod.createInstructionClient;
     }
-    const instructionsDir = process.env.TEST_INSTRUCTIONS_DIR || `${process.cwd().replace(/\\/g,'\\\\')}\\instructions`;
+    let instructionsDir: string;
+    if(process.env.TEST_INSTRUCTIONS_DIR){
+      instructionsDir = process.env.TEST_INSTRUCTIONS_DIR;
+    } else {
+      const tmpBase = await fs.mkdtemp(path.join(os.tmpdir(), 'mcp-persist-div-'));
+      instructionsDir = tmpBase;
+    }
     client = await createInstructionClient({ forceMutation:true, instructionsDir });
   }, 30000);
 

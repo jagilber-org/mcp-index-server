@@ -4,8 +4,11 @@
  * Progression policy: enable one skipped test only after 10 consecutive green runs (guard:baseline + guard:decl) with
  * zero hash polling timeouts. Document each activation in CHANGELOG or GOV-HASH test plan.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createInstructionClient } from '../portableClientShim';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import os from 'node:os';
 import { extractCatalogHash, waitForCatalogHashChange } from './hashHelpers';
 import { assertHashStable, assertHashChanged } from './testUtils.js';
 
@@ -13,9 +16,25 @@ import { assertHashStable, assertHashChanged } from './testUtils.js';
 const STATIC_BODY = 'governance-body-static-v1';
 const UPDATED_BODY = 'governance-body-static-v2';
 
+// Single shared client to avoid repeated process spawn costs & reduce flake surface.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let sharedClient: any;
+let instructionsDir: string;
+
+beforeAll(async () => {
+  if(process.env.TEST_INSTRUCTIONS_DIR){
+    instructionsDir = process.env.TEST_INSTRUCTIONS_DIR;
+  } else {
+    const tmpBase = await fs.mkdtemp(path.join(os.tmpdir(), 'mcp-gov-hash-'));
+    instructionsDir = tmpBase;
+  }
+  sharedClient = await createInstructionClient({ instructionsDir });
+}, 45000);
+
+afterAll(async () => { await sharedClient?.close(); });
+
 async function withClient<T>(fn: (c: any) => Promise<T>): Promise<T> { // eslint-disable-line @typescript-eslint/no-explicit-any
-  const client = await createInstructionClient({});
-  try { return await fn(client); } finally { await client.close(); }
+  return fn(sharedClient);
 }
 
 // Partially enable foundational governance hash tests; advanced cases remain skipped
@@ -115,6 +134,6 @@ describe('Governance & Hash Integrity', () => { // Active foundational governanc
       // We allow 2 or 3 depending on whether delete modifies catalog hashing scheme.
       expect(hashes.length === 2 || hashes.length === 3).toBe(true);
     });
-  });
+  }, 40000);
 });
 

@@ -51,6 +51,34 @@ function extractAnnotations() {
   return perf;
 }
 
+// Classify snapshot files into logical regions and browsers
+function classifyRegions(files = []) {
+  const map = {};
+  for (const f of files) {
+    const base = path.basename(f); // region-browser-platform.png
+    const m = /(.*)-([^-]+)-([^.]+)\.png$/.exec(base);
+    if (!m) continue;
+    const region = m[1];
+    const browser = m[2];
+    if (!map[region]) map[region] = { count: 0, browsers: new Set() };
+    map[region].count++;
+    map[region].browsers.add(browser);
+  }
+  return map;
+}
+
+function summarizeGraphRegion(regions) {
+  const raw = regions['graph-mermaid-raw'];
+  const rendered = regions['graph-mermaid-rendered'];
+  if (!raw && !rendered) return 'Graph snapshots missing (raw & rendered).';
+  if (raw && !rendered) return 'Graph raw present; rendered diagram missing.';
+  if (!raw && rendered) return 'Graph rendered present; raw (topology) missing.';
+  // Both present
+  const rawBrowsers = [...raw.browsers].sort().join(',');
+  const rendBrowsers = [...rendered.browsers].sort().join(',');
+  return `Graph coverage OK (raw browsers: ${rawBrowsers}; rendered browsers: ${rendBrowsers}).`;
+}
+
 const snapshots = findSnapshotFiles();
 const perfAnn = extractAnnotations();
 
@@ -61,7 +89,8 @@ const report = {
   maxDiffPixels: process.env.DRIFT_MAX_DIFF_PIXELS,
   snapshotCount: snapshots.length,
   snapshots,
-  performance: perfAnn
+  performance: perfAnn,
+  regions: classifyRegions(snapshots)
 };
 
 fs.writeFileSync(JSON_OUT, JSON.stringify(report, null, 2));
@@ -72,6 +101,12 @@ const md = [
   `Generated: ${report.generatedAt}`,
   `Browsers: ${report.browsers}`,
   `Thresholds: ratio=${report.maxDiffPixelRatio} pixels=${report.maxDiffPixels}`,
+  '',
+  '## Region Coverage',
+  ...Object.entries(report.regions).map(([region, info]) => `- ${region}: snapshots=${info.count} browsers=${[...info.browsers].join(',')}`),
+  '',
+  '### Graph Snapshot Completeness',
+  summarizeGraphRegion(report.regions),
   '',
   '## Snapshots',
   ...report.snapshots.map(s => `- ${s}`),

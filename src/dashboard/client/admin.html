@@ -529,6 +529,7 @@
                 <div id="drill-svg-wrapper" style="background:#0f1624; border:1px solid #1f2a3a; border-radius:8px; padding:10px; min-height:160px; overflow:auto;">
                     <svg id="drill-svg" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Roboto,sans-serif" font-size="11" fill="#e3ebf5" width="800" height="400" style="background:#0f1624;"></svg>
                 </div>
+                <div id="drill-detail" style="margin-top:10px; display:none; background:#0f1624; border:1px solid #1f2a3a; border-radius:6px; padding:10px; font-size:12px; line-height:1.4; white-space:pre-wrap; overflow:auto; max-height:180px;"></div>
             </div>
         </div>
 
@@ -3152,6 +3153,11 @@
             const status = document.getElementById('drill-status');
             const svg = document.getElementById('drill-svg');
             if(!instSel || !svg) return;
+            // Clear detail panel each render
+            const detail = document.getElementById('drill-detail');
+            if(detail){ detail.style.display='none'; detail.textContent=''; }
+            // Persistent for click handlers
+            window.__lastDrillData = null;
             const ids = [...instSel.selectedOptions].map(o=> o.value);
             if(!ids.length){ if(status) status.textContent='select instructions first'; return; }
             if(status) status.textContent='fetching relations...';
@@ -3160,6 +3166,8 @@
                 const j = await r.json();
                 if(!j.success) throw new Error(j.error||'failed');
                 const instructions = j.nodes.filter(n=> n.nodeType==='instruction');
+                // Keep full structure for interactions
+                window.__lastDrillData = { raw:j, instructions };
                 const nodeWidth = 140; const nodeHeight = 32;
                 // Decide layout strategy
                 let usedElk = false;
@@ -3212,20 +3220,32 @@
                             edgeGroup.appendChild(path);
                         });
                         svg.appendChild(edgeGroup);
-                        // Nodes
+                        // Arrowhead marker definition (once)
+                        const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+                        const marker = document.createElementNS('http://www.w3.org/2000/svg','marker');
+                        marker.setAttribute('id','drill-arrow'); marker.setAttribute('markerWidth','10'); marker.setAttribute('markerHeight','6'); marker.setAttribute('refX','10'); marker.setAttribute('refY','3'); marker.setAttribute('orient','auto');
+                        const mpath = document.createElementNS('http://www.w3.org/2000/svg','path'); mpath.setAttribute('d','M0,0 L10,3 L0,6 Z'); mpath.setAttribute('fill','#5479ff'); marker.appendChild(mpath); defs.appendChild(marker); svg.appendChild(defs);
+                        edgeGroup.setAttribute('marker-end','url(#drill-arrow)');
+                        // Nodes (interactive)
                         instructions.forEach(inst=>{
                             const pos = positions.get(inst.id); if(!pos) return;
                             const g = document.createElementNS('http://www.w3.org/2000/svg','g');
                             g.setAttribute('transform', `translate(${pos.x},${pos.y})`);
+                            g.setAttribute('data-id', inst.id);
                             g.style.cursor='pointer';
-                            g.addEventListener('mouseenter', ()=> rect.setAttribute('stroke','#8fb2ff'));
-                            g.addEventListener('mouseleave', ()=> rect.setAttribute('stroke','#6b8cff'));
                             const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
                             rect.setAttribute('width', String(nodeWidth)); rect.setAttribute('height', String(nodeHeight)); rect.setAttribute('rx','6');
                             rect.setAttribute('fill','#3a4554'); rect.setAttribute('stroke','#6b8cff');
+                            rect.classList.add('drill-node-rect');
                             const label = document.createElementNS('http://www.w3.org/2000/svg','text');
                             label.setAttribute('x','8'); label.setAttribute('y','20'); label.setAttribute('fill','#e3ebf5'); label.textContent = inst.id;
+                            label.setAttribute('pointer-events','none');
+                            // Tooltip
+                            const title = document.createElementNS('http://www.w3.org/2000/svg','title'); title.textContent = inst.id; g.appendChild(title);
                             g.appendChild(rect); g.appendChild(label); svg.appendChild(g);
+                            g.addEventListener('mouseenter', ()=> rect.setAttribute('stroke','#8fb2ff'));
+                            g.addEventListener('mouseleave', ()=>{ if(!g.classList.contains('selected')) rect.setAttribute('stroke','#6b8cff'); });
+                            g.addEventListener('click', ()=> selectDrillNode(inst.id));
                         });
                         // Category labels (left side aligned to their average y)
                         categories.forEach(cat=>{
@@ -3258,13 +3278,22 @@
                     svg.setAttribute('width', String(totalWidth));
                     svg.setAttribute('height', String(totalHeight));
                     svg.innerHTML='';
+                    // Lane separators + labels
                     categoriesManual.forEach(cat=>{
-                        const y = vPad + (catIndex.get(cat)||0)*laneHeight + nodeHeight/2;
+                        const laneY = vPad + (catIndex.get(cat)||0)*laneHeight;
+                        const yMid = laneY + nodeHeight/2;
+                        const sep = document.createElementNS('http://www.w3.org/2000/svg','line');
+                        sep.setAttribute('x1','0'); sep.setAttribute('x2', String(totalWidth)); sep.setAttribute('y1', String(laneY + laneHeight - 8)); sep.setAttribute('y2', String(laneY + laneHeight - 8)); sep.setAttribute('stroke','#1f2e40'); sep.setAttribute('stroke-width','1'); sep.setAttribute('opacity','0.35'); svg.appendChild(sep);
                         const text = document.createElementNS('http://www.w3.org/2000/svg','text');
-                        text.setAttribute('x','10'); text.setAttribute('y', String(y)); text.setAttribute('fill','#9fb5cc'); text.setAttribute('font-weight','600'); text.textContent = cat; svg.appendChild(text);
+                        text.setAttribute('x','10'); text.setAttribute('y', String(yMid)); text.setAttribute('fill','#9fb5cc'); text.setAttribute('font-weight','600'); text.textContent = cat; svg.appendChild(text);
                     });
                     const edgeGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
                     edgeGroup.setAttribute('stroke','#5479ff'); edgeGroup.setAttribute('stroke-width','1.2'); edgeGroup.setAttribute('fill','none'); edgeGroup.setAttribute('opacity','0.9');
+                    const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+                    const marker = document.createElementNS('http://www.w3.org/2000/svg','marker');
+                    marker.setAttribute('id','drill-arrow'); marker.setAttribute('markerWidth','10'); marker.setAttribute('markerHeight','6'); marker.setAttribute('refX','10'); marker.setAttribute('refY','3'); marker.setAttribute('orient','auto');
+                    const mpath = document.createElementNS('http://www.w3.org/2000/svg','path'); mpath.setAttribute('d','M0,0 L10,3 L0,6 Z'); mpath.setAttribute('fill','#5479ff'); marker.appendChild(mpath); defs.appendChild(marker); svg.appendChild(defs);
+                    edgeGroup.setAttribute('marker-end','url(#drill-arrow)');
                     j.edges.filter(e=> positions.has(e.from) && positions.has(e.to)).forEach(e=>{
                         const a = positions.get(e.from); const b = positions.get(e.to); if(!a||!b) return;
                         const path = document.createElementNS('http://www.w3.org/2000/svg','path');
@@ -3275,13 +3304,42 @@
                     svg.appendChild(edgeGroup);
                     instructions.forEach(inst=>{
                         const pos = positions.get(inst.id); if(!pos) return;
-                        const g = document.createElementNS('http://www.w3.org/2000/svg','g'); g.setAttribute('transform', `translate(${pos.x},${pos.y})`);
-                        const rect = document.createElementNS('http://www.w3.org/2000/svg','rect'); rect.setAttribute('width', String(nodeWidth)); rect.setAttribute('height', String(nodeHeight)); rect.setAttribute('rx','6'); rect.setAttribute('fill','#3a4554'); rect.setAttribute('stroke','#6b8cff');
-                        const label = document.createElementNS('http://www.w3.org/2000/svg','text'); label.setAttribute('x','8'); label.setAttribute('y','20'); label.setAttribute('fill','#e3ebf5'); label.textContent = inst.id; g.appendChild(rect); g.appendChild(label); svg.appendChild(g);
+                        const g = document.createElementNS('http://www.w3.org/2000/svg','g'); g.setAttribute('transform', `translate(${pos.x},${pos.y})`); g.setAttribute('data-id', inst.id); g.style.cursor='pointer';
+                        const rect = document.createElementNS('http://www.w3.org/2000/svg','rect'); rect.setAttribute('width', String(nodeWidth)); rect.setAttribute('height', String(nodeHeight)); rect.setAttribute('rx','6'); rect.setAttribute('fill','#3a4554'); rect.setAttribute('stroke','#6b8cff'); rect.classList.add('drill-node-rect');
+                        const label = document.createElementNS('http://www.w3.org/2000/svg','text'); label.setAttribute('x','8'); label.setAttribute('y','20'); label.setAttribute('fill','#e3ebf5'); label.textContent = inst.id; label.setAttribute('pointer-events','none');
+                        const title = document.createElementNS('http://www.w3.org/2000/svg','title'); title.textContent = inst.id; g.appendChild(title);
+                        g.appendChild(rect); g.appendChild(label); svg.appendChild(g);
+                        g.addEventListener('mouseenter', ()=> rect.setAttribute('stroke','#8fb2ff'));
+                        g.addEventListener('mouseleave', ()=>{ if(!g.classList.contains('selected')) rect.setAttribute('stroke','#6b8cff'); });
+                        g.addEventListener('click', ()=> selectDrillNode(inst.id));
                     });
                     if(status) status.textContent = `rendered ${instructions.length} nodes across ${categoriesManual.length} lane(s)`;
                 }
             } catch(e){ if(status) status.textContent='render error: ' + (e?.message||e); }
+        }
+        function selectDrillNode(id){
+            const svg = document.getElementById('drill-svg'); if(!svg) return;
+            // Clear previous selection
+            [...svg.querySelectorAll('g.selected')].forEach(g=>{ g.classList.remove('selected'); const rect = g.querySelector('rect.drill-node-rect'); if(rect) rect.setAttribute('stroke','#6b8cff'); });
+            const target = svg.querySelector(`g[data-id="${CSS.escape(id)}"]`);
+            if(target){
+                target.classList.add('selected'); const rect = target.querySelector('rect.drill-node-rect'); if(rect) rect.setAttribute('stroke','#ffd36b');
+            }
+            const data = window.__lastDrillData; const detail = document.getElementById('drill-detail');
+            if(!data || !detail) return;
+            const inst = data.instructions.find(i=> i.id===id); if(!inst){ detail.style.display='none'; return; }
+            // Compute incident edges
+            const edges = data.raw.edges.filter(e=> e.from===id || e.to===id);
+            const incoming = edges.filter(e=> e.to===id).map(e=> e.from);
+            const outgoing = edges.filter(e=> e.from===id).map(e=> e.to);
+            const cats = inst.categories || [];
+            detail.style.display='block';
+            detail.innerHTML = `<div style="font-weight:600; color:#ffd36b;">📄 ${id}</div>` +
+                `<div style="margin-top:4px; font-size:11px; opacity:0.75;">Primary: ${(inst.primaryCategory||cats[0]||'–')}` +
+                (cats.length? ` | Categories: ${cats.join(', ')}`:'') + `</div>` +
+                `<div style="margin-top:6px;">Incoming (${incoming.length}): ${incoming.length? incoming.join(', '):'none'}</div>` +
+                `<div>Outgoing (${outgoing.length}): ${outgoing.length? outgoing.join(', '):'none'}</div>` +
+                `<div style="margin-top:6px; font-size:11px; opacity:0.65;">Click another node to update. (Future: open file / copy / filter.)</div>`;
         }
         // Auto-preload categories when graph section first opened (best-effort)
         document.addEventListener('visibilitychange', ()=>{

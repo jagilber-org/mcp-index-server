@@ -7,6 +7,7 @@
 
 import express, { Router, Request, Response } from 'express';
 import { buildGraph, GraphExportParams } from '../../services/handlers.graph';
+import { ensureLoaded } from '../../services/catalogContext';
 import { getWebSocketManager } from './WebSocketManager.js';
 import { getMetricsCollector, ToolMetrics } from './MetricsCollector.js';
 import { listRegisteredMethods, getHandler } from '../../server/registry.js';
@@ -1045,6 +1046,90 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
       res.status(500).json({ success:false, error: String(e.message||e) });
     }
   });
+
+  // ---------------------------------------------------------------------------
+  // Lightweight Drilldown Graph Endpoints (for dynamic layered SVG rendering)
+  // These endpoints intentionally return minimal JSON to avoid generating a
+  // large monolithic Mermaid diagram that can fail to render for complex
+  // catalogs. The client composes small SVG layers on demand.
+  // ---------------------------------------------------------------------------
+
+  /**
+   * GET /api/graph/categories
+   * Returns list of unique categories with instruction counts.
+   * Optional query: q=partial (case-insensitive contains filter)
+   */
+  router.get('/graph/categories', (_req: Request, res: Response) => {
+    try {
+      const st = ensureLoaded();
+      const map = new Map<string, number>();
+      for(const inst of st.list){
+        const cats = Array.isArray(inst.categories)? inst.categories : [];
+        for(const c of cats){ map.set(c, (map.get(c)||0)+1); }
+      }
+      const categories = [...map.entries()].sort((a,b)=> a[0].localeCompare(b[0])).map(([id,count])=> ({ id, count }));
+      res.json({ success:true, categories, total: categories.length, timestamp: Date.now() });
+    } catch(err){
+      const e = err as Error; res.status(500).json({ success:false, error: e.message||String(e) });
+    }
+  });
+
+  /**
+   * GET /api/graph/instructions?categories=a,b&limit=100
+   * Returns lightweight instruction list filtered by categories (OR semantics).
+   */
+  router.get('/graph/instructions', (req: Request, res: Response) => {
+    try {
+      const st = ensureLoaded();
+      const catsParam = (req.query.categories as string|undefined) || '';
+      const filterCats = catsParam? catsParam.split(',').filter(Boolean) : [];
+      const limitRaw = parseInt((req.query.limit as string)||'0',10);
+      const limit = Number.isFinite(limitRaw) && limitRaw>0? limitRaw : 500;
+      let instructions = st.list.slice().sort((a,b)=> a.id.localeCompare(b.id));
+      if(filterCats.length){
+        const set = new Set(filterCats.map(c=> c.toLowerCase()));
+        instructions = instructions.filter(i=> (i.categories||[]).some(c=> set.has(c.toLowerCase())));
+      }
+      instructions = instructions.slice(0, limit);
+      const flat = instructions.map(i=> ({ id: i.id, primaryCategory: i.primaryCategory || i.categories?.[0], categories: i.categories||[] }));
+      res.json({ success:true, instructions: flat, count: flat.length, filtered: !!filterCats.length, timestamp: Date.now() });
+    } catch(err){
+      const e = err as Error; res.status(500).json({ success:false, error: e.message||String(e) });
+    }
+  });
+
+  /**
+   * GET /api/graph/relations?instructions=id1,id2
+   * Returns minimal edges among the provided instruction ids plus category linkage.
+   * Includes category nodes actually referenced (for client labeling/placement).
+   */
+  router.get('/graph/relations', (req: Request, res: Response) => {
+    try {
+      const idsParam = (req.query.instructions as string|undefined)||'';
+      const ids = idsParam.split(',').filter(Boolean);
+      if(!ids.length){ return res.json({ success:true, nodes:[], edges:[], categories:[], timestamp: Date.now() }); }
+      // Reuse buildGraph enriched with category nodes + belongs edges then filter.
+      const graph = buildGraph({ enrich:true, includeCategoryNodes:true, includeUsage:false });
+      const idSet = new Set(ids);
+      const nodes = graph.nodes.filter(n=> idSet.has(n.id) || (n as any).nodeType==='category');
+      // Filter edges to those referencing at least one selected instruction (keep category relation context)
+      const edges = graph.edges.filter(e=> idSet.has(e.from) || idSet.has(e.to));
+      // Trim category nodes to only those actually linked
+      const categoryRefs = new Set<string>();
+      for(const e of edges){
+        if(e.type==='belongs' || e.type==='primary'){
+          if(e.to.startsWith('category:')) categoryRefs.add(e.to);
+          if(e.from.startsWith('category:')) categoryRefs.add(e.from);
+        }
+      }
+      const finalNodes = nodes.filter(n=> !('nodeType' in n && (n as any).nodeType==='category') || categoryRefs.has(n.id));
+      const categories = [...categoryRefs].map(id=> ({ id: id.replace(/^category:/,'' ) }));
+      res.json({ success:true, nodes: finalNodes, edges, categories, timestamp: Date.now() });
+    } catch(err){
+      const e = err as Error; res.status(500).json({ success:false, error: e.message||String(e) });
+    }
+  });
+  // ---------------------------------------------------------------------------
 
   /**
    * GET /api/admin/sessions/history - Historical admin sessions (bounded)

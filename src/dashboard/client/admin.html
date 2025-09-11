@@ -499,6 +499,34 @@
                 </div>
                 <div style="margin-top:8px; font-size:11px; opacity:0.7;">Copy source (top) into <a href="https://mermaid.live" target="_blank" rel="noopener" style="color:#3498db;">Mermaid Live Editor</a> for advanced tweaks. Layout 'elk' leverages experimental ELK engine; fallback auto-applies legacy init directive if frontmatter unsupported.</div>
             </div>
+            <!-- Experimental Drilldown Layered SVG Section -->
+            <div class="admin-card" style="margin-top:22px;">
+                <div class="card-header">
+                    <div class="card-icon">🧭</div>
+                    <div class="card-title">Layered Drilldown SVG (Experimental)</div>
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:10px; align-items:flex-end;">
+                    <label style="font-size:12px; display:flex; flex-direction:column; gap:4px;">Categories
+                        <select id="drill-categories" multiple size="6" style="min-width:220px; max-width:280px; background:#1f2a3a; color:#d0d7e2; border:1px solid #2d3b4f; border-radius:4px; padding:4px;"></select>
+                    </label>
+                    <label style="font-size:12px; display:flex; flex-direction:column; gap:4px;">Instructions
+                        <select id="drill-instructions" multiple size="6" style="min-width:260px; max-width:340px; background:#1f2a3a; color:#d0d7e2; border:1px solid #2d3b4f; border-radius:4px; padding:4px;"></select>
+                    </label>
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <button class="action-btn" style="padding:8px 12px;" onclick="refreshDrillCategories()">🗂️ Load Categories</button>
+                        <button class="action-btn" style="padding:8px 12px; background:linear-gradient(45deg,#3498db,#2980b9)" onclick="loadDrillInstructions()">📥 Load Instructions</button>
+                        <button class="action-btn" style="padding:8px 12px; background:linear-gradient(45deg,#27ae60,#1e8449)" onclick="renderDrillSvg()">🖼️ Render SVG</button>
+                        <button class="action-btn" style="padding:8px 12px; background:linear-gradient(45deg,#8e44ad,#5e337d)" onclick="clearDrillSvg()">🧹 Clear</button>
+                    </div>
+                    <div style="flex:1; min-width:300px; font-size:11px; line-height:1.4; opacity:0.75;">
+                        Build custom layered diagrams without generating a massive Mermaid graph. Select categories to filter instructions, then pick instructions to render. Rendering is incremental and complexity scales with what you choose instead of the entire catalog.
+                    </div>
+                </div>
+                <div id="drill-status" style="font-size:11px; opacity:0.7; margin-bottom:6px; font-family:monospace;">(idle)</div>
+                <div id="drill-svg-wrapper" style="background:#0f1624; border:1px solid #1f2a3a; border-radius:8px; padding:10px; min-height:160px; overflow:auto;">
+                    <svg id="drill-svg" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI,Roboto,sans-serif" font-size="11" fill="#e3ebf5" width="800" height="400" style="background:#0f1624;"></svg>
+                </div>
+            </div>
         </div>
 
         <!-- Configuration Section -->
@@ -3051,6 +3079,134 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
         }
+        // ---------------- Drilldown Layered SVG (Experimental) -----------------
+        async function refreshDrillCategories(){
+            const status = document.getElementById('drill-status');
+            const sel = document.getElementById('drill-categories');
+            if(status) status.textContent='loading categories...';
+            try {
+                const r = await fetch('/api/graph/categories');
+                const j = await r.json();
+                if(!j.success) throw new Error(j.error||'failed');
+                if(sel){
+                    sel.innerHTML='';
+                    j.categories.forEach(c=>{
+                        const o = document.createElement('option');
+                        o.value = c.id; o.textContent = `${c.id} (${c.count})`;
+                        sel.appendChild(o);
+                    });
+                }
+                if(status) status.textContent=`loaded ${j.total} categories`;
+            } catch(e){ if(status) status.textContent='category load error: '+ (e?.message||e); }
+        }
+        async function loadDrillInstructions(){
+            const catSel = document.getElementById('drill-categories');
+            const instSel = document.getElementById('drill-instructions');
+            const status = document.getElementById('drill-status');
+            if(!catSel || !instSel) return;
+            const cats = [...catSel.selectedOptions].map(o=> o.value).join(',');
+            if(status) status.textContent='loading instructions...';
+            try {
+                const r = await fetch('/api/graph/instructions?categories=' + encodeURIComponent(cats));
+                const j = await r.json();
+                if(!j.success) throw new Error(j.error||'failed');
+                instSel.innerHTML='';
+                j.instructions.forEach(i=>{
+                    const o = document.createElement('option');
+                    o.value = i.id; o.textContent = i.id; instSel.appendChild(o);
+                });
+                if(status) status.textContent=`loaded ${j.count} instructions`;
+            } catch(e){ if(status) status.textContent='instruction load error: '+ (e?.message||e); }
+        }
+        function clearDrillSvg(){
+            const svg = document.getElementById('drill-svg');
+            const status = document.getElementById('drill-status');
+            if(svg) svg.innerHTML='';
+            if(status) status.textContent='cleared';
+        }
+        async function renderDrillSvg(){
+            const instSel = document.getElementById('drill-instructions');
+            const status = document.getElementById('drill-status');
+            const svg = document.getElementById('drill-svg');
+            if(!instSel || !svg) return;
+            const ids = [...instSel.selectedOptions].map(o=> o.value);
+            if(!ids.length){ if(status) status.textContent='select instructions first'; return; }
+            if(status) status.textContent='fetching relations...';
+            try {
+                const r = await fetch('/api/graph/relations?instructions=' + encodeURIComponent(ids.join(',')));
+                const j = await r.json();
+                if(!j.success) throw new Error(j.error||'failed');
+                // Basic force-less layout: vertical stacking by category groups.
+                // Group instructions by first category; categories sorted.
+                const instructions = j.nodes.filter(n=> n.nodeType==='instruction');
+                const categories = [...new Set(instructions.map(i=> (i.categories&&i.categories[0])||'uncategorized'))].sort();
+                const catIndex = new Map(categories.map((c,i)=> [c,i]));
+                const laneHeight = 70; const marginLeft = 180; const nodeWidth = 140; const nodeHeight = 32; const hGap = 40; const vPad = 24;
+                // Compute column placement by occurrence order per category lane
+                const laneCounters = new Map(categories.map(c=> [c,0]));
+                const positions = new Map();
+                instructions.forEach(inst=>{
+                    const lane = (inst.categories&&inst.categories[0])||'uncategorized';
+                    const idx = laneCounters.get(lane) || 0;
+                    laneCounters.set(lane, idx+1);
+                    const x = marginLeft + idx*(nodeWidth + hGap);
+                    const y = vPad + (catIndex.get(lane)||0)*laneHeight;
+                    positions.set(inst.id, { x, y });
+                });
+                // Resize SVG
+                const totalWidth = Math.max(800, marginLeft + Math.max(1, ...[...laneCounters.values()])* (nodeWidth + hGap));
+                const totalHeight = vPad + categories.length * laneHeight;
+                svg.setAttribute('width', String(totalWidth));
+                svg.setAttribute('height', String(totalHeight));
+                // Clear
+                svg.innerHTML='';
+                // Category lane labels
+                categories.forEach(cat=>{
+                    const y = vPad + (catIndex.get(cat)||0)*laneHeight + nodeHeight/2;
+                    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+                    text.setAttribute('x','10');
+                    text.setAttribute('y', String(y));
+                    text.setAttribute('fill','#9fb5cc');
+                    text.setAttribute('font-weight','600');
+                    text.textContent = cat;
+                    svg.appendChild(text);
+                });
+                // Edges (belongs / primary simplified) - map edges referencing selected nodes only
+                const edgeGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+                edgeGroup.setAttribute('stroke','#5479ff'); edgeGroup.setAttribute('stroke-width','1.2'); edgeGroup.setAttribute('fill','none'); edgeGroup.setAttribute('opacity','0.9');
+                j.edges.filter(e=> positions.has(e.from) && positions.has(e.to)).forEach(e=>{
+                    const a = positions.get(e.from); const b = positions.get(e.to);
+                    if(!a || !b) return;
+                    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+                    const dx = (b.x - a.x)/2;
+                    const d = `M ${a.x + nodeWidth} ${a.y + nodeHeight/2} C ${a.x + nodeWidth + dx} ${a.y + nodeHeight/2}, ${b.x - dx} ${b.y + nodeHeight/2}, ${b.x} ${b.y + nodeHeight/2}`;
+                    path.setAttribute('d', d);
+                    path.setAttribute('stroke', e.type==='category'? '#8fb2ff':'#5479ff');
+                    edgeGroup.appendChild(path);
+                });
+                svg.appendChild(edgeGroup);
+                // Nodes
+                instructions.forEach(inst=>{
+                    const pos = positions.get(inst.id); if(!pos) return;
+                    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+                    g.setAttribute('transform', `translate(${pos.x},${pos.y})`);
+                    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+                    rect.setAttribute('width', String(nodeWidth)); rect.setAttribute('height', String(nodeHeight)); rect.setAttribute('rx','6');
+                    rect.setAttribute('fill','#3a4554'); rect.setAttribute('stroke','#6b8cff');
+                    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+                    label.setAttribute('x','8'); label.setAttribute('y','20'); label.setAttribute('fill','#e3ebf5'); label.textContent = inst.id;
+                    // Basic hyperlink placeholder (could integrate deeper linking later)
+                    g.appendChild(rect); g.appendChild(label);
+                    svg.appendChild(g);
+                });
+                if(status) status.textContent = `rendered ${instructions.length} nodes across ${categories.length} lane(s)`;
+            } catch(e){ if(status) status.textContent='render error: ' + (e?.message||e); }
+        }
+        // Auto-preload categories when graph section first opened (best-effort)
+        document.addEventListener('visibilitychange', ()=>{
+            if(!document.hidden){ const catSel = document.getElementById('drill-categories'); if(catSel && !catSel.options.length) refreshDrillCategories(); }
+        });
+        // ----------------------------------------------------------------------
     </script>
 </body>
 </html>

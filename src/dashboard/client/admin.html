@@ -3190,32 +3190,65 @@
                             edges: j.edges.filter(e=> e.type!=='category' && instructions.find(n=> n.id===e.from) && instructions.find(n=> n.id===e.to)).map((e,i)=> ({ id:'e'+i, sources:[e.from], targets:[e.to] }))
                         };
                         const laidOut = await elk.layout(elkGraph);
-                        // Compute bounding box
-                        let maxX=0,maxY=0,minX=Infinity,minY=Infinity;
-                        laidOut.children.forEach(c=>{ positions.set(c.id,{ x:c.x||0, y:c.y||0 }); maxX=Math.max(maxX,(c.x||0)+nodeWidth); maxY=Math.max(maxY,(c.y||0)+nodeHeight); minX=Math.min(minX,c.x||0); minY=Math.min(minY,c.y||0); });
-                        // Normalize to small margin
-                        const pad = 40;
-                        const dx = isFinite(minX)? (pad - minX):0; const dy = isFinite(minY)? (pad - minY):0;
-                        positions.forEach((v,k)=>{ v.x += dx; v.y += dy; });
-                        svg.setAttribute('width', String(Math.max(800, maxX - minX + pad*2)));
-                        svg.setAttribute('height', String(Math.max(160, maxY - minY + pad*2)));
+                        // Initial raw positions from ELK
+                        laidOut.children.forEach(c=>{ positions.set(c.id,{ x:c.x||0, y:c.y||0 }); });
                         usedElk = true;
+                        // Derive categories (primary only for now)
                         categories = [...new Set(instructions.map(i=> (i.categories&&i.categories[0])||'uncategorized'))];
-                        // Sort categories by average y position of their nodes for label placement
+                        // Order categories by average original y so visual order is stable / data-driven
                         categories.sort((a,b)=>{
                             const ay = avg(instructions.filter(i=> (i.categories&&i.categories[0])===a).map(i=> positions.get(i.id)?.y||0));
                             const by = avg(instructions.filter(i=> (i.categories&&i.categories[0])===b).map(i=> positions.get(i.id)?.y||0));
                             return ay - by;
                         });
-                        function avg(arr){ return arr.length? arr.reduce((s,v)=> s+v,0)/arr.length : 0; }
+                        // Snap categories into uniform horizontal lanes for readability
+                        const laneHeight = 70; // vertical space per category lane
+                        const padX = 50; const padY = 40; // outer padding
+                        const categoryLaneY = new Map();
+                        categories.forEach((c,i)=> categoryLaneY.set(c, padY + i*laneHeight));
+                        // Reposition nodes: keep original x, quantize y to lane + small intra-lane spread based on original y ordering
+                        const laneOffsets = new Map();
+                        instructions.forEach(inst=>{
+                            const cat = (inst.categories&&inst.categories[0])||'uncategorized';
+                            const baseY = categoryLaneY.get(cat) || padY;
+                            // preserve relative ordering inside lane deterministically by x then id
+                            const p = positions.get(inst.id); if(!p) return;
+                            p.y = baseY; // snap exactly (no intra-lane jitter)
+                            // shift x by padX
+                            p.x = p.x + padX;
+                        });
+                        // Compute new bounding box after snapping
+                        let maxX=0,maxY=0,minX=Infinity,minY=Infinity;
+                        positions.forEach(p=>{ maxX=Math.max(maxX,p.x+nodeWidth); maxY=Math.max(maxY,p.y+nodeHeight); minX=Math.min(minX,p.x); minY=Math.min(minY,p.y); });
+                        const totalWidth = Math.max(800, maxX - minX + padX*2);
+                        const totalHeight = Math.max(160, (categories.length? (padY + categories.length*laneHeight) : (maxY-minY+padY*2)));
+                        svg.setAttribute('width', String(totalWidth));
+                        svg.setAttribute('height', String(totalHeight));
+                        // Prepare drawing surface
                         svg.innerHTML='';
-                        // Draw edges from elkGraph edges using node centers
+                        // Lane backgrounds (subtle)
+                        categories.forEach(cat=>{
+                            const y = categoryLaneY.get(cat);
+                            if(y==null) return;
+                            const laneRect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+                            laneRect.setAttribute('x','0'); laneRect.setAttribute('y', String(y - 10));
+                            laneRect.setAttribute('width', String(totalWidth)); laneRect.setAttribute('height', String(laneHeight));
+                            laneRect.setAttribute('fill','#18222f'); laneRect.setAttribute('opacity','0.25');
+                            svg.appendChild(laneRect);
+                        });
+                        // Vertical guideline (optional future: grid) -- skipped for now
+                        // Continue with edges & nodes below
+                        // NOTE: status text updated later includes '(ELK snapped)'
+                        function avg(arr){ return arr.length? arr.reduce((s,v)=> s+v,0)/arr.length : 0; }
+                        // Draw edges from elkGraph edges using node centers (after snapping)
                         const edgeGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
                         edgeGroup.setAttribute('stroke','#5479ff'); edgeGroup.setAttribute('stroke-width','1.1'); edgeGroup.setAttribute('fill','none'); edgeGroup.setAttribute('opacity','0.9');
                         elkGraph.edges.forEach(e=>{
                             const a = positions.get(e.sources[0]); const b = positions.get(e.targets[0]); if(!a||!b) return;
                             const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-                            const d = `M ${a.x + nodeWidth} ${a.y + nodeHeight/2} C ${a.x + nodeWidth + 40} ${a.y + nodeHeight/2}, ${b.x - 40} ${b.y + nodeHeight/2}, ${b.x} ${b.y + nodeHeight/2}`;
+                            // Smooth horizontal cubic; control points scaled by horizontal distance
+                            const hdx = Math.max(40, (b.x - a.x)/3);
+                            const d = `M ${a.x + nodeWidth} ${a.y + nodeHeight/2} C ${a.x + nodeWidth + hdx} ${a.y + nodeHeight/2}, ${b.x - hdx} ${b.y + nodeHeight/2}, ${b.x} ${b.y + nodeHeight/2}`;
                             path.setAttribute('d', d);
                             edgeGroup.appendChild(path);
                         });
@@ -3247,15 +3280,13 @@
                             g.addEventListener('mouseleave', ()=>{ if(!g.classList.contains('selected')) rect.setAttribute('stroke','#6b8cff'); });
                             g.addEventListener('click', ()=> selectDrillNode(inst.id));
                         });
-                        // Category labels (left side aligned to their average y)
-                        categories.forEach(cat=>{
-                            const catNodes = instructions.filter(i=> (i.categories&&i.categories[0])===cat);
-                            if(!catNodes.length) return;
-                            const yAvg = catNodes.reduce((s,i)=> s + (positions.get(i.id)?.y||0),0)/catNodes.length + nodeHeight/2;
+                        // Category labels (lane centered)
+                        categories.forEach((cat,i)=>{
+                            const yCenter = (categoryLaneY.get(cat)||0) + (laneHeight/2) - 10; // adjust for padding applied earlier
                             const t = document.createElementNS('http://www.w3.org/2000/svg','text');
-                            t.setAttribute('x','10'); t.setAttribute('y', String(yAvg)); t.setAttribute('fill','#9fb5cc'); t.setAttribute('font-weight','600'); t.textContent = cat; svg.appendChild(t);
+                            t.setAttribute('x','10'); t.setAttribute('y', String(yCenter)); t.setAttribute('fill','#9fb5cc'); t.setAttribute('font-weight','600'); t.textContent = cat; svg.appendChild(t);
                         });
-                        if(status) status.textContent = `rendered ${instructions.length} nodes (ELK) - categories ${categories.length}`;
+                        if(status) status.textContent = `rendered ${instructions.length} nodes (ELK snapped) - categories ${categories.length}`;
                     } catch(elkErr){ if(status) status.textContent = 'ELK layout failed; using manual lanes (' + (elkErr?.message||elkErr) + ')'; }
                 }
                 if(!usedElk){

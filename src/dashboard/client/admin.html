@@ -1044,34 +1044,71 @@
                             const mod = await import(url);
                             setState('loaded', { url, esm:true, keys:Object.keys(mod||{}) });
                             // Export shape: default is an array of { name, loader, algorithm }
-                            let candidate = null;
+                            let descriptorArray = null;
+                            let mapCandidate = null;
                             if(mod){
-                                const arr = (mod.default && Array.isArray(mod.default)) ? mod.default : (Array.isArray(mod) ? mod : null);
-                                if(arr){
+                                descriptorArray = (mod.default && Array.isArray(mod.default)) ? mod.default : (Array.isArray(mod) ? mod : null);
+                                if(descriptorArray){
                                     const obj = {};
-                                    for(const item of arr){ if(item?.name && item?.loader){ obj[item.name] = item.loader; } }
-                                    if(Object.keys(obj).length) candidate = obj;
+                                    for(const item of descriptorArray){ if(item?.name && item?.loader){ obj[item.name] = item.loader; } }
+                                    if(Object.keys(obj).length) mapCandidate = obj;
                                 }
                             }
-                            if(!candidate){ setState('candidate-missing', { url, esm:true }); return tryNext(); }
+                            if(!descriptorArray && !mapCandidate){ setState('candidate-missing', { url, esm:true }); return tryNext(); }
                             let registered = false;
+                            let attemptedForms = [];
+                            function finalizeSuccess(layoutList, mode){
+                                window.mermaid.mcpElkRegistered = true;
+                                if(!elkDebug.state.startsWith('registered')) setState(mode, { layouts: layoutList, esm:true });
+                                try { window.mermaid.initialize({ startOnLoad:false, defaultRenderer:'elk', flowchart:{ layout:'elk' } }); } catch { /* ignore */ }
+                            }
                             if(window.mermaid?.registerLayoutLoaders){
-                                try { window.mermaid.registerLayoutLoaders(candidate); registered = true; } catch(e){ setState('register-error', { message:e?.message, esm:true }); }
+                                // Try array form first (likely expected in v11+)
+                                if(descriptorArray){
+                                    try {
+                                        attemptedForms.push('array');
+                                        window.mermaid.registerLayoutLoaders(descriptorArray);
+                                        registered = true;
+                                        finalizeSuccess(descriptorArray.map(d=>d.name).filter(Boolean),'registered-array');
+                                    } catch(eArray){
+                                        setState('register-array-error', { message:eArray?.message, esm:true });
+                                        // Fallback to object map if available
+                                        if(mapCandidate){
+                                            try {
+                                                attemptedForms.push('map');
+                                                window.mermaid.registerLayoutLoaders(mapCandidate);
+                                                registered = true;
+                                                finalizeSuccess(Object.keys(mapCandidate),'registered-map');
+                                            } catch(eMap){
+                                                setState('register-error', { message:eMap?.message, esm:true, attempted:attemptedForms });
+                                            }
+                                        }
+                                    }
+                                } else if(mapCandidate){
+                                    try {
+                                        attemptedForms.push('map');
+                                        window.mermaid.registerLayoutLoaders(mapCandidate);
+                                        registered = true;
+                                        finalizeSuccess(Object.keys(mapCandidate),'registered-map');
+                                    } catch(eOnly){
+                                        setState('register-error', { message:eOnly?.message, esm:true, attempted:attemptedForms });
+                                    }
+                                }
                             } else if(window.mermaid?.mermaidAPI){
                                 // Legacy fallback: inject into mermaidAPI.layoutLoaders if structure exists (v10 style)
                                 try {
                                     const api = window.mermaid.mermaidAPI;
-                                    api.layoutLoaders = { ...(api.layoutLoaders||{}), ...candidate };
+                                    const loadersToMerge = mapCandidate || (descriptorArray ? descriptorArray.reduce((acc,it)=>{ if(it?.name && it?.loader) acc[it.name]=it.loader; return acc; },{}) : {});
+                                    api.layoutLoaders = { ...(api.layoutLoaders||{}), ...loadersToMerge };
                                     registered = true;
-                                    setState('registered-legacy', { layouts:Object.keys(candidate), esm:true });
+                                    finalizeSuccess(Object.keys(loadersToMerge),'registered-legacy');
                                 } catch(e){ setState('register-error-legacy', { message:e?.message, esm:true }); }
                             } else {
                                 setState('register-missing', { message:'registerLayoutLoaders unavailable', esm:true });
                             }
-                            if(registered && Object.keys(candidate).length){
-                                window.mermaid.mcpElkRegistered = true;
-                                if(!elkDebug.state.startsWith('registered')) setState('registered', { layouts:Object.keys(candidate), esm:true });
-                                try { window.mermaid.initialize({ startOnLoad:false, defaultRenderer:'elk', flowchart:{ layout:'elk' } }); } catch { /* ignore */ }
+                            // If neither path succeeded but we had candidates, record failure clearly
+                            if(!registered && (descriptorArray || mapCandidate)){
+                                setState('register-failed', { forms: attemptedForms, haveArray: !!descriptorArray, haveMap: !!mapCandidate });
                             }
                         } catch(e){ setState('load-error', { url, message:e?.message, esm:true }); }
                         finally { clearTimeout(timeout); if(window.mermaid?.mcpElkRegistered) resolve(null); else tryNext(); }

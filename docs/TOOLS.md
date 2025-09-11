@@ -376,7 +376,7 @@ Exports a structural or enriched graph representation of the instruction catalog
 |-------|------|---------|-------------|
 | `includeEdgeTypes` | string[] (subset of `primary`,`category`,`belongs`) | all | Edge type allowlist (filter applied before truncation) |
 | `maxEdges` | number >=0 | unlimited | Truncate edge list (stable slice) |
-| `format` | `json` \| `dot` \| `mermaid` | `json` | Output format (DOT & Mermaid are undirected visualizations) |
+| `format` | `json` \| `dot` \| `mermaid` | `json` | Output format (DOT & Mermaid are undirected visualizations). Mermaid produces a `flowchart undirected` block suitable for docs or the admin dashboard renderer. |
 | `enrich` | boolean | false | Enable schema v2 enrichment (metadata + optional new edge type) |
 | `includeCategoryNodes` | boolean | false | Materialize explicit category nodes `category:<name>` (enriched only) |
 | `includeUsage` | boolean | false | Attach real `usageCount` (falls back to 0 if absent) |
@@ -388,7 +388,7 @@ Exports a structural or enriched graph representation of the instruction catalog
 | `GRAPH_INCLUDE_PRIMARY_EDGES=0` | Suppress `primary` edges entirely |
 | `GRAPH_LARGE_CATEGORY_CAP=<N>` | Skip generating pairwise category edges when member size > N (note added to `meta.notes`) |
 
-**JSON Schema (Input):**
+**JSON Schema (Input):** (excerpt – note `mermaid` now included)
 
 ```json
 {
@@ -397,7 +397,7 @@ Exports a structural or enriched graph representation of the instruction catalog
   "properties": {
     "includeEdgeTypes": {"type": "array", "items": {"type": "string", "enum": ["primary","category","belongs"]}, "maxItems": 3},
     "maxEdges": {"type": "number", "minimum": 0},
-    "format": {"type": "string", "enum": ["json","dot"]},
+  "format": {"type": "string", "enum": ["json","dot","mermaid"]},
     "enrich": {"type": "boolean"},
     "includeCategoryNodes": {"type": "boolean"},
     "includeUsage": {"type": "boolean"}
@@ -405,13 +405,13 @@ Exports a structural or enriched graph representation of the instruction catalog
 }
 ```
 
-**Zod Schema (Internal Validation):**
+**Zod Schema (Internal Validation):** (excerpt – `mermaid` added)
 
 ```ts
 const GraphExportParams = z.object({
   includeEdgeTypes: z.array(z.enum(['primary','category','belongs'])).max(3).optional(),
   maxEdges: z.number().int().min(0).optional(),
-  format: z.enum(['json','dot']).optional(),
+  format: z.enum(['json','dot','mermaid']).optional(),
   enrich: z.boolean().optional(),
   includeCategoryNodes: z.boolean().optional(),
   includeUsage: z.boolean().optional()
@@ -460,7 +460,7 @@ graph Instructions {
   "instr.beta" -- "category:ai" [label="belongs"];
 }
 ```
-**Mermaid Output Example:**
+**Mermaid Output Example:** (enriched with category node and edge labels)
 
 ```mermaid
 flowchart undirected
@@ -485,9 +485,49 @@ await client.callTool('graph/export', { enrich: true, includeCategoryNodes: true
 // Limit edges and request DOT format
 await client.callTool('graph/export', { maxEdges: 25, format: 'dot' });
 
-// Mermaid output
+// Mermaid output (schema v2 enriched)
 await client.callTool('graph/export', { enrich: true, includeCategoryNodes: true, format: 'mermaid' });
+
+// Minimal mermaid (schema v1) – omit enrichment & category nodes
+await client.callTool('graph/export', { format: 'mermaid' });
+
+// Filter to only primary edges in mermaid
+await client.callTool('graph/export', { format: 'mermaid', includeEdgeTypes: ['primary'] });
 ```
+
+**Admin Dashboard Integration:**
+
+When the dashboard is enabled (`MCP_DASHBOARD=1`), a live visualization panel uses the endpoint:
+
+`GET /api/graph/mermaid`
+
+Query parameters mirror tool params (subset):
+
+| Param | Type | Notes |
+|-------|------|-------|
+| `enrich` | boolean | Enables schema v2 enrichment |
+| `includeCategoryNodes` | boolean | Adds explicit `category:<name>` nodes |
+| `includeEdgeTypes` | csv string | e.g. `primary,belongs` |
+| `maxEdges` | number | Optional truncation |
+| `includeUsage` | boolean | Adds usageCount (when present) |
+
+Response shape:
+
+```jsonc
+{
+  "success": true,
+  "meta": { "graphSchemaVersion": 1|2, "nodeCount": n, "edgeCount": m, "truncated"?: true },
+  "mermaid": "flowchart undirected\n  ..."
+}
+```
+
+The dashboard provides:
+
+* Raw / rendered toggle (inline mermaid -> SVG)
+* Copy source button
+* Enrichment & category node toggles
+* Edge type multi-select + usage overlay toggle
+
 
 **Evolution & Compatibility:**
 
@@ -1267,6 +1307,7 @@ interface InstructionEntry {
 * **Contributing**: [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 **Contact Information:**
+
 * Technical Issues: Create GitHub issue with `[tools-api]` label
 * Security Concerns: Follow responsible disclosure in SECURITY.md
 * Feature Requests: Use RFC process documented in CONTRIBUTING.md
@@ -1274,6 +1315,7 @@ interface InstructionEntry {
 ---
 
 *This document represents the complete API specification for the MCP Index Server tools interface. All integrations must conform to these specifications to ensure compatibility and enterprise-grade reliability.*
+
 | batch | { operations:[ { action,... }, ... ] } | { results:[ ... ] } | Per-op isolation; continues after failures |
 
 Mutation actions (require MCP_ENABLE_MUTATION=1):

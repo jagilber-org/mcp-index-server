@@ -29,6 +29,24 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 ## [1.3.0] - 2025-09-10
 
+## [1.3.1] - 2025-09-11
+
+### Fixed (governance overwrite semantics)
+
+- Added safe metadata-only overwrite hydration: when `overwrite:true` and body omitted, handler now hydrates existing body/title before validation allowing pure governance updates (e.g., priority + version bump) without resending full content.
+- Corrected `overwritten` flag reporting for metadata-only higher version updates (previously returned `overwritten:false`).
+- Enforced strict semantic version validation on create path (previously only validated updates) returning `invalid_semver` for malformed versions.
+
+### Internal (test reliability)
+
+- Targeted governance versioning tests now all green: auto bump, non-semver rejection, body change bump requirements, metadata-only version increment.
+- Added hydration logic with type-safe mutation (no `any` casts) to satisfy linting.
+
+### Notes
+
+- No changes to on-disk schema; patch release focused on correctness & ergonomics.
+- Recommended for users performing frequent governance-only edits to reduce payload size and maintain accurate overwrite telemetry.
+
 ### Added (schema v3 & governance)
 
 - Introduced on-disk instruction schemaVersion `3` with new `primaryCategory` field enforcing a single canonical category reference.

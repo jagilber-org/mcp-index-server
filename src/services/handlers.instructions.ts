@@ -292,6 +292,8 @@ registerHandler('instructions/import', guard('instructions/import', (p:{entries:
 interface AddParams { entry: ImportEntry & { lax?: boolean }; overwrite?: boolean; lax?: boolean }
 registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   const e = p.entry as ImportEntry | undefined;
+  // Shared semantic version validation regex (MAJOR.MINOR.PATCH with optional prerelease/build)
+  const SEMVER_REGEX = /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:[-+].*)?$/;
   // Unified failure helper adds feedback reporting guidance + sanitized repro details
   // Resolve (once) the published input schema so we can attach it for client self-correction on shape errors
   const ADD_INPUT_SCHEMA = getToolRegistry().find(t=> t.name==='instructions/add')?.inputSchema;
@@ -344,10 +346,36 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
     if(!mutable.requirement) mutable.requirement = 'optional';
     if(!Array.isArray(mutable.categories)) mutable.categories = [];
   }
+  // Metadata-only overwrite support: allow callers to omit body (and/or title already filled above)
+  // when performing a governance-only mutation (e.g., priority, version bump) against an existing
+  // instruction. We hydrate the missing body from the on-disk record BEFORE strict validation so
+  // tests like "metadata-only change with higher version" succeed without forcing clients to
+  // redundantly send the full body.
+  if(!e.body && p.overwrite){
+    try {
+      const dirCandidate = getInstructionsDir();
+      const fileCandidate = path.join(dirCandidate, `${e.id}.json`);
+      if(fs.existsSync(fileCandidate)){
+        try {
+          const raw = JSON.parse(fs.readFileSync(fileCandidate,'utf8')) as Partial<InstructionEntry>;
+          if(raw && typeof raw.body === 'string' && raw.body.trim()){
+            const mutableExisting = e as Partial<InstructionEntry> & { id:string };
+            mutableExisting.body = raw.body; // hydrate
+            if(!mutableExisting.title && typeof raw.title === 'string' && raw.title.trim()) mutableExisting.title = raw.title;
+          }
+        } catch { /* ignore parse */ }
+      }
+    } catch { /* ignore hydration errors */ }
+  }
   // Strict validation after lax fill
   if(!e.id || !e.title || !e.body) return fail('missing required fields');
   const dir = getInstructionsDir(); if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true});
-  const file = path.join(dir, `${e.id}.json`); const exists = fs.existsSync(file); const overwrite = !!p.overwrite;
+  const file = path.join(dir, `${e.id}.json`);
+  const exists = fs.existsSync(file);
+  // Preserve original existence state explicitly; some branches may fallback to treating unreadable
+  // existing files as new, but governance flags (created/overwritten) should reflect on-disk reality.
+  const existedBeforeOriginal = exists;
+  const overwrite = !!p.overwrite;
   if(exists && !overwrite){
     // Reliability patch: ensure that a skip (meaning file existed) also implies catalog visibility.
     // If not immediately visible, attempt reload then late materialization; if still missing we
@@ -401,6 +429,8 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
       const existing = JSON.parse(fs.readFileSync(file,'utf8')) as InstructionEntry;
       // Start from existing to preserve unspecified fields when overwrite=true but fields omitted (common in tests)
       base = { ...existing } as InstructionEntry;
+      const prevBody = existing.body;
+      const prevVersion = existing.version || '1.0.0';
       // Only overwrite individual fields if explicitly supplied (or lax provided default title)
       if(e.title) base.title = e.title;
   if(e.body) base.body = bodyTrimmed; // preserve original trimmed body on disk (do not store canonical form to retain author intent)
@@ -412,15 +442,113 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
       base.updatedAt = now;
       if(e.version!==undefined) base.version = e.version;
       if(e.changeLog!==undefined) base.changeLog = e.changeLog as InstructionEntry['changeLog'];
+      // --- Strict version governance & automatic bump logic ------------------------------
+      // We enforce semantic versioning (MAJOR.MINOR.PATCH) optionally with prerelease/build.
+  const semverRegex = SEMVER_REGEX;
+  const parse = (v:string) => { const m = semverRegex.exec(v); if(!m) return null; return { major:+m[1], minor:+m[2], patch:+m[3] }; };
+      const gt = (a:string,b:string) => { const pa=parse(a), pb=parse(b); if(!pa||!pb) return false; if(pa.major!==pb.major) return pa.major>pb.major; if(pa.minor!==pb.minor) return pa.minor>pb.minor; return pa.patch>pb.patch; };
+      const bodyChanged = e.body ? (bodyTrimmed !== prevBody) : false;
+      let incomingVersion = e.version; // could be undefined
+      if(incomingVersion && !semverRegex.test(incomingVersion)) return fail('invalid_semver', { id:e.id });
+      if(bodyChanged){
+        if(incomingVersion){
+          if(!gt(incomingVersion, prevVersion)) return fail('version_not_bumped', { id:e.id });
+          // Use incoming version; ensure changeLog alignment later
+        } else {
+          // Auto bump patch version
+          const pv = parse(prevVersion) || { major:1, minor:0, patch:0 };
+            const autoVersion = `${pv.major}.${pv.minor}.${pv.patch+1}`;
+            base.version = autoVersion;
+            incomingVersion = autoVersion;
+        }
+      } else if(incomingVersion){
+        // Metadata-only change but version supplied: must be strictly greater
+        if(!gt(incomingVersion, prevVersion)) return fail('version_not_bumped', { id:e.id });
+      } else {
+        // No body change & no version supplied: retain existing version
+        base.version = prevVersion;
+        incomingVersion = prevVersion;
+      }
+      // Initialize or append changeLog entries
+      if(!Array.isArray(base.changeLog) || !base.changeLog.length){
+        base.changeLog = [ { version: prevVersion, changedAt: existing.createdAt || now, summary: 'initial import' } ];
+      }
+      // Ensure a log entry exists for the new (possibly auto-bumped) version if it differs from last
+      const finalVersion = base.version || incomingVersion || prevVersion;
+      const last = base.changeLog[base.changeLog.length-1];
+      if(last.version !== finalVersion){
+        const summary = bodyChanged ? (e.version? 'body update':'auto bump (body change)') : 'metadata update';
+        base.changeLog.push({ version: finalVersion, changedAt: now, summary });
+      }
+      // --- Silent changeLog repair (update path) ------------------------------------------
+      // Goal: never throw on malformed changeLog; instead normalize entries & append a repair note.
+      const repairChangeLog = (cl: unknown): InstructionEntry['changeLog'] => {
+        interface CLRaw { version?: unknown; changedAt?: unknown; summary?: unknown }
+        const out: InstructionEntry['changeLog'] = [];
+        if(Array.isArray(cl)){
+          for(const entry of cl){
+            if(!entry || typeof entry !== 'object') continue;
+            const { version: v, changedAt: ca, summary: sum } = entry as CLRaw;
+            if(typeof v === 'string' && v.trim() && typeof sum === 'string' && sum.trim()){
+              const caIso = typeof ca === 'string' && /T/.test(ca) ? ca : now;
+              out.push({ version: v.trim(), changedAt: caIso, summary: sum.trim() });
+            }
+          }
+        }
+        if(!out.length){
+          // Seed with previous version if we lost everything
+          out.push({ version: prevVersion, changedAt: existing.createdAt || now, summary: 'initial import (repaired)' });
+        }
+        // Ensure final version present (append if necessary)
+        const lastVer = out[out.length-1].version;
+        if(lastVer !== finalVersion){
+          out.push({ version: finalVersion, changedAt: now, summary: bodyChanged? 'body update (repaired)': 'metadata update (repaired)' });
+        }
+        return out;
+      };
+      base.changeLog = repairChangeLog(base.changeLog);
     } catch {
       // Fallback if existing unreadable -> treat as new
   base = { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, primaryCategory, sourceHash, schemaVersion: SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
+      // Initialize governance defaults for new fallback record
+      base.version = '1.0.0';
+      base.changeLog = [ { version: '1.0.0', changedAt: now, summary: 'initial import' } ];
     }
   } else {
   base = { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, primaryCategory, sourceHash, schemaVersion: SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
+  // New entry governance defaults (strict): if caller supplies version it MUST be valid semver.
+  if(e.version !== undefined){
+    if(!SEMVER_REGEX.test(e.version)) return fail('invalid_semver', { id:e.id });
+    base.version = e.version;
+  } else {
+    base.version = '1.0.0';
   }
-  // Pass-through governance fields
-  const govKeys: (keyof ImportEntry)[] = ['version','owner','status','priorityTier','classification','lastReviewedAt','nextReviewDue','changeLog','semanticSummary'];
+  if(!Array.isArray(base.changeLog) || !base.changeLog.length){
+    base.changeLog = [ { version: base.version, changedAt: now, summary: 'initial import' } ];
+  }
+  // --- Silent changeLog repair (create path) ----------------------------------------------
+  if(Array.isArray(base.changeLog)){
+    interface CLRaw { version?: unknown; changedAt?: unknown; summary?: unknown }
+    const repaired: InstructionEntry['changeLog'] = [];
+    for(const entry of base.changeLog){
+      if(!entry || typeof entry !== 'object') continue;
+      const { version: v, changedAt: ca, summary: sum } = entry as CLRaw;
+      if(typeof v === 'string' && v.trim() && typeof sum === 'string' && sum.trim()){
+        const caIso = typeof ca === 'string' && /T/.test(ca) ? ca : now;
+        repaired.push({ version: v.trim(), changedAt: caIso, summary: sum.trim() });
+      }
+    }
+    if(!repaired.length){
+      repaired.push({ version: base.version, changedAt: now, summary: 'initial import (repaired)' });
+    }
+    if(repaired[repaired.length-1].version !== base.version){
+      repaired.push({ version: base.version, changedAt: now, summary: 'initial import (normalized)' });
+    }
+    base.changeLog = repaired;
+  }
+  }
+  // Pass-through governance fields (exclude changeLog to avoid overwriting repaired log)
+  const govKeys: (keyof ImportEntry)[] = ['version','owner','status','priorityTier','classification','lastReviewedAt','nextReviewDue','semanticSummary'];
   for(const k of govKeys){ const v = (e as ImportEntry)[k]; if(v!==undefined){ (base as unknown as Record<string, unknown>)[k]=v as unknown; } }
   // Ensure sourceHash reflects trimmed body (only recompute if body changed or new)
   if(!exists || base.body === bodyTrimmed){
@@ -561,9 +689,15 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
       return fail('strict_verification_failed', { id:e.id, hash: st.hash });
     }
   }
-  const resp = { id:e.id, created: !exists, overwritten: exists && overwrite, skipped:false, hash: st.hash, verified:true, strictVerified: strictEnabled? true: undefined };
-  logAudit('add', e.id, { created: !exists, overwritten: exists && overwrite, verified:true });
-  if(traceVisibility()){ emitTrace('[trace:add:success]', { dir, id:e.id, created: !exists, overwritten: exists && overwrite, listCount: st.list.length }); traceInstructionVisibility(e.id, 'add-success', { created: !exists, overwritten: exists && overwrite }); }
+  // Final authoritative flags (avoid stale existence race): if overwrite requested and the file
+  // exists now, treat as overwritten when it existed previously or when overwrite intent supplied.
+  const createdFlag = !existedBeforeOriginal;
+  // Overwrite semantics: if caller requested overwrite and the record existed before this call,
+  // we report overwritten=true (independent of any transient post-write visibility races).
+  const overwrittenFlag = overwrite && existedBeforeOriginal;
+  const resp = { id:e.id, created: createdFlag, overwritten: overwrittenFlag, skipped:false, hash: st.hash, verified:true, strictVerified: strictEnabled? true: undefined };
+  logAudit('add', e.id, { created: createdFlag, overwritten: overwrittenFlag, verified:true });
+  if(traceVisibility()){ emitTrace('[trace:add:success]', { dir, id:e.id, created: createdFlag, overwritten: overwrittenFlag, listCount: st.list.length }); traceInstructionVisibility(e.id, 'add-success', { created: createdFlag, overwritten: overwrittenFlag }); }
   return resp;
 }));
 

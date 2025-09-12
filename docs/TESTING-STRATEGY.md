@@ -77,6 +77,29 @@ Developer Workflow:
 
 Bypass (emergency only): set `BYPASS_PRE_PUSH=1` env var before `git push` (future enhancement) – not yet implemented; intentional friction maintained.
 
+### Environment-Gated RED Reproductions (Since 1.3.1)
+
+Some RED tests are high-friction (intermittent timeouts, deep diagnostics) and can block routine pushes while an upstream anomaly is under investigation. To preserve signal without halting velocity, we gate specific reproductions behind explicit environment variables. Current gating:
+
+| Test File | Env Var | Default Behavior | Rationale |
+|-----------|---------|------------------|-----------|
+| `importDuplicateAddVisibility.red.spec.ts` | `MCP_RUN_RED_IMPORT_DUP_ADD` | Skipped unless set truthy (`1/true/yes/on`) | Intermittent visibility timing anomaly; heavy diagnostics & 25s timeout |
+
+Guidelines:
+
+1. Gating is temporary; remove once anomaly either (a) fixed and converted to deterministic GREEN test, or (b) re-characterized as obsolete.
+2. Gated tests MUST clearly document activation variable at file top.
+3. Do NOT gate a RED test preemptively—only after repeated blocking incidents (>=2 aborted pushes) and documented in commit message.
+4. CI full runs (scheduled or manual deep diagnostics) should set the env var to avoid silent regression masking.
+
+Activation Example:
+
+```powershell
+$env:MCP_RUN_RED_IMPORT_DUP_ADD='1'; npm run test:slow -- src/tests/importDuplicateAddVisibility.red.spec.ts
+```
+
+This strategy keeps RED artifacts present (preventing knowledge drift) while eliminating routine friction for unrelated doc or governance changes.
+
 ## Property-Based Guidance
 
 - Keep each property < 100 runs for CI speed; add nightly job (future) with >1000 runs.  

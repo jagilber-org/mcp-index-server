@@ -84,6 +84,7 @@ Some RED tests are high-friction (intermittent timeouts, deep diagnostics) and c
 | Test File | Env Var | Default Behavior | Rationale |
 |-----------|---------|------------------|-----------|
 | `importDuplicateAddVisibility.red.spec.ts` | `MCP_RUN_RED_IMPORT_DUP_ADD` | Skipped unless set truthy (`1/true/yes/on`) | Intermittent visibility timing anomaly; heavy diagnostics & 25s timeout |
+| `instructionsAddSkipVisibility.spec.ts` | `MCP_RUN_SKIP_VISIBILITY_RELIABILITY` | Skipped unless set truthy (`1/true/yes/on`) | Occasional 35s timeout in production-dir handshake path; under active investigation |
 
 Guidelines:
 

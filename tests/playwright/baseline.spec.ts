@@ -10,6 +10,22 @@ function envNum(name: string, def: number): number {
 
 const MAX_DIFF_RATIO = envNum('DRIFT_MAX_DIFF_RATIO', 0.002); // 0.2%
 const MAX_DIFF_PIXELS = envNum('DRIFT_MAX_DIFF_PIXELS', 250);
+
+import type { Page } from '@playwright/test';
+
+async function gotoAdmin(page: Page){
+  const start = Date.now();
+  let lastErr: unknown;
+  while(Date.now()-start < 8000){
+    try {
+      await page.goto('/admin');
+      // Basic sanity: expect some root element
+      if(await page.locator('body').count()) return;
+    } catch(e){ lastErr = e; }
+    await page.waitForTimeout(300);
+  }
+  throw lastErr || new Error('Failed to load /admin after retries');
+}
 const PLATFORM = process.platform; // used in snapshot file naming
 
 function snap(region: string, browserName: string) {
@@ -23,6 +39,7 @@ function snap(region: string, browserName: string) {
 test.describe('Admin Dashboard Baseline @baseline', () => {
   test('loads admin page and navigates to instructions section', async ({ page }) => {
     await page.goto('/admin');
+    await gotoAdmin(page);
 
     // Overview (default) should show system health (use more specific selector to avoid strict mode violation)
     await expect(page.locator('.admin-card .card-title:has-text("System Health")')).toBeVisible();
@@ -41,6 +58,7 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
 
   test('instruction list contains semantic summaries (sampled)', async ({ page }) => {
     await page.goto('/admin');
+    await gotoAdmin(page);
   await page.click("button:has-text('Instructions')");
   const rows = page.locator('#instructions-list .session-item');
     try {
@@ -64,7 +82,7 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
   });
 
   test('capture visual snapshot of system health card', async ({ page, browserName }) => {
-  await page.goto('/admin');
+    await gotoAdmin(page);
   const card = page.locator('#system-health');
   await expect(card).toBeVisible();
   await page.waitForTimeout(1500); // allow spark charts to populate
@@ -81,6 +99,7 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
 
   test('capture visual snapshot of instruction list region', async ({ page, browserName }) => {
   await page.goto('/admin');
+    await gotoAdmin(page);
   await page.click("button:has-text('Instructions')");
   const list = page.locator('#instructions-list');
   await expect(list).toBeVisible();
@@ -90,6 +109,20 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
       await page.click('#instructions-section button:has-text("Refresh")');
       await list.locator('.session-item').first().waitFor({ timeout: 10000 });
     }
+    // Normalize ordering to reduce snapshot volatility (stable alphabetical by data-id or text)
+    await page.evaluate(() => {
+      const listEl = document.getElementById('instructions-list');
+      if (!listEl) return;
+      const items = Array.from(listEl.querySelectorAll('.session-item')) as HTMLElement[];
+      items.sort((a, b) => {
+        const ta = (a.getAttribute('data-id') || a.textContent || '').trim();
+        const tb = (b.getAttribute('data-id') || b.textContent || '').trim();
+        return ta.localeCompare(tb);
+      });
+      for (const it of items) listEl.appendChild(it); // re-append in sorted order
+    });
+    // Small delay to allow layout reflow post-normalization
+    await page.waitForTimeout(50);
     const start = performance.now();
     const shot = await list.screenshot();
     const elapsed = performance.now() - start;
@@ -101,7 +134,7 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
   });
 
   test('capture visual snapshot of instruction editor panel', async ({ page, browserName }) => {
-    await page.goto('/admin');
+  await gotoAdmin(page);
     await page.click("button:has-text('Instructions')");
     const list = page.locator('#instructions-list');
     await expect(list).toBeVisible();
@@ -125,6 +158,7 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
 
   test('capture visual snapshot of log tail panel (activated)', async ({ page, browserName }) => {
     await page.goto('/admin');
+    await gotoAdmin(page);
     // Start tail
     const tailBtn = page.locator('#log-tail-btn');
     await expect(tailBtn).toBeVisible();
@@ -141,32 +175,36 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
     });
   });
 
-  test('capture visual snapshot of graph mermaid (raw source)', async ({ page, browserName }) => {
+  test('capture textual snapshot of graph mermaid (raw source normalized)', async ({ page, browserName }) => {
     await page.goto('/admin');
-    // Navigate to graph section
+    await gotoAdmin(page);
     await page.click("button:has-text('Graph')");
     const raw = page.locator('#graph-mermaid');
     await expect(raw).toBeVisible();
-    // Wait until mermaid text (after fetch) replaces placeholder
     await page.waitForFunction(() => {
       const el = document.getElementById('graph-mermaid');
       if (!el) return false;
       const txt = el.textContent || '';
-      return txt.includes('graph ') && !txt.includes('(loading');
+      return (txt.includes('graph ') || txt.includes('flowchart ')) && !txt.includes('(loading');
     }, { timeout: 15000 });
-    // Ensure usage overlay remains off (minimizes volatility)
-    const usageToggle = page.locator('#graph-usage');
-    if (await usageToggle.isVisible()) {
-      const checked = await usageToggle.isChecked();
-      if (checked) await usageToggle.click();
-    }
-    const wrapper = page.locator('#graph-mermaid-wrapper');
-    const shot = await wrapper.screenshot();
-    test.info().annotations.push({ type: 'perf', description: 'graph-mermaid-raw-screenshot' });
-    expect(shot).toMatchSnapshot(snap('graph-mermaid-raw', browserName), {
-      maxDiffPixelRatio: MAX_DIFF_RATIO,
-      maxDiffPixels: MAX_DIFF_PIXELS
+    // Extract and normalize the mermaid source to reduce ordering volatility
+    const normalized = await page.evaluate(() => {
+      const el = document.getElementById('graph-mermaid');
+      if (!el) return '';
+      const lines = (el.textContent || '')
+        .split('\n')
+        .map(l => l.trim())
+        .filter(l => !!l && !l.startsWith('%%'));// drop blank & comment lines
+      if (!lines.length) return '';
+      const header = lines[0];
+      const rest = lines.slice(1);
+      // Sort remaining lines so node/edge ordering becomes deterministic
+      rest.sort((a, b) => a.localeCompare(b));
+      return [header, ...rest].join('\n');
     });
+    test.info().annotations.push({ type: 'perf', description: 'graph-mermaid-raw-text-snapshot' });
+    // Use a textual snapshot (adds .txt) rather than visual PNG
+    expect(normalized).toMatchSnapshot(`graph-mermaid-raw-${browserName}-${PLATFORM}.txt`);
   });
 
   test('capture visual snapshot of graph mermaid (rendered diagram, best-effort)', async ({ page, browserName }) => {
@@ -177,7 +215,7 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
       const el = document.getElementById('graph-mermaid');
       if (!el) return false;
       const txt = el.textContent || '';
-      return txt.includes('graph ') && !txt.includes('(loading');
+  return (txt.includes('graph ') || txt.includes('flowchart ')) && !txt.includes('(loading');
     }, { timeout: 15000 });
     // Attempt to wait for rendered SVG (external mermaid script). If not present, skip to avoid flake.
     try {

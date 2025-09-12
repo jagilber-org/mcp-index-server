@@ -20,6 +20,17 @@ This index distinguishes between **active** project documentation and **archived
 | Versioning | `VERSIONING.md` | Release semantics & governance |
 | Migration | `MIGRATION.md` | Upgrade & breaking change handling |
 | PowerShell MCP | `POWERSHELL-MCP-GUIDE.md` | PowerShell server integration guide |
+| Agent Graph Strategy | `AGENT-GRAPH-INSTRUCTIONS.md` | Operational playbook for agents leveraging graph/export |
+
+### Recent Governance Updates (1.3.1)
+
+The 1.3.1 release introduced:
+
+* Strict SemVer enforcement on instruction create (rejects non MAJOR.MINOR.PATCH).
+* Metadata-only overwrite hydration (omit body/title with `overwrite: true`).
+* Silent ChangeLog repair & overwrite flag accuracy improvements.
+
+See `VERSIONING.md` (section: Governance Enhancements 1.3.1) and `TOOLS.md` (instructions/add Governance Notes) for authoritative details.
 
 ## Archived (Historical / Temporal)
 

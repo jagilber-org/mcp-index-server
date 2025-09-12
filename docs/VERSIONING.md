@@ -76,3 +76,51 @@ Example skeleton:
 ## Initial State
 
 Current version: 0.1.0 (experimental phase; core read-only tools + prompt governance).
+
+## Governance Version Semantics (Post 1.1.0 Enhancements)
+
+### Strict SemVer Enforcement (Create & Update)
+
+All supplied `version` values on `instructions/add` (create or overwrite) must match full SemVer `MAJOR.MINOR.PATCH` optionally with pre-release/build metadata. Malformed versions (e.g., `1.0`, `2`, `1.0.0.1`) are rejected with `error: invalid_semver`.
+
+Rationale:
+
+- Prevents non-linear version lineage that complicates deterministic governance hashing.
+- Ensures changeLog entries map 1:1 to a valid semantic version.
+
+### Auto Patch Bump Logic
+
+If body content changes and caller omits a `version`, server auto-increments PATCH. ChangeLog entry summary includes an auto-bump note. Body change with same or lower explicit version -> `version_not_bumped` error.
+
+### Metadata-Only Overwrite Hydration
+
+When `overwrite:true` and the caller omits `body` (and optionally `title`), server hydrates existing body/title from the on-disk record **before** validation. This allows governance-only edits (priority, owner, classification, version bump) without resending full content.
+
+Implications:
+
+- Returned flags: `overwritten:true` when existing record modified even if body unchanged.
+- Clients should still supply an explicit higher version for metadata-only semantic changes; omission defers bump logic to body change rules.
+
+### ChangeLog Repair & Normalization
+
+Malformed `changeLog` arrays (wrong shapes, missing fields) are silently repaired:
+
+- Invalid entries dropped.
+- Missing initial entry synthesized from current version.
+- Ensures final element corresponds to authoritative version.
+
+### Overwrite Flag Accuracy
+
+`overwritten:true` now reflects any successful overwrite intent where the record existed pre-call (including metadata-only version increments). This improves mutation telemetry reliability for governance analytics.
+
+### Client Guidance Summary
+
+| Scenario | Provide Version? | Provide Body? | Outcome |
+|----------|------------------|---------------|---------|
+| First create | Optional (default 1.0.0) | Required | Created 1.0.0 |
+| Body edit, no version | Omitted | New body | Auto bump PATCH |
+| Body edit, same version | Same | New body | Error: version_not_bumped |
+| Metadata-only change, higher version | Higher | Omitted | Hydrate + overwrite |
+| Metadata-only change, no version | Omitted | Omitted | No version bump; governance fields updated (no ChangeLog append) |
+| Malformed version | Invalid | Any | Error: invalid_semver |
+

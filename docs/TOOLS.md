@@ -20,6 +20,10 @@ The MCP Index Server provides a comprehensive instruction catalog management sys
 * **Structured Tracing (1.1.2+)**: Rotated JSONL trace lines `[trace:category[:sub]] { json }` for reliable test parsing
 * **Schema-Aided Add Failures**: Inline JSON Schema returned on early structural `instructions/add` errors (1.1.0+)
 
+### 🤖 Agent Graph Strategy Reference
+
+For guidance on how autonomous / LLM agents should efficiently consume `graph/export` (progressive edge expansion, caching, scoring heuristics, and anomaly reporting), see `AGENT-GRAPH-INSTRUCTIONS.md`. That document defines the sparse→expand retrieval model recommended for large catalogs and should be followed instead of ad‑hoc full graph pulls.
+
 ## 🏗️ Architecture Overview
 
 ```mermaid
@@ -649,6 +653,35 @@ The dashboard provides:
 }
 ```
 
+##### Governance Notes (since 1.3.1)
+
+The `instructions/add` pathway now enforces additional server-side governance:
+
+* Strict SemVer validation on create: `entry.version` MUST match `/^\d+\.\d+\.\d+$/` (no pre-release/build metadata). Non‑conforming versions are rejected with `error: "invalid_semver"`.
+* Auto Patch Bump (implicit): If the body text changes for an existing ID (detected via content hash comparison) and `overwrite` is true, the server will internally bump patch when caller supplies the previous version unchanged. Client may still proactively increment; duplicate increments are normalized by repair logic.
+* Metadata-Only Overwrite Hydration: When `overwrite: true` and the caller intentionally omits `entry.body` (or `title`), the server hydrates the persisted values prior to validation so that minor metadata adjustments (e.g., tags) do not require resending full content. Omit ONLY when you intend no body/title change.
+* Overwritten Flag Accuracy: `overwritten: true` only when an existing persisted instruction was actually replaced (metadata-only hydrations without a semantic version change still set `overwritten: true` because the on-disk record is rewritten after governance normalization).
+* ChangeLog Repair: A malformed or missing ChangeLog entry for the ID is silently synthesized/normalized to keep governance hashes stable.
+
+Developer Tips:
+
+```text
+DO  supply a full SemVer (e.g., 2.4.7) on first creation.
+DO  omit body ONLY with overwrite for metadata-only edits; server reuses stored body.
+DO  increment patch when body changes if you want explicit client control.
+DON'T send non-standard versions like 1.0, v1.0.0, 1.0.0-beta, or 2024.09.01.
+DON'T rely on side effects of hydration to alter content; body changes require explicit body field.
+```
+
+Error Codes Added:
+
+| code            | Condition                                    | Guidance                                          |
+|-----------------|-----------------------------------------------|---------------------------------------------------|
+| invalid_semver  | Version not MAJOR.MINOR.PATCH                 | Supply strict SemVer or let server assign default |
+| hydration_mismatch | Body omitted but internal read failed     | Retry or resubmit with explicit body              |
+
+These behaviors are fully described in `VERSIONING.md` (Governance Enhancements 1.3.1) and surfaced here for quick implementer reference.
+
 #### `import` - Bulk Import
 
 **Purpose**: Import multiple instructions efficiently  
@@ -750,11 +783,12 @@ The dashboard provides:
 }
 ```
 
-### � **Common Troubleshooting**
+### 🛠️ **Common Troubleshooting**
 
 #### Parameter Format Issues
 
-\n#### Incorrect: Sending instruction object directly\n
+#### Incorrect: Sending instruction object directly
+
 ```typescript
 // This FAILS with "missing entry" error
 {
@@ -769,7 +803,8 @@ The dashboard provides:
 }
 ```
 
-\n#### Correct: Wrap in entry field\n
+#### Correct: Wrap in entry field
+
 ```typescript
 {
   "method": "tools/call",
@@ -788,7 +823,8 @@ The dashboard provides:
 
 #### Backup Restoration
 
-\n#### Incorrect: Sending backup file directly\n
+#### Incorrect: Sending backup file directly
+
 ```typescript
 // Backup files often contain arrays or metadata
 {
@@ -801,7 +837,8 @@ The dashboard provides:
 }
 ```
 
-\n#### Correct: Extract individual objects\n
+#### Correct: Extract individual objects
+
 ```typescript
 // Use instructions/import for multiple entries
 {

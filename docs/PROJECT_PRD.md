@@ -1,6 +1,6 @@
 # MCP Index Server Project Requirements Document (PRD)
 
-**Version:** 1.1.0 (Addendum drafted for 1.2.0 ratification)  
+**Version:** 1.3.1 (Former 1.1.0 baseline + consolidated ratified addendum)  
 **Status:** Binding - Authoritative Project Governance Document  
 **Owner:** Project Maintainers & Governance Working Group  
 **Last Updated:** August 28, 2025  
@@ -21,6 +21,24 @@ The **MCP Index Server** is an enterprise-grade, deterministic instruction index
 - **Developer Productivity**: Standards-based MCP integration with comprehensive tooling and APIs
 
 This document serves as the **single source of truth** for all project processes, technical decisions, and quality standards. All development activities must adhere to the specifications outlined herein.
+
+---
+
+## 🔄 Since 1.1.0 → 1.3.1 Delta (Ratified Enhancements)
+
+| Area | Change | Rationale | Status |
+|------|--------|-----------|--------|
+| Instruction Schema | Upgraded to schema v3 with `primaryCategory` invariant | Deterministic category referencing + forward compatibility | Ratified |
+| Governance Versioning | Strict semver validation on create & update (`invalid_semver` rejection) | Prevent malformed version lineage | Ratified |
+| Governance Mutations | Metadata-only overwrite hydration (omit body on overwrite) | Ergonomic governance edits; reduces payload redundancy | Ratified |
+| ChangeLog Integrity | Silent normalization & repair on malformed changeLog arrays | Stability; avoids editor-induced failures | Ratified |
+| Overwrite Telemetry | Correct `overwritten:true` for metadata-only higher-version updates | Accurate mutation metrics | Ratified |
+| Feedback System | Full 6-tool feedback lifecycle (submit/list/get/update/stats/health) | Operational quality & triage | Ratified |
+| Visibility Reliability | Late materialization + skip path self-healing | Eliminates race-induced notFound after skip | Ratified |
+| Hash Governance | Justified hash drift (schema normalization) via `governance/ALLOW_HASH_CHANGE` | Transparent integrity exceptions | Ratified |
+| Baseline Protection | Guard scripts & sentinel markers enforcing minimal invariant set | Prevent uncontrolled test sprawl | Ratified |
+
+All above changes are binding; earlier “pending ratification” addendum items have been merged into the authoritative baseline. Future provisional items will again appear under an Addendum section.
 
 ---
 

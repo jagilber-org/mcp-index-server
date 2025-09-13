@@ -351,17 +351,23 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   // instruction. We hydrate the missing body from the on-disk record BEFORE strict validation so
   // tests like "metadata-only change with higher version" succeed without forcing clients to
   // redundantly send the full body.
-  if(!e.body && p.overwrite){
+  // When overwrite is requested, hydrate any missing primary fields (body and/or title)
+  // from the on-disk record so metadata-only updates can omit them.
+  if(p.overwrite && (!e.body || !e.title)){
     try {
       const dirCandidate = getInstructionsDir();
       const fileCandidate = path.join(dirCandidate, `${e.id}.json`);
       if(fs.existsSync(fileCandidate)){
         try {
           const raw = JSON.parse(fs.readFileSync(fileCandidate,'utf8')) as Partial<InstructionEntry>;
-          if(raw && typeof raw.body === 'string' && raw.body.trim()){
+          if(raw){
             const mutableExisting = e as Partial<InstructionEntry> & { id:string };
-            mutableExisting.body = raw.body; // hydrate
-            if(!mutableExisting.title && typeof raw.title === 'string' && raw.title.trim()) mutableExisting.title = raw.title;
+            if(!mutableExisting.body && typeof raw.body === 'string' && raw.body.trim()){
+              mutableExisting.body = raw.body; // hydrate body when missing
+            }
+            if(!mutableExisting.title && typeof raw.title === 'string' && raw.title.trim()){
+              mutableExisting.title = raw.title; // hydrate title when missing
+            }
           }
         } catch { /* ignore parse */ }
       }
@@ -563,6 +569,28 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   if(record.owner==='unowned'){ const auto=resolveOwner(record.id); if(auto){ record.owner=auto; record.updatedAt=new Date().toISOString(); } }
   try { atomicWriteJson(file, record); } catch(err){ return fail((err as Error).message||'write-failed', { id:e.id }); }
   touchCatalogVersion(); invalidate(); let st=ensureLoaded();
+  // Optional stabilization delay: certain filesystems / antivirus layers on Windows or network mounts
+  // may surface a just-written file in directory listings a few milliseconds after synchronous write.
+  // Rather than performing multiple reload cycles aggressively, allow a small, configurable pause
+  // BEFORE we perform the atomic visibility check. This reduces reliance on late materialization
+  // while keeping the fast path effectively unchanged on systems without lag.
+  // Controlled by MCP_ADD_STABILIZE_MS (integer ms). If not set, defaults to 0 (no delay). Values
+  // above 50ms are clamped to 50 to avoid accidental large stalls. If set to a negative value, it
+  // is treated as 0. This is a pragmatic mitigation, not a full transactional FS abstraction.
+  try {
+    const stabilizeEnv = process.env.MCP_ADD_STABILIZE_MS;
+    if(stabilizeEnv){
+      let ms = parseInt(stabilizeEnv,10);
+      if(!Number.isFinite(ms) || ms<0) ms = 0;
+      if(ms>50) ms = 50; // clamp
+      if(ms>0){
+        const startSpin = Date.now();
+        // Busy-wait spin is acceptable here because add frequency is low and duration tiny (<50ms)
+        // and avoids introducing async complexity into the synchronous tool handler contract.
+        while(Date.now() - startSpin < ms) { /* spin for stabilization */ }
+      }
+    }
+  } catch { /* ignore stabilization errors */ }
   if(traceVisibility()){ emitTrace('[trace:add:post-write]', { dir, id:e.id, exists: fs.existsSync(file), catalogHas: st.byId.has(e.id), listCount: st.list.length }); traceInstructionVisibility(e.id, 'add-post-write'); }
   // Atomic read-back verification: ensure newly written/overwritten entry is *immediately* visible
   // in the in-memory catalog before declaring success. If not, attempt one forced reload; if still
@@ -691,7 +719,12 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   }
   // Final authoritative flags (avoid stale existence race): if overwrite requested and the file
   // exists now, treat as overwritten when it existed previously or when overwrite intent supplied.
-  const createdFlag = !existedBeforeOriginal;
+  
+  // REQUIREMENT: Only return created:true if instruction can be found by ID after disk write
+  // Check that instruction is actually findable by ID in the current catalog state
+  const foundById = st.byId.has(e.id);
+  const createdFlag = !existedBeforeOriginal && foundById;
+  
   // Overwrite semantics: if caller requested overwrite and the record existed before this call,
   // we report overwritten=true (independent of any transient post-write visibility races).
   const overwrittenFlag = overwrite && existedBeforeOriginal;

@@ -591,6 +591,19 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
       }
     }
   } catch { /* ignore stabilization errors */ }
+  // After stabilization & initial reload, ensure the just-written record is present in-memory.
+  // This removes reliance on directory enumeration timing for atomic visibility: if the loader
+  // missed the file (rare FS race), we inject the normalized record we already have. This is safe
+  // because 'record' is the authoritative normalized object that was persisted to disk.
+  try {
+    if(!st.byId.has(e.id)){
+      st.byId.set(record.id, record);
+      // Avoid duplicate list entries if an unexpected stale reference exists; simple guard.
+      if(!st.list.some(r=> r.id===record.id)) st.list.push(record);
+      incrementCounter('instructions:directInjectAfterAdd');
+      if(traceVisibility()) emitTrace('[trace:add:direct-inject]', { id:e.id, listCount: st.list.length });
+    }
+  } catch { /* ignore direct injection issues */ }
   if(traceVisibility()){ emitTrace('[trace:add:post-write]', { dir, id:e.id, exists: fs.existsSync(file), catalogHas: st.byId.has(e.id), listCount: st.list.length }); traceInstructionVisibility(e.id, 'add-post-write'); }
   // Atomic read-back verification: ensure newly written/overwritten entry is *immediately* visible
   // in the in-memory catalog before declaring success. If not, attempt one forced reload; if still

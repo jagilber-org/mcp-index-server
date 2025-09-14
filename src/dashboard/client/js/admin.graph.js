@@ -110,10 +110,31 @@
           setGraphMetaProgress('render-run','a='+attemptId);
           try {
             const renderSource = (manualOverride && persistedOverride) ? persistedOverride : ensured;
+            // Lightweight syntax validation before attempting full render (helps surface parse errors explicitly)
+            try {
+              if(window.mermaid.parse){
+                await window.mermaid.parse(renderSource);
+              }
+            } catch(parseErr){
+              setGraphMetaProgress('parse-fail','a='+attemptId);
+              const hostParse = document.getElementById('graph-mermaid-svg');
+              if(hostParse){
+                hostParse.innerHTML = `<div style="color:#ff6b6b; font-family:monospace; white-space:pre;">Mermaid parse error:: ${(parseErr && parseErr.message) || parseErr}</div>`;
+              }
+              // Abort further render attempt
+              throw parseErr;
+            }
             let svg; ({ svg } = await window.mermaid.render('graphMermaidSvg', renderSource));
             const host = document.getElementById('graph-mermaid-svg'); if(host) host.innerHTML = svg;
             setGraphMetaProgress('render-ok','a='+attemptId);
-          } catch(rendErr){ setGraphMetaProgress('render-fail','a='+attemptId); }
+          } catch(rendErr){
+            setGraphMetaProgress('render-fail','a='+attemptId);
+            const hostErr = document.getElementById('graph-mermaid-svg');
+            if(hostErr && !/Mermaid parse error/.test(hostErr.textContent||'')){
+              hostErr.innerHTML = `<div style="color:#ff6b6b; font-family:monospace; white-space:pre;">Mermaid render failed:: ${(rendErr && rendErr.message) || rendErr}</div>`;
+            }
+            try { console.warn('[mermaid render failed]', rendErr); } catch{}
+          }
         }
       } catch(procErr){ setGraphMetaProgress('process-error','a='+attemptId); }
     } else {

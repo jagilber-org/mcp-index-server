@@ -7,6 +7,9 @@ This index distinguishes between **active** project documentation and **archived
 | Category | File | Purpose |
 |----------|------|---------|
 | Requirements | `PROJECT_PRD.md` | Canonical product & governance requirements |
+| Constitution | `../memory/constitution.md` | Instruction & knowledge governance (spec-kit adapted) |
+| Specs (P1) | `../specs/000-bootstrapper.md` | Bootstrapper minimal dual-layer model |
+| Specs (P1) | `../specs/001-knowledge-index-lifecycle.md` | Lifecycle expansion & promotion gates |
 | API / Tools | `TOOLS.md` | MCP tool catalog & schemas |
 | Configuration | `MCP-CONFIGURATION.md` | MCP multi-environment setup patterns |
 | Server Runtime | `CONFIGURATION.md` | Flags, env vars, CLI switches |
@@ -31,6 +34,17 @@ This index distinguishes between **active** project documentation and **archived
 * Opportunistic in-memory materialization (race-free add visibility).
 * PRD 1.4.2 ratified manifest & materialization requirements (see `PROJECT_PRD.md`).
 * Continued governance stability (SemVer create enforcement & overwrite hydration retained from 1.3.1).
+
+### Specification Model (Spec-Kit Integration)
+
+Two sequential P1 specifications are now active under the adapted spec-kit model:
+
+1. `000-bootstrapper.md` (category: bootstrapper) – establishes minimal shared contract & dual-layer (P0 local vs shared index) separation.
+2. `001-knowledge-index-lifecycle.md` (category: lifecycle) – formalizes capture → validation → scoring → selective promotion workflow.
+
+Categories (see constitution for full list): bootstrapper, lifecycle, governance, integration, diagnostics, performance.
+
+Authoring template: `../templates/spec-template.md`.
 
 ## Archived (Historical / Temporal)
 

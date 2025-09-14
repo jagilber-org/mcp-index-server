@@ -7963,20 +7963,230 @@
       "responseTime": 3.929574509803923,
       "throughput": 39,
       "errorRate": 0
+    },
+    {
+      "timestamp": 1757863621313,
+      "responseTime": 0,
+      "throughput": 0,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757863681371,
+      "responseTime": 8.07601935483871,
+      "throughput": 31,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757863741372,
+      "responseTime": 5.323350980392158,
+      "throughput": 20,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757863801382,
+      "responseTime": 4.195160869565218,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757863861393,
+      "responseTime": 3.5166885057471253,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757863921398,
+      "responseTime": 3.0304533333333312,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757863981408,
+      "responseTime": 2.688084552845526,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864032200,
+      "responseTime": 0,
+      "throughput": 0,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864092250,
+      "responseTime": 5.665545,
+      "throughput": 20,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864152254,
+      "responseTime": 3.373323076923078,
+      "throughput": 32,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864212266,
+      "responseTime": 2.616019480519482,
+      "throughput": 25,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864272275,
+      "responseTime": 2.362698947368423,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864332281,
+      "responseTime": 2.0971026315789483,
+      "throughput": 19,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864392284,
+      "responseTime": 1.9721560606060613,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864452295,
+      "responseTime": 1.8168700000000013,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864512300,
+      "responseTime": 1.695464285714286,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864572300,
+      "responseTime": 1.5964010752688176,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864632300,
+      "responseTime": 1.5149019607843137,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864692300,
+      "responseTime": 1.45075990990991,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864752310,
+      "responseTime": 1.3917104166666667,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864812311,
+      "responseTime": 1.3418279069767445,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864872326,
+      "responseTime": 1.2992572463768122,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864932340,
+      "responseTime": 1.26170612244898,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757864992350,
+      "responseTime": 1.2276932692307696,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757865052355,
+      "responseTime": 1.1989518181818186,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757865112369,
+      "responseTime": 1.1718893678160922,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757865172370,
+      "responseTime": 1.1485262295081973,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757865232380,
+      "responseTime": 1.1279119791666672,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757865292390,
+      "responseTime": 1.1091029850746272,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757865352391,
+      "responseTime": 1.1100702380952387,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757865412400,
+      "responseTime": 1.0931525114155258,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757865472410,
+      "responseTime": 1.0782557017543868,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757865532411,
+      "responseTime": 1.0671997890295366,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757865592412,
+      "responseTime": 1.0542691056910576,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757865652420,
+      "responseTime": 1.0443450980392166,
+      "throughput": 18,
+      "errorRate": 0
     }
   ],
   "stats": {
-    "count": 1326,
+    "count": 1361,
     "capacity": 1440,
-    "totalAdded": 1326,
+    "totalAdded": 1361,
     "totalDropped": 0,
     "resizeCount": 0,
-    "memoryUsage": 253968,
-    "lastModified": "2025-09-14T15:25:34.068Z",
-    "utilization": 92.08333333333333
+    "memoryUsage": 260570,
+    "lastModified": "2025-09-14T16:00:52.447Z",
+    "utilization": 94.51388888888889
   },
   "version": "1.0.0",
-  "createdAt": "2025-09-14T15:25:34.069Z",
-  "lastSaved": "2025-09-14T15:25:34.069Z",
-  "checksum": "94d006173ba71dca17dfde3ed1f20615fa815503240c1f4566fe2975febe56cd"
+  "createdAt": "2025-09-14T16:00:52.448Z",
+  "lastSaved": "2025-09-14T16:00:52.448Z",
+  "checksum": "6e99730bdca2b6907186f9dc1fcbcb8458ab85687993e735e6c5175f8357dec8"
 }

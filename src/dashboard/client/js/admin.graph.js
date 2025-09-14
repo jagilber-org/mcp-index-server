@@ -61,6 +61,10 @@
     const metaEl = document.getElementById('graph-meta');
     const metaEl2 = document.getElementById('graph-meta2');
     if(target) target.textContent = '(loading graph...)';
+    const manualOverride = window.__GRAPH_MANUAL_OVERRIDE === true;
+    const persistedOverride = !manualOverride ? null : (function(){
+      try { return localStorage.getItem('mcp.graph.manualOverrideSource') || null; } catch { return null; }
+    })();
   setGraphMetaProgress('params', 'en='+(enrich?1:0)+';cat='+(categories?1:0)+';use='+(usage?1:0)+';selCats='+selectedCategories.length+';selIds='+selectedIds.length);
     let fetchOk = false; let data = null; let lastErr = null;
     try {
@@ -90,8 +94,15 @@
         if(effectiveLayout === 'elk') configLines.push('  layout: elk');
         if(configLines.length) mermaidSource = `---\nconfig:\n${configLines.join('\n')}\n---\n` + mermaidSource;
         const ensured = ensureMermaidDirective(mermaidSource);
-        window.graphOriginalSource = ensured;
-        if(target) target.textContent = ensured;
+        if(manualOverride && persistedOverride){
+          // Honor manual override: don't rebuild frontmatter or replace content
+          setGraphMetaProgress('manual-override');
+          window.graphOriginalSource = persistedOverride;
+          if(target) target.textContent = persistedOverride;
+        } else {
+          window.graphOriginalSource = ensured;
+          if(target) target.textContent = ensured;
+        }
         if(metaEl) metaEl.textContent = `schema=v${data.meta?.graphSchemaVersion} nodes=${data.meta?.nodeCount} edges=${data.meta?.edgeCount}`;
         setGraphMetaProgress('render-prep','a='+attemptId);
         try { await ensureMermaid(); } catch{}
@@ -99,7 +110,8 @@
         if(window.mermaid){
           setGraphMetaProgress('render-run','a='+attemptId);
           try {
-            let svg; ({ svg } = await window.mermaid.render('graphMermaidSvg', ensured));
+            const renderSource = (manualOverride && persistedOverride) ? persistedOverride : ensured;
+            let svg; ({ svg } = await window.mermaid.render('graphMermaidSvg', renderSource));
             const host = document.getElementById('graph-mermaid-svg'); if(host) host.innerHTML = svg;
             setGraphMetaProgress('render-ok','a='+attemptId);
           } catch(rendErr){ setGraphMetaProgress('render-fail','a='+attemptId); }
@@ -187,6 +199,7 @@
     graphEditing = true;
     target.setAttribute('contenteditable','true');
     target.style.outline = '1px solid #3498db';
+  window.__GRAPH_MANUAL_OVERRIDE = true; // enable manual override mode
     setGraphMetaProgress('edit-start');
     try { document.getElementById('graph-edit-btn').style.display='none'; } catch{}
     try { document.getElementById('graph-apply-btn').style.display='inline-block'; } catch{}
@@ -199,7 +212,8 @@
     const code = target.textContent || '';
     // Promote edited content to new baseline so subsequent cancel doesn't revert it
     window.graphOriginalSource = code;
-    persistGraphSource(code);
+  persistGraphSource(code);
+  try { localStorage.setItem('mcp.graph.manualOverrideSource', code); } catch{}
     setGraphMetaProgress('apply');
     (async ()=>{
       try {
@@ -216,7 +230,7 @@
   }
 
   function cancelGraphEdit(keep){
-    if(!graphEditing) return;
+  if(!graphEditing) return;
     const target = document.getElementById('graph-mermaid');
     if(target){
       target.removeAttribute('contenteditable');
@@ -226,7 +240,7 @@
         target.textContent = window.graphOriginalSource;
       }
     }
-    graphEditing=false;
+  graphEditing=false;
     setGraphMetaProgress('edit-end');
     try { document.getElementById('graph-edit-btn').style.display='inline-block'; } catch{}
     try { document.getElementById('graph-apply-btn').style.display='none'; } catch{}
@@ -320,8 +334,11 @@
     let updated = hasFrontmatter ? current.replace(/^---[\s\S]*?---\n?/, themeBlock) : themeBlock + current;
     pre.textContent = updated;
     persistGraphSource(updated);
+    try { localStorage.setItem('mcp.graph.manualOverrideSource', updated); window.__GRAPH_MANUAL_OVERRIDE = true; } catch{}
     setGraphMetaProgress('theme-inserted');
     if(!graphEditing) toggleGraphEdit();
+    // Immediately re-render with new theme block
+    (async ()=>{ try { await ensureMermaid(); const { svg } = await window.mermaid.render('graphMermaidSvg', updated); const legacyHost = document.getElementById('graph-mermaid-svg'); if(legacyHost) legacyHost.innerHTML = svg; setGraphMetaProgress('theme-rendered'); } catch(e){ setGraphMetaProgress('theme-render-fail'); } })();
   }
   window.insertGraphTheme = insertGraphTheme;
 
@@ -336,6 +353,11 @@
         target.textContent = persisted;
       }
     }
+    // Restore manual override source if present
+    try {
+      const mo = localStorage.getItem('mcp.graph.manualOverrideSource');
+      if(mo){ window.__GRAPH_MANUAL_OVERRIDE = true; const t = document.getElementById('graph-mermaid'); if(t) t.textContent = mo; }
+    } catch{}
   });
 
   let __graphInitialAutoReload = false;

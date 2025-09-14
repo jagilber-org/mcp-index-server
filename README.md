@@ -36,6 +36,9 @@ This project provides comprehensive enterprise-grade documentation:
 * **[📈 Instruction Usage Plan (INSTRUCTION-USAGE-PLAN.md)](./docs/INSTRUCTION-USAGE-PLAN.md)** – Active instrumentation & grooming enablement plan
 * **[📚 Documentation Index (DOCS-INDEX.md)](./docs/DOCS-INDEX.md)** – Active vs archived documentation map
 * **[🛡️ Runtime Diagnostics (RUNTIME-DIAGNOSTICS.md)](./docs/RUNTIME-DIAGNOSTICS.md)** – Global error, rejection, warning & signal handling
+* **[📜 Constitution (memory/constitution.md)](./memory/constitution.md)** – Governance & categories (spec-kit adapted)
+* **[🧩 Bootstrap Spec 000 (specs/000-bootstrapper.md)](./specs/000-bootstrapper.md)** – Minimal dual-layer model (P1 bootstrapper)
+* **[🔁 Lifecycle Spec 001 (specs/001-knowledge-index-lifecycle.md)](./specs/001-knowledge-index-lifecycle.md)** – Local-first capture → promotion workflow (P1 lifecycle)
 
 ### Recent Additions (1.4.x)
 
@@ -43,6 +46,7 @@ This project provides comprehensive enterprise-grade documentation:
 * **Opportunistic Materialization** – Race-free in-memory add visibility (formerly "late materialization").
 * **Feedback System** – (Previously formalized) 6 MCP tools with audit & security logging.
 * **PRD 1.4.2** – Added manifest & materialization requirements; deprecated PRD stubs removed.
+* **Spec-Kit Integration** – Added constitution + sequential P1 specs (bootstrapper, lifecycle) with authoring template.
 
 ### 🔐 Baseline Restoration & Guardrails
 

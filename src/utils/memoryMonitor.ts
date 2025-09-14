@@ -89,9 +89,27 @@ class MemoryMonitor {
       const rssGrowth = snapshot.rss - previous.rss;
       
       if (Math.abs(heapGrowth) > 1024 * 1024 || Math.abs(rssGrowth) > 5 * 1024 * 1024) {
-        console.log(`[MemoryMonitor] Memory change detected:
-  Heap: ${this.formatBytes(heapGrowth)} (${this.formatBytes(snapshot.heapUsed)} total)
-  RSS: ${this.formatBytes(rssGrowth)} (${this.formatBytes(snapshot.rss)} total)`);
+        const payload = {
+          ts: snapshot.timestamp,
+          level: 'info',
+          src: 'memory',
+          event: 'delta',
+          heapDelta: heapGrowth,
+          heapUsed: snapshot.heapUsed,
+          rssDelta: rssGrowth,
+          rss: snapshot.rss,
+          pid: snapshot.pid
+        };
+        // Structured logging piggybacks on existing debug/verbose flags to avoid introducing new env flags.
+        const wantStructured = process.env.MCP_DEBUG === '1' || process.env.MCP_VERBOSE_LOGGING === '1';
+        try {
+          if (wantStructured) {
+            console.log(JSON.stringify(payload));
+          } else {
+            // Fallback concise plain text (single line) to preserve readability and avoid multi-line noise.
+            console.log(`[MemoryMonitor] heapDelta=${this.formatBytes(heapGrowth)} heapUsed=${this.formatBytes(snapshot.heapUsed)} rssDelta=${this.formatBytes(rssGrowth)} rss=${this.formatBytes(snapshot.rss)}`);
+          }
+        } catch {/* swallow */}
       }
     }
 

@@ -10,2856 +10,6 @@
   },
   "entries": [
     {
-      "timestamp": 1757766913498,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3139
-    },
-    {
-      "timestamp": 1757766916648,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3051
-    },
-    {
-      "timestamp": 1757766916723,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3171
-    },
-    {
-      "timestamp": 1757766918460,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2746
-    },
-    {
-      "timestamp": 1757766918480,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3
-    },
-    {
-      "timestamp": 1757766918500,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3032
-    },
-    {
-      "timestamp": 1757766923460,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2536
-    },
-    {
-      "timestamp": 1757766923480,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3002
-    },
-    {
-      "timestamp": 1757766923500,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2659
-    },
-    {
-      "timestamp": 1757766926648,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4107
-    },
-    {
-      "timestamp": 1757766926710,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2934
-    },
-    {
-      "timestamp": 1757766927163,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.4291
-    },
-    {
-      "timestamp": 1757766927184,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3958
-    },
-    {
-      "timestamp": 1757766927206,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3287
-    },
-    {
-      "timestamp": 1757766927230,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.8476
-    },
-    {
-      "timestamp": 1757766927250,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2478
-    },
-    {
-      "timestamp": 1757766927271,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 21.2246
-    },
-    {
-      "timestamp": 1757766927294,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.4658
-    },
-    {
-      "timestamp": 1757766927316,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2931
-    },
-    {
-      "timestamp": 1757766927338,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5278
-    },
-    {
-      "timestamp": 1757766936652,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3435
-    },
-    {
-      "timestamp": 1757766936712,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3001
-    },
-    {
-      "timestamp": 1757766936734,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.3312
-    },
-    {
-      "timestamp": 1757766936755,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2738
-    },
-    {
-      "timestamp": 1757766936776,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 20.986
-    },
-    {
-      "timestamp": 1757766936800,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.807
-    },
-    {
-      "timestamp": 1757766936820,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2931
-    },
-    {
-      "timestamp": 1757766936841,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3305
-    },
-    {
-      "timestamp": 1757766942153,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.8344
-    },
-    {
-      "timestamp": 1757766942508,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 331.3532
-    },
-    {
-      "timestamp": 1757766942531,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.4661
-    },
-    {
-      "timestamp": 1757766943022,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 470.8491
-    },
-    {
-      "timestamp": 1757766943047,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.1955
-    },
-    {
-      "timestamp": 1757766943546,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 472.7345
-    },
-    {
-      "timestamp": 1757766943882,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 310.4176
-    },
-    {
-      "timestamp": 1757766944280,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 376.7848
-    },
-    {
-      "timestamp": 1757766944303,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3829
-    },
-    {
-      "timestamp": 1757766944754,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 418.8198
-    },
-    {
-      "timestamp": 1757766944781,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4037
-    },
-    {
-      "timestamp": 1757766944808,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3921
-    },
-    {
-      "timestamp": 1757766944837,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3049
-    },
-    {
-      "timestamp": 1757766944859,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2698
-    },
-    {
-      "timestamp": 1757766944882,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2615
-    },
-    {
-      "timestamp": 1757766944906,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.456
-    },
-    {
-      "timestamp": 1757766944931,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4162
-    },
-    {
-      "timestamp": 1757766944958,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2764
-    },
-    {
-      "timestamp": 1757766946644,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3158
-    },
-    {
-      "timestamp": 1757766946715,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3068
-    },
-    {
-      "timestamp": 1757766948994,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5063
-    },
-    {
-      "timestamp": 1757766949014,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2973
-    },
-    {
-      "timestamp": 1757766949033,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3163
-    },
-    {
-      "timestamp": 1757766953990,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2563
-    },
-    {
-      "timestamp": 1757766954011,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3356
-    },
-    {
-      "timestamp": 1757766954031,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3359
-    },
-    {
-      "timestamp": 1757766956649,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3533
-    },
-    {
-      "timestamp": 1757766956720,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3192
-    },
-    {
-      "timestamp": 1757766959001,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2791
-    },
-    {
-      "timestamp": 1757766959021,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3476
-    },
-    {
-      "timestamp": 1757766959041,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2729
-    },
-    {
-      "timestamp": 1757766963992,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2712
-    },
-    {
-      "timestamp": 1757766964009,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3118
-    },
-    {
-      "timestamp": 1757766964029,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3374
-    },
-    {
-      "timestamp": 1757766966653,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.6012
-    },
-    {
-      "timestamp": 1757766966718,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4276
-    },
-    {
-      "timestamp": 1757766966739,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3619
-    },
-    {
-      "timestamp": 1757766966761,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.7346
-    },
-    {
-      "timestamp": 1757766966795,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5764
-    },
-    {
-      "timestamp": 1757766968997,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.273
-    },
-    {
-      "timestamp": 1757766969017,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.335
-    },
-    {
-      "timestamp": 1757766969040,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3244
-    },
-    {
-      "timestamp": 1757766973992,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3018
-    },
-    {
-      "timestamp": 1757766974012,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.307
-    },
-    {
-      "timestamp": 1757766974032,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3062
-    },
-    {
-      "timestamp": 1757766976649,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3629
-    },
-    {
-      "timestamp": 1757766976717,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3357
-    },
-    {
-      "timestamp": 1757766978993,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2677
-    },
-    {
-      "timestamp": 1757766979012,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3183
-    },
-    {
-      "timestamp": 1757766979032,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3131
-    },
-    {
-      "timestamp": 1757766983990,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2771
-    },
-    {
-      "timestamp": 1757766984009,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3197
-    },
-    {
-      "timestamp": 1757766984029,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4278
-    },
-    {
-      "timestamp": 1757766986659,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.46
-    },
-    {
-      "timestamp": 1757766986725,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3151
-    },
-    {
-      "timestamp": 1757767101211,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 4.1409
-    },
-    {
-      "timestamp": 1757767101239,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.3221
-    },
-    {
-      "timestamp": 1757767101283,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.553
-    },
-    {
-      "timestamp": 1757767101415,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 99.6472
-    },
-    {
-      "timestamp": 1757767101435,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.6176
-    },
-    {
-      "timestamp": 1757767101469,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.159
-    },
-    {
-      "timestamp": 1757767101505,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 4.2405
-    },
-    {
-      "timestamp": 1757767101532,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4266
-    },
-    {
-      "timestamp": 1757767101552,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5276
-    },
-    {
-      "timestamp": 1757767107944,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.7659
-    },
-    {
-      "timestamp": 1757767107969,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5972
-    },
-    {
-      "timestamp": 1757767107989,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3765
-    },
-    {
-      "timestamp": 1757767111017,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.797
-    },
-    {
-      "timestamp": 1757767111042,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3201
-    },
-    {
-      "timestamp": 1757767111070,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5784
-    },
-    {
-      "timestamp": 1757767111089,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.32
-    },
-    {
-      "timestamp": 1757767111108,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4055
-    },
-    {
-      "timestamp": 1757767111127,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3588
-    },
-    {
-      "timestamp": 1757767111146,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3047
-    },
-    {
-      "timestamp": 1757767111165,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5548
-    },
-    {
-      "timestamp": 1757767111185,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.287
-    },
-    {
-      "timestamp": 1757767111205,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5191
-    },
-    {
-      "timestamp": 1757767111224,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2579
-    },
-    {
-      "timestamp": 1757767111243,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.377
-    },
-    {
-      "timestamp": 1757767111264,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4486
-    },
-    {
-      "timestamp": 1757767111285,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3333
-    },
-    {
-      "timestamp": 1757767111305,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3599
-    },
-    {
-      "timestamp": 1757767119916,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.7102
-    },
-    {
-      "timestamp": 1757767120245,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 305.7732
-    },
-    {
-      "timestamp": 1757767120265,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.2405
-    },
-    {
-      "timestamp": 1757767120567,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 282.614
-    },
-    {
-      "timestamp": 1757767120587,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.3552
-    },
-    {
-      "timestamp": 1757767120892,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 285.5995
-    },
-    {
-      "timestamp": 1757767121193,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 283.7343
-    },
-    {
-      "timestamp": 1757767121524,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 311.5209
-    },
-    {
-      "timestamp": 1757767121544,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2699
-    },
-    {
-      "timestamp": 1757767121881,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 318.8053
-    },
-    {
-      "timestamp": 1757767121902,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3029
-    },
-    {
-      "timestamp": 1757767129393,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 291.6032
-    },
-    {
-      "timestamp": 1757767129413,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.5143
-    },
-    {
-      "timestamp": 1757767129735,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 302.4225
-    },
-    {
-      "timestamp": 1757767129755,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.3194
-    },
-    {
-      "timestamp": 1757767130109,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 334.0582
-    },
-    {
-      "timestamp": 1757767130129,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.2703
-    },
-    {
-      "timestamp": 1757767130444,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 296.0978
-    },
-    {
-      "timestamp": 1757767130804,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 338.9798
-    },
-    {
-      "timestamp": 1757767131145,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 321.1704
-    },
-    {
-      "timestamp": 1757767131213,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3842
-    },
-    {
-      "timestamp": 1757767131299,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2945
-    },
-    {
-      "timestamp": 1757767131321,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.8551
-    },
-    {
-      "timestamp": 1757767131342,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5173
-    },
-    {
-      "timestamp": 1757767131365,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 24.0894
-    },
-    {
-      "timestamp": 1757767131388,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.4396
-    },
-    {
-      "timestamp": 1757767131845,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 435.4713
-    },
-    {
-      "timestamp": 1757767131991,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.7255
-    },
-    {
-      "timestamp": 1757767132023,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.6469
-    },
-    {
-      "timestamp": 1757767132057,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5426
-    },
-    {
-      "timestamp": 1757767132091,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4676
-    },
-    {
-      "timestamp": 1757767132121,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5389
-    },
-    {
-      "timestamp": 1757767132155,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.674
-    },
-    {
-      "timestamp": 1757767132179,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2998
-    },
-    {
-      "timestamp": 1757767132201,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3117
-    },
-    {
-      "timestamp": 1757767132227,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5031
-    },
-    {
-      "timestamp": 1757767136993,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2822
-    },
-    {
-      "timestamp": 1757767137012,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3148
-    },
-    {
-      "timestamp": 1757767137031,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3125
-    },
-    {
-      "timestamp": 1757767141210,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3373
-    },
-    {
-      "timestamp": 1757767141285,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3112
-    },
-    {
-      "timestamp": 1757767141993,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2797
-    },
-    {
-      "timestamp": 1757767142012,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3623
-    },
-    {
-      "timestamp": 1757767142032,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3586
-    },
-    {
-      "timestamp": 1757767142329,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 40.258
-    },
-    {
-      "timestamp": 1757767142348,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 59.1983
-    },
-    {
-      "timestamp": 1757767142407,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 37.8516
-    },
-    {
-      "timestamp": 1757767142426,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 56.886
-    },
-    {
-      "timestamp": 1757767143459,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1013.3055
-    },
-    {
-      "timestamp": 1757767143516,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 38.4531
-    },
-    {
-      "timestamp": 1757767143535,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 57.3769
-    },
-    {
-      "timestamp": 1757767144514,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 959.3938
-    },
-    {
-      "timestamp": 1757767144568,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 34.528
-    },
-    {
-      "timestamp": 1757767144587,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 53.6333
-    },
-    {
-      "timestamp": 1757767145737,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1130.6728
-    },
-    {
-      "timestamp": 1757767145791,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 31.9093
-    },
-    {
-      "timestamp": 1757767145822,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 62.1635
-    },
-    {
-      "timestamp": 1757767146788,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 942.6382
-    },
-    {
-      "timestamp": 1757767146848,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 38.0689
-    },
-    {
-      "timestamp": 1757767146866,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 56.2911
-    },
-    {
-      "timestamp": 1757767147953,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1065.06
-    },
-    {
-      "timestamp": 1757767148924,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 949.1824
-    },
-    {
-      "timestamp": 1757767151207,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4671
-    },
-    {
-      "timestamp": 1757767151287,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.562
-    },
-    {
-      "timestamp": 1757767161209,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3161
-    },
-    {
-      "timestamp": 1757767161292,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2646
-    },
-    {
-      "timestamp": 1757767161313,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.8633
-    },
-    {
-      "timestamp": 1757767161332,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3417
-    },
-    {
-      "timestamp": 1757767161353,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3973
-    },
-    {
-      "timestamp": 1757767171208,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4611
-    },
-    {
-      "timestamp": 1757767171287,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3029
-    },
-    {
-      "timestamp": 1757767175265,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 40.856
-    },
-    {
-      "timestamp": 1757767175321,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 35.4723
-    },
-    {
-      "timestamp": 1757767175378,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 37.0339
-    },
-    {
-      "timestamp": 1757767175437,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 38.1542
-    },
-    {
-      "timestamp": 1757767175499,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 37.0295
-    },
-    {
-      "timestamp": 1757767175557,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 37.4026
-    },
-    {
-      "timestamp": 1757767175619,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 37.7117
-    },
-    {
-      "timestamp": 1757767175676,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 37.2521
-    },
-    {
-      "timestamp": 1757767175739,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 42.2122
-    },
-    {
-      "timestamp": 1757767175825,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 41.1277
-    },
-    {
-      "timestamp": 1757767181207,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3072
-    },
-    {
-      "timestamp": 1757767181287,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.7148
-    },
-    {
-      "timestamp": 1757767189411,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 38.1112
-    },
-    {
-      "timestamp": 1757767191208,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5351
-    },
-    {
-      "timestamp": 1757767191287,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3029
-    },
-    {
-      "timestamp": 1757767191309,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.5434
-    },
-    {
-      "timestamp": 1757767191336,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3733
-    },
-    {
-      "timestamp": 1757767191363,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.513
-    },
-    {
-      "timestamp": 1757767200516,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 37.9309
-    },
-    {
-      "timestamp": 1757767201206,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3021
-    },
-    {
-      "timestamp": 1757767201283,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4021
-    },
-    {
-      "timestamp": 1757767211208,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3061
-    },
-    {
-      "timestamp": 1757767211287,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.32
-    },
-    {
-      "timestamp": 1757767221214,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3101
-    },
-    {
-      "timestamp": 1757767221300,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3577
-    },
-    {
-      "timestamp": 1757767221325,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.8991
-    },
-    {
-      "timestamp": 1757767221345,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3286
-    },
-    {
-      "timestamp": 1757767221365,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3428
-    },
-    {
-      "timestamp": 1757767231207,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3495
-    },
-    {
-      "timestamp": 1757767231289,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2854
-    },
-    {
-      "timestamp": 1757767241212,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3226
-    },
-    {
-      "timestamp": 1757767241291,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3056
-    },
-    {
-      "timestamp": 1757767251213,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3137
-    },
-    {
-      "timestamp": 1757767251284,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.264
-    },
-    {
-      "timestamp": 1757767251308,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.7189
-    },
-    {
-      "timestamp": 1757767251328,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3417
-    },
-    {
-      "timestamp": 1757767251348,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3772
-    },
-    {
-      "timestamp": 1757767261207,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3414
-    },
-    {
-      "timestamp": 1757767261285,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3054
-    },
-    {
-      "timestamp": 1757767271207,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3264
-    },
-    {
-      "timestamp": 1757767271284,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3786
-    },
-    {
-      "timestamp": 1757767281213,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3365
-    },
-    {
-      "timestamp": 1757767281286,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3455
-    },
-    {
-      "timestamp": 1757767281310,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.7047
-    },
-    {
-      "timestamp": 1757767281329,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3427
-    },
-    {
-      "timestamp": 1757767281348,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3284
-    },
-    {
-      "timestamp": 1757767291207,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3654
-    },
-    {
-      "timestamp": 1757767291296,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3269
-    },
-    {
-      "timestamp": 1757767301207,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3872
-    },
-    {
-      "timestamp": 1757767301287,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3264
-    },
-    {
-      "timestamp": 1757767311214,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4155
-    },
-    {
-      "timestamp": 1757767311286,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3551
-    },
-    {
-      "timestamp": 1757767311310,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.6512
-    },
-    {
-      "timestamp": 1757767311331,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3494
-    },
-    {
-      "timestamp": 1757767311352,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 21.2111
-    },
-    {
-      "timestamp": 1757767321214,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4769
-    },
-    {
-      "timestamp": 1757767321285,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.35
-    },
-    {
-      "timestamp": 1757767331208,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3258
-    },
-    {
-      "timestamp": 1757767331294,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3314
-    },
-    {
-      "timestamp": 1757767341207,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3551
-    },
-    {
-      "timestamp": 1757767341284,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3455
-    },
-    {
-      "timestamp": 1757767341307,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.4522
-    },
-    {
-      "timestamp": 1757767341328,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.6003
-    },
-    {
-      "timestamp": 1757767341347,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5001
-    },
-    {
-      "timestamp": 1757767351211,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3306
-    },
-    {
-      "timestamp": 1757767351291,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3146
-    },
-    {
-      "timestamp": 1757767361209,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3474
-    },
-    {
-      "timestamp": 1757767361297,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3414
-    },
-    {
-      "timestamp": 1757767371208,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.332
-    },
-    {
-      "timestamp": 1757767371300,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3205
-    },
-    {
-      "timestamp": 1757767371324,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 3.1082
-    },
-    {
-      "timestamp": 1757767371345,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5244
-    },
-    {
-      "timestamp": 1757767371363,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.367
-    },
-    {
-      "timestamp": 1757767381207,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3575
-    },
-    {
-      "timestamp": 1757767381293,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.6123
-    },
-    {
-      "timestamp": 1757767391208,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3244
-    },
-    {
-      "timestamp": 1757767391291,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3389
-    },
-    {
-      "timestamp": 1757767401207,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3767
-    },
-    {
-      "timestamp": 1757767401288,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3105
-    },
-    {
-      "timestamp": 1757767401310,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.397
-    },
-    {
-      "timestamp": 1757767401331,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.49
-    },
-    {
-      "timestamp": 1757767401350,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3108
-    },
-    {
-      "timestamp": 1757767411212,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.347
-    },
-    {
-      "timestamp": 1757767411295,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4646
-    },
-    {
-      "timestamp": 1757767421220,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3451
-    },
-    {
-      "timestamp": 1757767421283,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3375
-    },
-    {
-      "timestamp": 1757767431209,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3572
-    },
-    {
-      "timestamp": 1757767431287,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2899
-    },
-    {
-      "timestamp": 1757767431310,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.6813
-    },
-    {
-      "timestamp": 1757767431330,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.332
-    },
-    {
-      "timestamp": 1757767431350,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3581
-    },
-    {
-      "timestamp": 1757767441216,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4374
-    },
-    {
-      "timestamp": 1757767441286,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4177
-    },
-    {
-      "timestamp": 1757767451220,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.353
-    },
-    {
-      "timestamp": 1757767451360,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4001
-    },
-    {
-      "timestamp": 1757767461360,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4092
-    },
-    {
-      "timestamp": 1757767461381,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3111
-    },
-    {
-      "timestamp": 1757767461404,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.892
-    },
-    {
-      "timestamp": 1757767461424,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.342
-    },
-    {
-      "timestamp": 1757767461443,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3392
-    },
-    {
-      "timestamp": 1757767471363,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3817
-    },
-    {
-      "timestamp": 1757767471383,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4052
-    },
-    {
-      "timestamp": 1757767481210,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.395
-    },
-    {
-      "timestamp": 1757767481291,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3283
-    },
-    {
-      "timestamp": 1757767481576,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.9361
-    },
-    {
-      "timestamp": 1757767481598,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.308
-    },
-    {
-      "timestamp": 1757767481620,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.8757
-    },
-    {
-      "timestamp": 1757767481643,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 3.6684
-    },
-    {
-      "timestamp": 1757767481661,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2955
-    },
-    {
-      "timestamp": 1757767481682,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.6624
-    },
-    {
-      "timestamp": 1757767481705,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.7734
-    },
-    {
-      "timestamp": 1757767481724,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3077
-    },
-    {
-      "timestamp": 1757767481743,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3505
-    },
-    {
-      "timestamp": 1757767486486,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.8878
-    },
-    {
-      "timestamp": 1757767486506,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3252
-    },
-    {
-      "timestamp": 1757767486528,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2996
-    },
-    {
-      "timestamp": 1757767486555,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 3.021
-    },
-    {
-      "timestamp": 1757767486575,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3765
-    },
-    {
-      "timestamp": 1757767486599,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 24.394
-    },
-    {
-      "timestamp": 1757767486623,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 3.2804
-    },
-    {
-      "timestamp": 1757767486642,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3604
-    },
-    {
-      "timestamp": 1757767486661,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4318
-    },
-    {
-      "timestamp": 1757767488877,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4113
-    },
-    {
-      "timestamp": 1757767488898,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2888
-    },
-    {
-      "timestamp": 1757767488921,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3512
-    },
-    {
-      "timestamp": 1757767490571,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4605
-    },
-    {
-      "timestamp": 1757767490598,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3158
-    },
-    {
-      "timestamp": 1757767490618,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4723
-    },
-    {
-      "timestamp": 1757767490637,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3021
-    },
-    {
-      "timestamp": 1757767490658,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3306
-    },
-    {
-      "timestamp": 1757767490678,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5061
-    },
-    {
-      "timestamp": 1757767490700,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3074
-    },
-    {
-      "timestamp": 1757767490720,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.358
-    },
-    {
-      "timestamp": 1757767490741,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3447
-    },
-    {
-      "timestamp": 1757767492033,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.9151
-    },
-    {
-      "timestamp": 1757767492356,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 298.1408
-    },
-    {
-      "timestamp": 1757767492382,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.2309
-    },
-    {
-      "timestamp": 1757767492888,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 484.8399
-    },
-    {
-      "timestamp": 1757767492921,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.9235
-    },
-    {
-      "timestamp": 1757767608026,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.6809
-    },
-    {
-      "timestamp": 1757767608047,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.8516
-    },
-    {
-      "timestamp": 1757767608073,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5563
-    },
-    {
-      "timestamp": 1757767608166,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 70.6203
-    },
-    {
-      "timestamp": 1757767608190,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 4.8211
-    },
-    {
-      "timestamp": 1757767608210,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.7237
-    },
-    {
-      "timestamp": 1757767608236,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 3.5037
-    },
-    {
-      "timestamp": 1757767608256,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3591
-    },
-    {
-      "timestamp": 1757767608278,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 21.863
-    },
-    {
-      "timestamp": 1757767611115,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 34.6846
-    },
-    {
-      "timestamp": 1757767611134,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 53.7432
-    },
-    {
-      "timestamp": 1757767611188,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 34.9319
-    },
-    {
-      "timestamp": 1757767611206,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 53.6468
-    },
-    {
-      "timestamp": 1757767612174,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 947.6739
-    },
-    {
-      "timestamp": 1757767612226,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 32.0139
-    },
-    {
-      "timestamp": 1757767612246,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 51.2356
-    },
-    {
-      "timestamp": 1757767613317,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1051.794
-    },
-    {
-      "timestamp": 1757767613377,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 37.4678
-    },
-    {
-      "timestamp": 1757767613399,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 58.8044
-    },
-    {
-      "timestamp": 1757767614447,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1027.1436
-    },
-    {
-      "timestamp": 1757767614502,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 32.8233
-    },
-    {
-      "timestamp": 1757767614521,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 52.7852
-    },
-    {
-      "timestamp": 1757767615580,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1035.2279
-    },
-    {
-      "timestamp": 1757767615637,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 36.8466
-    },
-    {
-      "timestamp": 1757767615657,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 56.7904
-    },
-    {
-      "timestamp": 1757767616582,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 905.0538
-    },
-    {
-      "timestamp": 1757767617485,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 882.7034
-    },
-    {
-      "timestamp": 1757767618033,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3382
-    },
-    {
-      "timestamp": 1757767618073,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3953
-    },
-    {
-      "timestamp": 1757767628026,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3853
-    },
-    {
-      "timestamp": 1757767628075,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3431
-    },
-    {
-      "timestamp": 1757767638029,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3013
-    },
-    {
-      "timestamp": 1757767638074,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3538
-    },
-    {
-      "timestamp": 1757767638099,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.9399
-    },
-    {
-      "timestamp": 1757767638123,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3402
-    },
-    {
-      "timestamp": 1757767638143,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3903
-    },
-    {
-      "timestamp": 1757767648030,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3697
-    },
-    {
-      "timestamp": 1757767648078,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3069
-    },
-    {
-      "timestamp": 1757767658037,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3182
-    },
-    {
-      "timestamp": 1757767658080,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3925
-    },
-    {
-      "timestamp": 1757767668043,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3413
-    },
-    {
-      "timestamp": 1757767668079,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2978
-    },
-    {
-      "timestamp": 1757767668103,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 3.2619
-    },
-    {
-      "timestamp": 1757767668122,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3374
-    },
-    {
-      "timestamp": 1757767668142,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4102
-    },
-    {
-      "timestamp": 1757767678036,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3453
-    },
-    {
-      "timestamp": 1757767678074,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3315
-    },
-    {
-      "timestamp": 1757767688029,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3083
-    },
-    {
-      "timestamp": 1757767688076,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2986
-    },
-    {
-      "timestamp": 1757767698029,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2973
-    },
-    {
-      "timestamp": 1757767698078,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3027
-    },
-    {
-      "timestamp": 1757767698100,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.3639
-    },
-    {
-      "timestamp": 1757767698120,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3304
-    },
-    {
-      "timestamp": 1757767698140,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3505
-    },
-    {
-      "timestamp": 1757767708038,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3388
-    },
-    {
-      "timestamp": 1757767708078,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3173
-    },
-    {
-      "timestamp": 1757767718034,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3017
-    },
-    {
-      "timestamp": 1757767718087,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3248
-    },
-    {
-      "timestamp": 1757767728034,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.319
-    },
-    {
-      "timestamp": 1757767728084,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2593
-    },
-    {
-      "timestamp": 1757767728106,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.7093
-    },
-    {
-      "timestamp": 1757767728127,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2988
-    },
-    {
-      "timestamp": 1757767728146,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3658
-    },
-    {
-      "timestamp": 1757767738026,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2982
-    },
-    {
-      "timestamp": 1757767738078,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3299
-    },
-    {
-      "timestamp": 1757767748027,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4313
-    },
-    {
-      "timestamp": 1757767748087,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5765
-    },
-    {
-      "timestamp": 1757767758029,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3102
-    },
-    {
-      "timestamp": 1757767758084,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2876
-    },
-    {
-      "timestamp": 1757767758108,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 3.6107
-    },
-    {
-      "timestamp": 1757767758133,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3777
-    },
-    {
-      "timestamp": 1757767758157,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4998
-    },
-    {
-      "timestamp": 1757767768040,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3345
-    },
-    {
-      "timestamp": 1757767768089,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.317
-    },
-    {
-      "timestamp": 1757767778032,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3543
-    },
-    {
-      "timestamp": 1757767778082,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3388
-    },
-    {
-      "timestamp": 1757767788034,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3539
-    },
-    {
-      "timestamp": 1757767788078,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2966
-    },
-    {
-      "timestamp": 1757767788102,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.6268
-    },
-    {
-      "timestamp": 1757767788122,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.6029
-    },
-    {
-      "timestamp": 1757767788141,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3647
-    },
-    {
-      "timestamp": 1757767798025,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3191
-    },
-    {
-      "timestamp": 1757767798085,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.2996
-    },
-    {
-      "timestamp": 1757767808027,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3436
-    },
-    {
-      "timestamp": 1757767808076,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3113
-    },
-    {
-      "timestamp": 1757767818028,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3214
-    },
-    {
-      "timestamp": 1757767818078,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4577
-    },
-    {
-      "timestamp": 1757767818102,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.4257
-    },
-    {
-      "timestamp": 1757767818123,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3176
-    },
-    {
-      "timestamp": 1757767818143,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 19.9348
-    },
-    {
-      "timestamp": 1757767828031,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3083
-    },
-    {
-      "timestamp": 1757767828079,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3202
-    },
-    {
-      "timestamp": 1757767838032,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4636
-    },
-    {
-      "timestamp": 1757767838081,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3688
-    },
-    {
-      "timestamp": 1757767848030,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.357
-    },
-    {
-      "timestamp": 1757767848079,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3551
-    },
-    {
-      "timestamp": 1757767848101,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.4433
-    },
-    {
-      "timestamp": 1757767848121,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3495
-    },
-    {
-      "timestamp": 1757767848141,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 19.8555
-    },
-    {
-      "timestamp": 1757767858026,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3474
-    },
-    {
-      "timestamp": 1757767858084,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3361
-    },
-    {
-      "timestamp": 1757767868027,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3267
-    },
-    {
-      "timestamp": 1757767868076,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3536
-    },
-    {
-      "timestamp": 1757767878008,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.4061
-    },
-    {
-      "timestamp": 1757767878031,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3765
-    },
-    {
-      "timestamp": 1757767878057,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.3729
-    },
-    {
-      "timestamp": 1757767878077,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3511
-    },
-    {
-      "timestamp": 1757767878096,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 19.8882
-    },
-    {
-      "timestamp": 1757767878116,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4764
-    },
-    {
-      "timestamp": 1757767878139,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.4959
-    },
-    {
-      "timestamp": 1757767878158,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3083
-    },
-    {
-      "timestamp": 1757767878178,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.354
-    },
-    {
-      "timestamp": 1757767880261,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 37.3346
-    },
-    {
-      "timestamp": 1757767880281,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 57.6229
-    },
-    {
-      "timestamp": 1757767880333,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 31.8116
-    },
-    {
-      "timestamp": 1757767880353,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 51.5851
-    },
-    {
-      "timestamp": 1757767881326,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 953.2944
-    },
-    {
-      "timestamp": 1757767881381,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 33.8085
-    },
-    {
-      "timestamp": 1757767881401,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 54.2571
-    },
-    {
-      "timestamp": 1757767882324,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 903.2122
-    },
-    {
-      "timestamp": 1757767882375,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 29.8878
-    },
-    {
-      "timestamp": 1757767882395,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 49.2342
-    },
-    {
-      "timestamp": 1757767883485,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1070.5634
-    },
-    {
-      "timestamp": 1757767883537,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 31.7347
-    },
-    {
-      "timestamp": 1757767883556,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 51.0278
-    },
-    {
-      "timestamp": 1757767884485,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 910.1357
-    },
-    {
-      "timestamp": 1757767884536,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 29.7702
-    },
-    {
-      "timestamp": 1757767884555,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 48.6149
-    },
-    {
-      "timestamp": 1757767885544,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 969.3254
-    },
-    {
-      "timestamp": 1757767886475,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 910.415
-    },
-    {
-      "timestamp": 1757767888012,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3611
-    },
-    {
-      "timestamp": 1757767888031,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3104
-    },
-    {
-      "timestamp": 1757767898017,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3332
-    },
-    {
-      "timestamp": 1757767898037,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4244
-    },
-    {
-      "timestamp": 1757767908014,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3483
-    },
-    {
-      "timestamp": 1757767908035,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3281
-    },
-    {
-      "timestamp": 1757767908058,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.4346
-    },
-    {
-      "timestamp": 1757767908078,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3433
-    },
-    {
-      "timestamp": 1757767908098,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.334
-    },
-    {
-      "timestamp": 1757767918016,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.3706
-    },
-    {
-      "timestamp": 1757767918036,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.351
-    },
-    {
-      "timestamp": 1757768050556,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.3425
-    },
-    {
-      "timestamp": 1757768050579,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 2.6031
-    },
-    {
-      "timestamp": 1757768050637,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.5588
-    },
-    {
-      "timestamp": 1757768050731,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 72.7366
-    },
-    {
-      "timestamp": 1757768050753,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 1.0503
-    },
-    {
-      "timestamp": 1757768050774,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.6157
-    },
-    {
-      "timestamp": 1757768050798,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 3.8094
-    },
-    {
-      "timestamp": 1757768050819,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4879
-    },
-    {
-      "timestamp": 1757768050839,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 0.4513
-    },
-    {
-      "timestamp": 1757768056063,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 35.4449
-    },
-    {
-      "timestamp": 1757768056083,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 56.1096
-    },
-    {
-      "timestamp": 1757768056137,
-      "toolName": "instructions/dispatch",
-      "success": true,
-      "responseTimeMs": 32.6542
-    },
-    {
-      "timestamp": 1757768056157,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 53.0387
-    },
-    {
-      "timestamp": 1757768057114,
-      "toolName": "http/request",
-      "success": true,
-      "responseTimeMs": 936.7286
-    },
-    {
       "timestamp": 1757768057172,
       "toolName": "instructions/dispatch",
       "success": true,
@@ -60008,20 +57158,2870 @@
       "toolName": "http/request",
       "success": true,
       "responseTimeMs": 0.2972
+    },
+    {
+      "timestamp": 1757856564431,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3717
+    },
+    {
+      "timestamp": 1757856564449,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4898
+    },
+    {
+      "timestamp": 1757856574434,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4488
+    },
+    {
+      "timestamp": 1757856574453,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4617
+    },
+    {
+      "timestamp": 1757856574461,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.5189
+    },
+    {
+      "timestamp": 1757856574468,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3884
+    },
+    {
+      "timestamp": 1757856574475,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 7.5622
+    },
+    {
+      "timestamp": 1757856584428,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3837
+    },
+    {
+      "timestamp": 1757856584447,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.384
+    },
+    {
+      "timestamp": 1757856594433,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3844
+    },
+    {
+      "timestamp": 1757856594439,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5231
+    },
+    {
+      "timestamp": 1757856604448,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3843
+    },
+    {
+      "timestamp": 1757856604466,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4327
+    },
+    {
+      "timestamp": 1757856604560,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 90.2062
+    },
+    {
+      "timestamp": 1757856604565,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.365
+    },
+    {
+      "timestamp": 1757856604569,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.6387
+    },
+    {
+      "timestamp": 1757856613890,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.73
+    },
+    {
+      "timestamp": 1757856615094,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1186.4505
+    },
+    {
+      "timestamp": 1757856615098,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3703
+    },
+    {
+      "timestamp": 1757856616129,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1026.87
+    },
+    {
+      "timestamp": 1757856616134,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.389
+    },
+    {
+      "timestamp": 1757856616138,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.6073
+    },
+    {
+      "timestamp": 1757856624437,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3944
+    },
+    {
+      "timestamp": 1757856624456,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4804
+    },
+    {
+      "timestamp": 1757856634429,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4763
+    },
+    {
+      "timestamp": 1757856634448,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5257
+    },
+    {
+      "timestamp": 1757856634543,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 89.8545
+    },
+    {
+      "timestamp": 1757856634547,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3255
+    },
+    {
+      "timestamp": 1757856634551,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.6033
+    },
+    {
+      "timestamp": 1757856644434,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3433
+    },
+    {
+      "timestamp": 1757856644452,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.496
+    },
+    {
+      "timestamp": 1757856654436,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4179
+    },
+    {
+      "timestamp": 1757856654454,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4439
+    },
+    {
+      "timestamp": 1757856664442,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4073
+    },
+    {
+      "timestamp": 1757856664461,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4209
+    },
+    {
+      "timestamp": 1757856664567,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 101.5621
+    },
+    {
+      "timestamp": 1757856664571,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3086
+    },
+    {
+      "timestamp": 1757856664575,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.402
+    },
+    {
+      "timestamp": 1757856674430,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4035
+    },
+    {
+      "timestamp": 1757856674434,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3916
+    },
+    {
+      "timestamp": 1757856684431,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3785
+    },
+    {
+      "timestamp": 1757856684448,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5129
+    },
+    {
+      "timestamp": 1757856694428,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4028
+    },
+    {
+      "timestamp": 1757856694446,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.358
+    },
+    {
+      "timestamp": 1757856694455,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.2129
+    },
+    {
+      "timestamp": 1757856694459,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3492
+    },
+    {
+      "timestamp": 1757856694463,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3787
+    },
+    {
+      "timestamp": 1757856704435,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4113
+    },
+    {
+      "timestamp": 1757856704440,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3131
+    },
+    {
+      "timestamp": 1757856714442,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4508
+    },
+    {
+      "timestamp": 1757856714448,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.337
+    },
+    {
+      "timestamp": 1757856724432,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3675
+    },
+    {
+      "timestamp": 1757856724450,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3796
+    },
+    {
+      "timestamp": 1757856724457,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.2485
+    },
+    {
+      "timestamp": 1757856724461,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2597
+    },
+    {
+      "timestamp": 1757856724466,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2839
+    },
+    {
+      "timestamp": 1757856734428,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3737
+    },
+    {
+      "timestamp": 1757856734432,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2946
+    },
+    {
+      "timestamp": 1757856744431,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3954
+    },
+    {
+      "timestamp": 1757856744435,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3857
+    },
+    {
+      "timestamp": 1757856754432,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3577
+    },
+    {
+      "timestamp": 1757856754452,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.5569
+    },
+    {
+      "timestamp": 1757856754457,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3531
+    },
+    {
+      "timestamp": 1757856754461,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3009
+    },
+    {
+      "timestamp": 1757856754465,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.2393
+    },
+    {
+      "timestamp": 1757856764429,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3964
+    },
+    {
+      "timestamp": 1757856764434,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.338
+    },
+    {
+      "timestamp": 1757856774443,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3973
+    },
+    {
+      "timestamp": 1757856774448,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3651
+    },
+    {
+      "timestamp": 1757856784438,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4675
+    },
+    {
+      "timestamp": 1757856784446,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.2606
+    },
+    {
+      "timestamp": 1757856784450,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3426
+    },
+    {
+      "timestamp": 1757856784454,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3235
+    },
+    {
+      "timestamp": 1757856784492,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3266
+    },
+    {
+      "timestamp": 1757856794429,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3969
+    },
+    {
+      "timestamp": 1757856794433,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2835
+    },
+    {
+      "timestamp": 1757856804431,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3764
+    },
+    {
+      "timestamp": 1757856804448,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4405
+    },
+    {
+      "timestamp": 1757856814443,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3892
+    },
+    {
+      "timestamp": 1757856814465,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.03
+    },
+    {
+      "timestamp": 1757856814469,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3173
+    },
+    {
+      "timestamp": 1757856814473,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.439
+    },
+    {
+      "timestamp": 1757856814477,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2978
+    },
+    {
+      "timestamp": 1757856824434,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3792
+    },
+    {
+      "timestamp": 1757856824452,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4163
+    },
+    {
+      "timestamp": 1757856834432,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4099
+    },
+    {
+      "timestamp": 1757856834437,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3476
+    },
+    {
+      "timestamp": 1757856844427,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3728
+    },
+    {
+      "timestamp": 1757856844431,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3779
+    },
+    {
+      "timestamp": 1757856844465,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.2881
+    },
+    {
+      "timestamp": 1757856844469,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3196
+    },
+    {
+      "timestamp": 1757856844473,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.4172
+    },
+    {
+      "timestamp": 1757856854438,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3851
+    },
+    {
+      "timestamp": 1757856854455,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3658
+    },
+    {
+      "timestamp": 1757856864428,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4404
+    },
+    {
+      "timestamp": 1757856864447,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4666
+    },
+    {
+      "timestamp": 1757856874438,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3877
+    },
+    {
+      "timestamp": 1757856874446,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.0833
+    },
+    {
+      "timestamp": 1757856874451,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2394
+    },
+    {
+      "timestamp": 1757856874455,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.4834
+    },
+    {
+      "timestamp": 1757856874494,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4135
+    },
+    {
+      "timestamp": 1757856884433,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3997
+    },
+    {
+      "timestamp": 1757856884449,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3481
+    },
+    {
+      "timestamp": 1757856894440,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4021
+    },
+    {
+      "timestamp": 1757856894446,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5814
+    },
+    {
+      "timestamp": 1757856904443,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4148
+    },
+    {
+      "timestamp": 1757856904460,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4446
+    },
+    {
+      "timestamp": 1757856904468,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.039
+    },
+    {
+      "timestamp": 1757856904472,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2539
+    },
+    {
+      "timestamp": 1757856904476,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.1089
+    },
+    {
+      "timestamp": 1757856914428,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4246
+    },
+    {
+      "timestamp": 1757856914433,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3268
+    },
+    {
+      "timestamp": 1757856924431,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4143
+    },
+    {
+      "timestamp": 1757856924435,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3954
+    },
+    {
+      "timestamp": 1757856934433,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3835
+    },
+    {
+      "timestamp": 1757856934440,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.35
+    },
+    {
+      "timestamp": 1757856934471,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3997
+    },
+    {
+      "timestamp": 1757856934475,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2551
+    },
+    {
+      "timestamp": 1757856934478,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 7.9796
+    },
+    {
+      "timestamp": 1757856944430,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5062
+    },
+    {
+      "timestamp": 1757856944435,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3351
+    },
+    {
+      "timestamp": 1757856954432,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4245
+    },
+    {
+      "timestamp": 1757856954437,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3244
+    },
+    {
+      "timestamp": 1757856964428,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4171
+    },
+    {
+      "timestamp": 1757856964447,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4575
+    },
+    {
+      "timestamp": 1757856964454,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 2.9032
+    },
+    {
+      "timestamp": 1757856964458,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2683
+    },
+    {
+      "timestamp": 1757856964462,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.0832
+    },
+    {
+      "timestamp": 1757856974434,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4161
+    },
+    {
+      "timestamp": 1757856974439,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3902
+    },
+    {
+      "timestamp": 1757856984430,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4239
+    },
+    {
+      "timestamp": 1757856984434,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3483
+    },
+    {
+      "timestamp": 1757856994433,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4286
+    },
+    {
+      "timestamp": 1757856994452,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4684
+    },
+    {
+      "timestamp": 1757856994459,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.2537
+    },
+    {
+      "timestamp": 1757856994464,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2977
+    },
+    {
+      "timestamp": 1757856994468,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.4123
+    },
+    {
+      "timestamp": 1757857004428,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3984
+    },
+    {
+      "timestamp": 1757857004433,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3615
+    },
+    {
+      "timestamp": 1757857014436,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3955
+    },
+    {
+      "timestamp": 1757857014440,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3068
+    },
+    {
+      "timestamp": 1757857024434,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4702
+    },
+    {
+      "timestamp": 1757857024439,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4681
+    },
+    {
+      "timestamp": 1757857024448,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.9916
+    },
+    {
+      "timestamp": 1757857024454,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.6534
+    },
+    {
+      "timestamp": 1757857024460,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 6.3794
+    },
+    {
+      "timestamp": 1757857034433,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4201
+    },
+    {
+      "timestamp": 1757857034450,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4607
+    },
+    {
+      "timestamp": 1757857044430,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4676
+    },
+    {
+      "timestamp": 1757857044435,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5677
+    },
+    {
+      "timestamp": 1757857054443,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4943
+    },
+    {
+      "timestamp": 1757857054464,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.2268
+    },
+    {
+      "timestamp": 1757857054470,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4414
+    },
+    {
+      "timestamp": 1757857054474,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2816
+    },
+    {
+      "timestamp": 1757857054477,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.1829
+    },
+    {
+      "timestamp": 1757857064436,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4285
+    },
+    {
+      "timestamp": 1757857064441,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.573
+    },
+    {
+      "timestamp": 1757857074435,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4278
+    },
+    {
+      "timestamp": 1757857074440,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3819
+    },
+    {
+      "timestamp": 1757857127288,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.8448
+    },
+    {
+      "timestamp": 1757857127293,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.8659
+    },
+    {
+      "timestamp": 1757857127348,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.9501
+    },
+    {
+      "timestamp": 1757857127481,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 120.8651
+    },
+    {
+      "timestamp": 1757857127486,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.477
+    },
+    {
+      "timestamp": 1757857127489,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.6465
+    },
+    {
+      "timestamp": 1757857127500,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.7535
+    },
+    {
+      "timestamp": 1757857127507,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.6138
+    },
+    {
+      "timestamp": 1757857127512,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5718
+    },
+    {
+      "timestamp": 1757857130920,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 11.7994
+    },
+    {
+      "timestamp": 1757857130925,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.3623
+    },
+    {
+      "timestamp": 1757857130932,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.5838
+    },
+    {
+      "timestamp": 1757857130937,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.2138
+    },
+    {
+      "timestamp": 1757857130946,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.0611
+    },
+    {
+      "timestamp": 1757857130952,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.1616
+    },
+    {
+      "timestamp": 1757857130956,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.8207
+    },
+    {
+      "timestamp": 1757857130961,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.9723
+    },
+    {
+      "timestamp": 1757857130967,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.9792
+    },
+    {
+      "timestamp": 1757857137286,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3538
+    },
+    {
+      "timestamp": 1757857137351,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2903
+    },
+    {
+      "timestamp": 1757857147291,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3395
+    },
+    {
+      "timestamp": 1757857147352,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3016
+    },
+    {
+      "timestamp": 1757857155399,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 2.5941
+    },
+    {
+      "timestamp": 1757857157289,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3707
+    },
+    {
+      "timestamp": 1757857157362,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2826
+    },
+    {
+      "timestamp": 1757857157369,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.0836
+    },
+    {
+      "timestamp": 1757857157373,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2626
+    },
+    {
+      "timestamp": 1757857157377,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.1641
+    },
+    {
+      "timestamp": 1757857167293,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3765
+    },
+    {
+      "timestamp": 1757857167356,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3175
+    },
+    {
+      "timestamp": 1757857174252,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.8553
+    },
+    {
+      "timestamp": 1757857177297,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3528
+    },
+    {
+      "timestamp": 1757857177349,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.297
+    },
+    {
+      "timestamp": 1757857187288,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5607
+    },
+    {
+      "timestamp": 1757857187357,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2985
+    },
+    {
+      "timestamp": 1757857187364,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.5442
+    },
+    {
+      "timestamp": 1757857187368,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3246
+    },
+    {
+      "timestamp": 1757857187372,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3193
+    },
+    {
+      "timestamp": 1757857197292,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2897
+    },
+    {
+      "timestamp": 1757862736023,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.1246
+    },
+    {
+      "timestamp": 1757862736027,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.9641
+    },
+    {
+      "timestamp": 1757862736150,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 89.7175
+    },
+    {
+      "timestamp": 1757862736155,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5168
+    },
+    {
+      "timestamp": 1757862736158,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3007
+    },
+    {
+      "timestamp": 1757862736162,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 8.9593
+    },
+    {
+      "timestamp": 1757862736171,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.0091
+    },
+    {
+      "timestamp": 1757862736176,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3261
+    },
+    {
+      "timestamp": 1757862736180,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4784
+    },
+    {
+      "timestamp": 1757862746039,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3906
+    },
+    {
+      "timestamp": 1757862746043,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3611
+    },
+    {
+      "timestamp": 1757862756025,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4262
+    },
+    {
+      "timestamp": 1757862756030,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4333
+    },
+    {
+      "timestamp": 1757862766038,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3435
+    },
+    {
+      "timestamp": 1757862766045,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.3753
+    },
+    {
+      "timestamp": 1757862766063,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4284
+    },
+    {
+      "timestamp": 1757862766067,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3147
+    },
+    {
+      "timestamp": 1757862766071,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 9.2571
+    },
+    {
+      "timestamp": 1757862766090,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.46
+    },
+    {
+      "timestamp": 1757862766093,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3123
+    },
+    {
+      "timestamp": 1757862766097,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3157
+    },
+    {
+      "timestamp": 1757862776024,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3633
+    },
+    {
+      "timestamp": 1757862776029,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2919
+    },
+    {
+      "timestamp": 1757862786030,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4364
+    },
+    {
+      "timestamp": 1757862786047,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3351
+    },
+    {
+      "timestamp": 1757862796039,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3116
+    },
+    {
+      "timestamp": 1757862796060,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.4288
+    },
+    {
+      "timestamp": 1757862796064,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3221
+    },
+    {
+      "timestamp": 1757862796068,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.278
+    },
+    {
+      "timestamp": 1757862796072,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 8.0223
+    },
+    {
+      "timestamp": 1757862796079,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.0688
+    },
+    {
+      "timestamp": 1757862796083,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2457
+    },
+    {
+      "timestamp": 1757862796087,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.237
+    },
+    {
+      "timestamp": 1757862806029,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3046
+    },
+    {
+      "timestamp": 1757862806033,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2863
+    },
+    {
+      "timestamp": 1757862816030,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3297
+    },
+    {
+      "timestamp": 1757862816034,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2587
+    },
+    {
+      "timestamp": 1757862826023,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3224
+    },
+    {
+      "timestamp": 1757862826041,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3763
+    },
+    {
+      "timestamp": 1757862826048,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.2011
+    },
+    {
+      "timestamp": 1757862826053,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3601
+    },
+    {
+      "timestamp": 1757862826057,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.279
+    },
+    {
+      "timestamp": 1757862826064,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.175
+    },
+    {
+      "timestamp": 1757862826068,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3119
+    },
+    {
+      "timestamp": 1757862826072,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3285
+    },
+    {
+      "timestamp": 1757862836024,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3253
+    },
+    {
+      "timestamp": 1757862836028,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3648
+    },
+    {
+      "timestamp": 1757862846025,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3278
+    },
+    {
+      "timestamp": 1757862846042,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4524
+    },
+    {
+      "timestamp": 1757862849277,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.6138
+    },
+    {
+      "timestamp": 1757862849291,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 9.1699
+    },
+    {
+      "timestamp": 1757862849297,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.8424
+    },
+    {
+      "timestamp": 1757862849301,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.7537
+    },
+    {
+      "timestamp": 1757862849306,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.7942
+    },
+    {
+      "timestamp": 1757862849312,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 2.7525
+    },
+    {
+      "timestamp": 1757862849317,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.8933
+    },
+    {
+      "timestamp": 1757862849322,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.8578
+    },
+    {
+      "timestamp": 1757862849330,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.0361
+    },
+    {
+      "timestamp": 1757862856027,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.312
+    },
+    {
+      "timestamp": 1757862856046,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.6204
+    },
+    {
+      "timestamp": 1757862856050,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.7831
+    },
+    {
+      "timestamp": 1757862856054,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.398
+    },
+    {
+      "timestamp": 1757862856058,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3334
+    },
+    {
+      "timestamp": 1757862856235,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 2.0957
+    },
+    {
+      "timestamp": 1757862864073,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.361
+    },
+    {
+      "timestamp": 1757862864082,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.6001
+    },
+    {
+      "timestamp": 1757862864108,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4754
+    },
+    {
+      "timestamp": 1757862864118,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 5.091
+    },
+    {
+      "timestamp": 1757862864124,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4274
+    },
+    {
+      "timestamp": 1757862864131,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.1592
+    },
+    {
+      "timestamp": 1757862864141,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 17.5873
+    },
+    {
+      "timestamp": 1757862864159,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.7434
+    },
+    {
+      "timestamp": 1757862864163,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2596
+    },
+    {
+      "timestamp": 1757862866058,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.9345
+    },
+    {
+      "timestamp": 1757862866062,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.7494
+    },
+    {
+      "timestamp": 1757862866067,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.8736
+    },
+    {
+      "timestamp": 1757862866072,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.0989
+    },
+    {
+      "timestamp": 1757862866077,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.0202
+    },
+    {
+      "timestamp": 1757862866082,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.8065
+    },
+    {
+      "timestamp": 1757862866087,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.1247
+    },
+    {
+      "timestamp": 1757862866092,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.915
+    },
+    {
+      "timestamp": 1757862866099,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.546
+    },
+    {
+      "timestamp": 1757862874076,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3186
+    },
+    {
+      "timestamp": 1757862874093,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.328
+    },
+    {
+      "timestamp": 1757862884076,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3105
+    },
+    {
+      "timestamp": 1757862884081,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3228
+    },
+    {
+      "timestamp": 1757862894080,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.6213
+    },
+    {
+      "timestamp": 1757862894088,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.3508
+    },
+    {
+      "timestamp": 1757862894092,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3246
+    },
+    {
+      "timestamp": 1757862894097,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4838
+    },
+    {
+      "timestamp": 1757862894142,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3376
+    },
+    {
+      "timestamp": 1757862904075,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5376
+    },
+    {
+      "timestamp": 1757862904079,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3854
+    },
+    {
+      "timestamp": 1757862914087,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5763
+    },
+    {
+      "timestamp": 1757862914092,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2222
+    },
+    {
+      "timestamp": 1757862924080,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3322
+    },
+    {
+      "timestamp": 1757862924088,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.5104
+    },
+    {
+      "timestamp": 1757862924092,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2536
+    },
+    {
+      "timestamp": 1757862924097,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3145
+    },
+    {
+      "timestamp": 1757862924101,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 9.1249
+    },
+    {
+      "timestamp": 1757862934083,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3925
+    },
+    {
+      "timestamp": 1757862934087,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2903
+    },
+    {
+      "timestamp": 1757862944077,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3076
+    },
+    {
+      "timestamp": 1757862944082,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5358
+    },
+    {
+      "timestamp": 1757862954083,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3733
+    },
+    {
+      "timestamp": 1757862954105,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.4898
+    },
+    {
+      "timestamp": 1757862954109,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2954
+    },
+    {
+      "timestamp": 1757862954113,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3332
+    },
+    {
+      "timestamp": 1757862954117,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.5202
+    },
+    {
+      "timestamp": 1757862964080,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3349
+    },
+    {
+      "timestamp": 1757862964097,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3826
+    },
+    {
+      "timestamp": 1757862974083,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.344
+    },
+    {
+      "timestamp": 1757862974088,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3125
+    },
+    {
+      "timestamp": 1757862984087,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3668
+    },
+    {
+      "timestamp": 1757862984091,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3601
+    },
+    {
+      "timestamp": 1757862984099,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.3918
+    },
+    {
+      "timestamp": 1757862984103,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3069
+    },
+    {
+      "timestamp": 1757862984107,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.492
+    },
+    {
+      "timestamp": 1757862994084,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3546
+    },
+    {
+      "timestamp": 1757862994089,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4243
+    },
+    {
+      "timestamp": 1757863004078,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3252
+    },
+    {
+      "timestamp": 1757863004082,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3399
+    },
+    {
+      "timestamp": 1757863014088,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3662
+    },
+    {
+      "timestamp": 1757863014107,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4086
+    },
+    {
+      "timestamp": 1757863014115,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.2382
+    },
+    {
+      "timestamp": 1757863014119,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2915
+    },
+    {
+      "timestamp": 1757863014123,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.3855
+    },
+    {
+      "timestamp": 1757863024079,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3559
+    },
+    {
+      "timestamp": 1757863024097,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3606
+    },
+    {
+      "timestamp": 1757863034080,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3416
+    },
+    {
+      "timestamp": 1757863034085,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3029
+    },
+    {
+      "timestamp": 1757863044086,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5256
+    },
+    {
+      "timestamp": 1757863044103,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4032
+    },
+    {
+      "timestamp": 1757863044111,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.3264
+    },
+    {
+      "timestamp": 1757863044116,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4601
+    },
+    {
+      "timestamp": 1757863044120,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.5429
+    },
+    {
+      "timestamp": 1757863054080,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3954
+    },
+    {
+      "timestamp": 1757863054085,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.371
+    },
+    {
+      "timestamp": 1757863064086,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3676
+    },
+    {
+      "timestamp": 1757863064091,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3416
+    },
+    {
+      "timestamp": 1757863074081,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4578
+    },
+    {
+      "timestamp": 1757863074099,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4285
+    },
+    {
+      "timestamp": 1757863074107,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.108
+    },
+    {
+      "timestamp": 1757863074112,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3552
+    },
+    {
+      "timestamp": 1757863074116,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.2727
+    },
+    {
+      "timestamp": 1757863084085,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.364
+    },
+    {
+      "timestamp": 1757863084090,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3088
+    },
+    {
+      "timestamp": 1757863094077,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4426
+    },
+    {
+      "timestamp": 1757863094094,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5779
+    },
+    {
+      "timestamp": 1757863104082,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3948
+    },
+    {
+      "timestamp": 1757863104103,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.261
+    },
+    {
+      "timestamp": 1757863104108,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4834
+    },
+    {
+      "timestamp": 1757863104112,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2858
+    },
+    {
+      "timestamp": 1757863104117,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.468
+    },
+    {
+      "timestamp": 1757863114075,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3688
+    },
+    {
+      "timestamp": 1757863114081,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3169
+    },
+    {
+      "timestamp": 1757863124075,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3764
+    },
+    {
+      "timestamp": 1757863124092,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3981
+    },
+    {
+      "timestamp": 1757863134079,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3831
+    },
+    {
+      "timestamp": 1757863134087,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.1303
+    },
+    {
+      "timestamp": 1757863134091,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3596
+    },
+    {
+      "timestamp": 1757863134095,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2779
+    },
+    {
+      "timestamp": 1757863134135,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4126
+    },
+    {
+      "timestamp": 1757863144080,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3671
+    },
+    {
+      "timestamp": 1757863144085,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3566
+    },
+    {
+      "timestamp": 1757863154079,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3767
+    },
+    {
+      "timestamp": 1757863154097,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4299
+    },
+    {
+      "timestamp": 1757863164085,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4471
+    },
+    {
+      "timestamp": 1757863164103,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4132
+    },
+    {
+      "timestamp": 1757863164111,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.2416
+    },
+    {
+      "timestamp": 1757863164115,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2434
+    },
+    {
+      "timestamp": 1757863164120,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 5.0698
+    },
+    {
+      "timestamp": 1757863174088,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5081
+    },
+    {
+      "timestamp": 1757863174093,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3588
+    },
+    {
+      "timestamp": 1757863184081,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4102
+    },
+    {
+      "timestamp": 1757863184085,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3051
+    },
+    {
+      "timestamp": 1757863194086,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.384
+    },
+    {
+      "timestamp": 1757863194108,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.4626
+    },
+    {
+      "timestamp": 1757863194112,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4006
+    },
+    {
+      "timestamp": 1757863194117,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.291
+    },
+    {
+      "timestamp": 1757863194121,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.6714
+    },
+    {
+      "timestamp": 1757863204081,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3765
+    },
+    {
+      "timestamp": 1757863204086,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3555
+    },
+    {
+      "timestamp": 1757863214078,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.383
+    },
+    {
+      "timestamp": 1757863214096,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4326
+    },
+    {
+      "timestamp": 1757863224079,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4202
+    },
+    {
+      "timestamp": 1757863224097,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4519
+    },
+    {
+      "timestamp": 1757863224105,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.0585
+    },
+    {
+      "timestamp": 1757863224110,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.331
+    },
+    {
+      "timestamp": 1757863224113,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.0267
+    },
+    {
+      "timestamp": 1757863234082,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3904
+    },
+    {
+      "timestamp": 1757863234099,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4169
+    },
+    {
+      "timestamp": 1757863244085,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4044
+    },
+    {
+      "timestamp": 1757863244102,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4271
+    },
+    {
+      "timestamp": 1757863254086,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4001
+    },
+    {
+      "timestamp": 1757863254104,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4258
+    },
+    {
+      "timestamp": 1757863254112,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.2758
+    },
+    {
+      "timestamp": 1757863254116,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3272
+    },
+    {
+      "timestamp": 1757863254120,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.4641
+    },
+    {
+      "timestamp": 1757863264078,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3805
+    },
+    {
+      "timestamp": 1757863264083,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3481
+    },
+    {
+      "timestamp": 1757863274081,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3856
+    },
+    {
+      "timestamp": 1757863274086,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3596
+    },
+    {
+      "timestamp": 1757863284084,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3839
+    },
+    {
+      "timestamp": 1757863284102,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3693
+    },
+    {
+      "timestamp": 1757863284109,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.1295
+    },
+    {
+      "timestamp": 1757863284114,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2821
+    },
+    {
+      "timestamp": 1757863284118,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2954
+    },
+    {
+      "timestamp": 1757863294080,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4026
+    },
+    {
+      "timestamp": 1757863294097,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5379
+    },
+    {
+      "timestamp": 1757863304082,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3877
+    },
+    {
+      "timestamp": 1757863304100,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4177
+    },
+    {
+      "timestamp": 1757863314080,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4368
+    },
+    {
+      "timestamp": 1757863314103,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.4505
+    },
+    {
+      "timestamp": 1757863314107,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.358
+    },
+    {
+      "timestamp": 1757863314111,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3212
+    },
+    {
+      "timestamp": 1757863314115,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 4.1551
+    },
+    {
+      "timestamp": 1757863324088,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3875
+    },
+    {
+      "timestamp": 1757863324093,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3256
+    },
+    {
+      "timestamp": 1757863334085,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3846
+    },
+    {
+      "timestamp": 1757863334103,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4239
+    },
+    {
+      "timestamp": 1757863344084,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.382
+    },
+    {
+      "timestamp": 1757863344106,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.1037
+    },
+    {
+      "timestamp": 1757863344111,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3664
+    },
+    {
+      "timestamp": 1757863344116,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3392
+    },
+    {
+      "timestamp": 1757863344121,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 5.0842
+    },
+    {
+      "timestamp": 1757863354086,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4489
+    },
+    {
+      "timestamp": 1757863415143,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 2.4284
+    },
+    {
+      "timestamp": 1757863415148,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.0999
+    },
+    {
+      "timestamp": 1757863424353,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4545
+    },
+    {
+      "timestamp": 1757863424372,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.6584
+    },
+    {
+      "timestamp": 1757863434364,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3557
+    },
+    {
+      "timestamp": 1757863434465,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 97.1854
+    },
+    {
+      "timestamp": 1757863434501,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.6761
+    },
+    {
+      "timestamp": 1757863434509,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.3495
+    },
+    {
+      "timestamp": 1757863434513,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.6388
+    },
+    {
+      "timestamp": 1757863434517,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 17.7787
+    },
+    {
+      "timestamp": 1757863434522,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.453
+    },
+    {
+      "timestamp": 1757863434527,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.6004
+    },
+    {
+      "timestamp": 1757863476364,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3918
+    },
+    {
+      "timestamp": 1757863476372,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.5492
+    },
+    {
+      "timestamp": 1757863476377,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4635
+    },
+    {
+      "timestamp": 1757863476405,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2978
+    },
+    {
+      "timestamp": 1757863476409,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4262
+    },
+    {
+      "timestamp": 1757863476416,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.1259
+    },
+    {
+      "timestamp": 1757863476433,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.2761
+    },
+    {
+      "timestamp": 1757863476436,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.6983
+    },
+    {
+      "timestamp": 1757863490773,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.5323
+    },
+    {
+      "timestamp": 1757863490794,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3885
+    },
+    {
+      "timestamp": 1757863492898,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3087
+    },
+    {
+      "timestamp": 1757863492906,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 2.5984
+    },
+    {
+      "timestamp": 1757863492916,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3059
+    },
+    {
+      "timestamp": 1757863492929,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.4667
+    },
+    {
+      "timestamp": 1757863492936,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.1712
+    },
+    {
+      "timestamp": 1757863492940,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3523
+    },
+    {
+      "timestamp": 1757863492944,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3312
+    },
+    {
+      "timestamp": 1757863492947,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 14.8538
+    },
+    {
+      "timestamp": 1757863492952,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 8.1192
+    },
+    {
+      "timestamp": 1757863495696,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 9.1509
+    },
+    {
+      "timestamp": 1757863495701,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.3289
+    },
+    {
+      "timestamp": 1757863495706,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.9578
+    },
+    {
+      "timestamp": 1757863495713,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.2176
+    },
+    {
+      "timestamp": 1757863495717,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.9571
+    },
+    {
+      "timestamp": 1757863495723,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.1631
+    },
+    {
+      "timestamp": 1757863495730,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.6242
+    },
+    {
+      "timestamp": 1757863495738,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.6498
+    },
+    {
+      "timestamp": 1757863495744,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 1.2817
+    },
+    {
+      "timestamp": 1757863502900,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3417
+    },
+    {
+      "timestamp": 1757863502924,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3486
+    },
+    {
+      "timestamp": 1757863512909,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.321
+    },
+    {
+      "timestamp": 1757863512938,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.4302
+    },
+    {
+      "timestamp": 1757863522909,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3452
+    },
+    {
+      "timestamp": 1757863522927,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3315
+    },
+    {
+      "timestamp": 1757863522935,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 3.2422
+    },
+    {
+      "timestamp": 1757863522939,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3786
+    },
+    {
+      "timestamp": 1757863522943,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3405
+    },
+    {
+      "timestamp": 1757863532901,
+      "toolName": "http/request",
+      "success": true,
+      "responseTimeMs": 0.3399
     }
   ],
   "stats": {
     "count": 10000,
     "capacity": 10000,
-    "totalAdded": 15664,
-    "totalDropped": 5664,
+    "totalAdded": 16139,
+    "totalDropped": 6139,
     "resizeCount": 0,
-    "memoryUsage": 1944516,
-    "lastModified": "2025-09-14T13:29:14.434Z",
+    "memoryUsage": 1943906,
+    "lastModified": "2025-09-14T15:25:32.901Z",
     "utilization": 100
   },
   "version": "1.0.0",
-  "createdAt": "2025-09-14T13:29:14.454Z",
-  "lastSaved": "2025-09-14T13:29:14.455Z",
-  "checksum": "6c0579638fb735ed941cd8773c5c31b05e651bc5c13659edb2f6b0d4e23d244e"
+  "createdAt": "2025-09-14T15:25:32.909Z",
+  "lastSaved": "2025-09-14T15:25:32.909Z",
+  "checksum": "b1c2b5b389e594f04b5eb2dbee1c5ee9cc2a0b8a7565e1a93eb86f28c82464f8"
 }

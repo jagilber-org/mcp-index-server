@@ -126,16 +126,20 @@
                     </div>
                     <div class="actions" style="order:6;">
                         <button id="graph-refresh-btn" class="action-btn" style="background:linear-gradient(45deg,#2ecc71,#27ae60)" title="Refresh Mermaid diagram from current filters">🔄 Refresh Graph</button>
-                        <button class="action-btn" style="background:linear-gradient(45deg,#3498db,#2980b9)" title="Copy Mermaid source to clipboard">📋 Copy Source</button>
-                        <button id="graph-edit-btn" class="action-btn" style="background:linear-gradient(45deg,#e67e22,#d35400)" title="Edit Mermaid source inline">✏️ Edit Source</button>
-                        <button id="graph-apply-btn" class="action-btn" style="display:none; background:linear-gradient(45deg,#27ae60,#1e8449)" title="Apply manual edits">💾 Apply Edits</button>
-                        <button id="graph-cancel-btn" class="action-btn danger" style="display:none;" title="Cancel manual edits">↩️ Cancel Edit</button>
+                        <button id="graph-copy-btn" class="action-btn" style="background:linear-gradient(45deg,#3498db,#2980b9)" title="Copy Mermaid source to clipboard" onclick="window.copyMermaidSource && window.copyMermaidSource()">📋 Copy Source</button>
+                        <button id="graph-theme-insert" class="action-btn" style="background:linear-gradient(45deg,#8e44ad,#5e337d)" title="Insert dark theme frontmatter" onclick="window.insertGraphTheme && window.insertGraphTheme()">🎨 Theme</button>
+                        <button id="graph-edit-btn" class="action-btn" style="background:linear-gradient(45deg,#e67e22,#d35400)" title="Edit Mermaid source inline" onclick="window.toggleGraphEdit && window.toggleGraphEdit()">✏️ Edit Source</button>
+                        <button id="graph-apply-btn" class="action-btn" style="display:none; background:linear-gradient(45deg,#27ae60,#1e8449)" title="Apply manual edits" onclick="window.applyGraphEdit && window.applyGraphEdit()">💾 Apply Edits</button>
+                        <button id="graph-cancel-btn" class="action-btn danger" style="display:none;" title="Cancel manual edits" onclick="window.cancelGraphEdit && window.cancelGraphEdit()">↩️ Cancel Edit</button>
                     </div>
                 </div>
                 <div id="graph-meta" style="font-size:12px; opacity:0.8; margin-bottom:2px; font-family:monospace;"></div>
                 <div id="graph-meta2" style="font-size:11px; opacity:0.65; margin-bottom:6px; font-family:monospace;"></div>
-                <div id="graph-mermaid-wrapper" style="background:#0f1624; color:#d0d7e2; border:1px solid #1f2a3a; border-radius:8px; padding:16px; overflow:auto; max-height:320px; position:relative;">
-                    <div style="font-size:11px; opacity:0.65; margin-bottom:6px;">Mermaid Source (copy or edit; elk layout prepends frontmatter)</div>
+                <div id="graph-mermaid-wrapper" style="background:#0f1624; color:#d0d7e2; border:1px solid #1f2a3a; border-radius:8px; padding:16px; overflow:auto; max-height:420px; position:relative;">
+                    <div style="font-size:11px; opacity:0.65; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                        <span>Mermaid Source (edit inline; frontmatter optional)</span>
+                        <label style="font-size:10px; display:flex; gap:4px; align-items:center; opacity:0.8;"><input type="checkbox" id="graph-auto-render" checked style="margin:0;"> auto-render</label>
+                    </div>
                     <pre id="graph-mermaid" style="margin:0; white-space:pre; font-family:monospace; font-size:12px; line-height:1.25;">(loading graph...)</pre>
                 </div>
                 <div style="margin-top:8px; font-size:11px; opacity:0.65;">Mermaid source shown above. Rendered diagram below uses same code.</div>

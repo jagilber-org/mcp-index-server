@@ -175,11 +175,63 @@
 
   function copyMermaidSource(){ const el = document.getElementById('graph-mermaid'); if(!el) return; const txt = el.textContent || ''; navigator.clipboard.writeText(txt).catch(()=>{}); }
 
-  function toggleGraphEdit(){ if(graphEditing){ cancelGraphEdit(); return; } const target = document.getElementById('graph-mermaid'); if(!target) return; graphEditing = true; target.setAttribute('contenteditable','true'); target.style.outline = '1px solid #3498db'; document.getElementById('graph-edit-btn').style.display='none'; document.getElementById('graph-apply-btn').style.display='inline-block'; document.getElementById('graph-cancel-btn').style.display='inline-block'; }
+  function toggleGraphEdit(){
+    if(graphEditing){
+      cancelGraphEdit();
+      return;
+    }
+    const target = document.getElementById('graph-mermaid');
+    if(!target) return;
+    // Capture current content as restore baseline when entering edit mode
+    window.graphOriginalSource = target.textContent || '';
+    graphEditing = true;
+    target.setAttribute('contenteditable','true');
+    target.style.outline = '1px solid #3498db';
+    setGraphMetaProgress('edit-start');
+    try { document.getElementById('graph-edit-btn').style.display='none'; } catch{}
+    try { document.getElementById('graph-apply-btn').style.display='inline-block'; } catch{}
+    try { document.getElementById('graph-cancel-btn').style.display='inline-block'; } catch{}
+  }
 
-  function applyGraphEdit(){ const target = document.getElementById('graph-mermaid'); if(!target) return; const code = target.textContent || ''; (async ()=>{ try { await ensureMermaid(); const { svg } = await window.mermaid.render('graphMermaidSvg', code); const legacyHost = document.getElementById('graph-mermaid-svg'); if(legacyHost) legacyHost.innerHTML = svg; } catch(e){ alert('Render failed: '+ e.message); } })(); cancelGraphEdit(true); }
+  function applyGraphEdit(){
+    const target = document.getElementById('graph-mermaid');
+    if(!target) return;
+    const code = target.textContent || '';
+    // Promote edited content to new baseline so subsequent cancel doesn't revert it
+    window.graphOriginalSource = code;
+    persistGraphSource(code);
+    setGraphMetaProgress('apply');
+    (async ()=>{
+      try {
+        await ensureMermaid();
+        const { svg } = await window.mermaid.render('graphMermaidSvg', code);
+        const legacyHost = document.getElementById('graph-mermaid-svg'); if(legacyHost) legacyHost.innerHTML = svg;
+        setGraphMetaProgress('apply-ok');
+      } catch(e){
+        setGraphMetaProgress('apply-fail');
+        try { alert('Render failed: '+ (e && e.message || e)); } catch{}
+      }
+    })();
+    cancelGraphEdit(true); // keep edited content visible
+  }
 
-  function cancelGraphEdit(keep){ if(!graphEditing) return; const target = document.getElementById('graph-mermaid'); if(target){ target.removeAttribute('contenteditable'); target.style.outline='none'; if(!keep) target.textContent = window.graphOriginalSource; } graphEditing=false; document.getElementById('graph-edit-btn').style.display='inline-block'; document.getElementById('graph-apply-btn').style.display='none'; document.getElementById('graph-cancel-btn').style.display='none'; }
+  function cancelGraphEdit(keep){
+    if(!graphEditing) return;
+    const target = document.getElementById('graph-mermaid');
+    if(target){
+      target.removeAttribute('contenteditable');
+      target.style.outline='none';
+      if(!keep){
+        // Restore baseline content
+        target.textContent = window.graphOriginalSource;
+      }
+    }
+    graphEditing=false;
+    setGraphMetaProgress('edit-end');
+    try { document.getElementById('graph-edit-btn').style.display='inline-block'; } catch{}
+    try { document.getElementById('graph-apply-btn').style.display='none'; } catch{}
+    try { document.getElementById('graph-cancel-btn').style.display='none'; } catch{}
+  }
 
   // Drilldown helper placeholders (real functions live in admin.drilldown.js but we provide async-safe calls)
   async function refreshDrillCategories(){ if(typeof window.refreshDrillCategories === 'function') return window.refreshDrillCategories(); }
@@ -200,6 +252,91 @@
   window.toggleGraphEdit = toggleGraphEdit;
   window.applyGraphEdit = applyGraphEdit;
   window.cancelGraphEdit = cancelGraphEdit;
+
+  // Local persistence helpers
+  const LS_KEY = 'mcp.graph.lastSource';
+  function persistGraphSource(src){ try { if(src && src.trim().length) localStorage.setItem(LS_KEY, src); } catch{} }
+  function loadPersistedGraphSource(){ try { return localStorage.getItem(LS_KEY) || ''; } catch { return ''; } }
+  window.__persistGraphSource = persistGraphSource;
+
+  // Auto render on content edits when checkbox enabled
+  function bindAutoRender(){
+    const pre = document.getElementById('graph-mermaid');
+    if(!pre) return;
+    pre.addEventListener('input', ()=>{
+      const auto = (document.getElementById('graph-auto-render')||{}).checked;
+      if(auto && graphEditing){
+        const code = pre.textContent || '';
+        persistGraphSource(code);
+        // Debounced lightweight render (cancel previous if still pending)
+        clearTimeout(window.__graphAutoRenderTimer);
+        window.__graphAutoRenderTimer = setTimeout(()=>{
+          (async ()=>{ try { await ensureMermaid(); const { svg } = await window.mermaid.render('graphMermaidSvg', code); const legacyHost = document.getElementById('graph-mermaid-svg'); if(legacyHost) legacyHost.innerHTML = svg; } catch{} })();
+        }, 400);
+      }
+    });
+  }
+
+  // Theme insertion
+  function insertGraphTheme(){
+    const pre = document.getElementById('graph-mermaid'); if(!pre) return;
+    const current = pre.textContent || '';
+    const hasFrontmatter = /^---[\s\S]*?---/m.test(current);
+    setGraphMetaProgress('theme-start');
+    // Dynamically pull project CSS palette (falls back to hardcoded defaults if missing)
+    let rootStyles; try { rootStyles = getComputedStyle(document.documentElement); } catch { rootStyles = null; }
+    const css = (v, fb) => (rootStyles ? (rootStyles.getPropertyValue(v)||'').trim() : '') || fb;
+    // Map Mermaid themeVariables to project palette / graph overrides
+    const palette = {
+      primaryColor: css('--admin-accent', '#667eea'),
+      primaryBorderColor: '#6b8cff',
+      primaryTextColor: css('--admin-text', '#e3ebf5'),
+      lineColor: '#5479ff',
+      secondaryColor: css('--admin-accent-alt', '#764ba2'),
+      tertiaryColor: css('--admin-success', '#27ae60'),
+      background: css('--admin-bg', '#0b0f19'),
+      mainBkg: css('--admin-surface', '#101726'),
+      secondBkg: css('--admin-surface-alt', '#141e30'),
+      clusterBkg: '#273341',
+      clusterBorder: '#6b8cff',
+      edgeLabelBackground: '#2f3947',
+      nodeBkg: '#3a4554',
+      nodeBorder: '#6b8cff',
+      fontFamily: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif",
+      fontSize: '14px',
+      fontWeight: '600',
+      clusterLabelFontSize: '16px',
+      noteTextColor: css('--admin-text-dim', '#9fb5cc'),
+      nodeTextColor: css('--admin-text', '#e3ebf5'),
+      tertiaryBorderColor: css('--admin-success', '#27ae60'),
+      secondaryBorderColor: css('--admin-accent-alt', '#764ba2'),
+      secondaryTextColor: css('--admin-text', '#e3ebf5'),
+      tertiaryTextColor: css('--admin-text', '#e3ebf5'),
+      titleColor: css('--admin-text', '#e3ebf5')
+    };
+    // Build YAML block (only include known Mermaid variables)
+    const kv = Object.entries(palette).map(([k,v])=>`    ${k}: "${v}"`).join('\n');
+    const themeBlock = `---\nconfig:\n  theme: dark\n  themeVariables:\n${kv}\n  layout: elk\n---\n`;
+    let updated = hasFrontmatter ? current.replace(/^---[\s\S]*?---\n?/, themeBlock) : themeBlock + current;
+    pre.textContent = updated;
+    persistGraphSource(updated);
+    setGraphMetaProgress('theme-inserted');
+    if(!graphEditing) toggleGraphEdit();
+  }
+  window.insertGraphTheme = insertGraphTheme;
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    bindAutoRender();
+    // If we have a persisted manual edit, restore it (but allow fresh reload to overwrite when refreshed)
+    const persisted = loadPersistedGraphSource();
+    if(persisted){
+      const target = document.getElementById('graph-mermaid');
+      if(target && target.textContent && !/\(loading graph/.test(target.textContent)){
+        // Only restore if existing content is a real graph
+        target.textContent = persisted;
+      }
+    }
+  });
 
   let __graphInitialAutoReload = false;
   async function graphEnsureReadyAndReload(){

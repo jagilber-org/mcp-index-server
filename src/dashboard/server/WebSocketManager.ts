@@ -265,7 +265,15 @@ export class WebSocketManager {
       this.clients.delete(ws);
       const disconnectTs = Date.now();
       const duration = ws.connectedAt ? disconnectTs - ws.connectedAt : 0;
-      console.log(`[WebSocket] Client disconnected: ${code} ${reason.toString()} id=${ws.clientId} duration=${duration}ms`);
+      const wantStructured = process.env.MCP_DEBUG === '1' || process.env.MCP_VERBOSE_LOGGING === '1';
+      const structuredDisc = { ts: disconnectTs, level: 'info', src: 'websocket', event: 'client_disconnected', code, reason: reason.toString(), id: ws.clientId, durationMs: duration, totalClients: this.clients.size };
+      try {
+        if (wantStructured) {
+          console.log(JSON.stringify(structuredDisc));
+        } else {
+          console.log(`[WebSocket] Client disconnected: code=${code} reason=${reason.toString()} id=${ws.clientId} duration=${duration}ms`);
+        }
+      } catch {/* ignore */}
       if (ws.clientId) {
         try {
           getMetricsCollector().recordDisconnection(ws.clientId);
@@ -283,8 +291,16 @@ export class WebSocketManager {
     });
 
     ws.on('error', (error: Error) => {
-      console.error('[WebSocket] Client error:', error);
       this.clients.delete(ws);
+      const wantStructured = process.env.MCP_DEBUG === '1' || process.env.MCP_VERBOSE_LOGGING === '1';
+      const structuredErr = { ts: Date.now(), level: 'error', src: 'websocket', event: 'client_error', message: error.message, stack: error.stack, id: ws.clientId };
+      try {
+        if (wantStructured) {
+          console.log(JSON.stringify(structuredErr));
+        } else {
+          console.error('[WebSocket] Client error:', error);
+        }
+      } catch {/* ignore */}
     });
 
     ws.on('pong', () => {
@@ -303,7 +319,16 @@ export class WebSocketManager {
       },
     });
 
-    console.log(`[WebSocket] Client connected. Total clients: ${this.clients.size}`);
+    // Dual-format logging (no new env flags): structured JSON when MCP_DEBUG or MCP_VERBOSE_LOGGING enabled, else concise plain text
+    const wantStructured = process.env.MCP_DEBUG === '1' || process.env.MCP_VERBOSE_LOGGING === '1';
+    const structuredConn = { ts: Date.now(), level: 'info', src: 'websocket', event: 'client_connected', totalClients: this.clients.size };
+    try {
+      if (wantStructured) {
+        console.log(JSON.stringify(structuredConn));
+      } else {
+        console.log(`[WebSocket] Client connected. Total clients: ${this.clients.size}`);
+      }
+    } catch {/* ignore */}
 
   // Send immediate metrics snapshot to the new client
   this.sendCurrentMetrics(ws);

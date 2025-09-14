@@ -7813,20 +7813,170 @@
       "responseTime": 2.037246496815286,
       "throughput": 18,
       "errorRate": 0
+    },
+    {
+      "timestamp": 1757856590340,
+      "responseTime": 1.96378857142857,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757856650353,
+      "responseTime": 13.961999492385786,
+      "throughput": 22,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757856710358,
+      "responseTime": 13.309716744186048,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757856770367,
+      "responseTime": 12.3515356223176,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757856830380,
+      "responseTime": 11.530506374501996,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757856890382,
+      "responseTime": 10.835327881040898,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757856950388,
+      "responseTime": 10.2394362369338,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757857010392,
+      "responseTime": 9.700968852459022,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757857070392,
+      "responseTime": 9.238405882352943,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757857124324,
+      "responseTime": 0,
+      "throughput": 0,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757857184364,
+      "responseTime": 5.357112121212118,
+      "throughput": 33,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757862730300,
+      "responseTime": 0,
+      "throughput": 0,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757862790344,
+      "responseTime": 5.12966,
+      "throughput": 25,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757862850345,
+      "responseTime": 3.0667827586206897,
+      "throughput": 33,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757862910359,
+      "responseTime": 2.510862365591398,
+      "throughput": 35,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757862970364,
+      "responseTime": 2.3342333333333336,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757863030374,
+      "responseTime": 2.1668565891472866,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757863090384,
+      "responseTime": 2.042161904761905,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757863150387,
+      "responseTime": 1.920355757575758,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757863210389,
+      "responseTime": 1.8502961748633882,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757863270402,
+      "responseTime": 1.7859129353233831,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757863330410,
+      "responseTime": 1.7139474885844748,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757863413984,
+      "responseTime": 0,
+      "throughput": 0,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757863474031,
+      "responseTime": 10.473233333333335,
+      "throughput": 12,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757863534041,
+      "responseTime": 3.929574509803923,
+      "throughput": 39,
+      "errorRate": 0
     }
   ],
   "stats": {
-    "count": 1301,
+    "count": 1326,
     "capacity": 1440,
-    "totalAdded": 1301,
+    "totalAdded": 1326,
     "totalDropped": 0,
     "resizeCount": 0,
-    "memoryUsage": 249324,
-    "lastModified": "2025-09-14T13:28:50.353Z",
-    "utilization": 90.34722222222223
+    "memoryUsage": 253968,
+    "lastModified": "2025-09-14T15:25:34.068Z",
+    "utilization": 92.08333333333333
   },
   "version": "1.0.0",
-  "createdAt": "2025-09-14T13:28:50.354Z",
-  "lastSaved": "2025-09-14T13:28:50.354Z",
-  "checksum": "bbd73b3122230210bbb80aa8c787ece963eef2ee4a27f086e90df141a0f78043"
+  "createdAt": "2025-09-14T15:25:34.069Z",
+  "lastSaved": "2025-09-14T15:25:34.069Z",
+  "checksum": "94d006173ba71dca17dfde3ed1f20615fa815503240c1f4566fe2975febe56cd"
 }

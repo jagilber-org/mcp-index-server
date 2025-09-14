@@ -1,20 +1,20 @@
 {
-  "timestamp": 1757856110257,
+  "timestamp": 1757862730300,
   "server": {
-    "uptime": 52496,
+    "uptime": 50508,
     "version": "1.4.2",
     "memoryUsage": {
-      "rss": 93765632,
-      "heapTotal": 48836608,
-      "heapUsed": 19682656,
-      "external": 2544112,
-      "arrayBuffers": 778735
+      "rss": 93970432,
+      "heapTotal": 49213440,
+      "heapUsed": 21733088,
+      "external": 2552304,
+      "arrayBuffers": 786927
     },
     "cpuUsage": {
-      "user": 22109000,
-      "system": 29421000
+      "user": 19593000,
+      "system": 30062000
     },
-    "startTime": 1757856057761
+    "startTime": 1757862679792
   },
   "tools": {},
   "connections": {

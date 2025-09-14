@@ -9,6 +9,7 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 - Dashboard: Added performance (CPU + Memory) card visual baseline snapshot (`performance-card-*`).
 - UI: Refactored drilldown controls into horizontal grouped layout with standardized checkbox styling.
 - Tests: Promoted performance card snapshot to mandatory Playwright baseline; removed legacy optional skips via deterministic seeding.
+- Logging: Introduced dual-format (structured JSON vs concise plain) logging for WebSocket connect/disconnect/error and memory deltas using existing `MCP_DEBUG` / `MCP_VERBOSE_LOGGING` flags (no new env vars added). Multi-line memory change logs replaced with single-line structured or concise output to eliminate downstream JSON parse warnings.
 
 
 ### Added (dispatcher capabilities & batch)

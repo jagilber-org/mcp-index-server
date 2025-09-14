@@ -55,6 +55,8 @@ export interface BufferRingConfig {
   deserializer?: <U>(data: U) => U;
   /** Suppress persist/load info logs (for high-frequency buffers) */
   suppressPersistLog?: boolean;
+  /** Append mode (JSONL incremental writes instead of full snapshot rewrites) */
+  appendMode?: boolean;
 }
 
 /**
@@ -114,6 +116,10 @@ export class BufferRing<T = unknown> extends EventEmitter {
   private isFull = false;
   private config: BufferRingConfig;
   private stats: BufferRingStats;
+  /** Sequence counter for append mode records */
+  private appendSeq = 0;
+  /** Track whether append mode file has been lazily loaded */
+  private appendLoaded = false;
 
   constructor(config: Partial<BufferRingConfig> = {}) {
     super();
@@ -124,8 +130,13 @@ export class BufferRing<T = unknown> extends EventEmitter {
       autoPersist: false,
       maxPersistEntries: 0,
       enableIntegrityCheck: true,
+      appendMode: true,
       ...config
     };
+
+    // Environment override: allow disable (0) or enable (1) explicitly
+    if (process.env.BUFFER_RING_APPEND === '0') this.config.appendMode = false;
+    else if (process.env.BUFFER_RING_APPEND === '1') this.config.appendMode = true;
 
     this.stats = {
       count: 0,
@@ -140,10 +151,23 @@ export class BufferRing<T = unknown> extends EventEmitter {
 
     // Load from persistence if configured
     if (this.config.persistPath) {
-      this.loadFromDisk().catch(error => {
-        this.emit('error', error, 'load');
-        logError(`BufferRing: Failed to load from ${this.config.persistPath}: ${error.message}`);
-      });
+      if (this.config.appendMode) {
+        // Lazy load for append mode occurs on first access; optionally preload if explicit ENV set
+        if (process.env.BUFFER_RING_APPEND_PRELOAD === '1') {
+          try {
+                  this.loadFromAppendSync();
+                } catch (error: unknown) {
+                  const err = error instanceof Error ? error : new Error('Unknown append preload error');
+                  this.emit('error', err, 'load');
+                  logError(`BufferRing: Failed (append) to load from ${this.config.persistPath}: ${err.message}`);
+          }
+        }
+      } else {
+        this.loadFromDisk().catch(error => {
+          this.emit('error', error, 'load');
+          logError(`BufferRing: Failed to load from ${this.config.persistPath}: ${error.message}`);
+        });
+      }
     }
   }
 
@@ -201,9 +225,17 @@ export class BufferRing<T = unknown> extends EventEmitter {
 
       // Auto-persist if enabled
       if (this.config.autoPersist && this.config.persistPath) {
-        this.saveToDisk().catch(error => {
-          this.emit('error', error, 'auto-persist');
-        });
+        if (this.config.appendMode) {
+          try {
+            this.appendToDisk(serializedEntry);
+          } catch (err) {
+            this.emit('error', err as Error, 'auto-append');
+          }
+        } else {
+          this.saveToDisk().catch(error => {
+            this.emit('error', error, 'auto-persist');
+          });
+        }
       }
 
       return true;
@@ -217,6 +249,10 @@ export class BufferRing<T = unknown> extends EventEmitter {
    * Get all entries in chronological order (oldest first)
    */
   getAll(): T[] {
+    // Lazy load append file on first read if in append mode
+    if (this.config.appendMode && this.config.persistPath && !this.appendLoaded) {
+      try { this.loadFromAppendSync(); } catch (err) { this.emit('error', err as Error, 'load-append'); }
+    }
     if (!this.isFull) {
       return this.buffer.slice(0, this.writeIndex).map(this.deserializeEntry.bind(this));
     }
@@ -431,6 +467,54 @@ export class BufferRing<T = unknown> extends EventEmitter {
     } catch (error) {
       this.emit('error', error as Error, 'load');
       throw error;
+    }
+  }
+
+  /**
+   * Append a single entry (JSONL) instead of rewriting full snapshot.
+   * Record shape: { t: ISO timestamp, i: sequence, v: serializedEntry }
+   */
+  private appendToDisk(entry: T): void {
+    if (!this.config.persistPath) return;
+    const dir = path.dirname(this.config.persistPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const rec = { t: new Date().toISOString(), i: this.appendSeq++, v: entry };
+    fs.appendFileSync(this.config.persistPath, JSON.stringify(rec) + '\n');
+    if (!this.config.suppressPersistLog && this.appendSeq % 250 === 0) {
+      // Throttle log noise (every 250 appends)
+      logInfo(`BufferRing: Appended ${this.appendSeq} records to ${this.config.persistPath}`);
+    }
+  }
+
+  /**
+   * Synchronous load for append mode (reads JSONL file)
+   */
+  private loadFromAppendSync(): void {
+    if (!this.config.persistPath || !fs.existsSync(this.config.persistPath)) { this.appendLoaded = true; return; }
+    try {
+      const raw = fs.readFileSync(this.config.persistPath, 'utf8');
+      const lines = raw.split(/\r?\n/).filter(l => l.trim().length);
+      const max = this.config.maxPersistEntries > 0 ? this.config.maxPersistEntries : this.config.capacity;
+      const slice = lines.slice(-max);
+      // Clear existing buffer first (without emitting per-drop noise)
+      this.buffer = [];
+      this.writeIndex = 0; this.isFull = false; this.stats.count = 0;
+      slice.forEach(line => {
+        try {
+          const rec = JSON.parse(line);
+          this.add(rec.v as T); // reuse add for ordering & stats
+          if (typeof rec.i === 'number' && rec.i >= this.appendSeq) this.appendSeq = rec.i + 1;
+        } catch { /* skip malformed line */ }
+      });
+      this.appendLoaded = true;
+      if (!this.config.suppressPersistLog) {
+        logInfo(`BufferRing: Loaded (append mode) ${slice.length}/${lines.length} entries from ${this.config.persistPath}`);
+      }
+    } catch (err) {
+      this.appendLoaded = true; // avoid retry loop
+      throw err;
     }
   }
 

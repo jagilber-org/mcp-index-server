@@ -1,0 +1,33 @@
+{
+  "id": "mw-repair-1757878567141",
+  "title": "mw repair",
+  "body": "body",
+  "priority": 2,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "repair"
+  ],
+  "primaryCategory": "repair",
+  "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-14T19:36:07.144Z",
+  "updatedAt": "2025-09-14T19:36:07.144Z",
+  "riskScore": 103,
+  "version": "1.0.0",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-14T19:36:07.144Z",
+      "summary": "initial import"
+    }
+  ],
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-14T19:36:07.144Z",
+  "nextReviewDue": "2025-10-14T19:36:07.144Z",
+  "reviewIntervalDays": 30,
+  "semanticSummary": "body"
+}

@@ -8173,20 +8173,474 @@
       "responseTime": 1.0443450980392166,
       "throughput": 18,
       "errorRate": 0
+    },
+    {
+      "timestamp": 1757876444606,
+      "responseTime": 0,
+      "throughput": 0,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757876504654,
+      "responseTime": 8.980114285714286,
+      "throughput": 21,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757876564660,
+      "responseTime": 151.7207769230769,
+      "throughput": 70,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757876624668,
+      "responseTime": 173.43427063492058,
+      "throughput": 35,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757876684681,
+      "responseTime": 155.72401216216213,
+      "throughput": 22,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757876744692,
+      "responseTime": 142.41187647058823,
+      "throughput": 22,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757876804701,
+      "responseTime": 131.97290781249995,
+      "throughput": 22,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757876864714,
+      "responseTime": 124.66621542056066,
+      "throughput": 22,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757876924725,
+      "responseTime": 118.12209788135584,
+      "throughput": 22,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757876984734,
+      "responseTime": 112.85813333333326,
+      "throughput": 22,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877044741,
+      "responseTime": 108.65084464285708,
+      "throughput": 22,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877104755,
+      "responseTime": 104.64148841059598,
+      "throughput": 22,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877164759,
+      "responseTime": 101.13101388888884,
+      "throughput": 22,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877224771,
+      "responseTime": 98.22830780346818,
+      "throughput": 22,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877284772,
+      "responseTime": 95.50484728260872,
+      "throughput": 22,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877344772,
+      "responseTime": 93.01567384615387,
+      "throughput": 22,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877404783,
+      "responseTime": 90.95493325242724,
+      "throughput": 22,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877464786,
+      "responseTime": 89.62066541176475,
+      "throughput": 13,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877524790,
+      "responseTime": 89.48384027777783,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877584802,
+      "responseTime": 89.32353211845107,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877644811,
+      "responseTime": 89.22884394618838,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877704820,
+      "responseTime": 89.06580971302432,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877764822,
+      "responseTime": 89.02056260869568,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877824823,
+      "responseTime": 88.97602269807282,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877884831,
+      "responseTime": 88.9084518987342,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757877944846,
+      "responseTime": 88.83866860706863,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878004855,
+      "responseTime": 88.70970409836067,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878064856,
+      "responseTime": 88.71808585858588,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878124858,
+      "responseTime": 88.27427261904762,
+      "throughput": 9,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878184861,
+      "responseTime": 88.20761154598826,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878244865,
+      "responseTime": 88.09697413127414,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878304879,
+      "responseTime": 88.06714990476192,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878364879,
+      "responseTime": 88.01693063909777,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878424880,
+      "responseTime": 88.00452356215214,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878484889,
+      "responseTime": 87.97455732600733,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878544899,
+      "responseTime": 88.63057414104883,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878604900,
+      "responseTime": 92.77100975177305,
+      "throughput": 11,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878664907,
+      "responseTime": 92.69383169877409,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878724912,
+      "responseTime": 92.53166522491348,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878784914,
+      "responseTime": 92.43250786324785,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878844925,
+      "responseTime": 92.27349425675675,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878904929,
+      "responseTime": 92.15275442404005,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757878964939,
+      "responseTime": 92.15906336633661,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879024942,
+      "responseTime": 92.10131256117454,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879084956,
+      "responseTime": 92.13561677419355,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879144962,
+      "responseTime": 92.29348405103669,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879204973,
+      "responseTime": 92.46758107255519,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879264978,
+      "responseTime": 92.46384851794072,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879324983,
+      "responseTime": 92.41417577160495,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879384987,
+      "responseTime": 92.35077984732825,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879444999,
+      "responseTime": 92.23867749244714,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879505007,
+      "responseTime": 92.33392660687595,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879565009,
+      "responseTime": 99.08295233918132,
+      "throughput": 15,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879625023,
+      "responseTime": 99.15238900144722,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879685032,
+      "responseTime": 99.00551475644701,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879745044,
+      "responseTime": 99.01680751773051,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879805047,
+      "responseTime": 99.39519115168542,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879865049,
+      "responseTime": 99.29065438108486,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879925052,
+      "responseTime": 99.21616253443531,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757879985062,
+      "responseTime": 99.24225784447482,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757880045067,
+      "responseTime": 99.25143864864873,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757880105073,
+      "responseTime": 99.35827510040167,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757880165072,
+      "responseTime": 99.30189575596822,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757880225072,
+      "responseTime": 99.1858275952694,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757880285081,
+      "responseTime": 99.03924414062503,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757880345090,
+      "responseTime": 99.01463419354842,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757880405104,
+      "responseTime": 98.86460626598468,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757880465106,
+      "responseTime": 98.76893941698356,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757880525117,
+      "responseTime": 98.6547532663317,
+      "throughput": 7,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757880585117,
+      "responseTime": 98.49888580323788,
+      "throughput": 7,
+      "errorRate": 0
     }
   ],
   "stats": {
-    "count": 1361,
+    "count": 1431,
     "capacity": 1440,
-    "totalAdded": 1361,
+    "totalAdded": 1431,
     "totalDropped": 0,
     "resizeCount": 0,
-    "memoryUsage": 260570,
-    "lastModified": "2025-09-14T16:00:52.447Z",
-    "utilization": 94.51388888888889
+    "memoryUsage": 273750,
+    "lastModified": "2025-09-14T20:09:45.145Z",
+    "utilization": 99.375
   },
   "version": "1.0.0",
-  "createdAt": "2025-09-14T16:00:52.448Z",
-  "lastSaved": "2025-09-14T16:00:52.448Z",
-  "checksum": "6e99730bdca2b6907186f9dc1fcbcb8458ab85687993e735e6c5175f8357dec8"
-}
+  "createdAt": "2025-09-14T20:09:45.146Z",
+  "lastSaved": "2025-09-14T20:09:45.146Z",
+  "checksum": "6ccd6803e8134883a066186007a81de24424de0291e3f2564ebea5b27d5dfa9d"
+}{"t":"2025-09-14T20:10:27.232Z","i":0,"v":{"timestamp":1757880627231,"responseTime":0,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:11:27.250Z","i":1,"v":{"timestamp":1757880687248,"responseTime":77.13327777777778,"throughput":9,"errorRate":0}}
+{"t":"2025-09-14T20:12:27.260Z","i":2,"v":{"timestamp":1757880747258,"responseTime":85.59785,"throughput":7,"errorRate":0}}
+{"t":"2025-09-14T20:13:27.259Z","i":3,"v":{"timestamp":1757880807258,"responseTime":85.91208695652175,"throughput":7,"errorRate":0}}
+{"t":"2025-09-14T20:14:27.268Z","i":4,"v":{"timestamp":1757880867266,"responseTime":84.98184666666666,"throughput":7,"errorRate":0}}
+{"t":"2025-09-14T20:15:27.281Z","i":5,"v":{"timestamp":1757880927279,"responseTime":85.28524864864866,"throughput":7,"errorRate":0}}
+{"t":"2025-09-14T20:16:27.282Z","i":6,"v":{"timestamp":1757880987280,"responseTime":84.7147409090909,"throughput":7,"errorRate":0}}
+{"t":"2025-09-14T20:17:27.294Z","i":7,"v":{"timestamp":1757881047292,"responseTime":84.40973921568626,"throughput":7,"errorRate":0}}
+{"t":"2025-09-14T20:18:27.299Z","i":8,"v":{"timestamp":1757881107297,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:19:27.306Z","i":9,"v":{"timestamp":1757881167304,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:20:27.314Z","i":10,"v":{"timestamp":1757881227312,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:21:27.326Z","i":11,"v":{"timestamp":1757881287325,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:22:27.327Z","i":12,"v":{"timestamp":1757881347325,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:23:27.341Z","i":13,"v":{"timestamp":1757881407339,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:24:27.343Z","i":14,"v":{"timestamp":1757881467341,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:25:27.357Z","i":15,"v":{"timestamp":1757881527356,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:26:27.360Z","i":16,"v":{"timestamp":1757881587358,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:27:27.362Z","i":17,"v":{"timestamp":1757881647360,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:28:27.362Z","i":18,"v":{"timestamp":1757881707360,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:29:27.371Z","i":19,"v":{"timestamp":1757881767370,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:30:27.374Z","i":20,"v":{"timestamp":1757881827373,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:31:27.386Z","i":21,"v":{"timestamp":1757881887384,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:32:27.391Z","i":22,"v":{"timestamp":1757881947390,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:33:27.401Z","i":23,"v":{"timestamp":1757882007400,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:34:27.416Z","i":24,"v":{"timestamp":1757882067414,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:35:27.426Z","i":25,"v":{"timestamp":1757882127424,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:36:27.425Z","i":26,"v":{"timestamp":1757882187424,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:37:27.427Z","i":27,"v":{"timestamp":1757882247425,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:38:27.429Z","i":28,"v":{"timestamp":1757882307428,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:39:27.433Z","i":29,"v":{"timestamp":1757882367432,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:40:27.444Z","i":30,"v":{"timestamp":1757882427442,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:41:27.445Z","i":31,"v":{"timestamp":1757882487444,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:42:27.461Z","i":32,"v":{"timestamp":1757882547458,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:43:27.470Z","i":33,"v":{"timestamp":1757882607468,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}
+{"t":"2025-09-14T20:44:27.485Z","i":34,"v":{"timestamp":1757882667483,"responseTime":84.40973921568626,"throughput":0,"errorRate":0}}

@@ -7,6 +7,7 @@ Updated for 1.4.1 (adds: opportunistic in‑memory materialization eliminating a
 Simplified Mermaid (avoids subgraph + complex labels for GitHub compatibility):
 
 ```mermaid
+%%{init: { 'theme': 'base', 'themeVariables': { 'darkMode': 'true', 'primaryColor': '#BB2528', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#7C0000', 'lineColor': '#F8B229', 'secondaryColor': '#006100', 'tertiaryColor': '#ffffff', 'fontSize': '16px', 'fontFamily': 'trebuchet ms, Verdana, arial' }, 'layout': 'elk' } }%%
 graph TD
   Catalog[(Instruction Files)] --> Loader
   Loader --> Classifier
@@ -39,6 +40,7 @@ ASCII Fallback:
 ## Data Lifecycle
 
 ```mermaid
+%%{init: { 'theme': 'base', 'themeVariables': { 'darkMode': 'true', 'primaryColor': '#BB2528', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#7C0000', 'lineColor': '#F8B229', 'secondaryColor': '#006100', 'tertiaryColor': '#ffffff', 'fontSize': '16px', 'fontFamily': 'trebuchet ms, Verdana, arial' }, 'layout': 'elk' } }%%
 graph LR
   Files --> Validate --> Normalize --> Enrich --> Migrate --> Index --> Serve --> Track --> Persist --> Index
   Serve --> Metrics
@@ -218,3 +220,150 @@ The instruction catalog card styling has been generalized:
 - Instruction-specific classes remain (`.instruction-item*`) for backward compatibility; both point to unified rules.
 
 When adding a new list, apply `class="catalog-list"` to the container and emit `.catalog-item` blocks with optional `.meta-chip` children to inherit full theming automatically.
+
+## Manifest Manager & Historical Snapshot Flows (1.5.x)
+
+Recent additions introduced a lightweight manifest write helper plus a historical snapshot persistence path (BufferRing-based). This section documents the flows, performance considerations, and optimization roadmap to resolve observed startup latency caused by synchronous snapshot rewrites.
+
+### Components (New / Clarified)
+
+| Component | Purpose | Interaction Points |
+|-----------|---------|--------------------|
+| Manifest Manager | Maintains summarized catalog manifest (id, version markers, counts) for dashboard / backup routines | Triggered after successful mutation (`add`, `import`, `remove`, `groom`, integrity repair) via deferred `attemptManifestUpdate()` unless forced sync by `MCP_MANIFEST_WRITE=1` |
+| Historical Snapshot Writer | Persists rolling window of catalog state or activity metrics (BufferRing) | Currently writes full JSON on each `entry-added` when `autoPersist` enabled |
+| BufferRing (persistence mode) | Generic circular buffer (logs, metrics, snapshots) | Emits `persisted` events; synchronous atomic file rewrite per add (current) |
+
+### Current (Baseline) Flow
+
+```mermaid
+%%{init: { 'theme': 'base', 'themeVariables': { 'darkMode': 'true', 'primaryColor': '#BB2528', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#7C0000', 'lineColor': '#F8B229', 'secondaryColor': '#006100', 'tertiaryColor': '#ffffff', 'fontSize': '16px', 'fontFamily': 'trebuchet ms, Verdana, arial' }, 'layout': 'elk' } }%%
+sequenceDiagram
+  participant Mutator as Mutation Tool
+  participant Catalog as CatalogContext
+  participant Manifest as Manifest Manager
+  participant Ring as BufferRing
+  participant Disk as Disk
+
+  Mutator->>Catalog: apply change (add/remove/import/...)
+  Catalog-->>Mutator: ok
+  Mutator->>Manifest: schedule attemptManifestUpdate()
+  Manifest->>Disk: write catalog-manifest.json (deferred setImmediate)
+  Note over Ring: On instrumented events (e.g. snapshots)
+  Ring->>Ring: add(entry)
+  Ring->>Disk: saveToDisk() (full JSON rewrite)
+```
+
+ASCII summary:
+
+```text
+Mutation -> CatalogContext -> (defer) ManifestUpdate -> manifest.json
+Instrumented Event -> BufferRing.add -> synchronous full rewrite (historical-snapshots.json)
+```
+
+### Observed Issue
+
+- Repeated log lines: `BufferRing: Persisted N entries ...` (incrementing each single addition) during startup / dashboard usage.
+- Each addition triggers full JSON serialization + fs write + rename, amplifying I/O.
+- Large historical windows (500+ entries) cause cumulative startup delay when many early events occur in rapid succession.
+
+### Optimization Goals
+
+| Goal | Target | Rationale |
+|------|--------|-----------|
+| Reduce synchronous I/O frequency | <= 1 write / 250ms burst | Amortize cost under load |
+| Bound persisted window size | Configurable cap (e.g. 300) | Avoid unbounded growth & large JSON writes |
+| Lazy initial load | Only read snapshot file on first explicit access | Faster cold startup when feature unused |
+| Safe shutdown flush | Guarantee latest buffered entries persisted | Durability without constant writes |
+| Integrity preserved | Optional checksum retained | Maintain tamper detection |
+
+### Proposed Configuration Flags
+
+| Env Var | Default | Meaning |
+|---------|---------|---------|
+| BUFFER_RING_PERSIST_DEBOUNCE_MS | 250 | Debounce window before batch write (0 = immediate / legacy) |
+| BUFFER_RING_PERSIST_MIN_ADDS | 5 | Minimum new additions to trigger a pending flush earlier than debounce timeout |
+| BUFFER_RING_MAX_PERSIST | 300 | Hard cap of entries serialized (oldest trimmed) |
+| BUFFER_RING_LAZY_LOAD=1 | off | Skip loadFromDisk until first consumer `get*()` call |
+| BUFFER_RING_EXIT_FLUSH=1 | on | Force final flush on process exit signals / beforeExit |
+
+### Revised Flow (After Optimization)
+
+```mermaid
+%%{init: { 'theme': 'base', 'themeVariables': { 'darkMode': 'true', 'primaryColor': '#BB2528', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#7C0000', 'lineColor': '#F8B229', 'secondaryColor': '#006100', 'tertiaryColor': '#ffffff', 'fontSize': '16px', 'fontFamily': 'trebuchet ms, Verdana, arial' }, 'layout': 'elk' } }%%
+sequenceDiagram
+  participant Event as Event Producer
+  participant Ring as BufferRing
+  participant Debounce as Debounce Scheduler
+  participant Disk as Disk
+
+  Event->>Ring: add(entry)
+  Ring->>Debounce: schedule (if threshold met)
+  Debounce-->>Ring: timer fires or min-add threshold
+  Ring->>Disk: batched save (trim -> checksum -> atomic write)
+  Note over Ring,Disk: Exit signal => immediate flush (if pending)
+```
+
+### Complexity & Tradeoffs
+
+- Debounce introduces at most `BUFFER_RING_PERSIST_DEBOUNCE_MS` durability lag; acceptable for non-critical telemetry / snapshot data.
+- Batch trimming (cap) sacrifices very old history; governance baseline unaffected if snapshots are informational.
+- Lazy load defers integrity check; on-demand read executes once and caches result.
+
+### Implementation Sketch (High-Level)
+
+```text
+class BufferRing {
+  private pending = false; private timer?: NodeJS.Timeout; private addsSinceFlush = 0;
+  add(entry) { coreAdd(); addsSinceFlush++; if(autoPersist) schedule(); }
+  schedule(){ if(!pending){ pending=true; timer=setTimeout(flush, DEBOUNCE_MS);} else if(addsSinceFlush >= MIN_ADDS){ flush(); }
+  flush(){ clearTimeout(timer); pending=false; addsSinceFlush=0; saveToDisk(); }
+  installExitHooks(){ ['beforeExit','SIGINT','SIGTERM'].forEach(sig=>process.on(sig, ()=> pending && flush())); }
+  getAll(){ if(lazy && !loaded) loadOnDemand(); return orderedEntries; }
+}
+```
+
+### Manifest Diagram Augmentation
+
+Updated high-level component diagram (add Manifest & Historical Snapshot nodes):
+
+```mermaid
+%%{init: { 'theme': 'base', 'themeVariables': { 'darkMode': 'true', 'primaryColor': '#BB2528', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#7C0000', 'lineColor': '#F8B229', 'secondaryColor': '#006100', 'tertiaryColor': '#ffffff', 'fontSize': '16px', 'fontFamily': 'trebuchet ms, Verdana, arial' }, 'layout': 'elk' } }%%
+graph TD
+  Catalog[(Instruction Files)] --> Loader
+  Loader --> Classifier
+  Classifier --> Migrator
+  Migrator --> Cache[CatalogContext]
+  Cache --> ManifestMgr[Manifest Manager]
+  ManifestMgr --> ManifestFile[(catalog-manifest.json)]
+  Cache --> SnapshotRing[Historical BufferRing]
+  SnapshotRing --> SnapshotFile[(historical-snapshots.json)]
+  Cache --> Tools[ToolHandlers]
+  Tools --> Transport
+  Transport --> Client
+  Tools --> Governance
+  Tools --> Integrity
+  Tools --> Gates
+  Tools --> Metrics
+  Tools --> UsageTrack
+  UsageTrack --> UsageSnap[(usage-snapshot.json)]
+  Cache --> Dashboard
+```
+
+### Rollout Plan
+
+1. Introduce env flags + non-breaking internal scheduler (feature guarded; legacy path if flags unset).
+2. Add tests for: (a) debounced flush timing, (b) min-add early flush, (c) exit flush, (d) lazy load deferral.
+3. Update docs & dashboard config listing with new flags (manifest category or new persistence category).
+4. Monitor: measure average snapshot file writes per minute pre vs post optimization (target ≥90% reduction during bursts).
+5. Optional: extend to usage snapshot if similar pattern emerges.
+
+### Acceptance Criteria
+
+- Startup without requesting historical snapshots performs zero snapshot file reads.
+- Burst of 50 additions within 100ms results in ≤1 disk write.
+- Manual SIGINT after pending additions flushes within 100ms.
+- Historical snapshot file never exceeds `BUFFER_RING_MAX_PERSIST` entries.
+
+---
+
+This section formalizes current state and optimization pathway; implementation should be tracked under a minor version (e.g. 1.5.x) with CHANGELOG entry referencing these acceptance criteria.

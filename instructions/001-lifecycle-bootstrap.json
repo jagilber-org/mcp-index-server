@@ -5,9 +5,14 @@
   "audience": "agents",
   "requirement": "recommended",
   "priorityTier": "p1",
-  "categories": ["bootstrap","lifecycle"],
+  "categories": [
+    "bootstrap",
+    "lifecycle"
+  ],
   "owner": "system",
   "version": 1,
   "sourceHash": "sha256:7d9c1b21",
-  "semanticSummary": "Lifecycle and promotion guardrails after bootstrap confirmation"
+  "semanticSummary": "Lifecycle and promotion guardrails after bootstrap confirmation",
+  "reviewIntervalDays": 120,
+  "schemaVersion": "3"
 }

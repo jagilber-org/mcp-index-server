@@ -16,6 +16,7 @@ This index distinguishes between **active** project documentation and **archived
 | Content Strategy | `CONTENT-GUIDANCE.md` | Instruction curation & promotion workflow |
 | Prompts | `PROMPT-OPTIMIZATION.md` | Prompt handling & optimization guidance |
 | Architecture | `ARCHITECTURE.md` | System & component design |
+| Architecture (Interactive) | `diagram-viewer.html` | Full-page pan/zoom Mermaid diagrams (exportable) |
 | Manifest | `MANIFEST.md` | Catalog manifest lifecycle, invariants, fastload roadmap |
 | Security | `SECURITY.md` | Security controls & compliance posture |
 | Dashboard | `DASHBOARD.md` | Admin UI usage & drift maintenance |
@@ -25,6 +26,8 @@ This index distinguishes between **active** project documentation and **archived
 | Migration | `MIGRATION.md` | Upgrade & breaking change handling |
 | PowerShell MCP | `POWERSHELL-MCP-GUIDE.md` | PowerShell server integration guide |
 | Agent Graph Strategy | `AGENT-GRAPH-INSTRUCTIONS.md` | Operational playbook for agents leveraging graph/export |
+
+> The interactive diagram viewer allows real-time editing of Mermaid source, wheel+Ctrl zoom, drag pan, fit/reset, fullscreen, and SVG export for documentation snapshots.
 
 ### Recent Governance & Runtime Updates (1.4.x)
 

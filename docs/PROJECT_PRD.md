@@ -1,6 +1,6 @@
 # MCP Index Server Project Requirements Document (PRD)
 
-**Version:** 1.3.1 (Former 1.1.0 baseline + consolidated ratified addendum)  
+**Version:** 1.4.2 (Supersedes 1.3.1; incorporates manifest subsystem & materialization race fix)  
 **Status:** Binding - Authoritative Project Governance Document  
 **Owner:** Project Maintainers & Governance Working Group  
 **Last Updated:** August 28, 2025  
@@ -24,7 +24,7 @@ This document serves as the **single source of truth** for all project processes
 
 ---
 
-## 🔄 Since 1.1.0 → 1.3.1 Delta (Ratified Enhancements)
+## 🔄 Since 1.3.1 → 1.4.2 Delta (Ratified Enhancements)
 
 | Area | Change | Rationale | Status |
 |------|--------|-----------|--------|
@@ -34,7 +34,10 @@ This document serves as the **single source of truth** for all project processes
 | ChangeLog Integrity | Silent normalization & repair on malformed changeLog arrays | Stability; avoids editor-induced failures | Ratified |
 | Overwrite Telemetry | Correct `overwritten:true` for metadata-only higher-version updates | Accurate mutation metrics | Ratified |
 | Feedback System | Full 6-tool feedback lifecycle (submit/list/get/update/stats/health) | Operational quality & triage | Ratified |
-| Visibility Reliability | Late materialization + skip path self-healing | Eliminates race-induced notFound after skip | Ratified |
+| Visibility Reliability | Opportunistic in‑memory materialization (no reload) + skip path self-healing | Eliminates add→get race & reduces disk churn | Ratified |
+| Manifest Observability | Unified manifest write helper + counters (`manifest:write*`) | Deterministic structural drift diagnostics | Ratified |
+| Manifest Disable Mode | `MCP_MANIFEST_WRITE=0` runtime flag | Safe read‑only diagnostics | Ratified |
+| Fastload Placeholder | Reserved `MCP_MANIFEST_FASTLOAD` env | Forward perf optimization staging | Ratified |
 | Hash Governance | Justified hash drift (schema normalization) via `governance/ALLOW_HASH_CHANGE` | Transparent integrity exceptions | Ratified |
 | Baseline Protection | Guard scripts & sentinel markers enforcing minimal invariant set | Prevent uncontrolled test sprawl | Ratified |
 
@@ -46,7 +49,7 @@ All above changes are binding; earlier “pending ratification” addendum items
 
 These requirements are already implemented in code/tests but lacked explicit PRD coverage. Upon ratification the version will bump to 1.2.0. Until then they are treated as binding interim policy.
 
-### 1. Feedback / Emit System
+### 1. Feedback / Emit System (No Change This Cycle)
 
 **Tools:** `feedback/submit`, `feedback/list`, `feedback/get`, `feedback/update`, `feedback/stats`, `feedback/health` (all REQUIRED; removal is a breaking change).
 
@@ -70,7 +73,7 @@ These requirements are already implemented in code/tests but lacked explicit PRD
 - NFR-FB-1: Median local submit latency <50ms.
 - NFR-FB-2: No data loss on mid-write crash (verified by atomic pattern review).
 
-### 2. Portable Client Minimal CRUD & Governance Baseline
+### 2. Portable Client Minimal CRUD & Governance Baseline (Clarified)
 
 **Baseline Test Set (MUST stay green, no skips):**
 
@@ -83,7 +86,7 @@ These requirements are already implemented in code/tests but lacked explicit PRD
 
 Expanding beyond this nucleus (stress, fuzz, multi-process contention) requires formal CHANGE REQUEST with stability impact analysis.
 
-### 3. Governance Hash Integrity Policy
+### 3. Governance Hash Integrity Policy (Stable)
 
 The standalone governance hash test plan file has been deprecated (single-plan consolidation). The following inline protocol is now binding for any governance hash projection change:
 
@@ -100,7 +103,7 @@ Drift Lifecycle: Acceptable transient sequence remains ≤3 states (stable → m
 
 Status Field Scope: Current `instruction.schema.json` status enum = `draft | review | approved | deprecated`. The governanceUpdate tool previously exposed `superseded` — this state is deprecated for now; replacement relationships should use `deprecated` + `deprecatedBy` field. Future addition of `superseded` requires this section + schema update.
 
-### 4. Declaration & Skip Guard Enforcement
+### 4. Declaration & Skip Guard Enforcement (Stable)
 
 | ID | Requirement | Enforcement |
 |----|-------------|-------------|
@@ -109,7 +112,7 @@ Status Field Scope: Current `instruction.schema.json` status enum = `draft | rev
 | DG3 | No `describe.skip` / `it.skip` unless line tagged `SKIP_OK` + justification | `guard:skips` pretest stage |
 | DG4 | New `.d.ts` additions require explicit guard allowlist update | Guard failure -> review |
 
-### 5. Deployment Wipe Modes
+### 5. Deployment Wipe Modes (Stable)
 
 `scripts/deploy-local.ps1` MUST preserve these semantics:
 
@@ -123,7 +126,7 @@ Status Field Scope: Current `instruction.schema.json` status enum = `draft | rev
 
 Backups stored under `backups/instructions-<timestamp>`; non-fatal count warnings allowed; persistent failure requires issue filing within 1 business day.
 
-### 6. Documentation Canonicalization
+### 6. Documentation Canonicalization (Updated)
 
 | ID | Rule | Action |
 |----|------|--------|
@@ -132,7 +135,7 @@ Backups stored under `backups/instructions-<timestamp>`; non-fatal count warning
 | DOC3 | README must link feedback system & governance hash plan | Verified during release checklist |
 | DOC4 | `CONTENT-GUIDANCE.md` must state NOT to embed MCP tool catalogs/schemas in instructions (protocol discovery only) | Explicit bullet retained |
 
-### 7. Schema‑Aided Add Failure Contract (Implemented 1.1.0, pending formal ratification)
+### 7. Schema‑Aided Add Failure Contract (Ratified)
 
 | ID | Requirement | Rationale | Verification |
 |----|-------------|-----------|-------------|
@@ -142,7 +145,24 @@ Backups stored under `backups/instructions-<timestamp>`; non-fatal count warning
 | AF4 | `schemaRef` value stable logical key `instructions/add#input` | Enables client cache keying | Test asserts constant string |
 | AF5 | Feature considered additive; clients silently ignoring fields remain functional | Backward compatibility guarantee | Document review + absence of breaking changes in tests |
 
-Upon ratification this section migrates out of Addendum and project version will bump to 1.2.0.
+All AF requirements are now binding; failure to include `schemaRef` or authoritative subset on structural add failures constitutes a regression (P0 severity).
+
+### 8. Manifest & Materialization Requirements (New 1.4.2)
+
+| ID | Requirement | Rationale | Verification |
+|----|-------------|-----------|--------------|
+| MF1 | Successful mutations MUST invoke unified manifest helper once | Centralized error handling & metrics | Mutation tests assert counter increments |
+| MF2 | Manifest writes MUST be atomic (temp + rename) | Crash safety | File inspection during simulated crash harness |
+| MF3 | `manifest:writeFailed` increments on error; process continues | Non-fatal resilience | Induced IO error test |
+| MF4 | Opportunistic writeEntry MUST surface new id immediately w/out reload | Eliminates race | catalogContext usage/materialization test |
+| MF5 | Touching `.catalog-version` MUST sync in-memory token/mtime | Prevent spurious reload loop | Unit test asserts no immediate reload trace |
+| MF6 | `MCP_MANIFEST_WRITE=0` MUST suppress writes silently | Diagnostic read-only mode | Disabled mode test (no file mtime change) |
+| MF7 | Fastload flag reserved; enabling early MUST fallback gracefully | Forward compatibility | Env flag placeholder test |
+
+Non-Functional:
+
+- NFR-MF-1: Opportunistic add path P95 < 5ms at 5k entries (excludes file system write of entry itself).
+- NFR-MF-2: Manifest generation P95 < 40ms at 10k entries.
 
 ---
 

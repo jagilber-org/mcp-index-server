@@ -5,6 +5,7 @@
 **[📋 Product Requirements (PROJECT_PRD.md)](./docs/PROJECT_PRD.md)** – Authoritative binding requirements and governance
 
 * **[🔧 API Reference (TOOLS.md)](./docs/TOOLS.md)** - Complete MCP protocol-compliant tool documentation  
+* **[📦 Manifest & Materialization (MANIFEST.md)](./docs/MANIFEST.md)** - Catalog manifest lifecycle & opportunistic materialization semantics
 * **[⚙️ Configuration Guide (MCP-CONFIGURATION.md)](./docs/MCP-CONFIGURATION.md)** - Comprehensive MCP setup patterns for all environments
 * **[🔧 Server Configuration (CONFIGURATION.md)](./docs/CONFIGURATION.md)** - Environment variables and CLI options reference
 * **[�️ Admin Dashboard Guide (DASHBOARD.md)](./docs/DASHBOARD.md)** - UI features, screenshots, drift monitoring & maintenance
@@ -23,6 +24,7 @@ This project provides comprehensive enterprise-grade documentation:
 
 * **[📋 Product Requirements (PROJECT_PRD.md)](./docs/PROJECT_PRD.md)** – Authoritative binding requirements and governance
 * **[🔧 API Reference (TOOLS.md)](./docs/TOOLS.md)** – Complete MCP protocol-compliant tool documentation  
+* **[📦 Manifest & Materialization (MANIFEST.md)](./docs/MANIFEST.md)** – Catalog manifest lifecycle & opportunistic materialization semantics
 * **[⚙️ Configuration Guide (MCP-CONFIGURATION.md)](./docs/MCP-CONFIGURATION.md)** – Comprehensive MCP setup patterns for all environments
 * **[🔧 Server Configuration (CONFIGURATION.md)](./docs/CONFIGURATION.md)** – Environment variables and CLI options reference
 * **[📝 Content Guidance (CONTENT-GUIDANCE.md)](./docs/CONTENT-GUIDANCE.md)** – What to include in local vs. central instruction servers
@@ -34,10 +36,12 @@ This project provides comprehensive enterprise-grade documentation:
 * **[📚 Documentation Index (DOCS-INDEX.md)](./docs/DOCS-INDEX.md)** – Active vs archived documentation map
 * **[🛡️ Runtime Diagnostics (RUNTIME-DIAGNOSTICS.md)](./docs/RUNTIME-DIAGNOSTICS.md)** – Global error, rejection, warning & signal handling
 
-### Recently Formalized (Pending PRD 1.2.0)
+### Recent Additions (1.4.x)
 
-* **Feedback System** – 6 MCP tools (submit/list/get/update/stats/health) with audit & security logging
-* **Portable CRUD & Governance Baseline** – Minimal always-green suite (CRUD + 6 governance scenarios) guarding regression and hash determinism
+* **Manifest Subsystem** – Centralized helper + counters (`manifest:write*`), disable flag (`MCP_MANIFEST_WRITE=0`), future fastload placeholder.
+* **Opportunistic Materialization** – Race-free in-memory add visibility (formerly "late materialization").
+* **Feedback System** – (Previously formalized) 6 MCP tools with audit & security logging.
+* **PRD 1.4.2** – Added manifest & materialization requirements; deprecated PRD stubs removed.
 
 ### 🔐 Baseline Restoration & Guardrails
 
@@ -683,9 +687,9 @@ npm run test:diag
 
 Rationale: Segregating heavy concurrency / fragmentation tests avoids intermittent initialize starvation or off-by-one health count flakes from masking real regressions in routine PR validation while retaining full reproduction power on-demand.
 
-### Manifest Observability (1.4.0)
+### Manifest & Opportunistic Materialization (1.4.x)
 
-The server persists a lightweight catalog manifest (`snapshots/catalog-manifest.json`) after catalog‑mutating operations. 1.4.0 introduces a centralized helper plus counters. As of 1.4.x a formal JSON Schema (`schemas/manifest.schema.json`) documents the manifest snapshot independently of the instruction schema (`schemas/instruction.schema.json`). The manifest format is intentionally minimal and versioned separately (`version: 1`).
+The server persists a lightweight catalog manifest (`snapshots/catalog-manifest.json`) after catalog‑mutating operations, maintained via a centralized helper (`attemptManifestUpdate()`). Opportunistic in-memory materialization ensures an immediately added instruction is visible without a forced reload, eliminating prior add→get race windows. A formal JSON Schema (`schemas/manifest.schema.json`) documents the manifest snapshot independently of the instruction schema (`schemas/instruction.schema.json`). See **[MANIFEST.md](./docs/MANIFEST.md)** for full lifecycle, invariants, drift categories, and fastload roadmap.
 
 Counters (scrape via existing metrics interface):
 

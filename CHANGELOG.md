@@ -8,6 +8,21 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 ### Added (dispatcher capabilities & batch)
 
+### Documentation (overhaul 1.4.2)
+
+- Added `docs/MANIFEST.md` detailing catalog manifest lifecycle, invariants, drift categories, opportunistic materialization, and fastload roadmap.
+- Updated `README.md` with Manifest & Opportunistic Materialization section; added MANIFEST doc links in primary doc suite lists.
+- Updated `PROJECT_PRD.md` to version 1.4.2 including formal Manifest & Materialization requirements (MF1–MF7) and ratified schema‑aided failure contract.
+- Updated `ARCHITECTURE.md` (version banner 1.4.1 → context now aligned with opportunistic materialization & manifest helper) – cross-linked manifest semantics.
+- Updated `DOCS-INDEX.md` adding Manifest category; refreshed recent updates section for 1.4.x runtime changes.
+- Removed deprecated PRD stub files (`docs/PRD.md`, `docs/PROJECT-PRD.md`) to eliminate duplication; canonical remains `docs/PROJECT_PRD.md`.
+- Ensured CHANGELOG references preserved and future fastload placeholder documented (no runtime effect yet).
+
+### Changed (readability & consistency)
+
+- Standardized terminology: "Opportunistic Materialization" (replaces ambiguous "late materialization" phrasing) across updated docs.
+- Clarified disable flag guidance for `MCP_MANIFEST_WRITE=0` (diagnostic/read-only only).
+
 
 ### Fixed (persistence phantom write false positive)
 
@@ -119,7 +134,7 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 - Targeted governance versioning tests now all green: auto bump, non-semver rejection, body change bump requirements, metadata-only version increment.
 - Added hydration logic with type-safe mutation (no `any` casts) to satisfy linting.
 
-### Notes
+### Notes (1.3.1 governance follow-up)
 
 - No changes to on-disk schema; patch release focused on correctness & ergonomics.
 - Recommended for users performing frequent governance-only edits to reduce payload size and maintain accurate overwrite telemetry.
@@ -631,7 +646,7 @@ For routine CI or local verification omit the flag for deterministic results.
 - Resolved sporadic initialize wait timeouts in `createReadSmoke` & portable CRUD specs when run amidst heavy reproduction suites; root cause was duplicated bespoke timing logic racing process startup.
 - Direct protocol compliance test (`handshakeDirect.spec.ts`) remained stable confirming server-side sequencing correctness.
 
-### Documentation
+### Documentation (migration & governance)
 
 - Changelog now records deprecation & removal of short-circuit path; README environment flag table implicitly authoritative (no short-circuit flag documented).
 - Next minor (1.2.0) PRD addendum will ratify handshake helper as mandatory pattern for new spawn-based specs.

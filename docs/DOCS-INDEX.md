@@ -13,6 +13,7 @@ This index distinguishes between **active** project documentation and **archived
 | Content Strategy | `CONTENT-GUIDANCE.md` | Instruction curation & promotion workflow |
 | Prompts | `PROMPT-OPTIMIZATION.md` | Prompt handling & optimization guidance |
 | Architecture | `ARCHITECTURE.md` | System & component design |
+| Manifest | `MANIFEST.md` | Catalog manifest lifecycle, invariants, fastload roadmap |
 | Security | `SECURITY.md` | Security controls & compliance posture |
 | Dashboard | `DASHBOARD.md` | Admin UI usage & drift maintenance |
 | Testing | `TESTING-STRATEGY.md` | Test tiers, quarantine & drift policies |
@@ -22,15 +23,14 @@ This index distinguishes between **active** project documentation and **archived
 | PowerShell MCP | `POWERSHELL-MCP-GUIDE.md` | PowerShell server integration guide |
 | Agent Graph Strategy | `AGENT-GRAPH-INSTRUCTIONS.md` | Operational playbook for agents leveraging graph/export |
 
-### Recent Governance Updates (1.3.1)
+### Recent Governance & Runtime Updates (1.4.x)
 
-The 1.3.1 release introduced:
+1.4.x adds:
 
-* Strict SemVer enforcement on instruction create (rejects non MAJOR.MINOR.PATCH).
-* Metadata-only overwrite hydration (omit body/title with `overwrite: true`).
-* Silent ChangeLog repair & overwrite flag accuracy improvements.
-
-See `VERSIONING.md` (section: Governance Enhancements 1.3.1) and `TOOLS.md` (instructions/add Governance Notes) for authoritative details.
+* Manifest subsystem central helper + counters; disable flag `MCP_MANIFEST_WRITE=0`.
+* Opportunistic in-memory materialization (race-free add visibility).
+* PRD 1.4.2 ratified manifest & materialization requirements (see `PROJECT_PRD.md`).
+* Continued governance stability (SemVer create enforcement & overwrite hydration retained from 1.3.1).
 
 ## Archived (Historical / Temporal)
 

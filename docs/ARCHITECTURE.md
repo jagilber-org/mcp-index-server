@@ -1,6 +1,6 @@
 # ARCHITECTURE
 
-Updated for 1.1.2 (adds: memoized catalog reload (mtime/size signature + optional hash), late materialization eliminating add→get race, persistent structured tracing (label + JSON lines w/ rotation), feedback/emit subsystem, dispatcher consolidation, governance projection + hash, integrity verification, usage persistence, schema‑aided add failure contract, baseline & declaration guards).
+Updated for 1.4.1 (adds: opportunistic in‑memory materialization eliminating add→get reload race, unified manifest write helper + observability counters, refined dashboard asset override for stale cache busting, persistent structured tracing (label + JSON lines w/ rotation), feedback/emit subsystem, dispatcher consolidation, governance projection + hash, integrity verification, usage persistence, schema‑aided add failure contract, baseline & declaration guards).
 
 ## High-Level Components
 
@@ -63,7 +63,7 @@ Files -> Validate -> Normalize -> Enrich -> Migrate -> Index -> Serve -> Track -
 | CatalogLoader | Read + schema validate + minimal defaults | Computes catalog hash (id:sourceHash) |
 | Classification | Normalize (trim, dedupe, scope derivation), risk, priority tier | Derives semantic summary + review cadence |
 | Migration | Ensure `schemaVersion` matches current constant | Rewrites file if version upgraded |
-| CatalogContext | Caching, mtime + signature invalidation, enrichment persistence | Supports INSTRUCTIONS_ALWAYS_RELOAD, .catalog-version file |
+| CatalogContext | Caching, mtime + signature invalidation, enrichment persistence, opportunistic materialization | Uses `.catalog-version` for cross‑process invalidation; in‑memory write path avoids reload race |
 | Governance Projection | Deterministic subset for governance hash | Fields: id,title,version,owner,priorityTier,nextReviewDue,semanticSummarySha256,changeLogLength |
 | Tool Registry | Central schemas + stable flags + dynamic listing (`meta/tools`) | Exposes machine-consumable tool metadata |
 | Tool Handlers | JSON-RPC implementation (instructions/*, feedback/*, governanceHash, usage, integrity, gates, metrics) | Write tools gated by MCP_ENABLE_MUTATION |

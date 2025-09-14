@@ -34,15 +34,14 @@
     const categoriesEl = document.getElementById('graph-categories');
     const usageEl = document.getElementById('graph-usage');
     const edgeTypesEl = document.getElementById('graph-edgeTypes');
-    const layoutSel = document.getElementById('graph-layout');
-    const themeSel = document.getElementById('graph-theme');
+  const layoutSel = document.getElementById('graph-layout');
   // Default enrich & categories to true if element not yet bound so initial meta shows enriched schema
   const enrich = enrichEl && 'checked' in enrichEl ? enrichEl.checked : true;
   const categories = categoriesEl && 'checked' in categoriesEl ? categoriesEl.checked : true;
     const usage = usageEl && 'checked' in usageEl ? usageEl.checked : false;
     const edgeTypesRaw = edgeTypesEl && 'value' in edgeTypesEl ? (edgeTypesEl.value || '').trim() : '';
     let layout = (layoutSel && 'value' in layoutSel) ? layoutSel.value : 'elk';
-    const theme = (themeSel && 'value' in themeSel) ? themeSel.value : 'dark';
+  const theme = 'base'; // fixed project-standard theme
     const params = new URLSearchParams();
     const selCatsEl = document.getElementById('drill-categories');
     const selInstEl = document.getElementById('drill-instructions');
@@ -90,7 +89,7 @@
         const effectiveLayout = layout === 'elk' ? 'elk' : 'default';
         if(effectiveLayout === 'elk') await ensureMermaidElk();
         const configLines = [];
-        if(theme) configLines.push(`  theme: ${theme}`);
+  if(theme) configLines.push(`  theme: ${theme}`);
         if(effectiveLayout === 'elk') configLines.push('  layout: elk');
         if(configLines.length) mermaidSource = `---\nconfig:\n${configLines.join('\n')}\n---\n` + mermaidSource;
         const ensured = ensureMermaidDirective(mermaidSource);
@@ -155,7 +154,8 @@
       const s = document.createElement('script');
       const cb = Date.now().toString().slice(-7);
       s.src = `https://cdn.jsdelivr.net/npm/mermaid@${MERMAID_VERSION_TARGET}/dist/mermaid.min.js?cb=${cb}`;
-      s.onload = ()=>{ try { const large = !!window.__MERMAID_LARGE_GRAPH_FLAG; let configuredMaxEdges; if(typeof window.__MERMAID_MAX_EDGES === 'number' && window.__MERMAID_MAX_EDGES>0){ configuredMaxEdges = window.__MERMAID_MAX_EDGES; } else { configuredMaxEdges = large ? 20000 : 3000; } const maxTextSize = large ? 10000000 : 1000000; window.mermaid.initialize({ startOnLoad:false, theme:'dark', maxEdges: configuredMaxEdges, maxTextSize }); window.__MERMAID_ACTIVE_MAX_EDGES = configuredMaxEdges; window.__MERMAID_ACTIVE_MAX_TEXT_SIZE = maxTextSize; resolve(null);} catch(e){ reject(e);} };
+      s.onload = ()=>{ try { const large = !!window.__MERMAID_LARGE_GRAPH_FLAG; let configuredMaxEdges; if(typeof window.__MERMAID_MAX_EDGES === 'number' && window.__MERMAID_MAX_EDGES>0){ configuredMaxEdges = window.__MERMAID_MAX_EDGES; } else { configuredMaxEdges = large ? 20000 : 3000; } const maxTextSize = large ? 10000000 : 1000000; // Standardize base theme (frontmatter may still override per-graph)
+        window.mermaid.initialize({ startOnLoad:false, theme:'base', maxEdges: configuredMaxEdges, maxTextSize }); window.__MERMAID_ACTIVE_MAX_EDGES = configuredMaxEdges; window.__MERMAID_ACTIVE_MAX_TEXT_SIZE = maxTextSize; resolve(null);} catch(e){ reject(e);} };
       s.onerror = (e)=>reject(e instanceof Error? e : new Error('mermaid load failed'));
       document.head.appendChild(s);
     });
@@ -291,56 +291,7 @@
     });
   }
 
-  // Theme insertion
-  function insertGraphTheme(){
-    const pre = document.getElementById('graph-mermaid'); if(!pre) return;
-    const current = pre.textContent || '';
-    const hasFrontmatter = /^---[\s\S]*?---/m.test(current);
-    setGraphMetaProgress('theme-start');
-    // Dynamically pull project CSS palette (falls back to hardcoded defaults if missing)
-    let rootStyles; try { rootStyles = getComputedStyle(document.documentElement); } catch { rootStyles = null; }
-    const css = (v, fb) => (rootStyles ? (rootStyles.getPropertyValue(v)||'').trim() : '') || fb;
-    // Map Mermaid themeVariables to project palette / graph overrides
-    const palette = {
-      primaryColor: css('--admin-accent', '#667eea'),
-      primaryBorderColor: '#6b8cff',
-      primaryTextColor: css('--admin-text', '#e3ebf5'),
-      lineColor: '#5479ff',
-      secondaryColor: css('--admin-accent-alt', '#764ba2'),
-      tertiaryColor: css('--admin-success', '#27ae60'),
-      background: css('--admin-bg', '#0b0f19'),
-      mainBkg: css('--admin-surface', '#101726'),
-      secondBkg: css('--admin-surface-alt', '#141e30'),
-      clusterBkg: '#273341',
-      clusterBorder: '#6b8cff',
-      edgeLabelBackground: '#2f3947',
-      nodeBkg: '#3a4554',
-      nodeBorder: '#6b8cff',
-      fontFamily: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif",
-      fontSize: '14px',
-      fontWeight: '600',
-      clusterLabelFontSize: '16px',
-      noteTextColor: css('--admin-text-dim', '#9fb5cc'),
-      nodeTextColor: css('--admin-text', '#e3ebf5'),
-      tertiaryBorderColor: css('--admin-success', '#27ae60'),
-      secondaryBorderColor: css('--admin-accent-alt', '#764ba2'),
-      secondaryTextColor: css('--admin-text', '#e3ebf5'),
-      tertiaryTextColor: css('--admin-text', '#e3ebf5'),
-      titleColor: css('--admin-text', '#e3ebf5')
-    };
-    // Build YAML block (only include known Mermaid variables)
-    const kv = Object.entries(palette).map(([k,v])=>`    ${k}: "${v}"`).join('\n');
-    const themeBlock = `---\nconfig:\n  theme: dark\n  themeVariables:\n${kv}\n  layout: elk\n---\n`;
-    let updated = hasFrontmatter ? current.replace(/^---[\s\S]*?---\n?/, themeBlock) : themeBlock + current;
-    pre.textContent = updated;
-    persistGraphSource(updated);
-    try { localStorage.setItem('mcp.graph.manualOverrideSource', updated); window.__GRAPH_MANUAL_OVERRIDE = true; } catch{}
-    setGraphMetaProgress('theme-inserted');
-    if(!graphEditing) toggleGraphEdit();
-    // Immediately re-render with new theme block
-    (async ()=>{ try { await ensureMermaid(); const { svg } = await window.mermaid.render('graphMermaidSvg', updated); const legacyHost = document.getElementById('graph-mermaid-svg'); if(legacyHost) legacyHost.innerHTML = svg; setGraphMetaProgress('theme-rendered'); } catch(e){ setGraphMetaProgress('theme-render-fail'); } })();
-  }
-  window.insertGraphTheme = insertGraphTheme;
+  // Theme insertion removed (fixed theme configuration)
 
   document.addEventListener('DOMContentLoaded', ()=>{
     bindAutoRender();

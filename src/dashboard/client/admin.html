@@ -109,15 +109,6 @@
                                 <option value="default">default</option>
                             </select>
                         </label>
-                        <label class="block">Theme
-                            <select id="graph-theme" class="form-input" onchange="reloadGraphMermaid()">
-                                <option value="dark" selected>dark</option>
-                                <option value="default">default</option>
-                                <option value="neutral">neutral</option>
-                                <option value="forest">forest</option>
-                                <option value="base">base</option>
-                            </select>
-                        </label>
                     </div>
                     <div class="stack" style="order:5;">
                         <label class="chk" title="Toggle high Mermaid maxEdges secure limit (forces re-init)"><input id="mermaid-high-edges" type="checkbox"> High edge cap</label>
@@ -127,7 +118,6 @@
                     <div class="actions" style="order:6;">
                         <button id="graph-refresh-btn" class="action-btn" style="background:linear-gradient(45deg,#2ecc71,#27ae60)" title="Refresh Mermaid diagram from current filters">🔄 Refresh Graph</button>
                         <button id="graph-copy-btn" class="action-btn" style="background:linear-gradient(45deg,#3498db,#2980b9)" title="Copy Mermaid source to clipboard" onclick="window.copyMermaidSource && window.copyMermaidSource()">📋 Copy Source</button>
-                        <button id="graph-theme-insert" class="action-btn" style="background:linear-gradient(45deg,#8e44ad,#5e337d)" title="Insert dark theme frontmatter" onclick="window.insertGraphTheme && window.insertGraphTheme()">🎨 Theme</button>
                         <button id="graph-edit-btn" class="action-btn" style="background:linear-gradient(45deg,#e67e22,#d35400)" title="Edit Mermaid source inline" onclick="window.toggleGraphEdit && window.toggleGraphEdit()">✏️ Edit Source</button>
                         <button id="graph-apply-btn" class="action-btn" style="display:none; background:linear-gradient(45deg,#27ae60,#1e8449)" title="Apply manual edits" onclick="window.applyGraphEdit && window.applyGraphEdit()">💾 Apply Edits</button>
                         <button id="graph-cancel-btn" class="action-btn danger" style="display:none;" title="Cancel manual edits" onclick="window.cancelGraphEdit && window.cancelGraphEdit()">↩️ Cancel Edit</button>

@@ -719,3 +719,9 @@ No client changes required. Enable `MCP_CATALOG_MEMOIZE=1` (and optionally `MCP_
 - Patch release retained (1.0.7) while evaluating whether enriched add response should be treated as a documented stable contract.
 - Next release should bump MINOR to 1.1.0 once documentation references are finalized (optional field additions per policy).
 
+
+## [1.5.0] - 2025-09-14
+
+### Added
+
+- Bootstrap confirmation gating, minimal seed instructions, recursion risk refinement, perf baseline tooling

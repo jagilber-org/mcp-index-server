@@ -1,0 +1,35 @@
+{
+  "id": "agent-connection-protocol",
+  "title": "Agent Connection Establishment Protocol",
+  "body": "When initiating communication with another AI agent:\n\n1. **Health Check First**: Always start with a health/check call to verify the target agent is responsive\n2. **Capability Discovery**: Use tools/list or meta/tools to understand available functionality\n3. **Version Compatibility**: Check MCP protocol version compatibility before proceeding\n4. **Timeout Configuration**: Set appropriate timeouts (typically 30-60 seconds for complex operations)\n5. **Retry Logic**: Implement exponential backoff for failed connection attempts\n6. **Connection Pooling**: Reuse connections when possible to reduce overhead\n7. **Graceful Degradation**: Have fallback strategies when target agent is unavailable\n\nConnection sequence:\n```\n1. health/check -> verify agent is alive\n2. meta/tools -> discover capabilities  \n3. Establish session context\n4. Begin actual work communication\n5. Clean up resources on completion\n```",
+  "priority": 30,
+  "audience": "ai-agents",
+  "requirement": "recommended",
+  "categories": [
+    "connection-management",
+    "mcp",
+    "reliability"
+  ],
+  "primaryCategory": "connection-management",
+  "sourceHash": "4b80ca18843979c697adacfef744c1a50b6592b763ba9b96f7f01b3ab2f1f663",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T12:03:30.439Z",
+  "updatedAt": "2025-09-12T12:03:30.439Z",
+  "riskScore": 90,
+  "version": "1.0.0",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T12:03:30.439Z",
+      "summary": "initial import"
+    }
+  ],
+  "owner": "mcp-team",
+  "status": "approved",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T12:03:30.439Z",
+  "nextReviewDue": "2025-11-11T12:03:30.439Z",
+  "reviewIntervalDays": 60,
+  "semanticSummary": "When initiating communication with another AI agent:"
+}

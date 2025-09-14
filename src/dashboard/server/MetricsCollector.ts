@@ -262,8 +262,21 @@ export class MetricsCollector {
   // BufferRing-Enhanced Storage
   private historicalSnapshots: BufferRing<MetricsTimeSeriesEntry>;
   private toolCallEvents: BufferRing<ToolCallEvent>;
+
+  // Persistence throttling state for tool call events (defined explicitly to avoid dynamic props)
+  private _lastToolPersist: number = 0;
+  private _pendingToolPersist: number = 0;
   private performanceMetrics: BufferRing<{ timestamp: number; responseTime: number; throughput: number; errorRate: number }>;
   private bufferConfig: MetricsBufferConfig;
+  // Append/segment logging state (optional)
+  private appendMode = false;
+  private appendLogPath: string | null = null;
+  private pendingAppendEvents: ToolCallEvent[] = [];
+  private lastAppendFlush = 0;
+  private lastAppendCompact = 0;
+  private appendChunkSize = 250;
+  private appendFlushMs = 5000;
+  private appendCompactMs = 5 * 60 * 1000; // 5 min default
 
   constructor(options: MetricsCollectorOptions = {}) {
     this.options = {
@@ -318,7 +331,8 @@ export class MetricsCollector {
       capacity: this.bufferConfig.toolCallEvents.capacity,
       overflowStrategy: OverflowStrategy.DROP_OLDEST,
       persistPath: this.useFileStorage ? this.bufferConfig.toolCallEvents.persistenceFile : undefined,
-      autoPersist: this.useFileStorage
+      autoPersist: false, // we'll manage chunked persistence manually for performance
+      suppressPersistLog: true
     });
 
     this.performanceMetrics = new BufferRing<{ timestamp: number; responseTime: number; throughput: number; errorRate: number }>({
@@ -327,6 +341,37 @@ export class MetricsCollector {
       persistPath: this.useFileStorage ? this.bufferConfig.performanceMetrics.persistenceFile : undefined,
       autoPersist: this.useFileStorage
     });
+
+    // Configure optional append-only logging for tool call events (reduces large snapshot writes)
+    if (this.useFileStorage) {
+      this.appendMode = getBooleanEnv('MCP_TOOLCALL_APPEND_LOG');
+      if (this.appendMode) {
+        this.appendLogPath = path.join(path.dirname(this.bufferConfig.toolCallEvents.persistenceFile!), 'tool-call-events.ndjson');
+        this.appendChunkSize = parseInt(process.env.MCP_TOOLCALL_CHUNK_SIZE || `${this.appendChunkSize}`) || this.appendChunkSize;
+        this.appendFlushMs = parseInt(process.env.MCP_TOOLCALL_FLUSH_MS || `${this.appendFlushMs}`) || this.appendFlushMs;
+        this.appendCompactMs = parseInt(process.env.MCP_TOOLCALL_COMPACT_MS || `${this.appendCompactMs}`) || this.appendCompactMs;
+        try {
+          // Load any un-compacted append log tail (best-effort)
+            if (this.appendLogPath && fs.existsSync(this.appendLogPath)) {
+              const stat = fs.statSync(this.appendLogPath);
+              if (stat.size < 25 * 1024 * 1024) { // safety cap 25MB
+                const raw = fs.readFileSync(this.appendLogPath, 'utf8');
+                const lines = raw.split(/\r?\n/).filter(l => l.trim().length > 0);
+                for (const line of lines) {
+                  try {
+                    const evt = JSON.parse(line) as ToolCallEvent;
+                    this.toolCallEvents.add(evt);
+                  } catch {/* ignore bad line */}
+                }
+              } else {
+                console.warn('tool-call-events.ndjson too large to preload (>25MB); will rely on last snapshot');
+              }
+            }
+        } catch (err) {
+          console.warn('Failed to preload append log', err);
+        }
+      }
+    }
     
     if (this.useFileStorage) {
       // Initialize legacy file storage for backward compatibility
@@ -383,6 +428,23 @@ export class MetricsCollector {
       errorType,
       clientId
     });
+    if (this.useFileStorage) {
+      if (this.appendMode) {
+        this.pendingAppendEvents.push({ timestamp: now, toolName, success, responseTimeMs, errorType, clientId });
+        this.flushToolCallEvents(false); // schedule conditional flush
+      } else {
+        // legacy snapshot batching (retain previous throttling fields)
+        this._pendingToolPersist++;
+        const dueTime = now - this._lastToolPersist > this.appendFlushMs;
+        if (this._pendingToolPersist >= this.appendChunkSize || dueTime) {
+          setTimeout(() => {
+            this.toolCallEvents.saveToDisk().catch(()=>{});
+            this._lastToolPersist = Date.now();
+            this._pendingToolPersist = 0;
+          }, 0).unref?.();
+        }
+      }
+    }
 
     // Track call timestamp for rolling RPM calculation (last 60s window)
     this.recentCallTimestamps.push(now);
@@ -402,6 +464,36 @@ export class MetricsCollector {
     // Prevent unbounded tool metrics growth - cleanup old/unused tools after adding the new tool
     if (this.tools.size > MetricsCollector.MAX_TOOL_METRICS) {
       this.cleanupOldToolMetrics();
+    }
+  }
+
+  /** Flush tool call events (append or snapshot) */
+  private flushToolCallEvents(force: boolean) {
+    if (!this.useFileStorage) return;
+    const now = Date.now();
+    if (this.appendMode) {
+      const timeDue = (now - this.lastAppendFlush) >= this.appendFlushMs;
+      if (!force && this.pendingAppendEvents.length < this.appendChunkSize && !timeDue) return;
+      if (!this.appendLogPath || this.pendingAppendEvents.length === 0) return;
+      const toWrite = this.pendingAppendEvents.splice(0, this.pendingAppendEvents.length);
+      const lines = toWrite.map(e => JSON.stringify(e)).join('\n') + '\n';
+      fs.promises.appendFile(this.appendLogPath, lines).catch(()=>{});
+      this.lastAppendFlush = now;
+      // Periodic compaction: write full snapshot & truncate log
+      if ((now - this.lastAppendCompact) >= this.appendCompactMs || force) {
+        this.toolCallEvents.saveToDisk().catch(()=>{});
+        this.lastAppendCompact = now;
+        if (this.appendLogPath) {
+          fs.promises.writeFile(this.appendLogPath, '').catch(()=>{}); // truncate
+        }
+      }
+    } else {
+      // snapshot mode manual force
+      if (force) {
+        this.toolCallEvents.saveToDisk().catch(()=>{});
+        this._lastToolPersist = now;
+        this._pendingToolPersist = 0;
+      }
     }
   }
 

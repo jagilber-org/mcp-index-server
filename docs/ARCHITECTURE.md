@@ -178,3 +178,43 @@ Results summarize counts, highest severity enabling fast gating flows.
 - Versioning Policy: `docs/VERSIONING.md`
 - Prompt Criteria: `docs/PROMPT-CRITERIA.json`
 - Change Log: `CHANGELOG.md`
+
+## Dashboard Asset Refresh & Cache Strategy (1.4.x)
+
+The admin dashboard now separates structural HTML (admin.html) from functional modules (admin.*.js) and styling (admin.css). During the extraction we observed a UX issue: after upgrading the markup for the Instruction Catalog (chip‑based meta layout + dual ring card accent) some browsers kept rendering the pre‑extraction stacked layout. Root cause analysis:
+
+1. Legacy inline implementation of `renderInstructionList` was previously embedded in `admin.html`.
+2. New implementation lives in `js/admin.instructions.js` (deferred). If a cached older JS file (or the inline legacy function) remained dominant, stale DOM would persist.
+3. No cache‑busting headers or query fingerprints were present; long‑lived browser tabs reused cached resources.
+
+Mitigation implemented:
+
+- External script now force‑overrides any legacy `window.renderInstructionList` and triggers a zero‑delay re‑render when `window.allInstructions` already populated.
+- Style / structure changes are contained entirely in external assets so future visual upgrades do not require editing `admin.html` unless adding new sections.
+
+Recommended future hardening (optional, low risk):
+
+- Add build version query param: `<script defer src="js/admin.instructions.js?v=${BUILD_VERSION}"></script>` emitted by a tiny build step that injects package.json version (or short git sha).
+- Serve dashboard static assets with `Cache-Control: no-cache` or a short `max-age=60` to balance freshness vs network.
+- Integrate a lightweight integrity stamp (e.g. `data-build-hash` attribute on `<html>`) so automated tests can assert the expected asset revision loaded.
+
+Rationale for override approach vs immediate query param injection: minimal surface change; avoids altering copy script or requiring HTML rewrite during patch. Query params can be layered later without breaking existing deployments.
+
+Testing Guidance:
+
+- Open DevTools Network tab, disable cache, reload: chips (`.meta-chip > .chip-label/.chip-value`) should appear.
+- Confirm `window.renderInstructionList.toString()` contains `meta-chip` to verify override JS loaded.
+- Validation automation can scrape `#instructions-list .meta-chip` count after seeding one instruction to assert modern layout active.
+
+This section documents the adopted pattern so future contributors avoid re‑introducing inline render code that could mask upgraded external modules.
+
+### Reusable Catalog List Styling (1.4.x)
+
+The instruction catalog card styling has been generalized:
+
+- `.catalog-list` wraps any grouped entities (sessions, history, future logs).
+- `.catalog-item` mirrors `.instruction-item` (shadow, dual ring hover, gradient accent overlay).
+- Shared sub-classes: `.catalog-item-header`, `.catalog-item-name`, `.catalog-item-meta`, `.catalog-item-summary`.
+- Instruction-specific classes remain (`.instruction-item*`) for backward compatibility; both point to unified rules.
+
+When adding a new list, apply `class="catalog-list"` to the container and emit `.catalog-item` blocks with optional `.meta-chip` children to inherit full theming automatically.

@@ -53,6 +53,8 @@ export interface BufferRingConfig {
   serializer?: <U>(entry: U) => U;
   /** Custom deserializer for entries */
   deserializer?: <U>(data: U) => U;
+  /** Suppress persist/load info logs (for high-frequency buffers) */
+  suppressPersistLog?: boolean;
 }
 
 /**
@@ -380,7 +382,9 @@ export class BufferRing<T = unknown> extends EventEmitter {
       fs.renameSync(tempPath, this.config.persistPath);
 
       this.emit('persisted', this.config.persistPath, entriesToSave.length);
-      logInfo(`BufferRing: Persisted ${entriesToSave.length} entries to ${this.config.persistPath}`);
+      if (!this.config.suppressPersistLog) {
+        logInfo(`BufferRing: Persisted ${entriesToSave.length} entries to ${this.config.persistPath}`);
+      }
     } catch (error) {
       this.emit('error', error as Error, 'save');
       throw error;
@@ -421,7 +425,9 @@ export class BufferRing<T = unknown> extends EventEmitter {
       };
 
       this.emit('loaded', this.config.persistPath, data.entries.length);
-      logInfo(`BufferRing: Loaded ${data.entries.length} entries from ${this.config.persistPath}`);
+      if (!this.config.suppressPersistLog) {
+        logInfo(`BufferRing: Loaded ${data.entries.length} entries from ${this.config.persistPath}`);
+      }
     } catch (error) {
       this.emit('error', error as Error, 'load');
       throw error;

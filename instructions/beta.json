@@ -9,5 +9,6 @@
     "b"
   ],
   "reviewIntervalDays": 120,
-  "schemaVersion": "2"
+  "schemaVersion": "3",
+  "primaryCategory": "b"
 }

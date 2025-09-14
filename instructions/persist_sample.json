@@ -9,7 +9,7 @@
     "testing"
   ],
   "reviewIntervalDays": 30,
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "sourceHash": "24bddc50d715f0ab5bd187177217e495d7ba43a49bdbc5d7f957209cf0067892",
   "createdAt": "2025-08-30T14:38:26.267Z",
   "updatedAt": "2025-08-30T14:38:26.267Z",
@@ -28,5 +28,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "First line summary."
+  "semanticSummary": "First line summary.",
+  "primaryCategory": "testing"
 }

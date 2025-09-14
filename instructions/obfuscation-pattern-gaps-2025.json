@@ -5,8 +5,11 @@
   "priority": 60,
   "audience": "all",
   "requirement": "recommended",
-  "categories": ["detection","security"],
-  "schemaVersion": "2",
+  "categories": [
+    "detection",
+    "security"
+  ],
+  "schemaVersion": "3",
   "sourceHash": "5bf6e5279d6e9bf813bc4b4c4e39a641196acc3c43d9b38fc54d04df53aac0bd",
   "createdAt": "2025-08-25T18:45:18.060Z",
   "updatedAt": "2025-08-25T18:45:18.060Z",
@@ -18,8 +21,13 @@
   "lastReviewedAt": "2025-08-25T18:45:18.060Z",
   "nextReviewDue": "2025-09-24T18:45:18.060Z",
   "changeLog": [
-    { "version": "1.0.0", "changedAt": "2025-08-25T18:45:18.060Z", "summary": "initial bootstrap" }
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-25T18:45:18.060Z",
+      "summary": "initial bootstrap"
+    }
   ],
   "semanticSummary": "Identify and close emerging 2025 obfuscation pattern gaps.",
-  "reviewIntervalDays": 30
+  "reviewIntervalDays": 30,
+  "primaryCategory": "detection"
 }

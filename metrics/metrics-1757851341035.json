@@ -1,0 +1,105 @@
+{
+  "timestamp": 1757851341035,
+  "server": {
+    "uptime": 224485,
+    "version": "1.4.0",
+    "memoryUsage": {
+      "rss": 78585856,
+      "heapTotal": 27533312,
+      "heapUsed": 16934072,
+      "external": 2704130,
+      "arrayBuffers": 41229
+    },
+    "cpuUsage": {
+      "user": 31000,
+      "system": 0
+    },
+    "startTime": 1757851116550
+  },
+  "tools": {
+    "http/request": {
+      "callCount": 172,
+      "successCount": 172,
+      "errorCount": 0,
+      "totalResponseTime": 13974.636499999997,
+      "errorTypes": {},
+      "lastCalled": 1757851340378
+    },
+    "instructions/dispatch": {
+      "callCount": 19,
+      "successCount": 19,
+      "errorCount": 0,
+      "totalResponseTime": 2164.2036,
+      "errorTypes": {},
+      "lastCalled": 1757851276116
+    },
+    "instructions/remove": {
+      "callCount": 2,
+      "successCount": 2,
+      "errorCount": 0,
+      "totalResponseTime": 582.7294,
+      "errorTypes": {},
+      "lastCalled": 1757851276045
+    },
+    "usage/track": {
+      "callCount": 3,
+      "successCount": 3,
+      "errorCount": 0,
+      "totalResponseTime": 564.7634,
+      "errorTypes": {},
+      "lastCalled": 1757851276136
+    },
+    "health/check": {
+      "callCount": 2,
+      "successCount": 2,
+      "errorCount": 0,
+      "totalResponseTime": 12.5027,
+      "errorTypes": {},
+      "lastCalled": 1757851274763
+    },
+    "metrics/snapshot": {
+      "callCount": 2,
+      "successCount": 2,
+      "errorCount": 0,
+      "totalResponseTime": 560.9903999999999,
+      "errorTypes": {},
+      "lastCalled": 1757851276126
+    },
+    "instructions/add": {
+      "callCount": 1,
+      "successCount": 1,
+      "errorCount": 0,
+      "totalResponseTime": 551.8511,
+      "errorTypes": {},
+      "lastCalled": 1757851275477
+    },
+    "gates/evaluate": {
+      "callCount": 2,
+      "successCount": 2,
+      "errorCount": 0,
+      "totalResponseTime": 51.5741,
+      "errorTypes": {},
+      "lastCalled": 1757851276119
+    },
+    "meta/tools": {
+      "callCount": 3,
+      "successCount": 3,
+      "errorCount": 0,
+      "totalResponseTime": 16.6513,
+      "errorTypes": {},
+      "lastCalled": 1757851276133
+    }
+  },
+  "connections": {
+    "activeConnections": 2,
+    "totalConnections": 3,
+    "disconnectedConnections": 1,
+    "avgSessionDuration": 118941.33333333333
+  },
+  "performance": {
+    "requestsPerMinute": 24,
+    "successRate": 100,
+    "avgResponseTime": 89.7082645631068,
+    "errorRate": 0
+  }
+}

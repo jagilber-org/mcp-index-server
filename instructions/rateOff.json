@@ -8,7 +8,7 @@
   ],
   "updatedAt": "2025-09-02T16:00:54.767Z",
   "createdAt": "2025-09-02T16:00:54.767Z",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "sourceHash": "658077a58f4fdd2a1089a36076c795b74815e86f618ec811daa1aa50d892c893",
   "riskScore": null,
   "workspaceId": "unit",
@@ -26,5 +26,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Sample body"
+  "semanticSummary": "Sample body",
+  "primaryCategory": "type:test"
 }

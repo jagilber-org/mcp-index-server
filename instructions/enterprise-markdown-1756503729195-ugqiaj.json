@@ -15,7 +15,7 @@
     "troubleshooting"
   ],
   "sourceHash": "f473b90ef6931e9d436af9bbf1254db11ca1752d2d9b37b3359ac07b34747016",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-29T21:42:09.199Z",
   "updatedAt": "2025-08-29T21:42:10.148Z",
   "riskScore": 80,
@@ -34,5 +34,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "# Enterprise Resource Index (Synthetic)"
+  "semanticSummary": "# Enterprise Resource Index (Synthetic)",
+  "primaryCategory": "ai"
 }

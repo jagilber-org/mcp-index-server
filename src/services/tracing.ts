@@ -119,6 +119,26 @@ function getCaller(): string | undefined {
 
 export interface TraceRecord { ts: string; t: number; lvl: TraceLevel; label: string; data?: unknown; func?: string; pid: number; session: string }
 
+// Ring buffer (fallback) for diagnosing missing trace frames when stderr capture drops lines in CI.
+// Enabled when MCP_TRACE_BUFFER_SIZE > 0. Optional dump on exit to MCP_TRACE_BUFFER_FILE.
+const bufferSize = parseInt(process.env.MCP_TRACE_BUFFER_SIZE || '0',10) || 0;
+const traceBuffer: TraceRecord[] = [];
+function pushBuffer(rec: TraceRecord){
+  if(!bufferSize) return;
+  traceBuffer.push(rec);
+  if(traceBuffer.length > bufferSize) traceBuffer.splice(0, traceBuffer.length - bufferSize);
+}
+function dumpTraceBuffer(file?: string){
+  if(!bufferSize || !traceBuffer.length) return;
+  const target = file || process.env.MCP_TRACE_BUFFER_FILE || path.join(process.cwd(),'logs','trace','trace-buffer.json');
+  try { const dir = path.dirname(target); if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true}); fs.writeFileSync(target, JSON.stringify({ size: traceBuffer.length, records: traceBuffer }, null, 2)); } catch { /* ignore */ }
+}
+if(bufferSize && (process.env.MCP_TRACE_BUFFER_DUMP_ON_EXIT === '1' || process.env.MCP_TRACE_BUFFER_FILE)){
+  try { process.on('exit', ()=> dumpTraceBuffer()); } catch { /* ignore */ }
+}
+export function getTraceBuffer(){ return traceBuffer.slice(); }
+export function dumpTraceBufferNow(target?:string){ dumpTraceBuffer(target); }
+
 export function emitTrace(label: string, data: unknown, min: TraceLevel = 1){
   if(!traceEnabled(min)) return;
   if(!categoriesAllow(label)) return; // category filter
@@ -127,6 +147,7 @@ export function emitTrace(label: string, data: unknown, min: TraceLevel = 1){
   const rec: TraceRecord = { ts: new Date(now).toISOString(), t: now, lvl, label, data, pid: process.pid, session: getSessionId() } as TraceRecord;
   const func = getCaller();
   if(func) rec.func = func;
+  pushBuffer(rec); // always push after constructing record (even if not persisted to file)
   try {
     // eslint-disable-next-line no-console
     console.error(label, JSON.stringify(rec));
@@ -164,3 +185,6 @@ export function summarizeTraceEnv(): TraceEnvSummary {
   const categories = catsRaw ? catsRaw.split(/[,;\s]+/).filter(Boolean) : undefined;
   return { level: currentTraceLevel(), file: traceFilePath, session: getSessionId(), categories, maxFileSize, rotationIndex };
 }
+
+// Diagnostic helper: when tests detect missing expected trace labels they can invoke trace/dump tool which calls dumpTraceBufferNow.
+

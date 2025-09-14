@@ -11,7 +11,7 @@
     "validation"
   ],
   "sourceHash": "06d3655b6f8c59bb823bee6372cd669044c0212d5578cdb972de421de21f9050",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-30T01:04:44.909Z",
   "updatedAt": "2025-08-30T01:04:50.451Z",
   "riskScore": 55,
@@ -30,5 +30,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "This is a comprehensive test instruction designed to validate CRUD operations after server update. Testing:"
+  "semanticSummary": "This is a comprehensive test instruction designed to validate CRUD operations after server update. Testing:",
+  "primaryCategory": "governance"
 }

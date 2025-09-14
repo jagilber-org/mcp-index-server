@@ -9,7 +9,7 @@
     "testing"
   ],
   "sourceHash": "a947c7fbc3ae37516edceeca79207d0d028fd008a9bbc51ae43aa9f6fe8ef2f4",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-30T15:12:54.224Z",
   "updatedAt": "2025-08-30T15:12:54.224Z",
   "riskScore": 30,
@@ -28,5 +28,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Simple test for CREATE validation"
+  "semanticSummary": "Simple test for CREATE validation",
+  "primaryCategory": "testing"
 }

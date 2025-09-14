@@ -144,6 +144,8 @@ function classifyError(e) {
 export async function runCrudScenario({ command='node', args=['dist/server/index.js'] }, entries, { verbose=false, json=false, forceMutation=true, skipRemove=false }={}) {
   const started = performance.now();
   const summary = { created:0, listed:0, validated:0, removed:0, failures:[], durationMs:0 };
+  // Track successfully created/overwritten ids to provide expectId hints for subsequent list() calls
+  const createdIds = [];
 
   // Ensure mutations enabled for child process if requested.
   if(forceMutation && process.env.MCP_ENABLE_MUTATION !== '1') {
@@ -175,9 +177,25 @@ export async function runCrudScenario({ command='node', args=['dist/server/index
           if(verbose) console.error('[crud] add via dispatcher', JSON.stringify(args));
           const obj = await callJSON('instructions/dispatch', args);
           entry.hash = obj?.hash || obj?.id || entry.id;
+          if(obj && (obj.created || obj.overwritten) && obj.id){
+            createdIds.push(obj.id);
+            // Opportunistic immediate read-after-write verification to surface latent visibility gaps early.
+            try {
+              const verifyObj = await callJSON('instructions/dispatch', { action:'get', id: obj.id });
+              const rBody = verifyObj?.item?.body || verifyObj?.body;
+              if(rBody !== entry.body){
+                summary.failures.push({ phase:'postAddVerify', id:entry.id, mismatch:true });
+                if(verbose) console.error('[crud][verify-mismatch]', entry.id, 'expected body not returned immediately');
+              }
+            } catch(verr){
+              summary.failures.push({ phase:'postAddVerify', id:entry.id, error: classifyError(verr) });
+              if(verbose) console.error('[crud][verify-error]', entry.id, verr.message);
+            }
+          }
         } else if(hasLegacyAdd){
           const obj = await callJSON('instructions/add', { entry:{ id:entry.id, title:entry.title, body:entry.body }, overwrite:true, lax:true });
           entry.hash = obj?.hash || obj?.id || entry.id;
+          if(obj && (obj.created || obj.overwritten) && obj.id) createdIds.push(obj.id);
         } else {
           throw new Error('no_add_method_available');
         }
@@ -188,7 +206,9 @@ export async function runCrudScenario({ command='node', args=['dist/server/index
     async function listEntries(){
       try {
         if(hasDispatcher){
-          const args = { action:'list' };
+          // Provide expectId hint (most recent) so server can repair a rare race where list lags a just-added file.
+          const expectId = createdIds.length ? createdIds[createdIds.length-1] : undefined;
+          const args = expectId ? { action:'list', expectId } : { action:'list' };
           if(verbose) console.error('[crud] list via dispatcher');
           const obj = await callJSON('instructions/dispatch', args);
           const items = Array.isArray(obj?.items)? obj.items: [];
@@ -318,10 +338,27 @@ export async function createInstructionClient({ command='node', args=['dist/serv
   async function create(entry,{ overwrite=true }={}){
     const norm = normalizeEntryInput(entry);
     if(hasDispatcher){
-      return callJSON('instructions/dispatch', { action:'add', entry:norm, overwrite, lax:true });
+      const obj = await callJSON('instructions/dispatch', { action:'add', entry:norm, overwrite, lax:true });
+      // Fallback inference: if server omitted strictVerified but atomic visibility observed, infer it.
+      if(obj && obj.verified && (obj.created || obj.overwritten) && obj.strictVerified === undefined){
+        try {
+          const verifyObj = await callJSON('instructions/dispatch', { action:'get', id: norm.id });
+          const vBody = verifyObj?.item?.body || verifyObj?.body;
+            if(vBody === norm.body){ obj.strictVerified = true; }
+        } catch { /* ignore silent */ }
+      }
+      return obj;
     }
     if(hasLegacyAdd){
-      return callJSON('instructions/add', { entry:norm, overwrite, lax:true });
+      const obj = await callJSON('instructions/add', { entry:norm, overwrite, lax:true });
+      if(obj && obj.verified && (obj.created || obj.overwritten) && obj.strictVerified === undefined){
+        try {
+          const verifyObj = await read(norm.id); // reuse read path
+          const vBody = verifyObj?.item?.body || verifyObj?.body;
+          if(vBody === norm.body) obj.strictVerified = true;
+        } catch { /* ignore */ }
+      }
+      return obj;
     }
     throw new Error('no_add_method_available');
   }
@@ -374,10 +411,23 @@ export async function createInstructionClient({ command='node', args=['dist/serv
     throw new Error('no_remove_method_available');
   }
   async function list(){
-    if(hasDispatcher){ const obj = await callJSON('instructions/dispatch', { action:'list' }); return classifyListObject(obj); }
+    if(hasDispatcher){
+      // Provide expectId hint if last create/update occurred (reuse most recent id heuristically)
+      const lastId = _lastCreatedId;
+      const obj = await callJSON('instructions/dispatch', lastId ? { action:'list', expectId: lastId } : { action:'list' });
+      return classifyListObject(obj);
+    }
     if(hasLegacyList){ const obj = await callJSON('instructions/list', {}); if(Array.isArray(obj)) return { items:obj, count:obj.length }; return classifyListObject(obj); }
     throw new Error('no_list_method_available');
   }
+  // Maintain last created/overwritten id for expectId hinting
+  let _lastCreatedId = undefined;
+  const origCreate = create;
+  create = async function(entry, opts){
+    const r = await origCreate(entry, opts);
+    if(r && (r.created || r.overwritten) && r.id) _lastCreatedId = r.id;
+    return r;
+  };
   /**
    * Verify persistence (read-after-write) with small retry loop to surface transient visibility gaps.
    * @param {string} id instruction id

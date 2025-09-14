@@ -1,0 +1,36 @@
+{
+  "id": "agent-security-protocol",
+  "title": "Agent Communication Security Protocol",
+  "body": "Implement security best practices for agent-to-agent communication:\n\n1. **Input Validation**: Sanitize all incoming data and parameters\n2. **Output Sanitization**: Ensure responses don't contain sensitive information\n3. **Rate Limiting**: Implement per-agent request limits to prevent abuse\n4. **Authentication**: Verify agent identity before processing requests\n5. **Authorization**: Check permissions for requested operations\n6. **Audit Logging**: Log all inter-agent communications with timestamps\n7. **Encryption**: Use TLS for network communication when possible\n8. **Sandboxing**: Isolate agent operations to prevent cross-contamination\n9. **Resource Limits**: Enforce memory, CPU, and time limits on operations\n10. **Monitoring**: Track unusual patterns or suspicious behavior\n\nSecurity checklist for each request:\n- [ ] Agent identity verified\n- [ ] Request parameters validated\n- [ ] Resource limits checked\n- [ ] Operation authorized\n- [ ] Response sanitized\n- [ ] Interaction logged",
+  "priority": 15,
+  "audience": "ai-agents",
+  "requirement": "critical",
+  "categories": [
+    "authentication",
+    "mcp",
+    "monitoring",
+    "security"
+  ],
+  "primaryCategory": "authentication",
+  "sourceHash": "1a8886374ea9335d620cfbd7ebb51e72acdacb7ec100163e9f0a3a8d41db19e6",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T12:03:48.956Z",
+  "updatedAt": "2025-09-12T12:03:48.956Z",
+  "riskScore": 145,
+  "version": "1.0.0",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T12:03:48.956Z",
+      "summary": "initial import"
+    }
+  ],
+  "owner": "security-team",
+  "status": "approved",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T12:03:48.956Z",
+  "nextReviewDue": "2025-10-12T12:03:48.956Z",
+  "reviewIntervalDays": 30,
+  "semanticSummary": "Implement security best practices for agent-to-agent communication:"
+}

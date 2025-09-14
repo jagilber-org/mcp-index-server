@@ -10,7 +10,7 @@
     "ghash"
   ],
   "sourceHash": "5eba503ad0aecc563ec135f5c772a2ced93642512e9b39f44c35eb8f3d9528cf",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-29T23:10:42.691Z",
   "updatedAt": "2025-08-29T23:10:44.244Z",
   "version": "1.0.0",
@@ -29,5 +29,6 @@
   ],
   "semanticSummary": "Stable Body",
   "reviewIntervalDays": 30,
-  "riskScore": 145
+  "riskScore": 145,
+  "primaryCategory": "auto"
 }

@@ -10,7 +10,7 @@
     "testing"
   ],
   "sourceHash": "562f5992c0156f135db99a1fa021b7fa021a3c6702f053b033fcef467837b392",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-30T15:13:47.274Z",
   "updatedAt": "2025-08-30T15:13:47.274Z",
   "riskScore": 60,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Fresh test entry on completely clean catalog. Testing CREATE operation after index reset."
+  "semanticSummary": "Fresh test entry on completely clean catalog. Testing CREATE operation after index reset.",
+  "primaryCategory": "fresh-start"
 }

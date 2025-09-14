@@ -48,11 +48,9 @@ describe('instructions disappearing regression self-healing', () => {
 		}
 		expect(found).toBe(true);
 		if(listObj){
-			if(!listObj.repairedVisibility && !listObj.lateMaterialized){
-				// Allow scenario where reload already captured file before our first list (fast path); perform a sanity read of file to confirm.
-				const existsOnDisk = fs.existsSync(path.join(instructionsDir, `${id}.json`));
-				if(!existsOnDisk) throw new Error('File unexpectedly missing after write');
-			}
+			// Legacy repairedVisibility/lateMaterialized flags removed (Phase E). Presence validated purely by items[] now.
+			const existsOnDisk = fs.existsSync(path.join(instructionsDir, `${id}.json`));
+			if(!existsOnDisk) throw new Error('File unexpectedly missing after write');
 		}
 
 		// Follow-up get should succeed.

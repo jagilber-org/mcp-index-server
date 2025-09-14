@@ -9,7 +9,7 @@
     "test"
   ],
   "sourceHash": "532eaabd9574880dbf76b9b8cc00832c20a6ec113d682299550d7a6e0f345e25",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-30T15:13:55.260Z",
   "updatedAt": "2025-08-30T15:13:55.260Z",
   "riskScore": 55,
@@ -28,5 +28,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Test"
+  "semanticSummary": "Test",
+  "primaryCategory": "test"
 }

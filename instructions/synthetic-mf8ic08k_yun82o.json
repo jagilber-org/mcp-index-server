@@ -10,7 +10,7 @@
     "updated"
   ],
   "sourceHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-09-06T16:58:03.165Z",
   "updatedAt": "2025-09-06T16:58:03.165Z",
   "riskScore": 55,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Updated body"
+  "semanticSummary": "Updated body",
+  "primaryCategory": "synthetic"
 }

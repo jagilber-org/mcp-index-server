@@ -10,7 +10,7 @@
     "test"
   ],
   "sourceHash": "f42214cda322466f8bcb866012d6512e9c91b1db2a3382bbe602382b97204743",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-09-02T17:05:05.297Z",
   "updatedAt": "2025-09-02T17:05:05.297Z",
   "riskScore": 95,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Hello body"
+  "semanticSummary": "Hello body",
+  "primaryCategory": "p1"
 }

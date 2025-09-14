@@ -1,0 +1,33 @@
+{
+  "id": "vis-1757791210134",
+  "title": "Visibility Invariant",
+  "body": "Body for visibility invariant test",
+  "priority": 5,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "invariant"
+  ],
+  "primaryCategory": "invariant",
+  "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-13T19:20:12.347Z",
+  "updatedAt": "2025-09-13T19:20:12.347Z",
+  "riskScore": 100,
+  "version": "1.0.0",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-13T19:20:12.347Z",
+      "summary": "initial import"
+    }
+  ],
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-13T19:20:12.347Z",
+  "nextReviewDue": "2025-10-13T19:20:12.347Z",
+  "reviewIntervalDays": 30,
+  "semanticSummary": "Body for visibility invariant test"
+}

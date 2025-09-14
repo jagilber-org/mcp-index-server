@@ -77,6 +77,10 @@ const INPUT_SCHEMAS: Record<string, object> = {
   'metrics/snapshot': { type: 'object', additionalProperties: true },
   'gates/evaluate': { type: 'object', additionalProperties: true },
   'meta/tools': { type: 'object', additionalProperties: true },
+  // manifest tools (catalog manifest management)
+  'manifest/status': { type: 'object', additionalProperties: true },
+  'manifest/refresh': { type: 'object', additionalProperties: true },
+  'manifest/repair': { type: 'object', additionalProperties: true },
   // feedback system tools
   'feedback/submit': { type: 'object', additionalProperties: false, required: ['type', 'severity', 'title', 'description'], properties: {
     type: { type: 'string', enum: ['issue', 'status', 'security', 'feature-request', 'bug-report', 'performance', 'usability', 'other'] },
@@ -122,8 +126,8 @@ const INPUT_SCHEMAS: Record<string, object> = {
 };
 
 // Stable & mutation classification lists (mirrors usage in toolHandlers; exported to remove duplication there).
-export const STABLE = new Set(['health/check','graph/export','instructions/dispatch','instructions/governanceHash','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools','feedback/list','feedback/get','feedback/stats','feedback/health']);
-const MUTATION = new Set(['instructions/add','instructions/import','instructions/repair','instructions/reload','instructions/remove','instructions/groom','instructions/enrich','instructions/governanceUpdate','usage/flush','feedback/submit','feedback/update']);
+export const STABLE = new Set(['health/check','graph/export','instructions/dispatch','instructions/governanceHash','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools','feedback/list','feedback/get','feedback/stats','feedback/health','manifest/status']);
+const MUTATION = new Set(['instructions/add','instructions/import','instructions/repair','instructions/reload','instructions/remove','instructions/groom','instructions/enrich','instructions/governanceUpdate','usage/flush','feedback/submit','feedback/update','manifest/refresh','manifest/repair']);
 
 export function getToolRegistry(): ToolRegistryEntry[] {
   const entries: ToolRegistryEntry[] = [];
@@ -178,6 +182,9 @@ function describeTool(name: string): string {
   case 'feedback/update': return 'Update feedback entry status and metadata (admin function).';
   case 'feedback/stats': return 'Get feedback system statistics and metrics dashboard.';
   case 'feedback/health': return 'Health check for feedback system storage and configuration.';
+  case 'manifest/status': return 'Report catalog manifest presence and drift summary.';
+  case 'manifest/refresh': return 'Rewrite manifest from current catalog state.';
+  case 'manifest/repair': return 'Repair manifest by reconciling drift with catalog.';
   // diagnostics descriptions
   case 'diagnostics/block': return 'Intentionally CPU blocks the event loop for N ms (diagnostic stress).';
   case 'diagnostics/microtaskFlood': return 'Flood the microtask queue with many Promise resolutions to probe event loop starvation.';

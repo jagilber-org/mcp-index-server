@@ -29,60 +29,101 @@ function ensureDir(p) {
 
 function copyAssets() {
   ensureDir(destDir);
-  const entries = readdirSync(srcDir);
   let copied = 0;
   const debug = [];
-  for (const f of entries) {
-    const ext = extname(f).toLowerCase();
-    if (!allowed.has(ext)) continue;
-    const src = join(srcDir, f);
-    const dest = join(destDir, f);
-    try {
-      const srcStat = statSync(src);
-      let needsCopy = true;
-      let reason = 'new or changed';
+
+  /**
+   * Recursively walk src dashboard client tree and copy allowed file types
+   * preserving relative structure (so js/*.js modules load in dist).
+   */
+  function walk(currentSrc, currentDest) {
+    ensureDir(currentDest);
+    const entries = readdirSync(currentSrc, { withFileTypes: true });
+    for (const entry of entries) {
+      const srcPath = join(currentSrc, entry.name);
+      const destPath = join(currentDest, entry.name);
+      if (entry.isDirectory()) {
+        // Only recurse into known safe directories (js, css) to avoid copying build artifacts accidentally
+        if (/^(js|css)$/i.test(entry.name)) {
+          walk(srcPath, destPath);
+        }
+        continue;
+      }
+      const ext = extname(entry.name).toLowerCase();
+      if (!allowed.has(ext)) continue;
       try {
-        const destStat = statSync(dest);
-        if (destStat.size === srcStat.size) {
-          // Size match; verify content hash to avoid mtime resolution issues on Windows
-          const srcH = fileHash(src);
-            const destH = fileHash(dest);
+        const srcStat = statSync(srcPath);
+        let needsCopy = true;
+        let reason = 'new or changed';
+        try {
+          const destStat = statSync(destPath);
+          if (destStat.size === srcStat.size) {
+            const srcH = fileHash(srcPath);
+            const destH = fileHash(destPath);
             if (srcH === destH) {
               needsCopy = false;
               reason = 'unchanged';
             } else {
               reason = 'hash-diff';
             }
+          } else {
+            reason = 'size-diff';
+          }
+        } catch { reason = 'missing-dest'; }
+        if (needsCopy) {
+          copyFileSync(srcPath, destPath);
+          copied++;
+          debug.push(`${destPath.replace(process.cwd()+"/", '')}: copied (${reason})`);
         } else {
-          reason = 'size-diff';
+          debug.push(`${destPath.replace(process.cwd()+"/", '')}: skipped (${reason})`);
         }
-      } catch (e) { reason = 'missing-dest'; }
-      if (needsCopy) {
-        copyFileSync(src, dest);
-        copied++;
-        debug.push(`${f}: copied (${reason})`);
-      } else {
-        debug.push(`${f}: skipped (${reason})`);
+      } catch (e) {
+        console.error('Failed to copy', srcPath, e.message);
       }
-    } catch (e) {
-      console.error('Failed to copy', f, e.message);
     }
   }
-  console.log(`[copy-dashboard-assets] Copied ${copied} asset(s) to dist. Details: ${debug.join('; ')}`);
+
+  walk(srcDir, destDir);
+
+  console.log(`[copy-dashboard-assets] Copied ${copied} asset(s) (recursive). Details: ${debug.join('; ')}`);
   if (!copied) {
-    // Provide explicit signal so CI can optionally grep
     console.log('[copy-dashboard-assets] NOTE: 0 assets copied (all unchanged by hash).');
   }
 
-  // Bundle @mermaid-js/layout-elk UMD for offline / firewall-safe usage.
+  // Bundle @mermaid-js/layout-elk ESM build for offline usage.
   try {
-    // Package 0.2.0 no longer ships UMD; use ESM min build and load via dynamic import shim in admin.html
     const elkPkgPath = join(process.cwd(), 'node_modules', '@mermaid-js', 'layout-elk', 'dist', 'mermaid-layout-elk.esm.min.mjs');
     const elkDest = join(destDir, 'mermaid-layout-elk.esm.min.mjs');
     copyFileSync(elkPkgPath, elkDest);
+    debug.push('mermaid-layout-elk.esm.min.mjs: copied (forced)');
     console.log('[copy-dashboard-assets] Added local mermaid-layout-elk.esm.min.mjs');
   } catch (e) {
     console.warn('[copy-dashboard-assets] WARN: could not copy layout-elk ESM build (package missing?)', e.message);
+  }
+
+  // Lightweight cache-busting: append ?v=<pkgVersion-sha1(admin.css)> to script & css references in admin.html (dist copy only)
+  try {
+    const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'));
+    const adminHtmlPath = join(destDir, 'admin.html');
+    let html = readFileSync(adminHtmlPath, 'utf8');
+    const version = pkg.version || '0.0.0';
+    // build content hash from css file to change when styling changes even if version not bumped
+    let cssHash = '';
+  try { cssHash = fileHash(join(destDir, 'css', 'admin.css')).slice(0,8); } catch { /* ignore hash calc */ }
+    const stamp = `${version}-${cssHash}`;
+    // Replace existing query (if present) or append
+    html = html.replace(/(css\/admin\.css)(?:\?v=[A-Za-z0-9.-]+)?/,'$1?v='+stamp);
+    html = html.replace(/(js\/admin\.[a-zA-Z0-9_.-]+\.js)(?:\?v=[A-Za-z0-9.-]+)?/g,'$1?v='+stamp);
+    // Inject meta for runtime verification (idempotent)
+    if(!/meta name="dashboard-build-version"/.test(html)){
+      html = html.replace(/<head>/,'<head>\n    <meta name="dashboard-build-version" content="'+stamp+'">');
+    }
+  // Overwrite in place
+  copyFileSync(adminHtmlPath, adminHtmlPath); // no-op ensure
+  import('fs').then(fsMod => { try { fsMod.writeFileSync(adminHtmlPath, html); } catch(e2){ console.warn('[copy-dashboard-assets] write failed', e2.message); } });
+    console.log('[copy-dashboard-assets] Applied cache-busting query stamp', stamp);
+  } catch(e) {
+    console.warn('[copy-dashboard-assets] Cache-busting patch skipped:', e.message);
   }
 }
 

@@ -31,7 +31,9 @@ describe('instructions governance: version & changeLog CRUD', () => {
 
     const id = 'governance-test-entry';
     // Create with minimal fields (lax) - version should default (1.0.0) & changeLog seeded length=1
-    const createResp: any = await add({ entry: { id, title: id, body: 'initial body', audience: 'all', requirement: 'req', priority: 10, categories: ['test'] }, lax: true });
+  // NOTE: requirement must be one of the allowed governance enums. Previous value 'req' caused silent
+  // classification rejection resulting in item not appearing in list. Use 'optional' to satisfy enum.
+  const createResp: any = await add({ entry: { id, title: id, body: 'initial body', audience: 'all', requirement: 'optional', priority: 10, categories: ['test'] }, lax: true });
     expect(createResp).toMatchObject({ id, created: true });
 
     // List and locate entry; verify default governance fields
@@ -72,7 +74,8 @@ describe('instructions governance: version & changeLog CRUD', () => {
     const add = getHandler('instructions/add');
     const dispatch = (action: string, params: Record<string, any>) => (getHandler('instructions/dispatch') as any)({ action, ...params });
     const badId = 'governance-bad-changelog';
-    const resp: any = await add({ entry: { id: badId, title: badId, body: 'x', audience: 'all', requirement: 'r', priority: 5, categories: [], version: '2.0.0', changeLog: [{ version: '2.0.0', summary: 'missing changedAt' }] }, lax: true });
+  // Use valid requirement value 'optional' (was 'r') to ensure record is accepted, letting changeLog repair logic run.
+  const resp: any = await add({ entry: { id: badId, title: badId, body: 'x', audience: 'all', requirement: 'optional', priority: 5, categories: [], version: '2.0.0', changeLog: [{ version: '2.0.0', summary: 'missing changedAt' }] }, lax: true });
     expect(resp).toMatchObject({ id: badId, created: true });
     const list: any = await dispatch('list', { expectId: badId });
     const item = list.items.find((i: any) => i.id === badId);

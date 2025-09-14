@@ -9,7 +9,7 @@
     "x"
   ],
   "sourceHash": "6ccaa6415b5ee449e3c5c716f57b4608ebe3b780f5aa6b077bc5d8eee5d961f9",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "",
   "updatedAt": "2025-09-05T14:08:02.836Z",
   "version": "1.0.0",
@@ -27,5 +27,6 @@
     }
   ],
   "semanticSummary": "",
-  "reviewIntervalDays": 120
+  "reviewIntervalDays": 120,
+  "primaryCategory": "x"
 }

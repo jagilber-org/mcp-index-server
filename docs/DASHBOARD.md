@@ -224,3 +224,80 @@ git commit -m "test: refresh playwright baseline after <reason>"
 ---
 
 This guide complements: `CONFIGURATION.md`, `MCP-CONFIGURATION.md`, `TOOLS.md`.
+
+## Configuration Introspection (dashboard/config)
+
+Version: Added in 1.1.2
+
+When the server is running (dashboard optional), a new MCP tool `dashboard/config` returns a deterministic snapshot of ALL recognized environment / feature flags and their metadata – including those currently unset. This eliminates the need to manually cross‑reference README tables and scattered code comments.
+
+### Why This Matters
+
+- Central authoritative source for UI rendering of feature flag glossary.
+- Enables clients / dashboards to diff configuration between processes (e.g. prod vs staging) without shell access.
+- Surfaces experimental / diagnostic flags so they can be audited (e.g. detect if a diagnostic flag accidentally left on in production).
+- Stabilizes tests: rather than pattern‑matching docs, tests can assert that specific flags exist with expected defaults & stability classification.
+
+### Response Shape
+
+```json
+{
+  "generatedAt": "2025-09-13T12:34:56.789Z",
+  "total": 57,
+  "flags": [
+    {
+      "name": "MCP_ENABLE_MUTATION",
+      "category": "core",
+      "description": "Enable mutation tools (add/import/remove/enrich/governance updates).",
+      "stability": "stable",
+      "since": "1.0.0",
+      "default": "off",
+      "type": "boolean",
+      "value": "1",          // present only if set
+      "enabled": true,         // boolean flags include parsed enabled
+      "parsed": true           // parsed/normalized representation (number/string otherwise)
+    },
+    { "name": "MCP_MANIFEST_FASTLOAD", ... }
+  ]
+}
+```
+
+### Field Semantics
+
+| Field | Meaning |
+|-------|---------|
+| name | Environment variable identifier |
+| category | Logical grouping (core, dashboard, manifest, tracing, instructions, usage, metrics, validation, diagnostics, stress, auth, experimental, deprecated) |
+| description | Concise human readable purpose |
+| stability | Lifecycle classification (stable/diagnostic/experimental/deprecated/reserved) |
+| since | First version flag introduced (best effort) |
+| default | Documented default behavior when unset |
+| type | Expected value type (boolean/number/string) |
+| value | Raw environment-provided value (only when set) |
+| enabled | Boolean interpretation (boolean flags only) |
+| parsed | Normalized value (e.g. number parse, boolean parse) |
+
+### Example Invocation (MCP Client JSON-RPC)
+
+```json
+{ "method":"tools/call", "params": { "name":"dashboard/config" } }
+```
+
+### Usage Patterns
+
+- Auditing: Compare two environments by diffing returned flag arrays; highlight mismatches for investigation.
+- UI: Populate a feature flag matrix with grouping & stability badges.
+- Testing: Assert required stable flags exist with expected defaults; ensure deprecated flags remain listed (visibility) but are not active.
+- Hardening: Failsafe check in CI that no diagnostic flags are active in production build pipeline (e.g. assert all diagnostic flags have enabled=false under prod profile).
+
+### Extension Guidance
+
+When adding a new flag:
+
+1. Implement runtime usage (code path).
+2. Append entry to `handlers.dashboardConfig.ts` (do not reorder existing entries to keep diff minimal).
+3. Update README environment table if user‑facing.
+4. Add tests if behavior materially affects runtime semantics.
+
+> The curated list avoids dynamic discovery so that even removed / deprecated flags may be retained for operator awareness and historical audits.
+

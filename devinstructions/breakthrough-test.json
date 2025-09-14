@@ -9,7 +9,7 @@
     "breakthrough"
   ],
   "sourceHash": "1d964adab1078fbb1622d0935170ee50413e19072bf57f14d55bef68cf8c1dcf",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-30T15:16:08.913Z",
   "updatedAt": "2025-08-30T15:16:08.913Z",
   "riskScore": 80,
@@ -28,5 +28,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Final test"
+  "semanticSummary": "Final test",
+  "primaryCategory": "breakthrough"
 }

@@ -9,7 +9,7 @@
     "verification"
   ],
   "sourceHash": "0121f248fbd4e84d5df67ca9f4619c5e2a6f28ded1a25c12966e0a78b91e8bff",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-30T15:28:13.821Z",
   "updatedAt": "2025-08-30T15:28:13.821Z",
   "riskScore": 50,
@@ -28,5 +28,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Second test to confirm CREATE is working consistently"
+  "semanticSummary": "Second test to confirm CREATE is working consistently",
+  "primaryCategory": "verification"
 }

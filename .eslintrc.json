@@ -64,5 +64,12 @@
       "files": ["src/tests/**/*.spec.ts"],
       "rules": { "@typescript-eslint/no-explicit-any": "off" }
     }
+    ,{
+      // Client-side extracted JS modules: treat as plain JS (no type-aware parsing)
+      "files": ["src/dashboard/client/js/**/*.js"],
+      "parserOptions": { "project": null },
+      "env": { "browser": true },
+      "rules": {}
+    }
   ]
 }

@@ -1,0 +1,36 @@
+{
+  "id": "agent-error-handling",
+  "title": "Agent Communication Error Handling",
+  "body": "Implement comprehensive error handling for agent-to-agent communication:\n\n1. **Network Errors**: Handle connection timeouts, DNS failures, and network partitions\n2. **Protocol Errors**: Validate JSON-RPC structure and handle malformed messages\n3. **Authentication Errors**: Gracefully handle permission denied and credential issues\n4. **Resource Errors**: Manage memory limits, rate limiting, and resource exhaustion\n5. **Business Logic Errors**: Handle tool-specific errors and invalid parameters\n6. **Circuit Breaker Pattern**: Stop attempting failed calls after threshold reached\n7. **Error Reporting**: Log errors with sufficient context for debugging\n8. **Recovery Strategies**: Implement retry with backoff, fallback methods, or graceful degradation\n\nError response format:\n```json\n{\n  \"error\": {\n    \"code\": -32000,\n    \"message\": \"Agent communication failed\",\n    \"data\": {\n      \"type\": \"network_timeout\",\n      \"agent\": \"target-agent-id\",\n      \"retry_after\": 30\n    }\n  }\n}\n```",
+  "priority": 25,
+  "audience": "ai-agents",
+  "requirement": "critical",
+  "categories": [
+    "debugging",
+    "error-handling",
+    "mcp",
+    "reliability"
+  ],
+  "primaryCategory": "debugging",
+  "sourceHash": "6a75e8f1e1c46803b0c980c20486db6f37f657203f6b11c5237ab6a9c76f5c2b",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T12:03:40.081Z",
+  "updatedAt": "2025-09-12T12:03:40.081Z",
+  "riskScore": 135,
+  "version": "1.0.0",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T12:03:40.081Z",
+      "summary": "initial import"
+    }
+  ],
+  "owner": "mcp-team",
+  "status": "approved",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T12:03:40.081Z",
+  "nextReviewDue": "2025-10-12T12:03:40.081Z",
+  "reviewIntervalDays": 30,
+  "semanticSummary": "Implement comprehensive error handling for agent-to-agent communication:"
+}

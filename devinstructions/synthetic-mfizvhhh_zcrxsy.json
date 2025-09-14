@@ -1,0 +1,49 @@
+{
+  "id": "synthetic-mfizvhhh_zcrxsy",
+  "title": "Synthetic Instruction Updated",
+  "body": "Updated body",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "synthetic",
+    "updated"
+  ],
+  "primaryCategory": "synthetic",
+  "sourceHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-14T01:06:33.748Z",
+  "updatedAt": "2025-09-14T01:06:36.621Z",
+  "riskScore": 55,
+  "version": "1.0.3",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-14T01:06:33.748Z",
+      "summary": "initial import"
+    },
+    {
+      "version": "1.0.1",
+      "changedAt": "2025-09-14T01:06:34.680Z",
+      "summary": "auto bump (body change)"
+    },
+    {
+      "version": "1.0.2",
+      "changedAt": "2025-09-14T01:06:35.656Z",
+      "summary": "auto bump (body change)"
+    },
+    {
+      "version": "1.0.3",
+      "changedAt": "2025-09-14T01:06:36.621Z",
+      "summary": "auto bump (body change)"
+    }
+  ],
+  "owner": "synthetic",
+  "status": "approved",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-14T01:06:33.748Z",
+  "nextReviewDue": "2025-12-13T01:06:33.748Z",
+  "reviewIntervalDays": 90,
+  "semanticSummary": "Temporary synthetic entry"
+}

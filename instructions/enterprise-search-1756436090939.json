@@ -10,7 +10,7 @@
     "search"
   ],
   "sourceHash": "75e4b8b3217ff8fae2adb255fed7136e11ecb4372ebe1cca556677c1872a04bd",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-29T02:54:50.943Z",
   "updatedAt": "2025-08-29T02:54:50.943Z",
   "riskScore": 75,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "# Service Fabric Resources"
+  "semanticSummary": "# Service Fabric Resources",
+  "primaryCategory": "development-tools"
 }

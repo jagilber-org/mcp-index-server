@@ -9,7 +9,7 @@
     "x"
   ],
   "sourceHash": "8fe8b68fd32ffc729aeac49fcf11ba555d74cbf5362628887e0758516f5e4f1a",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-29T01:10:10.663Z",
   "updatedAt": "2025-08-29T01:10:11.599Z",
   "version": "1.0.0",
@@ -28,5 +28,6 @@
   ],
   "semanticSummary": "Body Stable",
   "reviewIntervalDays": 30,
-  "riskScore": 140
+  "riskScore": 140,
+  "primaryCategory": "x"
 }

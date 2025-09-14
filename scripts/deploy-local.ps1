@@ -46,10 +46,32 @@ param(
   [switch]$PruneLegacy,
   # Emit JSON integrity summary to stdout at end (does not contaminate protocol; deploy script only)
   [switch]$EmitSummary
+  , [switch]$AssertNoConcurrentTests
 )
+
+# NOTE (stability-hardening): Recent CI/deploy flake analysis showed two intermittent issues:
+#  1) Handshake test timeouts during concurrent heavy IO (npm ci + large dist copy). Mitigated by raising
+#     handshake helper max timeout & adding diagnostics (MCP_TEST_HANDSHAKE_* env vars).
+#  2) Transient ERR_MODULE_NOT_FOUND / ENOENT for node_modules packages (e.g. es-errors, debug) observed
+#     only when a separate test task executed overlapping with a fresh `npm ci` from this deploy script.
+#     Root cause: parallel task deleted and reinstalled node_modules while vitest worker tried to resolve.
+# To prevent recurrence, ensure tests complete before invoking deploy-local.ps1 with -Rebuild, or run deploy
+# first then an isolated smoke test. Future enhancement: introduce an optional `-AssertNoConcurrentTests` flag
+# using a simple lock file protocol (.build.lock) or NPX sentinel. For now we only document the hazard here.
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+if($AssertNoConcurrentTests){
+  # Simple heuristic: block if a vitest sentinel or build lock is present & recently modified (<5m)
+  $lockFiles = @('.build.lock','.test-run-active.lock') | ForEach-Object { if(Test-Path $_){ Get-Item $_ } }
+  $recent = $lockFiles | Where-Object { ([DateTime]::UtcNow - $_.LastWriteTimeUtc).TotalMinutes -lt 5 }
+  if($recent){
+    Write-Host ('[deploy] AssertNoConcurrentTests: active lock(s) detected: {0}' -f ($recent | ForEach-Object Name -join ', ')) -ForegroundColor Red
+    Write-Host '[deploy] Abort to avoid race with node_modules mutation during deployment (rerun after tests complete or omit -AssertNoConcurrentTests).' -ForegroundColor Red
+    exit 2
+  }
+}
 
 Write-Host "[deploy] Destination: $Destination" -ForegroundColor Cyan
 if($Rebuild){

@@ -10,7 +10,7 @@
     "testing"
   ],
   "sourceHash": "2fb556d75c47728e37fb4074641f6635012d025b58dc71ef157eb04cb90aa1ce",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-31T20:40:08.412Z",
   "updatedAt": "2025-08-31T20:40:08.412Z",
   "riskScore": 63,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Variant of testing patterns to probe skip anomaly."
+  "semanticSummary": "Variant of testing patterns to probe skip anomaly.",
+  "primaryCategory": "patterns"
 }

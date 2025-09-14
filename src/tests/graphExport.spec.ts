@@ -8,7 +8,35 @@ function writeInstruction(id:string, body:string, categories:string[], primary?:
   const dir = process.env.INSTRUCTIONS_DIR || path.join(process.cwd(),'instructions');
   if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true});
   const now = new Date().toISOString();
-  const rec = { id, title:id, body, rationale:'', priority:50, audience:'all', requirement:'optional', categories: categories.map(c=>c.toLowerCase()), primaryCategory: (primary && categories.includes(primary))? primary: categories[0], sourceHash: 'hash-'+id, schemaVersion:'v3', createdAt:now, updatedAt:now, version:'1.0.0', status:'approved', owner:'owner', priorityTier:'P3', classification:'public', lastReviewedAt:now, nextReviewDue:now, changeLog:[], semanticSummary:'' };
+  // Updated fixture to comply with current schema validation:
+  //  - schemaVersion must be "3" (not "v3")
+  //  - sourceHash must be a 64 hex sha256 style string
+  //  - changeLog must contain at least one entry
+  //  - categories already lower‑cased; provide primaryCategory alignment
+  const rec = {
+    id,
+    title:id,
+    body,
+    rationale:'',
+    priority:50,
+    audience:'all',
+    requirement:'optional',
+    categories: categories.map(c=>c.toLowerCase()),
+    primaryCategory: (primary && categories.includes(primary))? primary: categories[0],
+    sourceHash: '0'.repeat(64),
+    schemaVersion:'3',
+    createdAt:now,
+    updatedAt:now,
+    version:'1.0.0',
+    status:'approved',
+    owner:'owner',
+    priorityTier:'P3',
+    classification:'public',
+    lastReviewedAt:now,
+    nextReviewDue:now,
+    changeLog:[{ version:'1.0.0', changedAt: now, summary:'initial import' }],
+    semanticSummary:''
+  };
   fs.writeFileSync(path.join(dir, id+'.json'), JSON.stringify(rec,null,2));
 }
 

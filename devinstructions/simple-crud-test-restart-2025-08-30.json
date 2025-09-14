@@ -10,7 +10,7 @@
     "testing"
   ],
   "sourceHash": "239f027d4643f0173bc8369b4fd58d0f904b0709bb4d73e833463d650c85f423",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-30T15:12:29.068Z",
   "updatedAt": "2025-08-30T15:12:29.068Z",
   "riskScore": 70,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "This is a simple test entry to validate CREATE operation after server restart/revert. Testing basic persistence functionality."
+  "semanticSummary": "This is a simple test entry to validate CREATE operation after server restart/revert. Testing basic persistence functionality.",
+  "primaryCategory": "restart-validation"
 }

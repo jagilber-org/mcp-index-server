@@ -13,7 +13,7 @@
     "server-health"
   ],
   "sourceHash": "5efbe1e603c5e25bfb4c2a3e3609dba4a6596120648a81c6715dc4792ee3e52a",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-30T10:29:35.100Z",
   "updatedAt": "2025-08-30T13:06:37.281Z",
   "riskScore": 58,
@@ -32,5 +32,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "# Post-Restart CRUD Validation Test"
+  "semanticSummary": "# Post-Restart CRUD Validation Test",
+  "primaryCategory": "crud-validation"
 }

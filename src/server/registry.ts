@@ -26,6 +26,9 @@ export function registerHandler<TParams=unknown>(name: string, fn: Handler<TPara
   const wrapped: Handler<TParams> = async (params: TParams) => {
     const corr = ENABLE ? newCorrelationId() : undefined;
     const startNs = typeof process.hrtime === 'function' ? process.hrtime.bigint() : BigInt(Date.now()) * 1_000_000n;
+    const timingEnabled = process.env.MCP_ADD_TIMING === '1';
+    let phaseMarks: { p:string; t:number }[] | undefined;
+    if(timingEnabled){ phaseMarks = [{ p:'start', t: Date.now() }]; }
     if(ENABLE){
       try { log('info','tool_start',{ tool: name, correlationId: corr }); } catch { /* logging should not break */ }
     }
@@ -33,8 +36,18 @@ export function registerHandler<TParams=unknown>(name: string, fn: Handler<TPara
     let errorType: string | undefined;
     try {
       const result = await Promise.resolve(fn(params));
+      if(timingEnabled && phaseMarks){ phaseMarks.push({ p:'afterFn', t: Date.now() }); }
       success = true;
-      return wrapResponse(result);
+      const wrappedResp = wrapResponse(result) as { result?: unknown };
+      if(timingEnabled){
+        try {
+          const endTs = Date.now();
+          phaseMarks!.push({ p:'endPreWrap', t:endTs });
+          const phases = phaseMarks!;
+          (wrappedResp as Record<string, unknown>).__timing = { tool:name, phases };
+        } catch { /* ignore timing embed errors */ }
+      }
+      return wrappedResp;
     } catch(e){
       if(ENABLE){
         try { log('error','tool_error',{ tool: name, correlationId: corr, data: { message: e instanceof Error ? e.message : String(e) } }); } catch { /* ignore */ }
@@ -66,6 +79,9 @@ export function registerHandler<TParams=unknown>(name: string, fn: Handler<TPara
       const endNs = typeof process.hrtime === 'function' ? process.hrtime.bigint() : BigInt(Date.now()) * 1_000_000n;
       const ms = Number(endNs - startNs)/1_000_000;
       recordMetric(name, ms);
+      if(timingEnabled && phaseMarks){
+        try { phaseMarks.push({ p:'finally', t: Date.now() }); } catch { /* ignore */ }
+      }
       // Feed global dashboard metrics (safe no-op if collector absent). This enables:
       //  - requestsPerMinute (rolling window)
       //  - successRate / errorRate

@@ -4,8 +4,12 @@
  * must remain disabled (commented out or absent) unless a formal CHANGE REQUEST updates the baseline.
  *
  * Protected keys (must NOT be active):
- *  INSTRUCTIONS_ALWAYS_RELOAD, MCP_LOG_DIAG, MCP_HANDSHAKE_TRACE, MCP_DEBUG,
+ *  INSTRUCTIONS_ALWAYS_RELOAD, MCP_LOG_DIAG, MCP_HANDSHAKE_TRACE,
  *  INDEX_AUTOSAVE_INTERVAL_MS
+ *
+ * Policy Change (2025-09-13): MCP_DEBUG is now ALLOWED to remain enabled by default per user directive.
+ * The previous guard caused workflow friction; for deterministic CI one can re‑introduce enforcement
+ * by adding it back to the forbiddenKeys array or gating with an env flag (future option).
  *
  * Change (2025-09-11 #1): MCP_LOG_FILE was previously enforced as forbidden but is now
  * allowed to remain enabled by default to support continuous file-based log
@@ -38,7 +42,6 @@ describe('Imperative Directive: mcp.json diagnostic flags remain disabled', () =
     'INSTRUCTIONS_ALWAYS_RELOAD',
     'MCP_LOG_DIAG',
     'MCP_HANDSHAKE_TRACE',
-    'MCP_DEBUG',
     'INDEX_AUTOSAVE_INTERVAL_MS'
   ];
 

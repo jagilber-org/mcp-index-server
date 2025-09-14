@@ -1,0 +1,36 @@
+{
+  "id": "agent2agent-communication",
+  "title": "Agent-to-Agent Communication Protocol",
+  "body": "Enable secure, structured communication between AI agents using the Model Context Protocol (MCP). Agents should:\n\n1. **Authentication**: Establish identity and permissions before communication\n2. **Message Structure**: Use standardized JSON-RPC format with proper method names, parameters, and error handling\n3. **Tool Discovery**: Query available tools using tools/list before attempting operations\n4. **Resource Management**: Properly manage connections, timeouts, and cleanup\n5. **Error Handling**: Implement robust error recovery and graceful degradation\n6. **Logging**: Maintain audit trails of inter-agent communications\n7. **Security**: Validate all inputs and outputs, implement rate limiting\n8. **Protocol Compliance**: Follow MCP specification for compatibility\n\nExample workflow:\n- Agent A requests tools/list from Agent B\n- Agent A validates required tools are available\n- Agent A sends structured request with proper parameters\n- Agent B validates request and responds with results\n- Both agents log the interaction for audit purposes",
+  "priority": 20,
+  "audience": "ai-agents",
+  "requirement": "critical",
+  "categories": [
+    "agent-communication",
+    "mcp",
+    "protocol",
+    "security"
+  ],
+  "primaryCategory": "agent-communication",
+  "sourceHash": "a707ec5a20650d2640c4d3ead9fff2070ce6942e5f1ac5256ad0c546397caba7",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T12:03:19.501Z",
+  "updatedAt": "2025-09-12T12:03:19.501Z",
+  "riskScore": 140,
+  "version": "1.0.0",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T12:03:19.501Z",
+      "summary": "initial import"
+    }
+  ],
+  "owner": "mcp-team",
+  "status": "approved",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T12:03:19.501Z",
+  "nextReviewDue": "2025-10-12T12:03:19.501Z",
+  "reviewIntervalDays": 30,
+  "semanticSummary": "Enable secure, structured communication between AI agents using the Model Context Protocol (MCP). Agents should:"
+}

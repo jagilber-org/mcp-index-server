@@ -15,6 +15,7 @@ import { getAdminPanel } from './AdminPanel.js';
 import fs from 'fs';
 import path from 'path';
 import { dumpFlags, updateFlags } from '../../services/featureFlags.js';
+import { getFlagRegistrySnapshot } from '../../services/handlers.dashboardConfig.js';
 
 export interface ApiRoutesOptions {
   enableCors?: boolean;
@@ -694,10 +695,14 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
       // Surface feature flags (environment + file) for visibility
   let featureFlags: Record<string, boolean> = {};
   try { featureFlags = dumpFlags(); } catch { /* ignore */ }
+  // Include full registry snapshot for UI (so dashboard shows ALL flags, not just active)
+  let allFlags = [] as ReturnType<typeof getFlagRegistrySnapshot>;
+  try { allFlags = getFlagRegistrySnapshot(); } catch { /* ignore */ }
       res.json({
         success: true,
         config,
-        featureFlags,
+        featureFlags, // currently configured / resolved flags
+        allFlags,     // full registry with metadata + parsed values
         timestamp: Date.now()
       });
     } catch (error) {
@@ -707,6 +712,19 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
         error: 'Failed to get admin configuration',
         message: error instanceof Error ? error.message : 'Unknown error',
       });
+    }
+  });
+
+  // Lightweight flags-only endpoint so the UI can retry if /admin/config was served from an older cache.
+  router.get('/admin/flags', (_req: Request, res: Response) => {
+    try {
+      let featureFlags: Record<string, boolean> = {};
+      try { featureFlags = dumpFlags(); } catch { /* ignore */ }
+      let allFlags = [] as ReturnType<typeof getFlagRegistrySnapshot>;
+      try { allFlags = getFlagRegistrySnapshot(); } catch { /* ignore */ }
+      res.json({ success:true, featureFlags, allFlags, total: allFlags.length, timestamp: Date.now() });
+    } catch (error) {
+      res.status(500).json({ success:false, error: 'Failed to get flags snapshot', message: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -1028,8 +1046,21 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
    */
   router.get('/graph/mermaid', (req: Request, res: Response) => {
     try {
-  const { enrich, categories, usage, edgeTypes } = req.query as Record<string,string|undefined>;
-  const includeEdgeTypes = edgeTypes ? (edgeTypes.split(',').filter(Boolean) as GraphExportParams['includeEdgeTypes']) : undefined;
+      const { enrich, categories, usage, edgeTypes, selectedCategories, selectedIds } = req.query as Record<string,string|undefined>;
+      const includeEdgeTypes = edgeTypes ? (edgeTypes.split(',').filter(Boolean) as GraphExportParams['includeEdgeTypes']) : undefined;
+      const t0 = Date.now();
+      try {
+        // Lightweight diagnostic log to help identify why client is timing out waiting for mermaid source.
+        // Intentionally terse to avoid flooding logs.
+        // Example: [graph/mermaid][start] enrich=1 categories=1 usage=0 edgeTypes= selCats= selIds=
+        // NOTE: Remove or guard with env flag when stabilized.
+        // eslint-disable-next-line no-console
+        console.debug('[graph/mermaid][start]', `enrich=${enrich}`, `categories=${categories}`, `usage=${usage}`, `edgeTypes=${edgeTypes||''}`, `selCats=${selectedCategories||''}`, `selIds=${selectedIds||''}`);
+  } catch { /* ignore diag logging errors */ }
+
+      // Build full graph first (existing behavior). For very large datasets this is still heavy, but
+      // we then apply client-provided narrowing so the same endpoint can power both the legacy
+      // monolithic view and the new drilldown coordinated filters.
       const graph = buildGraph({
         enrich: enrich === '1' || enrich === 'true',
         includeCategoryNodes: categories === '1' || categories === 'true',
@@ -1040,9 +1071,75 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
       if(!graph.mermaid){
         return res.status(500).json({ success:false, error:'failed_to_generate_mermaid'});
       }
-      res.json({ success:true, meta: graph.meta, mermaid: graph.mermaid });
+
+      // Optional post-filtering: When selectedCategories or selectedIds are provided we prune the
+      // mermaid source to only keep relevant node/edge lines. This is a pragmatic line-based filter
+      // relying on the stable "id[" pattern for nodes and "id --> id" (or other edge tokens).
+      let mermaidSource = graph.mermaid;
+      const catFilter = selectedCategories?.split(',').filter(Boolean) || [];
+      const idFilter = selectedIds?.split(',').filter(Boolean) || [];
+      if(catFilter.length || idFilter.length){
+        try {
+          const keepIds = new Set<string>();
+          // When categories are specified we attempt to detect nodes whose labels include the category
+          // or an inline annotation. Because the raw mermaid source structure may evolve, this is best-effort.
+          const lines = mermaidSource.split(/\r?\n/);
+          // First pass: identify node ids lines like:    id[Label ...]
+          for(const ln of lines){
+            const m = ln.match(/^(\s*)([A-Za-z0-9_-]+)\[/);
+            if(m){
+              const nodeId = m[2];
+              if(idFilter.includes(nodeId)) { keepIds.add(nodeId); continue; }
+              if(catFilter.length){
+                const lower = ln.toLowerCase();
+                if(catFilter.some(c=> lower.includes(c.toLowerCase()))) keepIds.add(nodeId);
+              }
+            }
+          }
+          // Union explicit idFilter even if not matched above
+          for(const id of idFilter) keepIds.add(id);
+          if(keepIds.size){
+            const nodeIdPattern = Array.from(keepIds).map(id=> id.replace(/[-/\\^$*+?.()|[\]{}]/g,'\\$&')).join('|');
+            const edgeRegex = new RegExp(`^(.*)(${nodeIdPattern})(.*)(${nodeIdPattern})(.*)$`);
+            const nodeRegex = new RegExp(`^(\\s*)(${nodeIdPattern})\\[`);
+            const filtered: string[] = [];
+            for(const ln of lines){
+              if(ln.trim().startsWith('%%')) { filtered.push(ln); continue; } // keep comments / config
+              if(nodeRegex.test(ln) || edgeRegex.test(ln)) { filtered.push(ln); }
+            }
+            // Preserve frontmatter (---) blocks if present
+            const frontmatterBlocks = lines.filter(l=> /^---/.test(l));
+            // Preserve directive line (e.g. 'flowchart TB' or legacy 'graph TD') which is required for mermaid parsing.
+            const directiveLine = lines.find(l=> /^\s*(flowchart|graph)\b/i.test(l));
+            // If directive accidentally matched filtering (future change) avoid duplicate.
+            const parts: string[] = [];
+            if(frontmatterBlocks.length) parts.push(...frontmatterBlocks);
+            if(directiveLine) parts.push(directiveLine);
+            for(const fl of filtered){
+              if(fl === directiveLine) continue; // de-dupe safeguard
+              parts.push(fl);
+            }
+            mermaidSource = parts.join('\n');
+            if(process.env.MCP_DEBUG){
+              // eslint-disable-next-line no-console
+              console.debug('[graph/mermaid][filter]', { kept: keepIds.size, totalLines: lines.length, emittedLines: parts.length });
+            }
+          }
+        } catch(filterErr){
+          console.warn('[graph/mermaid][filter-failed]', filterErr);
+        }
+      }
+      try {
+        // eslint-disable-next-line no-console
+        console.debug('[graph/mermaid][ok]', { ms: Date.now()-t0, nodes: graph.meta?.nodeCount, edges: graph.meta?.edgeCount, bytes: mermaidSource.length });
+  } catch { /* ignore diag logging errors */ }
+      res.json({ success:true, meta: graph.meta, mermaid: mermaidSource });
     } catch(err){
       const e = err as Error;
+      try {
+        // eslint-disable-next-line no-console
+        console.warn('[graph/mermaid][error]', e.message);
+  } catch { /* ignore diag logging errors */ }
       res.status(500).json({ success:false, error: String(e.message||e) });
     }
   });
@@ -1110,11 +1207,23 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
       if(!ids.length){ return res.json({ success:true, nodes:[], edges:[], categories:[], timestamp: Date.now() }); }
       // Reuse buildGraph enriched with category nodes + belongs edges then filter.
       const graph = buildGraph({ enrich:true, includeCategoryNodes:true, includeUsage:false });
-      const idSet = new Set(ids);
-      const nodes = graph.nodes.filter(n=> idSet.has(n.id) || (n as any).nodeType==='category');
-      // Filter edges to those referencing at least one selected instruction (keep category relation context)
-      const edges = graph.edges.filter(e=> idSet.has(e.from) || idSet.has(e.to));
-      // Trim category nodes to only those actually linked
+      const expand = (req.query.expand === '1' || req.query.expand === 'true');
+      const selectedSet = new Set(ids);
+  const workingSet = new Set(ids); // may expand with one-hop neighbors
+      // First pass edges (incident to selected)
+  const firstEdges = graph.edges.filter(e=> selectedSet.has(e.from) || selectedSet.has(e.to));
+      if(expand){
+        // Identify one-hop neighbor instruction ids not already selected
+  const instructionNodeIds = new Set(graph.nodes.filter(n=> (n as { nodeType?: string }).nodeType==='instruction').map(n=> n.id));
+        for(const e of firstEdges){
+          if(instructionNodeIds.has(e.from) && !workingSet.has(e.from)) workingSet.add(e.from);
+          if(instructionNodeIds.has(e.to) && !workingSet.has(e.to)) workingSet.add(e.to);
+        }
+      }
+      // Nodes: any instruction in workingSet plus category nodes (we'll prune unused categories)
+  const nodesAll = graph.nodes.filter(n=> workingSet.has(n.id) || (n as { nodeType?: string }).nodeType==='category');
+      // Edges: restrict to those whose endpoints are in workingSet and at least one endpoint in selectedSet (keeps visual focus)
+      const edges = graph.edges.filter(e=> workingSet.has(e.from) && workingSet.has(e.to) && (selectedSet.has(e.from) || selectedSet.has(e.to)));
       const categoryRefs = new Set<string>();
       for(const e of edges){
         if(e.type==='belongs' || e.type==='primary'){
@@ -1122,9 +1231,10 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
           if(e.from.startsWith('category:')) categoryRefs.add(e.from);
         }
       }
-      const finalNodes = nodes.filter(n=> !('nodeType' in n && (n as any).nodeType==='category') || categoryRefs.has(n.id));
+  const finalNodes = nodesAll.filter(n=> !('nodeType' in n && (n as { nodeType?: string }).nodeType==='category') || categoryRefs.has(n.id));
       const categories = [...categoryRefs].map(id=> ({ id: id.replace(/^category:/,'' ) }));
-      res.json({ success:true, nodes: finalNodes, edges, categories, timestamp: Date.now() });
+      const expandedCount = workingSet.size - selectedSet.size;
+      res.json({ success:true, nodes: finalNodes, edges, categories, expanded: expand ? expandedCount : 0, timestamp: Date.now() });
     } catch(err){
       const e = err as Error; res.status(500).json({ success:false, error: e.message||String(e) });
     }
@@ -1550,6 +1660,89 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
       res.json({ success: true, instructions: files, count: files.length, timestamp: Date.now() });
     } catch (error) {
       res.status(500).json({ success: false, error: 'Failed to list instructions', message: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  /**
+   * GET /api/instructions/search?q=term&limit=20
+   * Lightweight substring search across instruction id/name, title, body and categories.
+   * Intended as a fallback when richer semantic tools return no matches.
+   * Returns at most `limit` (default 20, max 100) items with a small context snippet highlighting the first match.
+   * Response shape: { success:true, query, count, results:[ { name, categories, size, mtime, snippet } ] }
+  * Notes:
+  * - Performs simple case-insensitive substring checks; no tokenization/stemming.
+  * - Skips parsing JSON bodies larger than 1MB for safety/perf (still coarse scans raw text).
+  * - Snippet window ~120 chars either side of first match with naive **highlight** markup consumed client-side into <mark>.
+  * - Designed as a resiliency / last-mile discovery aid when semantic index unavailable.
+   */
+  router.get('/instructions/search', (req: Request, res: Response) => {
+    try {
+      ensureInstructionsDir();
+      const qRaw = String(req.query.q || '').trim();
+      const query = qRaw.slice(0, 256); // guard length
+      const limitRaw = parseInt(String(req.query.limit||'20'), 10);
+      const limit = Math.min(100, Math.max(1, isNaN(limitRaw)? 20 : limitRaw));
+      if(!query || query.length < 2){
+        return res.json({ success:true, query, count:0, results:[], note:'query_too_short' });
+      }
+      const qLower = query.toLowerCase();
+      const files = fs.readdirSync(instructionsDir).filter(f=> f.toLowerCase().endsWith('.json'));
+      const results: Array<{ name:string; categories:string[]; size:number; mtime:number; snippet:string }> = [];
+      for(const f of files){
+        if(results.length >= limit) break;
+        try {
+          const abs = path.join(instructionsDir, f);
+            const raw = fs.readFileSync(abs, 'utf8');
+            // Quick coarse filter before JSON parse to reduce cost on large sets
+            const coarse = raw.toLowerCase();
+            if(!coarse.includes(qLower)){
+              // Still parse minimal header fields just in case name or categories match
+              const nameOnly = f.replace(/\.json$/i,'');
+              if(!nameOnly.toLowerCase().includes(qLower)) continue;
+            }
+            let parsed: unknown = null;
+            try { if(raw.length < 1_000_000) parsed = JSON.parse(raw); } catch { /* ignore parse errors */ }
+
+            interface ParsedInstructionLite { title?: unknown; body?: unknown; categories?: unknown; description?: unknown }
+            const asParsed = (obj: unknown): ParsedInstructionLite | undefined => {
+              return obj && typeof obj === 'object' ? obj as ParsedInstructionLite : undefined;
+            };
+            const pi = asParsed(parsed);
+
+            const name = f.replace(/\.json$/i,'');
+            let categories: string[] = [];
+            if (pi && Array.isArray(pi.categories)) {
+              categories = pi.categories.filter((c: unknown): c is string => typeof c === 'string').slice(0,10);
+            }
+            // Determine if match actually present across fields
+            const haystacks: string[] = [name];
+            if(pi){
+              if(typeof pi.title === 'string') haystacks.push(pi.title);
+              if(typeof pi.body === 'string') haystacks.push(pi.body);
+              if(Array.isArray(pi.categories)) haystacks.push(pi.categories.join(' '));
+              if(typeof pi.description === 'string') haystacks.push(pi.description);
+            } else {
+              // fallback raw limited content check
+              haystacks.push(raw.slice(0, 20_000));
+            }
+            const joined = haystacks.join('\n').toLowerCase();
+            const idx = joined.indexOf(qLower);
+            if(idx === -1) continue;
+            // Build snippet around first match (collapse newlines)
+            const snippetWindow = 120;
+            const start = Math.max(0, idx - snippetWindow);
+            const end = Math.min(joined.length, idx + qLower.length + snippetWindow);
+            let snippet = joined.slice(start, end).replace(/\s+/g,' ').trim();
+            // Highlight match (simple)
+            snippet = snippet.replace(new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'i'), m=> `**${m}**`);
+            const stat = fs.statSync(abs);
+            results.push({ name, categories, size: stat.size, mtime: stat.mtimeMs, snippet });
+        } catch(err){ /* skip file on error */ }
+      }
+      res.json({ success:true, query, count: results.length, results, timestamp: Date.now() });
+    } catch (error) {
+      console.error('[API] instructions search error:', error);
+      res.status(500).json({ success:false, error:'search_failed', message: error instanceof Error? error.message : 'Unknown error' });
     }
   });
 

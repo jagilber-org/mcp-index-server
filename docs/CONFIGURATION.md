@@ -65,6 +65,8 @@ export MCP_DASHBOARD=0
 | `MCP_LOG_DIAG` | `0` | Enable diagnostic logging |
 | `MCP_ENABLE_MUTATION` | `0` | Enable write operations (add/import/remove/etc.) |
 | `MCP_IDLE_KEEPALIVE_MS` | `30000` | Keepalive interval for idle transports (ms) |
+| `MCP_MANIFEST_WRITE` | `1` (enabled) | Set to `0` to disable writing the catalog manifest file (diagnostic / read-only mode) |
+| `MCP_MANIFEST_FASTLOAD` | `0` | When `1`, trust existing manifest snapshot to accelerate drift check (falls back if manifest missing or inconsistent) |
 
 ### Dashboard Settings
 
@@ -113,6 +115,7 @@ export MCP_ENABLE_MUTATION=0
 
 # Production: Minimal logging
 export MCP_LOG_VERBOSE=0
+export MCP_MANIFEST_WRITE=1   # keep manifest writes enabled in production
 export MCP_LOG_DIAG=0
 ```
 
@@ -124,6 +127,7 @@ export MCP_DASHBOARD=1
 export MCP_DASHBOARD_PORT=8787
 export MCP_LOG_VERBOSE=1
 export MCP_ENABLE_MUTATION=1
+export MCP_MANIFEST_WRITE=1   # default (omit to allow writes)
 ```
 
 ## Configuration Examples
@@ -138,6 +142,7 @@ export MCP_DASHBOARD=1
 export MCP_DASHBOARD_PORT=8787
 export MCP_LOG_VERBOSE=1
 export MCP_ENABLE_MUTATION=1
+export MCP_MANIFEST_WRITE=1
 
 node dist/server/index.js
 ```
@@ -151,6 +156,7 @@ node dist/server/index.js
 export MCP_DASHBOARD=0
 export MCP_ENABLE_MUTATION=0
 export MCP_LOG_VERBOSE=0
+export MCP_MANIFEST_WRITE=1
 
 node dist/server/index.js
 ```

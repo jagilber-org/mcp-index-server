@@ -7,6 +7,7 @@
   "include": [
     "src/**/*.ts",
   "src/**/*.tsx",
+  "src/dashboard/client/js/**/*.js",
   "scripts/**/*.mjs",
   "playwright.config.ts",
   "tests/playwright/**/*.ts"

@@ -7,10 +7,9 @@ import { hasFeature, incrementCounter } from './features';
 import { atomicWriteJson } from './atomicFs';
 import { ClassificationService } from './classificationService';
 import { resolveOwner } from './ownershipService';
-import { getUsageBucketsService } from './usageBuckets';
 import { getBooleanEnv } from '../utils/envUtils';
 
-export interface CatalogState { loadedAt: string; hash: string; byId: Map<string, InstructionEntry>; list: InstructionEntry[]; latestMTime: number; fileSignature: string; fileCount: number; versionMTime: number; versionToken: string }
+export interface CatalogState { loadedAt: string; hash: string; byId: Map<string, InstructionEntry>; list: InstructionEntry[]; fileCount: number; versionMTime: number; versionToken: string }
 let state: CatalogState | null = null;
 // Simple reliable invalidation: any mutation sets dirty=true; next ensureLoaded() performs full rescan.
 let dirty = false;
@@ -221,9 +220,7 @@ export function getInstructionsDir(){
 import { emitTrace, traceEnabled } from './tracing';
 // Throttled file trace emission (avoid per-get amplification). We emit per-file decisions only
 // on true reloads AND if file signature changed OR time since last emission > threshold.
-let lastFileTraceSignature = '';
-let lastFileTraceAt = 0;
-const FILE_TRACE_COOLDOWN_MS = 2000; // configurable later if needed
+// (legacy file-level trace removed in simplified loader)
 // Lightweight diagnostics for external callers (startup logging / health checks)
 export function diagnoseInstructionsDir(){
   const dir = getInstructionsDir();
@@ -238,46 +235,7 @@ export function diagnoseInstructionsDir(){
   } catch(e){ error = (e as Error).message; }
   return { dir, exists, writable, error };
 }
-interface DirMeta { latest:number; signature:string; count:number; fileMap: Record<string,string> }
-function computeDirMeta(dir: string): DirMeta {
-  // Incorporate fast content hashes to detect metadata-only edits that keep size & coarse mtime identical.
-  const parts: string[] = [];
-  const fileMap: Record<string,string> = {};
-  let latest = 0; let count = 0; const now = Date.now();
-  try {
-    for(const f of fs.readdirSync(dir)){
-      if(!f.endsWith('.json')) continue;
-      const fp = path.join(dir,f);
-      try {
-        const st = fs.statSync(fp);
-        if(!st.isFile()) continue;
-        count++;
-        const effMtime = Math.min(st.mtimeMs, now);
-        latest = Math.max(latest, effMtime);
-        let contentHash = '';
-        try {
-          // Small files: hash full content; larger files: hash first & last 4KB segments to bound cost.
-          const buf = fs.readFileSync(fp);
-          if(buf.length <= 64 * 1024){
-            contentHash = crypto.createHash('sha256').update(buf).digest('hex');
-          } else {
-            const start = buf.subarray(0, 4096);
-            const end = buf.subarray(buf.length-4096);
-            contentHash = crypto.createHash('sha256').update(start).update(end).update(String(buf.length)).digest('hex');
-          }
-        } catch { /* ignore content hash failure */ }
-        const record = `${st.mtimeMs}:${st.size}:${contentHash}`;
-        parts.push(`${f}:${record}`);
-        fileMap[f] = record;
-      } catch { /* ignore stat */ }
-    }
-  } catch { /* ignore readdir */ }
-  parts.sort();
-  const h = crypto.createHash('sha256');
-  h.update(parts.join('|'),'utf8');
-  const signature = h.digest('hex');
-  return { latest, signature, count, fileMap };
-}
+// Removed computeDirMeta and related signature hashing in simplified model.
 
 // Simple explicit version marker file touched on every mutation for robust cross-process cache invalidation.
 function getVersionFile(){ return path.join(getInstructionsDir(), '.catalog-version'); }
@@ -294,206 +252,103 @@ function readVersionToken(): string { try { const vf=getVersionFile(); if(fs.exi
 export function markCatalogDirty(){ dirty = true; }
 export function ensureLoaded(): CatalogState {
   const baseDir = getInstructionsDir();
-  const perfStart = traceEnabled(2)? Date.now(): 0;
-  // Force reload if state missing or marked dirty or ALWAYS_RELOAD enabled
-  if(process.env.INSTRUCTIONS_ALWAYS_RELOAD === '1') dirty = true;
+  // Always reload if no state or dirty or version file changed.
+  const currentVersionMTime = readVersionMTime();
+  const currentVersionToken = readVersionToken();
   if(state && !dirty){
-    // External change detection: compare version marker mtime & directory signature
-    try {
-      const currentVersionMTime = readVersionMTime();
-      const currentVersionToken = readVersionToken();
-      const metaNow = computeDirMeta(baseDir);
-      // Any version token change becomes an unconditional reload trigger (even if signature has not yet diverged)
-      if(currentVersionToken && currentVersionToken !== state.versionToken){
-        dirty = true;
-      } else if(
-        (currentVersionMTime && currentVersionMTime !== state.versionMTime) ||
-        metaNow.signature !== state.fileSignature ||
-        metaNow.latest > state.latestMTime ||
-        metaNow.count !== state.fileCount
-      ){
-        dirty = true;
-      }
-      // Opportunistic micro‑race guard: a file write that lands immediately AFTER the first meta snapshot.
-      // We spin a few very fast rechecks (no timers, purely synchronous) to catch a just-written file whose
-      // metadata visibility lags by a couple of milliseconds on some filesystems (especially Windows / CI).
-      if(!dirty){
-        const start = Date.now();
-        for(let spin=0; spin<3; spin++){
-          const meta2 = computeDirMeta(baseDir);
-          const vt2 = readVersionToken();
-          const vm2 = readVersionMTime();
-          if(
-            (vt2 && vt2 !== state.versionToken) ||
-            (vm2 && vm2 !== state.versionMTime) ||
-            meta2.signature !== state.fileSignature ||
-            meta2.count !== state.fileCount ||
-            meta2.latest > state.latestMTime
-          ){
-            dirty = true; break;
-          }
-          // Break early if we've already spent >15ms (avoid pathological synchronous loop)
-          if(Date.now() - start > 15) break;
-        }
-      }
-      // FINAL LATE MATERIALIZATION GUARD (cache-hit path): If we still consider the cache valid but a
-      // newly added file's directory entry became visible only AFTER the micro‑spin above (common on
-      // Windows / network FS with coarse mtime granularity), we may miss it until the *next* call.
-      // To tighten multi‑client propagation guarantees (list() immediately after another process add),
-      // perform a lightweight name diff: if any *.json file on disk is not present in state.byId, force
-      // an immediate reload now instead of leaking a stale view to the caller.
-      if(!dirty){
-        try {
-          const diskFiles = fs.readdirSync(baseDir).filter(f=> f.endsWith('.json'));
-          for(const f of diskFiles){
-            const id = f.slice(0,-5);
-            if(!state.byId.has(id)) { dirty = true; incrementCounter('catalog:lateMaterializeReload'); break; }
-          }
-        } catch { /* ignore directory scan errors */ }
-      }
-    } catch { /* ignore detection errors */ }
-    if(!dirty){
-      if(process.env.MCP_CATALOG_DIAG==='1'){
-        // eslint-disable-next-line no-console
-        console.error('[catalogContext.ensureLoaded] cache-hit dirty=false entries=', state.list.length, 'hash=', state.hash);
-      }
-  if(traceEnabled(1)){ try { const disk=fs.readdirSync(baseDir).filter(f=>f.endsWith('.json')); const missing=disk.filter(f=> !state!.byId.has(f.slice(0,-5))); if(missing.length){ emitTrace('[trace:ensureLoaded:cache-hit-missing]', { dir:baseDir, listCount: state.list.length, diskCount: disk.length, missingIds: missing.map(m=>m.slice(0,-5)) },1); } else { emitTrace('[trace:ensureLoaded:cache-hit]', { dir:baseDir, listCount: state.list.length, diskCount: disk.length },1); } } catch { /* ignore */ } }
+    if(currentVersionMTime && currentVersionMTime === state.versionMTime && currentVersionToken === state.versionToken){
       return state;
     }
   }
-  // Load (with a tiny resilience loop for very narrow cross-process rename visibility races)
-  let attempts = 0; const maxAttempts = 2; let lastMeta: DirMeta | null = null; let lastVersionToken = '';
-  while(attempts <= maxAttempts){
-    const loader = new CatalogLoader(baseDir);
-    const result = loader.load();
-    // If file-level trace enabled, surface each file decision (accepted/rejected + reason)
-  const willEmitFileTrace = traceEnabled(3);
-    const byId = new Map<string, InstructionEntry>(); result.entries.forEach(e=>byId.set(e.id,e));
-  const meta = computeDirMeta(baseDir);
-    const versionMTime = readVersionMTime();
-    const versionToken = readVersionToken();
-    // If we previously had a state and saw a version token change but file count/signature identical to prior state
-    // (possible extremely tight race where the new file wasn't yet visible), retry once.
-  if(state && attempts < maxAttempts && versionToken && versionToken !== state.versionToken && meta.signature === state.fileSignature && meta.count === state.fileCount){
-      attempts++; lastMeta = meta; lastVersionToken = versionToken; continue; // retry immediately
-    }
-  state = { loadedAt: new Date().toISOString(), hash: result.hash, byId, list: result.entries, latestMTime: meta.latest, fileSignature: meta.signature, fileCount: meta.count, versionMTime, versionToken };
-    dirty = false;
-  if(traceEnabled(2)){ try { const disk=fs.readdirSync(baseDir).filter(f=>f.endsWith('.json')); emitTrace('[trace:ensureLoaded:reloaded]', { dir:baseDir, listCount: state.list.length, diskCount: disk.length },2); } catch { /* ignore */ } }
-    if(willEmitFileTrace && result.debug?.trace){
-      const now = Date.now();
-      const sigChanged = state.fileSignature !== lastFileTraceSignature;
-      if(sigChanged || (now - lastFileTraceAt) > FILE_TRACE_COOLDOWN_MS){
-        try {
-          for(const t of result.debug.trace){
-            emitTrace('[trace:catalog:file]', t, 3);
-          }
-          lastFileTraceSignature = state.fileSignature;
-          lastFileTraceAt = now;
-        } catch { /* ignore */ }
-      }
-    }
-    // NEW: Post-load visibility stabilization spin (initial load or freshly invalidated) to mitigate rare
-    // rename visibility lag causing a just-written instruction file to be missed on first pass (observed
-    // as silent add/import success with missing list entry until a later mutation forced reload).
-    // We synchronously rescan a few times (very low cost with small catalogs) if directory signature
-    // changes almost immediately after first load. Guarded by tight time budget (<20ms) and spin cap.
-    if(result.entries.length > 0){
-      const spinStart = Date.now();
-      for(let spin=0; spin<3; spin++){
-        const meta2 = computeDirMeta(baseDir);
-        if(meta2.signature !== state.fileSignature || meta2.count !== state.fileCount || meta2.latest > state.latestMTime){
-          // Directory changed between load and immediate re-check; perform a fast second load to capture new file(s).
-          const loader2 = new CatalogLoader(baseDir);
-          const result2 = loader2.load();
-          const byId2 = new Map<string, InstructionEntry>(); result2.entries.forEach(e=>byId2.set(e.id,e));
-          state = { loadedAt: new Date().toISOString(), hash: result2.hash, byId: byId2, list: result2.entries, latestMTime: meta2.latest, fileSignature: meta2.signature, fileCount: meta2.count, versionMTime: readVersionMTime(), versionToken: readVersionToken() };
-          if(process.env.MCP_CATALOG_DIAG==='1'){
-            // eslint-disable-next-line no-console
-            console.error('[catalogContext.ensureLoaded] post-load spin reload applied', { spin, fileCount: state.fileCount });
-          }
-          // Continue loop to see if further immediate churn occurs, else exit next iteration.
-        } else {
-          break; // stable
-        }
-        if(Date.now() - spinStart > 20) break; // time budget exceeded
-      }
-    }
-    // Overlay persisted usage metadata (usageCount, firstSeenTs, lastUsedAt) for durability across reloads.
-    try {
-      const snap = loadUsageSnapshot();
-      if(snap && state){
-        for(const e of state.list){
-          const rec = (snap as Record<string, { usageCount?: number; firstSeenTs?: string; lastUsedAt?: string }>)[e.id];
-          if(rec){
-            if(e.usageCount == null && rec.usageCount != null) e.usageCount = rec.usageCount;
-            if(!e.firstSeenTs && rec.firstSeenTs){
-              e.firstSeenTs = rec.firstSeenTs;
-              // Seed authority map to preserve immutability.
-              if(!firstSeenAuthority[e.id]) firstSeenAuthority[e.id] = rec.firstSeenTs;
-            }
-            if(!e.lastUsedAt && rec.lastUsedAt) e.lastUsedAt = rec.lastUsedAt;
-          }
+  const loader = new CatalogLoader(baseDir);
+  const result = loader.load();
+  const byId = new Map<string, InstructionEntry>(); result.entries.forEach(e=>byId.set(e.id,e));
+  state = { loadedAt: new Date().toISOString(), hash: result.hash, byId, list: result.entries, fileCount: result.entries.length, versionMTime: currentVersionMTime, versionToken: currentVersionToken };
+  dirty = false;
+  // Overlay usage snapshot (simplified; no spin/repair loops here—existing invariant repairs still occur in getCatalogState)
+  try {
+    const snap = loadUsageSnapshot();
+    if(snap){
+      for(const e of state.list){
+        const rec = (snap as Record<string, { usageCount?: number; firstSeenTs?: string; lastUsedAt?: string }>)[e.id];
+        if(rec){
+          if(e.usageCount == null && rec.usageCount != null) e.usageCount = rec.usageCount;
+          if(!e.firstSeenTs && rec.firstSeenTs){ e.firstSeenTs = rec.firstSeenTs; if(!firstSeenAuthority[e.id]) firstSeenAuthority[e.id] = rec.firstSeenTs; }
+          if(!e.lastUsedAt && rec.lastUsedAt) e.lastUsedAt = rec.lastUsedAt;
         }
       }
-    } catch { /* ignore snapshot overlay errors */ }
-    
-    // Initialize usage buckets service if enabled
-    if (hasFeature('usage') || hasFeature('window')) {
-      try {
-        const bucketService = getUsageBucketsService(getInstructionsDir());
-        bucketService.initialize().catch(err => {
-          // Non-fatal: log and continue
-          console.error('[catalogContext] UsageBuckets initialization failed:', err);
-        });
-      } catch (err) {
-        console.error('[catalogContext] UsageBuckets service creation failed:', err);
-      }
     }
-
-    // FINAL POST-RELOAD LATE MATERIALIZATION GUARD (addresses ultra‑narrow race where a just-written
-    // instruction file becomes visible on disk only AFTER the primary load + spin loops completed).
-    // Instead of forcing an immediate second full reload (which could still miss under pathological
-    // timing), we surgically parse any missing *.json files now and inject them in-memory so callers
-    // (especially tests asserting immediate visibility after writeEntry) observe a consistent view.
-    // The next catalog mutation or explicit reload will recompute hash/fileSignature including these.
-    try {
-      const diskFiles = fs.readdirSync(baseDir).filter(f=> f.endsWith('.json'));
-      const missing: string[] = [];
-      for(const f of diskFiles){
-        const id = f.slice(0,-5);
-        if(!state.byId.has(id)) missing.push(f);
-      }
-      if(missing.length){
-        for(const f of missing){
-          try {
-            const raw = JSON.parse(fs.readFileSync(path.join(baseDir,f),'utf8')) as InstructionEntry;
-            if(raw && raw.id && !state.byId.has(raw.id)){
-              state.list.push(raw);
-              state.byId.set(raw.id, raw);
-              try { incrementCounter('catalog:lateMaterializePostReload'); } catch { /* ignore */ }
-            }
-          } catch { /* ignore parse */ }
-        }
-      }
-    } catch { /* ignore directory scan */ }
-    
-    break;
+  } catch { /* ignore */ }
+  if(traceEnabled(1)){
+    try { emitTrace('[trace:ensureLoaded:simple-reload]', { dir: baseDir, count: state.list.length }); } catch { /* ignore */ }
   }
-  if(state && lastMeta && state.versionToken === lastVersionToken && state.fileSignature === lastMeta.signature){
-    // No change after retry; proceed with whatever we have.
-  }
-  if(process.env.MCP_CATALOG_DIAG==='1' && state){
-    // eslint-disable-next-line no-console
-    console.error('[catalogContext.ensureLoaded] reload complete entries=', state.list.length, 'hash=', state.hash, 'fileCount=', state.fileCount);
-  }
-  if(perfStart && traceEnabled(2)){
-    const ms = Date.now()-perfStart;
-    emitTrace('[trace:ensureLoaded:perf]', { ms, count: state!.list.length, fileCount: state!.fileCount, signature: state!.fileSignature },2);
-  }
-  // state is always set here
-  return state!;
+  return state;
 }
+
+// ---------------------------------------------------------------------------
+// Cross-instance catalog version poller
+// ---------------------------------------------------------------------------
+// Lightweight interval that watches the .catalog-version file for changes made
+// by OTHER processes. Our own mutations already mark the catalog dirty when we
+// touch the version file (touchCatalogVersion). The poller simply shortens the
+// staleness window for read-only processes that never mutate.
+//
+// Design principles:
+//  - Minimal overhead: single stat + optional file read each interval
+//  - Configurable interval (env MCP_CATALOG_POLL_MS, default 10000ms)
+//  - Safe to call multiple times (idempotent start)
+//  - Optional proactive reload (env MCP_CATALOG_POLL_PROACTIVE=1)
+//  - Detects directory repin: if INSTRUCTIONS_DIR changes, token snapshot resets
+//  - Exposed stop function for tests / deterministic shutdown
+// ---------------------------------------------------------------------------
+let versionPoller: NodeJS.Timeout | null = null;
+let lastPollDir: string | null = null;
+let lastSeenToken: string | null = null;
+let lastSeenMTime = 0;
+
+export interface CatalogPollerOptions { intervalMs?: number; proactive?: boolean }
+
+export function startCatalogVersionPoller(opts: CatalogPollerOptions = {}){
+  if(versionPoller) return; // already running
+  const intervalMs = Math.max(500, opts.intervalMs || parseInt(process.env.MCP_CATALOG_POLL_MS || '10000',10) || 10000);
+  const proactive = opts.proactive || process.env.MCP_CATALOG_POLL_PROACTIVE === '1';
+  // Prime snapshot
+  try {
+    const dir = getInstructionsDir();
+    lastPollDir = dir;
+    lastSeenMTime = readVersionMTime();
+    lastSeenToken = readVersionToken();
+  } catch { /* ignore */ }
+  versionPoller = setInterval(()=>{
+    try {
+      const dir = getInstructionsDir();
+      if(dir !== lastPollDir){
+        // Directory changed (repin) -> reset snapshot so next diff triggers reload
+        lastPollDir = dir; lastSeenMTime = 0; lastSeenToken = null;
+      }
+      const mt = readVersionMTime();
+      const tk = readVersionToken();
+      // Fast path: nothing changed
+      if(mt === lastSeenMTime && tk === lastSeenToken){ return; }
+      // Update snapshot first to avoid duplicate work if ensureLoaded triggers another poll cycle
+      const prevToken = lastSeenToken;
+      lastSeenMTime = mt; lastSeenToken = tk;
+      // If we already have state and token truly changed, mark dirty. We compare tokens first as
+      // a stronger signal; mt changes without token content change are rare (overwrite with same value).
+      if(prevToken !== tk){
+        markCatalogDirty();
+        try { incrementCounter('catalog:pollerVersionChanged'); } catch { /* ignore */ }
+        if(proactive){
+          // Proactive reload to keep process view hot; ignore errors.
+          try { ensureLoaded(); incrementCounter('catalog:pollerProactiveReload'); } catch { /* ignore */ }
+        }
+      }
+    } catch { /* ignore poll errors */ }
+  }, intervalMs);
+  try { incrementCounter('catalog:pollerStarted'); } catch { /* ignore */ }
+}
+
+export function stopCatalogVersionPoller(){ if(versionPoller){ clearInterval(versionPoller); versionPoller = null; } }
 
 // Mutation helpers (import/add/remove/groom share)
 export function invalidate(){ state = null; dirty = true; }
@@ -551,15 +406,41 @@ export function writeEntry(entry: InstructionEntry){
   const record = classifier.normalize(entry);
   if(record.owner === 'unowned'){ const auto = resolveOwner(record.id); if(auto){ record.owner = auto; record.updatedAt = new Date().toISOString(); } }
   atomicWriteJson(file, record);
-  markCatalogDirty();
-  // Opportunistic in-memory materialization: shrink window where immediate post-add usage increment races
+  // Revised mutation strategy (2025-09-14): Avoid setting dirty=true when we can
+  // apply the change directly to the in-memory catalog. Previous implementation
+  // marked the catalog dirty before an immediate getCatalogState() call in tests,
+  // forcing a reload that sometimes raced the Windows filesystem directory
+  // visibility of the new file. That produced a flake where the opportunistic
+  // materialization guarantee was lost. We now:
+  //  1. Opportunistically materialize (add or update) the entry in-memory.
+  //  2. Touch the version file so other processes/pollers observe the change.
+  //  3. Only mark dirty if no state is currently loaded (so first subsequent
+  //     access triggers a load). Otherwise we keep the current state hot.
   if(state){
     const existing = state.byId.get(record.id);
-    if(!existing){
+    if(existing){
+      // Update in-place so references (including any cached projections) see new fields.
+      Object.assign(existing, record);
+      try { incrementCounter('catalog:inMemoryUpdate'); } catch { /* ignore */ }
+    } else {
       state.list.push(record);
       state.byId.set(record.id, record);
       try { incrementCounter('catalog:inMemoryMaterialize'); } catch { /* ignore */ }
     }
+    // Signal externally. Then optimistically update in-memory version snapshot so getCatalogState()
+    // does NOT trigger an immediate reload (which can race directory enumeration on Windows).
+    try {
+      touchCatalogVersion();
+      // After touching, read back token + mtime to align with ensureLoaded's cache validation logic.
+      const vfMTime = (function(){ try { const vf = path.join(getInstructionsDir(), '.catalog-version'); if(fs.existsSync(vf)){ return fs.statSync(vf).mtimeMs || 0; } } catch { /* ignore */ } return 0; })();
+      const vfToken = (function(){ try { const vf = path.join(getInstructionsDir(), '.catalog-version'); if(fs.existsSync(vf)){ return fs.readFileSync(vf,'utf8').trim(); } } catch { /* ignore */ } return ''; })();
+      if(vfMTime && state.versionMTime !== vfMTime){ state.versionMTime = vfMTime; }
+      if(vfToken && state.versionToken !== vfToken){ state.versionToken = vfToken; }
+    } catch { /* ignore */ }
+  } else {
+    // No in-memory state yet; next ensureLoaded should pick up new file.
+    markCatalogDirty();
+    try { touchCatalogVersion(); } catch { /* ignore */ }
   }
 }
 export function removeEntry(id:string){

@@ -10,7 +10,7 @@
     "test"
   ],
   "sourceHash": "3208ed0d4601e2bf90a8b3f05033ecb1acf47a2a4010c8f6b0dc53a8efa67dbd",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-30T01:04:44.842Z",
   "updatedAt": "2025-08-30T01:04:47.291Z",
   "riskScore": 63,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Atomic create visibility test body with deterministic content. XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX..."
+  "semanticSummary": "Atomic create visibility test body with deterministic content. XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX...",
+  "primaryCategory": "atomic"
 }

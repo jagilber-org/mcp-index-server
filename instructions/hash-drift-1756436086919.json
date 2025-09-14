@@ -9,7 +9,7 @@
     "governance"
   ],
   "sourceHash": "2bbe6c42424304ee6cced05be51694ba2756ee600b5bb26e8c010db923a236ec",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-29T02:54:46.922Z",
   "updatedAt": "2025-08-29T02:54:47.645Z",
   "riskScore": 70,
@@ -28,5 +28,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "# Drift Test"
+  "semanticSummary": "# Drift Test",
+  "primaryCategory": "governance"
 }

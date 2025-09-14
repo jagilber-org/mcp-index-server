@@ -25,6 +25,83 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
   - `dashboardRpmStability.spec.ts` (RPM metrics stability)
   (No minimal invariant expansion; internal baseline policy unchanged.)
 
+  ## [1.4.0] - 2025-09-13
+
+  ### Added (manifest observability & helper)
+
+  - Centralized manifest update helper `attemptManifestUpdate()` consolidates all post‑mutation catalog manifest writes (future hook point for batching/debounce without changing call sites).
+  - Structured manifest write log lines: `[manifest] wrote catalog-manifest.json count=<entryCount> ms=<duration>` emitted only on successful writes.
+  - New counters:
+    - `manifest:write` – incremented on each successful manifest write
+    - `manifest:writeFailed` – incremented when an exception occurs during write
+    - `manifest:hookError` – incremented when update hook invocation throws
+  - Environment flag `MCP_MANIFEST_WRITE=0` disables manifest persistence (read-only / diagnostic mode) while allowing normal runtime behavior.
+
+  ### Fixed (visibility flake)
+
+  - Stabilized intermittent add → immediate list/get visibility timing by refining late materialization path and adding targeted retry logic in `addVisibilityInvariant.spec.ts` (single bounded retry, preserves genuine failure signal).
+
+  ### Tests (edge coverage)
+
+  - New `manifestEdgeCases.spec.ts` validating:
+    - Disabled write mode respects `MCP_MANIFEST_WRITE=0` (no file created/modified)
+    - Corrupted on-disk manifest auto‑repair after subsequent catalog mutation
+  - Visibility invariant test enhanced with diagnostic trace & retry instrumentation (now consistently green).
+
+  ### Documentation
+
+  - README: Added Manifest Observability section, documented new counters & `MCP_MANIFEST_WRITE` flag plus reserved `MCP_MANIFEST_FASTLOAD` (planned fast load optimization – inactive placeholder).
+  - CONFIGURATION guide: Added Manifest Configuration section & environment variable table entries.
+  - CHANGELOG: This entry formalizes helper + observability release.
+
+  ### Internal (refactor & safety)
+
+  - Removed scattered try/catch blocks around manifest writes in instruction mutation handlers; all now route through helper ensuring unified error handling & metrics.
+  - Preserved existing manifest drift detection & repair logic (no behavioral change when flag unset).
+
+  ### Compatibility (1.4.0)
+
+  - No instruction schema or tool interface changes.
+  - Purely additive logging & metrics; safe transparent upgrade for all clients.
+  - When `MCP_MANIFEST_WRITE=0`, runtime skips writes silently (counter increments suppressed) – intended only for diagnostics / perf profiling.
+
+  ### Upgrade Guidance (1.4.0)
+
+  - Pull & rebuild – no client changes required.
+  - To disable manifest file writes for diagnostics: set `MCP_MANIFEST_WRITE=0` (do not use in production if you rely on external manifest consumers).
+  - Monitoring systems may now scrape manifest counters alongside existing metrics buckets.
+
+  ### Future (not included – 1.4.0 roadmap)
+
+  - Planned `MCP_MANIFEST_FASTLOAD` optimization mode (hash/mtime short‑circuit) reserved; currently no effect (documented as placeholder only).
+
+## [1.4.1] - 2025-09-14
+
+### Fixed (dashboard health accuracy)
+
+- Resolved persistent false positive "Statistics unavailable" issue: local `statsAvailable` shadowed global flag so health card always injected the warning despite successful stats fetches. Now uses `window.statsAvailable` consistently.
+- Restored memory utilization health check (`mem: ok` / fail at ≥90% heap usage) alongside CPU derived check when backend omits explicit entries.
+
+### Changed (UI consistency)
+
+- Unified overview card styling with Real‑time Monitoring card via new shared `.stat-row` styles (consistent spacing, typography, separators).
+- Added stronger label/value contrast and tabular numeric alignment across System Statistics, System Health, and Performance cards.
+
+### Internal (refactor / cleanup)
+
+- Removed accidentally injected diagnostic block from `applyInstructionTemplate` (caused earlier syntax noise during patch).
+- Hardened health rendering defensive normalization & comments clarifying derived check thresholds (CPU <85% ok, Memory <90% ok).
+
+### Notes (1.4.1)
+
+- Pure UI + client-side logic update; no API or schema changes.
+- Safe patch upgrade; no restart flags required beyond standard rebuild/deploy.
+
+### Upgrade Guidance (1.4.1)
+
+- Pull, rebuild, redeploy. Dashboard automatically reflects new styling; no configuration changes.
+
+
 ## [1.2.1] - 2025-09-05
 
 ## [1.3.0] - 2025-09-10

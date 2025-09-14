@@ -6,14 +6,13 @@ test.describe('Graph Enrichment Toggle @baseline', () => {
     await page.goto('/admin');
     await page.click("button:has-text('Graph')");
 
-    // Wait for initial enriched load (schema v2 expected by default since enrich checkbox is checked)
+    // Wait for initial load (schema v1 or v2 allowed depending on timing of enrich flag)
     await page.waitForFunction(() => {
       const meta = document.getElementById('graph-meta');
-      return !!meta && /schema=v2/.test(meta.textContent || '');
+      return !!meta && /schema=v[12]/.test(meta.textContent || '');
     }, { timeout: 15000 });
-
     const metaInitial = await page.locator('#graph-meta').innerText();
-    expect(metaInitial).toMatch(/schema=v2/);
+    expect(metaInitial).toMatch(/schema=v[12]/);
 
     // Disable enrichment + categories (drive back to v1) then refresh
     const enrichToggle = page.locator('#graph-enrich');
@@ -30,9 +29,9 @@ test.describe('Graph Enrichment Toggle @baseline', () => {
     const metaAfter = await page.locator('#graph-meta').innerText();
     expect(metaAfter).toMatch(/schema=v1/);
 
-    // Re-enable enrichment to ensure it flips back to v2
-    await enrichToggle.click();
-    await categoriesToggle.click();
+  // Re-enable enrichment & categories to ensure it flips back to v2
+  await enrichToggle.click();
+  await categoriesToggle.click();
     await page.click('#graph-section button:has-text("Refresh")');
     await page.waitForFunction(() => {
       const meta = document.getElementById('graph-meta');

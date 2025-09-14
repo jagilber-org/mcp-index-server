@@ -10,7 +10,7 @@
     "testing"
   ],
   "sourceHash": "24a4b1b1c395bdb1439398097cc96764c77dc1eafb19b987efd09a9298926e33",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-29T02:05:11.213Z",
   "updatedAt": "2025-08-29T02:05:11.213Z",
   "riskScore": 15,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Third entry with minimal priority and optional requirement for testing various priority tiers and requirement levels."
+  "semanticSummary": "Third entry with minimal priority and optional requirement for testing various priority tiers and requirement levels.",
+  "primaryCategory": "priority-testing"
 }

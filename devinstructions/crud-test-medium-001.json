@@ -10,7 +10,7 @@
     "testing"
   ],
   "sourceHash": "4c152bd57ac13c1aabec92536e66befac877291ef564dfcd9841940f375fb8dd",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-29T17:21:32.686Z",
   "updatedAt": "2025-08-29T17:21:32.686Z",
   "riskScore": 95,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "This is a medium complexity test with proper metadata structure"
+  "semanticSummary": "This is a medium complexity test with proper metadata structure",
+  "primaryCategory": "medium-complexity"
 }

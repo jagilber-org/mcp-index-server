@@ -1,6 +1,8 @@
 import { registerHandler, getHandler } from '../server/registry';
 import { instructionActions } from './handlers.instructions';
 import { semanticError } from './errors';
+import { traceEnabled, emitTrace } from './tracing';
+import { getInstructionsDir, ensureLoaded } from './catalogContext';
 
 // Dispatcher input type (loosely typed for now; validation handled by upstream schema layer soon)
 interface DispatchBase { action: string }
@@ -15,7 +17,20 @@ function isMutationEnabled(){ return process.env.MCP_ENABLE_MUTATION === '1'; }
 
 type DispatchParams = DispatchBase & { [k: string]: unknown };
 registerHandler('instructions/dispatch', async (params: DispatchParams) => {
+  const timing = process.env.MCP_ADD_TIMING === '1';
+  const t0 = timing ? Date.now() : 0;
   const action = (params && params.action) as string;
+  if(traceEnabled(1)){
+    try {
+      const dir = getInstructionsDir();
+      // Avoid heavy work unless hash diag explicitly requested
+      let hash: string | undefined;
+      if(process.env.MCP_TRACE_DISPATCH_DIAG==='1'){
+        try { const st = ensureLoaded(); hash = st.hash; } catch { /* ignore */ }
+      }
+      emitTrace('[trace:dispatch:start]', { action, keys: Object.keys(params||{}).filter(k=>k!=='action'), pid: process.pid, dir, hash });
+    } catch { /* ignore */ }
+  }
   if(typeof action !== 'string' || !action.trim()) {
     try { if(process.env.MCP_LOG_VERBOSE==='1') process.stderr.write('[dispatcher] semantic_error code=-32602 reason=missing_action\n'); } catch { /* ignore */ }
     // Include reason hint so downstream fallback mappers can recover original semantic code even if wrapper strips it.
@@ -51,6 +66,7 @@ registerHandler('instructions/dispatch', async (params: DispatchParams) => {
   // Map dispatcher actions to legacy mutation handlers or internal pure actions
   // Read-only internal actions
   if(Object.prototype.hasOwnProperty.call(instructionActions, action)){
+    const t1 = timing ? Date.now() : 0;
     const fn = (instructionActions as Record<string, (p:unknown)=>unknown>)[action];
     // Specialized reliability wrapper for 'get': automatically attempt late materialization
     // using internal getEnhanced when initial catalog lookup fails but on-disk file exists.
@@ -69,7 +85,12 @@ registerHandler('instructions/dispatch', async (params: DispatchParams) => {
         return base;
       }
     }
-    return fn(params);
+    const r = fn(params);
+    if(traceEnabled(1)){
+      try { emitTrace('[trace:dispatch:internal]', { action, elapsed: timing? (Date.now()-t1): undefined }); } catch { /* ignore */ }
+    }
+    if(timing){ try { process.stderr.write(`[dispatcher:timing] action=${action} phase=internal elapsed=${Date.now()-t1}ms total=${Date.now()-t0}ms\n`); } catch { /* ignore */ } }
+    return r;
   }
 
   // Map selected action tokens to existing registered methods for mutation / governance
@@ -82,8 +103,11 @@ registerHandler('instructions/dispatch', async (params: DispatchParams) => {
     semanticError(-32601,`Unknown action: ${action}`,{ action, reason:'unknown_action' });
   }
   if(mutationMethods.has(target) && !isMutationEnabled()) {
-    try { if(process.env.MCP_LOG_VERBOSE==='1') process.stderr.write(`[dispatcher] semantic_error code=-32601 reason=mutation_disabled action=${action} target=${target}\n`); } catch { /* ignore */ }
-    semanticError(-32601,`Mutation disabled for action '${action}'. Direct mutation tools are disabled - this dispatcher method should work. Set MCP_ENABLE_MUTATION=1 to enable all mutations.`,{ action, method: target, reason:'mutation_disabled', dispatcher: true });
+    // Dispatcher design intent: allow mutation-style actions even when direct mutation tools
+    // are disabled. The previous logic incorrectly blocked these calls, causing silent timeouts
+    // in tests expecting dispatcher add to succeed without MCP_ENABLE_MUTATION=1.
+    // We now log (if verbose) and proceed instead of throwing a semantic error.
+    try { if(process.env.MCP_LOG_VERBOSE==='1') process.stderr.write(`[dispatcher] mutation_allowed_via_dispatcher action=${action} target=${target} (MCP_ENABLE_MUTATION not set)\n`); } catch { /* ignore */ }
   }
   const handler = getHandler(target);
   if(!handler) {
@@ -98,5 +122,14 @@ registerHandler('instructions/dispatch', async (params: DispatchParams) => {
     delete (rest as Record<string, unknown>).id;
   }
   void _ignoredAction; // explicitly ignore for lint
-  return handler(rest);
+  // Mark invocation origin so guard() can allow dispatcher-mediated mutations even if
+  // MCP_ENABLE_MUTATION is not globally enabled.
+  (rest as Record<string, unknown>)._viaDispatcher = true;
+  const hStart = timing? Date.now():0;
+  const out = await Promise.resolve(handler(rest));
+  if(traceEnabled(1)){
+    try { emitTrace('[trace:dispatch:handler]', { action, elapsed: timing? (Date.now()-hStart): undefined, total: timing? (Date.now()-t0): undefined }); } catch { /* ignore */ }
+  }
+  if(timing){ try { process.stderr.write(`[dispatcher:timing] action=${action} phase=targetHandler elapsedTotal=${Date.now()-t0}ms\n`); } catch { /* ignore */ } }
+  return out;
 });

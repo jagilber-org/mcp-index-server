@@ -634,6 +634,8 @@ Rationale: a single execution pathway (tools/call) eliminates duplicate validati
 | `MCP_HANDSHAKE_TRACE` | off | runtime (diagnostic) | Extra trace around initialize & server/ready sequencing. |
 | `MCP_HEALTH_MIXED_DIAG` | off | runtime (diagnostic) | Adds additional mixed workload scheduling diagnostics during health/check stress exploration. |
 | `MCP_DISABLE_INIT_SNIFF` | off | runtime (diagnostic) | Disables stdin pre-read initialize sniffing logic (forces pure SDK handling). Useful to compare behavior with and without early fragmentation mitigation. |
+| `MCP_MANIFEST_WRITE` | on (unset) | runtime | Set to `0` to disable writing the catalog manifest (diagnostic / read-only). |
+| `MCP_MANIFEST_FASTLOAD` | (reserved) | runtime (future) | Placeholder for upcoming fast load optimization (currently no effect). |
 
 Operational guidance:
 
@@ -680,6 +682,33 @@ npm run test:diag
 ```
 
 Rationale: Segregating heavy concurrency / fragmentation tests avoids intermittent initialize starvation or off-by-one health count flakes from masking real regressions in routine PR validation while retaining full reproduction power on-demand.
+
+### Manifest Observability (1.4.0)
+
+The server persists a lightweight catalog manifest (`snapshots/catalog-manifest.json`) after catalog‑mutating operations. 1.4.0 introduces a centralized helper plus counters. As of 1.4.x a formal JSON Schema (`schemas/manifest.schema.json`) documents the manifest snapshot independently of the instruction schema (`schemas/instruction.schema.json`). The manifest format is intentionally minimal and versioned separately (`version: 1`).
+
+Counters (scrape via existing metrics interface):
+
+* `manifest:write` – successful manifest persisted
+* `manifest:writeFailed` – write attempt threw
+* `manifest:hookError` – upstream hook invocation failed
+
+Log Line (INFO):
+
+```text
+[manifest] wrote catalog-manifest.json count=<entries> ms=<latency>
+```
+
+Environment Flags:
+
+* `MCP_MANIFEST_WRITE=0` – skip all writes (counters suppressed) but continue normal instruction functionality. Use for diagnostics or perf profiling only.
+* `MCP_MANIFEST_FASTLOAD=1` – (preview) trust an up‑to‑date manifest on startup to short‑circuit full body re‑hash when computing drift. Falls back automatically to the normal path if the manifest is missing / invalid / drift > 0.
+
+Design Rationale:
+
+* Central helper `attemptManifestUpdate()` now performs an immediate synchronous manifest write (Phase F simplification). Previous debounce logic was removed to guarantee determinism and eliminate timing races. (A future high‑churn mode could reintroduce batching behind an env flag if needed.)
+* Separation of concerns: instruction files validated by `instruction.schema.json` (schemaVersion `3`), manifest snapshot validated by its own schema (`manifest.schema.json`). No need to bump instruction `schemaVersion` when altering internal manifest representation.
+* Additive only – no change in existing mutation semantics or instruction schema.
 
 ### Handshake Reliability (1.1.1)
 

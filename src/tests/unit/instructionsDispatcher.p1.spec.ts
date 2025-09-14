@@ -42,7 +42,7 @@ describe('instructions dispatcher (P1)', () => {
   const addResp: any = await dispatch('add', { entry: { id, body: 'Hello body', title: id, audience: 'all', requirement: 'optional', priority: 10, categories: ['test','P1'] }, lax: true });
   expect(addResp).toMatchObject({ id, created: true, overwritten: false });
 
-    // List with expectId should surface new id first & include repairedVisibility flags (not set here but ensures branch executes)
+  // List with expectId should surface new id first (legacy repairedVisibility flags removed in Phase E cleanup)
   const listResp: any = await dispatch('list', { expectId: id });
     expect(listResp.items[0].id).toBe(id);
 

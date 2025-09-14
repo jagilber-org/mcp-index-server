@@ -9,7 +9,7 @@
     "performance"
   ],
   "sourceHash": "6e04b18dc5e5905684b25e42ff74383575449365f848cfb9ac30b46695843109",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-29T02:54:50.552Z",
   "updatedAt": "2025-08-29T02:54:50.552Z",
   "riskScore": 60,
@@ -28,5 +28,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Line 0 - https://example.com/resource/0 Service Fabric Azure Bicep"
+  "semanticSummary": "Line 0 - https://example.com/resource/0 Service Fabric Azure Bicep",
+  "primaryCategory": "performance"
 }

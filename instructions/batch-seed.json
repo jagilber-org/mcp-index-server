@@ -9,7 +9,7 @@
     "test"
   ],
   "sourceHash": "b6b3b2b1bdd1694f13e7cd554bd42badafa8db744e9094fd0e41afc79104fa77",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-28T07:47:11.162Z",
   "updatedAt": "2025-08-28T07:47:11.162Z",
   "riskScore": 119,
@@ -28,5 +28,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "Seed body"
+  "semanticSummary": "Seed body",
+  "primaryCategory": "test"
 }

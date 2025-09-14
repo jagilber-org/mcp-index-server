@@ -1,0 +1,30 @@
+{
+  "id": "agent-graph-guidance",
+  "title": "Agent Graph Utilization Guidance",
+  "body": "Purpose: Provide agents a compact operating pattern for using the instruction relationship graph.\n\nCore Principles:\n1. Always query JSON graph/export (never reason from Mermaid).\n2. Start sparse: enrich=true, includeCategoryNodes=true, includeEdgeTypes=[primary].\n3. Expand only if needed with belongs edges; avoid category edges unless small subset.\n4. Cache graph by governance hash; refetch only on change.\n5. Rank related instructions by category overlap + usageCount + recency + degree centrality.\n6. Prefer local Jaccard(categorySets) for similarity over dense pairwise edges.\n7. Report anomalies (orphans, stale hubs, duplicates) via feedback tools.\n8. Summaries to user must justify each instruction (overlap & recency).\n\nScoring (adaptable): score = 0.5*overlap + 0.25*log(1+usage) + 0.15*recency + 0.10*centrality.\n\nFailure Fallback: If graph/export fails, retry with primary-only; if still failing, fall back to instruction search + category heuristics and disclose limitation.\n\nDo Nots: Do not fetch category edges first; do not surface entire raw graph; do not rely on stale hash; do not parse Mermaid for logic.\n\nExtended detail: see docs/AGENT-GRAPH-INSTRUCTIONS.md.",
+  "priority": 8,
+  "audience": "agents",
+  "requirement": "Graph reasoning must follow sparse→expand pattern and justify returned instructions.",
+  "categories": [
+    "graph",
+    "agent-strategy",
+    "retrieval"
+  ],
+  "schemaVersion": "3",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "version": "1.0.0",
+  "riskScore": 40,
+  "createdAt": "2025-09-11T00:00:00.000Z",
+  "updatedAt": "2025-09-11T00:00:00.000Z",
+  "reviewIntervalDays": 60,
+  "lastReviewedAt": "2025-09-11T00:00:00.000Z",
+  "nextReviewDue": "2025-11-10T00:00:00.000Z",
+  "changeLog": [
+    { "version": "1.0.0", "changedAt": "2025-09-11T00:00:00.000Z", "summary": "Initial import" }
+  ],
+  "primaryCategory": "graph",
+  "semanticSummary": "Compact agent operating directive for efficient graph usage and ranking heuristics."
+}

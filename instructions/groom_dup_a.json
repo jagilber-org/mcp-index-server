@@ -10,7 +10,7 @@
     "y"
   ],
   "sourceHash": "74ce3a3a33c2a562689eaafa5b50447704c34efdc0d79116b91f8d3befb42cc4",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-01-01T00:00:00.000Z",
   "updatedAt": "2025-08-30T14:38:21.105Z",
   "version": "1.0.0",
@@ -29,5 +29,6 @@
   ],
   "semanticSummary": "dup body unify",
   "reviewIntervalDays": 90,
-  "riskScore": 45
+  "riskScore": 45,
+  "primaryCategory": "x"
 }

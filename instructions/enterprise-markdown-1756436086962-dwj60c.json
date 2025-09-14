@@ -10,7 +10,7 @@
     "troubleshooting"
   ],
   "sourceHash": "1c7ac2d00da19e41a64fe9a3c0e32cb333a5f57090c72fd02eea81119c7d61c2",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "createdAt": "2025-08-29T02:54:46.966Z",
   "updatedAt": "2025-08-29T02:54:47.375Z",
   "riskScore": 80,
@@ -29,5 +29,6 @@
       "summary": "initial import"
     }
   ],
-  "semanticSummary": "# Enterprise Resource Index (Synthetic)"
+  "semanticSummary": "# Enterprise Resource Index (Synthetic)",
+  "primaryCategory": "development-tools"
 }

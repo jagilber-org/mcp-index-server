@@ -1,0 +1,13 @@
+{
+  "$schema": "../schemas/manifest.schema.json",
+  "version": 1,
+  "generatedAt": "2025-09-14T11:51:44.818Z",
+  "count": 1,
+  "entries": [
+    {
+      "id": "synthetic-mfizvhhh_zcrxsy",
+      "sourceHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c",
+      "bodyHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c"
+    }
+  ]
+}

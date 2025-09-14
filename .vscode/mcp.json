@@ -23,39 +23,13 @@
 				"MCP_METRICS_FILE_STORAGE": "1",
 				"MCP_METRICS_MAX_FILES": "720",
 				"MCP_TRACE_FILE": "1",
+				"MCP_DEBUG": "1",
 				"MCP_VISIBILITY_DIAG": "1",
 				"MCP_DASHBOARD": "1",
 				"MCP_LOG_VERBOSE": "1",
 				"MCP_DASHBOARD_PORT": "8787"
 			}
 		},
-		// ====================================================================
-		// Mermaid Chat MCP Server (PLACEHOLDER)
-		// --------------------------------------------------------------------
-		// To activate the newly installed "Mermaid Chat" MCP server extension,
-		// replace one of the placeholder configurations below (uncomment it)
-		// depending on how the extension exposes its server:
-		// 1) If the VS Code extension registers an MCP server by extension id:
-		//    "mermaid-chat": {
-		//      "type": "extension",
-		//      "id": "publisher.mermaid-chat" // <-- adjust to real extension id
-		//    }
-		// 2) If it is a local Node script you run directly:
-		//    "mermaid-chat": {
-		//      "type": "stdio",
-		//      "cwd": "C:/path/to/mermaid-chat-server",
-		//      "command": "node",
-		//      "args": ["dist/server/index.js"],
-		//      "env": { }
-		//    }
-		// After adding & saving, reload the client (or use the MCP: Reload command)
-		// then list tools to discover something like:
-		//   mermaid/validate   -> validates Mermaid diagram syntax
-		//   mermaid/render     -> (if provided) returns SVG
-		// You can then invoke via your MCP client UI or programmatically by
-		// sending a tools/call request with the tool name and an input object:
-		//   { name: "mermaid/validate", arguments: { code: "graph TD; A-->B" } }
-		// ====================================================================
 		// "powershell-mcp-server": {
 		// 	"command": "node",
 		// 	"args": [

@@ -60,7 +60,7 @@ import '../services/handlers.gates';
 import '../services/handlers.testPrimitive';
 import '../services/handlers.diagnostics';
 import '../services/handlers.feedback';
-import { getCatalogState, diagnoseInstructionsDir } from '../services/catalogContext';
+import { getCatalogState, diagnoseInstructionsDir, startCatalogVersionPoller } from '../services/catalogContext';
 import { createDashboardServer } from '../dashboard/server/DashboardServer.js';
 import { getMetricsCollector } from '../dashboard/server/MetricsCollector.js';
 import { getMemoryMonitor } from '../utils/memoryMonitor';
@@ -366,6 +366,18 @@ export async function main(){
     try { process.stderr.write(`[handshake-buffer] pre-start buffered=${__earlyInitChunks.length}\n`); } catch { /* ignore */ }
   }
   await startSdkServer();
+  // Start cross-instance catalog version poller unless disabled.
+  try {
+    // Poller now opt-in to avoid introducing timing variance into deterministic
+    // visibility & manifest repair tests. Enable with MCP_ENABLE_CATALOG_POLLER=1.
+    if(process.env.MCP_ENABLE_CATALOG_POLLER === '1'){
+      const proactive = process.env.MCP_CATALOG_POLL_PROACTIVE === '1';
+      startCatalogVersionPoller({ proactive });
+      if(getBooleanEnv('MCP_LOG_DIAG')){ try { process.stderr.write(`[startup] catalog version poller started proactive=${proactive}\n`); } catch { /* ignore */ } }
+    } else if(getBooleanEnv('MCP_LOG_DIAG')) {
+      try { process.stderr.write('[startup] catalog version poller not enabled (set MCP_ENABLE_CATALOG_POLLER=1)\n'); } catch { /* ignore */ }
+    }
+  } catch { /* ignore */ }
   // Mark SDK ready & replay any buffered stdin chunks exactly once.
   __sdkReady = true;
   if(__bufferEnabled){

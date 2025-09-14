@@ -95,9 +95,9 @@
                         <button class="action-btn sm" style="background:linear-gradient(45deg,#27ae60,#1e8449)" title="Clear selections">🧹 Clear Selections</button>
                     </div>
                     <div class="flags" style="order:3;">
-                        <label>Enrich <input id="graph-enrich" type="checkbox" checked></label>
-                        <label>Categories <input id="graph-categories" type="checkbox" checked></label>
-                        <label>Usage <input id="graph-usage" type="checkbox"></label>
+                        <label class="chk simple"><input id="graph-enrich" type="checkbox" checked> Enrich</label>
+                        <label class="chk simple"><input id="graph-categories" type="checkbox" checked> Categories</label>
+                        <label class="chk simple"><input id="graph-usage" type="checkbox"> Usage</label>
                     </div>
                     <div class="flags" style="order:4;">
                         <label class="block">Edge Types
@@ -120,15 +120,9 @@
                         </label>
                     </div>
                     <div class="stack" style="order:5;">
-                        <label style="display:flex; gap:4px; align-items:center; background:#1f2a3a; border:1px solid #2d3b4f; border-radius:4px; padding:4px 6px;" title="Toggle high Mermaid maxEdges secure limit (forces re-init)">
-                            <input id="mermaid-high-edges" type="checkbox" style="margin:0;"> High edge cap
-                        </label>
-                        <label style="display:flex; gap:4px; align-items:center; background:#1f2a3a; border:1px solid #2d3b4f; border-radius:4px; padding:4px 6px;" title="Enable Large Graph Mode (raises maxEdges & maxTextSize caps)">
-                            <input id="mermaid-large-graph" type="checkbox" style="margin:0;"> Large graph mode
-                        </label>
-                        <label style="display:flex; gap:4px; align-items:center;" title="Enable debug logging">
-                            Debug <input id="graph-debug" type="checkbox" style="margin:0;">
-                        </label>
+                        <label class="chk" title="Toggle high Mermaid maxEdges secure limit (forces re-init)"><input id="mermaid-high-edges" type="checkbox"> High edge cap</label>
+                        <label class="chk" title="Enable Large Graph Mode (raises maxEdges & maxTextSize caps)"><input id="mermaid-large-graph" type="checkbox"> Large graph mode</label>
+                        <label class="chk simple" title="Enable debug logging"><input id="graph-debug" type="checkbox"> Debug</label>
                     </div>
                     <div class="actions" style="order:6;">
                         <button id="graph-refresh-btn" class="action-btn" style="background:linear-gradient(45deg,#2ecc71,#27ae60)" title="Refresh Mermaid diagram from current filters">🔄 Refresh Graph</button>
@@ -162,30 +156,20 @@
                     <div class="card-icon">🧭</div>
                     <div class="card-title">Layered Drilldown SVG (Experimental)</div>
                 </div>
-                <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:10px; align-items:flex-end;">
-                    <div style="display:flex; flex-direction:column; gap:6px;">
-                        <button class="action-btn" style="padding:8px 12px; background:linear-gradient(45deg,#27ae60,#1e8449)">🖼️ Render SVG</button>
-                        <button class="action-btn" style="padding:8px 12px; background:linear-gradient(45deg,#8e44ad,#5e337d)">🧹 Clear</button>
-                        <label style="font-size:11px; display:flex; gap:4px; align-items:center; background:#1f2a3a; color:#d0d7e2; border:1px solid #2d3b4f; border-radius:4px; padding:4px 6px;">
-                            <input id="drill-use-elk" type="checkbox" checked style="margin:0;"> ELK layout
-                        </label>
-                        <label style="font-size:11px; display:flex; gap:4px; align-items:center; background:#1f2a3a; color:#d0d7e2; border:1px solid #2d3b4f; border-radius:4px; padding:4px 6px;">
-                            <input id="drill-expand" type="checkbox" style="margin:0;"> Expand 1-hop
-                        </label>
-                        <label style="font-size:11px; display:flex; gap:4px; align-items:center; background:#1f2a3a; color:#d0d7e2; border:1px solid #2d3b4f; border-radius:4px; padding:4px 6px;">
-                            <input id="drill-show-membership" type="checkbox" checked style="margin:0;"> Show membership
-                        </label>
-                        <label style="font-size:11px; display:flex; gap:4px; align-items:center; background:#1f2a3a; color:#d0d7e2; border:1px solid #2d3b4f; border-radius:4px; padding:4px 6px;" title="Toggle high Mermaid maxEdges secure limit (forces re-init)">
-                            <input id="mermaid-high-edges" type="checkbox" style="margin:0;"> High edge cap
-                        </label>
-                        <label style="font-size:11px; display:flex; gap:4px; align-items:center; background:#1f2a3a; color:#d0d7e2; border:1px solid #2d3b4f; border-radius:4px; padding:4px 6px;" title="Enable Large Graph Mode (raises maxEdges & maxTextSize caps)">
-                            <input id="mermaid-large-graph" type="checkbox" style="margin:0;"> Large graph mode
-                        </label>
-                        <button class="action-btn" style="padding:6px 10px; background:linear-gradient(45deg,#16a085,#0e6655)">💾 Export SVG</button>
+                <div class="drill-toolbar">
+                    <div class="group buttons">
+                        <button class="action-btn success" style="background:linear-gradient(45deg,#27ae60,#1e8449)">🖼️ Render SVG</button>
+                        <button class="action-btn" style="background:linear-gradient(45deg,#8e44ad,#5e337d)">🧹 Clear</button>
+                        <button class="action-btn" style="background:linear-gradient(45deg,#16a085,#0e6655)">💾 Export SVG</button>
                     </div>
-                    <div style="flex:1; min-width:300px; font-size:11px; line-height:1.4; opacity:0.75;">
-                        Build custom layered diagrams without generating a massive Mermaid graph. Use the selectors above to filter; they also narrow the Mermaid diagram when refreshed.
+                    <div class="group toggle-grid">
+                        <label class="chk"><input id="drill-use-elk" type="checkbox" checked> ELK layout</label>
+                        <label class="chk"><input id="drill-expand" type="checkbox"> Expand 1-hop</label>
+                        <label class="chk"><input id="drill-show-membership" type="checkbox" checked> Show membership</label>
+                        <label class="chk" title="Toggle high Mermaid maxEdges secure limit (forces re-init)"><input id="mermaid-high-edges" type="checkbox"> High edge cap</label>
+                        <label class="chk" title="Enable Large Graph Mode (raises maxEdges & maxTextSize caps)"><input id="mermaid-large-graph" type="checkbox"> Large graph mode</label>
                     </div>
+                    <div class="spacer-note">Build custom layered diagrams without generating a massive Mermaid graph. Use the selectors above to filter; they also narrow the Mermaid diagram when refreshed.</div>
                 </div>
                 <div id="drill-status" style="font-size:11px; opacity:0.7; margin-bottom:6px; font-family:monospace;">(idle)</div>
                 <div id="drill-svg-wrapper" style="background:#0f1624; border:1px solid #1f2a3a; border-radius:8px; padding:10px; min-height:160px; overflow:auto;">

@@ -9,6 +9,7 @@
 * **[⚙️ Configuration Guide (MCP-CONFIGURATION.md)](./docs/MCP-CONFIGURATION.md)** - Comprehensive MCP setup patterns for all environments
 * **[🔧 Server Configuration (CONFIGURATION.md)](./docs/CONFIGURATION.md)** - Environment variables and CLI options reference
 * **[�️ Admin Dashboard Guide (DASHBOARD.md)](./docs/DASHBOARD.md)** - UI features, screenshots, drift monitoring & maintenance
+  * Includes baseline visual snapshots (system health, performance CPU+Memory card, instruction list, editor, log tail, graph raw + rendered) maintained via Playwright @baseline tests.
 * **[�📊 Dashboard Development Plan (DASHBOARD-DEVELOPMENT-PLAN.md)](./docs/DASHBOARD-DEVELOPMENT-PLAN.md)** - Multi-phase dashboard enhancement roadmap
 * **[📝 Content Guidance (CONTENT-GUIDANCE.md)](./docs/CONTENT-GUIDANCE.md)** - What to include in local vs. central instruction servers
 * **[🧠 Prompt Optimization (PROMPT-OPTIMIZATION.md)](./docs/PROMPT-OPTIMIZATION.md)** - AI prompt handling and optimization guide

@@ -185,6 +185,20 @@ Report output: `playwright-report/` (in CI artifact `playwright-drift-artifacts`
 
 Skips: Some regions are marked optional (editor, log tail) and tests auto-skip when prerequisites (at least one instruction row, visible tail button) are absent. This keeps baseline runs green while still documenting expected snapshot naming so teams can enable them later by seeding data or ensuring UI visibility.
 
+### 1.4.x Baseline Expansion (Performance + Memory)
+
+Version 1.4.x integrates memory sampling in parallel with CPU and promotes the Performance card (CPU + Memory sparklines) to a first-class visual baseline target. The Playwright suite (`baseline.spec.ts`) now captures:
+
+- `system-health-card-*` (CPU + memory summary & status)
+- `performance-card-*` (extended CPU + memory visualization panel)
+- `instructions-list-*`
+- `instruction-editor-*`
+- `log-tail-*`
+- `graph-mermaid-raw-*` (text snapshot)
+- `graph-mermaid-rendered-*` (SVG render)
+
+Deterministic seeding via `tests/playwright/global-setup.ts` ensures presence of at least one instruction and a log line, eliminating prior optional/skip logic for editor & tail captures. A short stabilization delay (≈1.2s) precedes performance card capture to mitigate sparkline initialization drift while maintaining tight diff thresholds (0.2% / 250px).
+
 ### When to Refresh Baseline
 
 Refresh only when intentional UI changes alter the captured regions (layout/class changes or semantic summary rendering). Do NOT refresh for incidental color/font shifts unless expected.

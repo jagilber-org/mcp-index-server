@@ -7765,20 +7765,68 @@
       "responseTime": 96.46409215686269,
       "throughput": 18,
       "errorRate": 0
+    },
+    {
+      "timestamp": 1757856110257,
+      "responseTime": 0,
+      "throughput": 0,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757856170300,
+      "responseTime": 4.3386469387755096,
+      "throughput": 49,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757856230312,
+      "responseTime": 3.4162417910447758,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757856290312,
+      "responseTime": 2.8689458823529415,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757856350312,
+      "responseTime": 2.528681553398059,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757856410312,
+      "responseTime": 2.376967768595041,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757856470319,
+      "responseTime": 2.2058561151079132,
+      "throughput": 18,
+      "errorRate": 0
+    },
+    {
+      "timestamp": 1757856530328,
+      "responseTime": 2.037246496815286,
+      "throughput": 18,
+      "errorRate": 0
     }
   ],
   "stats": {
-    "count": 1293,
+    "count": 1301,
     "capacity": 1440,
-    "totalAdded": 1293,
+    "totalAdded": 1301,
     "totalDropped": 0,
     "resizeCount": 0,
-    "memoryUsage": 247830,
-    "lastModified": "2025-09-14T12:17:48.703Z",
-    "utilization": 89.79166666666667
+    "memoryUsage": 249324,
+    "lastModified": "2025-09-14T13:28:50.353Z",
+    "utilization": 90.34722222222223
   },
   "version": "1.0.0",
-  "createdAt": "2025-09-14T12:17:48.704Z",
-  "lastSaved": "2025-09-14T12:17:48.704Z",
-  "checksum": "c444e046aad60e78f0ed671435f686549030e78b4699a8e99558579841fc31b6"
+  "createdAt": "2025-09-14T13:28:50.354Z",
+  "lastSaved": "2025-09-14T13:28:50.354Z",
+  "checksum": "bbd73b3122230210bbb80aa8c787ece963eef2ee4a27f086e90df141a0f78043"
 }

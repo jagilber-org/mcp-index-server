@@ -6,6 +6,11 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 ## [Unreleased]
 
+- Dashboard: Added performance (CPU + Memory) card visual baseline snapshot (`performance-card-*`).
+- UI: Refactored drilldown controls into horizontal grouped layout with standardized checkbox styling.
+- Tests: Promoted performance card snapshot to mandatory Playwright baseline; removed legacy optional skips via deterministic seeding.
+
+
 ### Added (dispatcher capabilities & batch)
 
 ### Documentation (overhaul 1.4.2)

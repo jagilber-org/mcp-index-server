@@ -101,6 +101,26 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
   });
   });
 
+  test('capture visual snapshot of performance card (cpu+memory)', async ({ page, browserName }) => {
+    await gotoAdmin(page);
+    // Performance card title text assumed stable
+    const perfCard = page.locator('.admin-card .card-title:has-text("Performance")');
+    await perfCard.first().waitFor({ timeout: 8000 });
+    // Expand root card element (ancestor with class admin-card)
+    const perfRoot = perfCard.first().locator('xpath=ancestor::*[contains(@class,"admin-card")][1]');
+    await expect(perfRoot).toBeVisible();
+    // Allow charts to stabilize (memory & cpu sparkline sampling)
+    await page.waitForTimeout(1200);
+    const start = performance.now();
+    const shot = await perfRoot.screenshot();
+    const elapsed = performance.now() - start;
+    test.info().annotations.push({ type: 'perf', description: `performance-card-screenshot-ms=${elapsed.toFixed(1)}` });
+    expect(shot).toMatchSnapshot(snap('performance-card', browserName), {
+      maxDiffPixelRatio: MAX_DIFF_RATIO,
+      maxDiffPixels: MAX_DIFF_PIXELS
+    });
+  });
+
   test('capture visual snapshot of instruction list region', async ({ page, browserName }) => {
   await page.goto('/admin');
     await gotoAdmin(page);

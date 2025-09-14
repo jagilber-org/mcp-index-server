@@ -28,8 +28,25 @@
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs" type="module"></script>
   <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    const themeConfig = { startOnLoad:false, theme:'base', darkMode:true, themeVariables:{
-        primaryColor:'#BB2528', primaryTextColor:'#ffffff', primaryBorderColor:'#7C0000', lineColor:'#F8B229', secondaryColor:'#006100', tertiaryColor:'#ffffff', fontSize:'16px', fontFamily:'trebuchet ms, Verdana, arial'
+    const themeConfig = { startOnLoad:false, theme:'base', themeVariables:{
+        darkMode:'false',
+        primaryColor:'#BB2528',
+        primaryTextColor:'#fff',
+        primaryBorderColor:'#7C0000',
+        secondaryColor:'#006100',
+        secondaryBorderColor:'#004a00',
+        secondaryTextColor:'#fff',
+        tertiaryColor:'#ffffff',
+        tertiaryBorderColor:'#d0d0d0',
+        tertiaryTextColor:'#333',
+        noteBkgColor:'#fff5ad',
+        noteTextColor:'#333',
+        noteBorderColor:'#e0d27a',
+        lineColor:'#F8B229',
+        textColor:'#fff',
+        mainBkg:'#1e1f22',
+        errorBkgColor:'#ffffff',
+        errorTextColor:'#333'
       }, layout:'elk' };
     mermaid.initialize(themeConfig);
 

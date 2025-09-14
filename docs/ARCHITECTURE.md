@@ -7,7 +7,30 @@ Updated for 1.4.1 (adds: opportunistic in‑memory materialization eliminating a
 Simplified Mermaid (avoids subgraph + complex labels for GitHub compatibility):
 
 ```mermaid
-%%{init: { 'theme': 'base', 'themeVariables': { 'darkMode': 'true', 'primaryColor': '#BB2528', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#7C0000', 'lineColor': '#F8B229', 'secondaryColor': '#006100', 'tertiaryColor': '#ffffff', 'fontSize': '16px', 'fontFamily': 'trebuchet ms, Verdana, arial' }, 'layout': 'elk' } }%%
+---
+config:
+  theme: base
+  themeVariables:
+    darkMode: 'false'
+    primaryColor: '#BB2528'
+    primaryTextColor: '#fff'
+    primaryBorderColor: '#7C0000'
+    secondaryColor: '#006100'
+    secondaryBorderColor: '#004a00'
+    secondaryTextColor: '#fff'
+    tertiaryColor: '#ffffff'
+    tertiaryBorderColor: '#d0d0d0'
+    tertiaryTextColor: '#333'
+    noteBkgColor: '#fff5ad'
+    noteTextColor: '#333'
+    noteBorderColor: '#e0d27a'
+    lineColor: '#F8B229'
+    textColor: '#fff'
+    mainBkg: '#1e1f22'
+    errorBkgColor: '#ffffff'
+    errorTextColor: '#333'
+  layout: elk
+---
 graph TD
   Catalog[(Instruction Files)] --> Loader
   Loader --> Classifier
@@ -40,7 +63,30 @@ ASCII Fallback:
 ## Data Lifecycle
 
 ```mermaid
-%%{init: { 'theme': 'base', 'themeVariables': { 'darkMode': 'true', 'primaryColor': '#BB2528', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#7C0000', 'lineColor': '#F8B229', 'secondaryColor': '#006100', 'tertiaryColor': '#ffffff', 'fontSize': '16px', 'fontFamily': 'trebuchet ms, Verdana, arial' }, 'layout': 'elk' } }%%
+---
+config:
+  theme: base
+  themeVariables:
+    darkMode: 'false'
+    primaryColor: '#BB2528'
+    primaryTextColor: '#fff'
+    primaryBorderColor: '#7C0000'
+    secondaryColor: '#006100'
+    secondaryBorderColor: '#004a00'
+    secondaryTextColor: '#fff'
+    tertiaryColor: '#ffffff'
+    tertiaryBorderColor: '#d0d0d0'
+    tertiaryTextColor: '#333'
+    noteBkgColor: '#fff5ad'
+    noteTextColor: '#333'
+    noteBorderColor: '#e0d27a'
+    lineColor: '#F8B229'
+    textColor: '#fff'
+    mainBkg: '#1e1f22'
+    errorBkgColor: '#ffffff'
+    errorTextColor: '#333'
+  layout: elk
+---
 graph LR
   Files --> Validate --> Normalize --> Enrich --> Migrate --> Index --> Serve --> Track --> Persist --> Index
   Serve --> Metrics
@@ -236,7 +282,30 @@ Recent additions introduced a lightweight manifest write helper plus a historica
 ### Current (Baseline) Flow
 
 ```mermaid
-%%{init: { 'theme': 'base', 'themeVariables': { 'darkMode': 'true', 'primaryColor': '#BB2528', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#7C0000', 'lineColor': '#F8B229', 'secondaryColor': '#006100', 'tertiaryColor': '#ffffff', 'fontSize': '16px', 'fontFamily': 'trebuchet ms, Verdana, arial' }, 'layout': 'elk' } }%%
+---
+config:
+  theme: base
+  themeVariables:
+    darkMode: 'false'
+    primaryColor: '#BB2528'
+    primaryTextColor: '#fff'
+    primaryBorderColor: '#7C0000'
+    secondaryColor: '#006100'
+    secondaryBorderColor: '#004a00'
+    secondaryTextColor: '#fff'
+    tertiaryColor: '#ffffff'
+    tertiaryBorderColor: '#d0d0d0'
+    tertiaryTextColor: '#333'
+    noteBkgColor: '#fff5ad'
+    noteTextColor: '#333'
+    noteBorderColor: '#e0d27a'
+    lineColor: '#F8B229'
+    textColor: '#fff'
+    mainBkg: '#1e1f22'
+    errorBkgColor: '#ffffff'
+    errorTextColor: '#333'
+  layout: elk
+---
 sequenceDiagram
   participant Mutator as Mutation Tool
   participant Catalog as CatalogContext
@@ -289,7 +358,30 @@ Instrumented Event -> BufferRing.add -> synchronous full rewrite (historical-sna
 ### Revised Flow (After Optimization)
 
 ```mermaid
-%%{init: { 'theme': 'base', 'themeVariables': { 'darkMode': 'true', 'primaryColor': '#BB2528', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#7C0000', 'lineColor': '#F8B229', 'secondaryColor': '#006100', 'tertiaryColor': '#ffffff', 'fontSize': '16px', 'fontFamily': 'trebuchet ms, Verdana, arial' }, 'layout': 'elk' } }%%
+---
+config:
+  theme: base
+  themeVariables:
+    darkMode: 'false'
+    primaryColor: '#BB2528'
+    primaryTextColor: '#fff'
+    primaryBorderColor: '#7C0000'
+    secondaryColor: '#006100'
+    secondaryBorderColor: '#004a00'
+    secondaryTextColor: '#fff'
+    tertiaryColor: '#ffffff'
+    tertiaryBorderColor: '#d0d0d0'
+    tertiaryTextColor: '#333'
+    noteBkgColor: '#fff5ad'
+    noteTextColor: '#333'
+    noteBorderColor: '#e0d27a'
+    lineColor: '#F8B229'
+    textColor: '#fff'
+    mainBkg: '#1e1f22'
+    errorBkgColor: '#ffffff'
+    errorTextColor: '#333'
+  layout: elk
+---
 sequenceDiagram
   participant Event as Event Producer
   participant Ring as BufferRing
@@ -327,7 +419,30 @@ class BufferRing {
 Updated high-level component diagram (add Manifest & Historical Snapshot nodes):
 
 ```mermaid
-%%{init: { 'theme': 'base', 'themeVariables': { 'darkMode': 'true', 'primaryColor': '#BB2528', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#7C0000', 'lineColor': '#F8B229', 'secondaryColor': '#006100', 'tertiaryColor': '#ffffff', 'fontSize': '16px', 'fontFamily': 'trebuchet ms, Verdana, arial' }, 'layout': 'elk' } }%%
+---
+config:
+  theme: base
+  themeVariables:
+    darkMode: 'false'
+    primaryColor: '#BB2528'
+    primaryTextColor: '#fff'
+    primaryBorderColor: '#7C0000'
+    secondaryColor: '#006100'
+    secondaryBorderColor: '#004a00'
+    secondaryTextColor: '#fff'
+    tertiaryColor: '#ffffff'
+    tertiaryBorderColor: '#d0d0d0'
+    tertiaryTextColor: '#333'
+    noteBkgColor: '#fff5ad'
+    noteTextColor: '#333'
+    noteBorderColor: '#e0d27a'
+    lineColor: '#F8B229'
+    textColor: '#fff'
+    mainBkg: '#1e1f22'
+    errorBkgColor: '#ffffff'
+    errorTextColor: '#333'
+  layout: elk
+---
 graph TD
   Catalog[(Instruction Files)] --> Loader
   Loader --> Classifier

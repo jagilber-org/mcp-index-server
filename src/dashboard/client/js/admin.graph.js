@@ -88,16 +88,78 @@
         setGraphMetaProgress('fetched-bytes','len='+ (mermaidSource? mermaidSource.length:0));
         const effectiveLayout = layout === 'elk' ? 'elk' : 'default';
         if(effectiveLayout === 'elk') await ensureMermaidElk();
-        const configLines = [];
-  if(theme) configLines.push(`  theme: ${theme}`);
-        if(effectiveLayout === 'elk') configLines.push('  layout: elk');
-        if(configLines.length) mermaidSource = `---\nconfig:\n${configLines.join('\n')}\n---\n` + mermaidSource;
-        const ensured = ensureMermaidDirective(mermaidSource);
+        // Merge or create frontmatter ensuring single config.theme + config.layout entries
+        function mergeFrontmatter(src){
+          const wantThemeLine = theme ? `  theme: ${theme}` : null;
+          const wantLayoutLine = (effectiveLayout === 'elk') ? '  layout: elk' : null;
+          const hasFrontmatter = src.startsWith('---\n');
+          if(!hasFrontmatter){
+            const lines = ['config:'];
+            if(wantThemeLine) lines.push(wantThemeLine);
+            if(wantLayoutLine) lines.push(wantLayoutLine);
+            return `---\n${lines.join('\n')}\n---\n`+src;
+          }
+          // Split existing frontmatter header & body
+          const m = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/m.exec(src);
+          if(!m) return src; // malformed, skip
+          let header = m[1];
+          const body = m[2];
+          // Ensure config: section exists
+          if(!/^config:/m.test(header)){
+            header = 'config:\n'+header;
+          }
+            // Remove existing theme/layout lines inside config: top-level to avoid duplicates
+          header = header.split(/\r?\n/).filter(l=>!(/(^\s*theme:\s)/.test(l)||/(^\s*layout:\s)/.test(l))).join('\n');
+          // Reconstruct with desired lines appended after config:
+          const rebuilt = header.split(/\r?\n/);
+          // Find index of 'config:'
+          let cfgIdx = rebuilt.findIndex(l=>/^config:/.test(l));
+          if(cfgIdx === -1){ rebuilt.unshift('config:'); cfgIdx = 0; }
+          const inject = [];
+          if(wantThemeLine) inject.push(wantThemeLine);
+          if(wantLayoutLine) inject.push(wantLayoutLine);
+          rebuilt.splice(cfgIdx+1,0,...inject);
+          return `---\n${rebuilt.join('\n')}\n---\n${body}`;
+        }
+        mermaidSource = mergeFrontmatter(mermaidSource);
+        // Sanitize duplicated YAML mapping keys in frontmatter (e.g., accidental repeated darkMode)
+        function sanitizeFrontmatter(src){
+          if(!src || src.indexOf('---') !== 0) return src;
+          try {
+            const segMatch = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/m.exec(src);
+            if(!segMatch) return src; // not standard frontmatter pattern
+            const header = segMatch[1];
+            const body = segMatch[2];
+            const lines = header.split(/\r?\n/);
+            const seenAtIndent = {}; // key -> indent level signature
+            const out = [];
+            for(const line of lines){
+              // Match YAML simple key: value OR key: (end) respecting indentation
+              const m = /^(\s*)([A-Za-z0-9_-]+):/.exec(line);
+              if(m){
+                const indent = m[1].length;
+                const key = m[2];
+                const sig = indent+':'+key;
+                if(seenAtIndent[sig]){
+                  // Skip duplicate at same nesting level
+                  continue;
+                }
+                seenAtIndent[sig] = true;
+              }
+              out.push(line);
+            }
+            return `---\n${out.join('\n')}\n---\n${body}`;
+          } catch{ return src; }
+        }
+        let ensured = ensureMermaidDirective(mermaidSource);
+        ensured = sanitizeFrontmatter(ensured);
+        // If manual override is active, sanitize it too so duplicate keys (e.g. darkMode) don't break parse
+        let sanitizedOverride = null;
         if(manualOverride && persistedOverride){
-          // Honor manual override: don't rebuild frontmatter or replace content
+          sanitizedOverride = sanitizeFrontmatter(persistedOverride);
           setGraphMetaProgress('manual-override');
-          window.graphOriginalSource = persistedOverride;
-          if(target) target.textContent = persistedOverride;
+          window.graphOriginalSource = sanitizedOverride;
+          if(target) target.textContent = sanitizedOverride;
         } else {
           window.graphOriginalSource = ensured;
           if(target) target.textContent = ensured;
@@ -109,7 +171,7 @@
         if(window.mermaid){
           setGraphMetaProgress('render-run','a='+attemptId);
           try {
-            const renderSource = (manualOverride && persistedOverride) ? persistedOverride : ensured;
+            const renderSource = (manualOverride && sanitizedOverride) ? sanitizedOverride : ensured;
             // Lightweight syntax validation before attempting full render (helps surface parse errors explicitly)
             try {
               if(window.mermaid.parse){

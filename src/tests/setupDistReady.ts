@@ -21,6 +21,23 @@ const g = globalThis as any;
 if(!g.__SETUP_DIST_READY_INIT){
   g.__SETUP_DIST_READY_INIT = true;
   try {
+    // ------------------------------------------------------------------
+    // Test bootstrap auto-confirm default
+    // ------------------------------------------------------------------
+    // Most historical test suites pre-date the bootstrap confirmation
+    // gating flow and expect immediate mutation capability on a fresh
+    // empty instructions directory. Rather than retrofitting dozens of
+    // suites with explicit token request/finalize sequences we default
+    // MCP_BOOTSTRAP_AUTOCONFIRM=1 for the entire test process. Individual
+    // gating-focused specs (e.g., bootstrapGating.spec.ts) explicitly
+    // override this by spawning servers with MCP_BOOTSTRAP_AUTOCONFIRM='0'.
+    // If a developer wishes to exercise the true manual flow across all
+    // tests they can launch with MCP_BOOTSTRAP_AUTOCONFIRM=0 in the outer
+    // environment which will skip this default assignment.
+    if(typeof process.env.MCP_BOOTSTRAP_AUTOCONFIRM === 'undefined'){
+      process.env.MCP_BOOTSTRAP_AUTOCONFIRM = '1';
+    }
+
     // Recommendation 2: Skip production deploy auto-sync on non-Windows runners to eliminate noisy
     // "Cannot find drive 'C'" errors in Linux CI. Users can still force behavior by unsetting
     // SKIP_PROD_DEPLOY on Windows. On non-win32 platforms we set SKIP_PROD_DEPLOY=1 implicitly.

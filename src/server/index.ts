@@ -70,6 +70,7 @@ import { getBooleanEnv } from '../utils/envUtils';
 import fs from 'fs';
 import path from 'path';
 import { logInfo } from '../services/logger';
+import { forceBootstrapConfirmForTests } from '../services/bootstrapGating';
 
 // ---------------------------------------------------------------------------
 // Unified global diagnostics guard (installs once) for uncaught errors, promise
@@ -368,6 +369,14 @@ export async function main(){
     try { process.stderr.write(`[handshake-buffer] pre-start buffered=${__earlyInitChunks.length}\n`); } catch { /* ignore */ }
   }
   await startSdkServer();
+  // Auto-confirm bootstrap (test harness opt-in). Executed after SDK start so catalog state
+  // exists; harmless if already confirmed or non-bootstrap instructions present.
+  try {
+    if(process.env.MCP_BOOTSTRAP_AUTOCONFIRM === '1'){
+      const ok = forceBootstrapConfirmForTests('auto-confirm env');
+      if(ok && getBooleanEnv('MCP_LOG_DIAG')){ try { process.stderr.write('[bootstrap] auto-confirm applied (test env)\n'); } catch { /* ignore */ } }
+    }
+  } catch { /* ignore */ }
   // Start cross-instance catalog version poller unless disabled.
   try {
     // Poller now opt-in to avoid introducing timing variance into deterministic

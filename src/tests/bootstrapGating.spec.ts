@@ -32,7 +32,8 @@ describe('bootstrap gating', () => {
   let proc: ReturnType<typeof spawn> | null = null;
   afterAll(() => { try { proc?.kill(); } catch { /* ignore */ } });
   it('blocks mutation until confirmation then allows', async () => {
-    proc = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1' } });
+  // Explicitly disable auto-confirm so we validate genuine gating behavior.
+  proc = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', MCP_BOOTSTRAP_AUTOCONFIRM:'0' } });
     // Handshake
     send(proc,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'bootstrap-test', version:'0.0.0' }, capabilities:{ tools:{} } } });
     await waitForId(proc,1);
@@ -62,7 +63,7 @@ describe('bootstrap gating', () => {
 
   it('handles expired token and reference mode block', async () => {
     // Force very short TTL
-    proc = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', MCP_BOOTSTRAP_TOKEN_TTL_SEC:'1' } });
+  proc = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', MCP_BOOTSTRAP_TOKEN_TTL_SEC:'1', MCP_BOOTSTRAP_AUTOCONFIRM:'0' } });
     send(proc,{ jsonrpc:'2.0', id:11, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'bootstrap-expire', version:'0.0.0' }, capabilities:{ tools:{} } } });
     await waitForId(proc,11);
     send(proc,{ jsonrpc:'2.0', id:12, method:'tools/call', params:{ name:'bootstrap/request', arguments:{ rationale:'expire test' } } });
@@ -79,7 +80,7 @@ describe('bootstrap gating', () => {
     proc.kill();
 
     // Reference mode test
-    const procRef = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_REFERENCE_MODE:'1', MCP_ENABLE_MUTATION:'1' } });
+  const procRef = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_REFERENCE_MODE:'1', MCP_ENABLE_MUTATION:'1', MCP_BOOTSTRAP_AUTOCONFIRM:'0' } });
     send(procRef,{ jsonrpc:'2.0', id:21, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'bootstrap-ref', version:'0.0.0' }, capabilities:{ tools:{} } } });
     await waitForId(procRef,21);
     send(procRef,{ jsonrpc:'2.0', id:22, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id:'ref-block-test', title:'ref', body:'r', priority:1, audience:'agents', requirement:'optional', categories:['test'] }, overwrite:true, lax:true } } });

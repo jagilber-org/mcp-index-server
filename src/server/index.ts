@@ -60,6 +60,8 @@ import '../services/handlers.gates';
 import '../services/handlers.testPrimitive';
 import '../services/handlers.diagnostics';
 import '../services/handlers.feedback';
+import '../services/handlers.help';
+import '../services/handlers.bootstrap';
 import { getCatalogState, diagnoseInstructionsDir, startCatalogVersionPoller } from '../services/catalogContext';
 import { createDashboardServer } from '../dashboard/server/DashboardServer.js';
 import { getMetricsCollector } from '../dashboard/server/MetricsCollector.js';

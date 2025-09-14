@@ -1,0 +1,13 @@
+{
+  "id": "000-bootstrapper",
+  "title": "Bootstrap: Initial Workspace Activation",
+  "body": "Purpose: Provide a clean agent the first actionable steps to safely enable catalog mutation.\n\nSteps (agent-facing):\n1. Call tool 'bootstrap/request' to obtain a one-time confirmation token (raw token returned once; only hash persisted). Optionally pass rationale.\n2. Present the rationale + token verbatim to the human operator for explicit approval.\n3. When approved, call tool 'bootstrap/confirmFinalize' with the token.\n4. After confirmation succeeds (or if workspace already contained non-bootstrap instructions), proceed to add domain instructions using dispatcher action add (tools/call name='instructions/dispatch', arguments.action='add').\n5. Use help/overview for lifecycle & promotion guidance; keep governance markdown outside the runtime catalog.\n6. Periodically call 'bootstrap/status' and 'instructions/health' to verify confirmation + recursionRisk remains 'none'.\n\nWorkspace State Matrix:\n- Reference Mode (MCP_REFERENCE_MODE=1): Read-only forever; all mutations blocked even after finalize attempts.\n- Fresh (only bootstrap seeds present, no confirmation file): mutation_blocked with reason=bootstrap_confirmation_required.\n- Pending (token issued, not finalized): Still blocked until confirmFinalize succeeds.\n- Confirmed (confirmation file written): Mutations allowed (subject to MCP_ENABLE_MUTATION rules).\n- Existing Workspace (any non-bootstrap instruction present): Treated as implicitly activated; confirmation optional.\n\nSafety & Errors:\n- Block response shape: { error:'mutation_blocked', reason:'bootstrap_confirmation_required' }.\n- Expired token: { error:'token_expired' }.\n- Invalid token: { error:'invalid_token' }.\n- No pending token: { error:'no_pending_token' }.\n- Reference mode block: reason='reference_mode_read_only'.\n\nRenewal: If token expires before use, request a new one via 'bootstrap/request'.\n\nDo NOT brute force tokens; rate/bulk attempts may be treated as abuse defense signals.",
+  "audience": "agents",
+  "requirement": "required",
+  "priorityTier": "p0",
+  "categories": ["bootstrap","lifecycle"],
+  "owner": "system",
+  "version": 1,
+  "sourceHash": "sha256:2f42a4c8",
+  "semanticSummary": "Bootstrap activation steps with confirmation token gating mutations"
+}

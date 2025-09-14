@@ -104,6 +104,38 @@ export class CatalogLoader {
         try { emitTrace('[trace:catalog:file-begin]', { file: f, index: scannedSoFar - 1, total: files.length }); } catch { /* ignore */ }
       }
   const full = path.join(dir, f);
+      // Recursion / governance denial: prevent ingestion of files that originate from
+      // repository governance or specification seed areas that must not become part of
+      // the live instruction catalog (avoids knowledge recursion loops).
+      // We rely on a simple fast path filename / parent folder heuristic here because
+      // governance artifacts are intentionally never written into the primary instructions
+      // directory. However, defensive hardening protects against accidental copy or user
+      // misplacement (e.g., copying specs/*.json into instructions/).
+      // Deny patterns (case-insensitive):
+      //  - files whose basename starts with '000-bootstrapper' or '001-knowledge-index-lifecycle'
+      //  - any file containing '.governance.' marker (future use)
+      //  - any file named 'constitution.json'
+      //  - any file whose first line (if readable) contains marker '__GOVERNANCE_SEED__'
+      const lowerBase = f.toLowerCase();
+      let denied = false;
+      if(/^(000-bootstrapper|001-knowledge-index-lifecycle)/.test(lowerBase)) denied = true;
+      else if(lowerBase.includes('.governance.')) denied = true;
+      else if(lowerBase === 'constitution.json') denied = true;
+      if(!denied){
+        try {
+          // Very small peek (first 200 bytes) – safe even for large files
+            const peek = fs.readFileSync(full, { encoding: 'utf8', flag: 'r' }).slice(0,200);
+            if(/__GOVERNANCE_SEED__/.test(peek)) denied = true;
+        } catch { /* ignore peek errors */ }
+      }
+      if(denied){
+        if(trace) trace.push({ file:f, accepted:false, reason:'ignored:governance-denylist' });
+        if(traceEnabled(1)){
+          try { emitTrace('[trace:catalog:file-end]', { file: f, accepted: false, reason: 'ignored:governance-denylist', scanned: scannedSoFar, acceptedSoFar }); } catch { /* ignore */ }
+          try { emitTrace('[trace:catalog:file-progress]', { scanned: scannedSoFar, total: files.length, acceptedSoFar, rejectedSoFar: scannedSoFar - acceptedSoFar }); } catch { /* ignore */ }
+        }
+        continue;
+      }
       // Attempt cache reuse before any I/O beyond stat
       let reused = false;
     if(memoryCacheEnabled){

@@ -77,6 +77,8 @@ const INPUT_SCHEMAS: Record<string, object> = {
   'metrics/snapshot': { type: 'object', additionalProperties: true },
   'gates/evaluate': { type: 'object', additionalProperties: true },
   'meta/tools': { type: 'object', additionalProperties: true },
+  // onboarding / help tool (no params for v1, future may allow sections[] filtering)
+  'help/overview': { type: 'object', additionalProperties: true },
   // manifest tools (catalog manifest management)
   'manifest/status': { type: 'object', additionalProperties: true },
   'manifest/refresh': { type: 'object', additionalProperties: true },
@@ -119,6 +121,10 @@ const INPUT_SCHEMAS: Record<string, object> = {
     since: { type: 'string' }
   } },
   'feedback/health': { type: 'object', additionalProperties: true },
+  // bootstrap confirmation gating tools
+  'bootstrap/request': { type: 'object', additionalProperties: false, properties: { rationale: { type: 'string' } } },
+  'bootstrap/confirmFinalize': { type: 'object', additionalProperties: false, required: ['token'], properties: { token: { type: 'string' } } },
+  'bootstrap/status': { type: 'object', additionalProperties: true },
   // diagnostics / test-only tools (not stable)
   'diagnostics/block': { type: 'object', additionalProperties: false, required: ['ms'], properties: { ms: { type: 'number', minimum: 0, maximum: 10000 } } },
   'diagnostics/microtaskFlood': { type: 'object', additionalProperties: false, properties: { count: { type: 'number', minimum: 0, maximum: 200000 } } },
@@ -126,7 +132,7 @@ const INPUT_SCHEMAS: Record<string, object> = {
 };
 
 // Stable & mutation classification lists (mirrors usage in toolHandlers; exported to remove duplication there).
-export const STABLE = new Set(['health/check','graph/export','instructions/dispatch','instructions/governanceHash','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools','feedback/list','feedback/get','feedback/stats','feedback/health','manifest/status']);
+export const STABLE = new Set(['health/check','graph/export','instructions/dispatch','instructions/governanceHash','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools','help/overview','feedback/list','feedback/get','feedback/stats','feedback/health','manifest/status']);
 const MUTATION = new Set(['instructions/add','instructions/import','instructions/repair','instructions/reload','instructions/remove','instructions/groom','instructions/enrich','instructions/governanceUpdate','usage/flush','feedback/submit','feedback/update','manifest/refresh','manifest/repair']);
 
 export function getToolRegistry(): ToolRegistryEntry[] {
@@ -185,11 +191,15 @@ function describeTool(name: string): string {
   case 'manifest/status': return 'Report catalog manifest presence and drift summary.';
   case 'manifest/refresh': return 'Rewrite manifest from current catalog state.';
   case 'manifest/repair': return 'Repair manifest by reconciling drift with catalog.';
+  case 'bootstrap/request': return 'Request a human confirmation bootstrap token (hash persisted, raw returned once).';
+  case 'bootstrap/confirmFinalize': return 'Finalize bootstrap by submitting issued token; enables guarded mutations.';
+  case 'bootstrap/status': return 'Return bootstrap gating status (referenceMode, confirmed, requireConfirmation).';
   // diagnostics descriptions
   case 'diagnostics/block': return 'Intentionally CPU blocks the event loop for N ms (diagnostic stress).';
   case 'diagnostics/microtaskFlood': return 'Flood the microtask queue with many Promise resolutions to probe event loop starvation.';
   case 'diagnostics/memoryPressure': return 'Allocate & release transient memory to induce GC / memory pressure.';
   case 'diagnostics/handshake': return 'Return recent handshake events (ordering/ready/list_changed trace).';
+  case 'help/overview': return 'Structured onboarding guidance for new agents (tool discovery, catalog lifecycle, promotion workflow).';
     default: return 'Tool description pending.';
   }
 }

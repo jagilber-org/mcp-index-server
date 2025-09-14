@@ -242,6 +242,31 @@ export const schemas: Record<string, unknown> = {
       }
     }
   },
+  'help/overview': {
+    type: 'object',
+    additionalProperties: true,
+    required: ['generatedAt','version','sections'],
+    properties: {
+      generatedAt: { type: 'string' },
+      version: { type: 'string' },
+      summary: { type: 'string' },
+      sections: { type: 'array', items: { type: 'object', required: ['id','title','content'], additionalProperties: true, properties: {
+        id: { type: 'string' },
+        title: { type: 'string' },
+        content: { type: 'string' },
+        bullets: { type: 'array', items: { type: 'string' } },
+        nextActions: { type: 'array', items: { type: 'string' } }
+      } } },
+      lifecycleModel: { type: 'object', additionalProperties: true, properties: {
+        tiers: { type: 'array', items: { type: 'object', required: ['tier','purpose'], additionalProperties: true, properties: { tier: { type: 'string' }, purpose: { type: 'string' } } } },
+        promotionChecklist: { type: 'array', items: { type: 'string' } }
+      } },
+      toolDiscovery: { type: 'object', additionalProperties: true, properties: {
+        primary: { type: 'array', items: { type: 'string' } },
+        diagnostics: { type: 'array', items: { type: 'string' } }
+      } }
+    }
+  },
   'usage/flush': { type: 'object', required: ['flushed'], additionalProperties: false, properties: { flushed: { const: true } } },
   'instructions/reload': { type: 'object', required: ['reloaded','hash','count'], additionalProperties: false, properties: { reloaded: { const: true }, hash: { type: 'string' }, count: { type: 'number' } } },
   'instructions/remove': { type: 'object', required: ['removed','removedIds','missing','errorCount','errors'], additionalProperties: false, properties: {

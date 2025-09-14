@@ -6,6 +6,7 @@ import { hashBody } from './canonical';
 import { InstructionEntry } from '../models/instruction';
 import { registerHandler } from '../server/registry';
 import { computeGovernanceHash, ensureLoaded, invalidate, projectGovernance, getInstructionsDir, touchCatalogVersion, getDebugCatalogSnapshot } from './catalogContext';
+import { BOOTSTRAP_ALLOWLIST } from './bootstrapGating';
 import path from 'path';
 import { incrementCounter } from './features';
 import { SCHEMA_VERSION } from '../versioning/schemaVersion';
@@ -864,7 +865,37 @@ registerHandler('instructions/governanceHash', ()=>{
   return { count: projections.length, governanceHash, items: projections };
 });
 
-registerHandler('instructions/health', ()=>{ const st=ensureLoaded(); const governanceHash = computeGovernanceHash(st.list); const snapshot=path.join(process.cwd(),'snapshots','canonical-instructions.json'); if(!fs.existsSync(snapshot)) return { snapshot:'missing', hash: st.hash, count: st.list.length, governanceHash }; try { const raw = JSON.parse(fs.readFileSync(snapshot,'utf8')) as { items?: { id:string; sourceHash:string }[] }; const snapItems=raw.items||[]; const snapMap=new Map(snapItems.map(i=>[i.id,i.sourceHash] as const)); const missing:string[]=[]; const changed:string[]=[]; for(const e of st.list){ const h=snapMap.get(e.id); if(h===undefined) missing.push(e.id); else if(h!==e.sourceHash) changed.push(e.id); } const extra=snapItems.filter(i=> !st.byId.has(i.id)).map(i=>i.id); return { snapshot:'present', hash: st.hash, count: st.list.length, missing, changed, extra, drift: missing.length+changed.length+extra.length, governanceHash }; } catch(e){ return { snapshot:'error', error: e instanceof Error? e.message: String(e), hash: st.hash, governanceHash }; } });
+registerHandler('instructions/health', ()=>{ const st=ensureLoaded(); const governanceHash = computeGovernanceHash(st.list);
+  // Recursion / governance leakage assessment (refined: keyword hits alone no longer elevate risk).
+  const total = st.list.length || 1; // avoid div by zero
+  const governanceKeywords = ['constitution','quality gate','p1 ','p0 ','lifecycle','governance','bootstrapper'];
+  let governanceLike = 0; let keywordHit = 0;
+  for(const e of st.list){
+    const body = (e.body||'').toLowerCase();
+    const title = (e.title||'').toLowerCase();
+    const composite = title + '\n' + body.slice(0,2000); // cap scan window
+    // Strict seed / bootstrap identifiers (only these contribute to governanceLike risk score)
+    if(/__governance_seed__/.test(composite) || /^000-bootstrapper/.test(e.id) || /^001-knowledge-index-lifecycle/.test(e.id)){
+      governanceLike++; continue;
+    }
+    // Soft keyword heuristic (informational only now)
+    if(governanceKeywords.some(k=> composite.includes(k))){ keywordHit++; }
+  }
+  // Revised: leakageRatio now only reflects strict governanceLike seeds, isolating true recursion risk.
+  const leakageRatio = governanceLike / total;
+  // Treat bootstrap seed ids as safe (do not elevate recursionRisk)
+  const effectiveGovernanceLike = (ensureLoaded().list.filter(e=> e && (e as { id:string }).id && !BOOTSTRAP_ALLOWLIST.has((e as { id:string }).id)).length === 0) ? 0 : governanceLike;
+  // Subtract allowlisted bootstrap ids entirely; they should never influence escalation.
+  let recursionRisk: 'none' | 'warning' | 'critical';
+  try {
+    const st3 = ensureLoaded();
+    const allowlistedCount = st3.list.filter(e=> BOOTSTRAP_ALLOWLIST.has(e.id)).length;
+    const adjusted = Math.max(0, governanceLike - allowlistedCount);
+    recursionRisk = adjusted === 0 ? 'none' : (leakageRatio < 0.01 ? 'warning' : 'critical');
+  } catch {
+    recursionRisk = effectiveGovernanceLike === 0 ? 'none' : (leakageRatio < 0.01 ? 'warning' : 'critical');
+  }
+  const snapshot=path.join(process.cwd(),'snapshots','canonical-instructions.json'); if(!fs.existsSync(snapshot)) return { snapshot:'missing', hash: st.hash, count: st.list.length, governanceHash, recursionRisk, leakage: { governanceLike, keywordHit, leakageRatio } }; try { const raw = JSON.parse(fs.readFileSync(snapshot,'utf8')) as { items?: { id:string; sourceHash:string }[] }; const snapItems=raw.items||[]; const snapMap=new Map(snapItems.map(i=>[i.id,i.sourceHash] as const)); const missing:string[]=[]; const changed:string[]=[]; for(const e of st.list){ const h=snapMap.get(e.id); if(h===undefined) missing.push(e.id); else if(h!==e.sourceHash) changed.push(e.id); } const extra=snapItems.filter(i=> !st.byId.has(i.id)).map(i=>i.id); return { snapshot:'present', hash: st.hash, count: st.list.length, missing, changed, extra, drift: missing.length+changed.length+extra.length, governanceHash, recursionRisk, leakage: { governanceLike, keywordHit, leakageRatio } }; } catch(e){ return { snapshot:'error', error: e instanceof Error? e.message: String(e), hash: st.hash, governanceHash, recursionRisk, leakage: { governanceLike, keywordHit, leakageRatio } }; } });
   attemptManifestUpdate();
 
 // Enrichment persistence tool: rewrites placeholder governance fields on disk to normalized values

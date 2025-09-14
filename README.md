@@ -250,6 +250,46 @@ If VS Code shows "Configured but Not Connected":
 * ✅ **Security**: Input validation, mutation gating, audit logging
 * ✅ **Performance**: Optimized for <50ms response times
 
+### 🔑 Bootstrap Flow (Activation & Gating)
+
+The server ships with two minimal bootstrap seed instructions (`000-bootstrapper`, `001-lifecycle-bootstrap`). They enable a clean agent to understand how to safely activate mutation while preventing governance recursion.
+
+Bootstrap tools:
+
+* `bootstrap/status` – Inspect current gating state (referenceMode, confirmed, requireConfirmation)
+* `bootstrap/request` – Issue one-time confirmation token (hash persisted only)
+* `bootstrap/confirmFinalize` – Finalize activation using token
+
+Workspace states:
+
+| State | Conditions | Mutation | Notes |
+|-------|-----------|----------|-------|
+| Reference Mode | `MCP_REFERENCE_MODE=1` | Blocked | Read-only reference server (never mutates) |
+| Fresh | Only bootstrap seeds present, no confirmation file | Blocked (reason=bootstrap_confirmation_required) | Request + finalize to enable |
+| Pending | Token issued, not finalized | Blocked | Re-request if expired |
+| Confirmed | Confirmation file written | Allowed (subject to `MCP_ENABLE_MUTATION`) | Persistent across restarts |
+| Existing | Any non-bootstrap instruction already present | Allowed | Treated as implicitly active |
+
+Error contract examples:
+
+```jsonc
+{ "error":"mutation_blocked", "reason":"bootstrap_confirmation_required" }
+{ "error":"mutation_blocked", "reason":"reference_mode_read_only" }
+{ "result": { "error":"token_expired" } }
+```
+
+Token lifecycle:
+
+1. `bootstrap/request` → returns `{ token, expiresAt }`
+2. Human reviews rationale & approves
+3. `bootstrap/confirmFinalize` with token → writes confirmation file
+4. Dispatcher mutation actions now proceed (if mutation not globally disabled)
+
+Recursion risk: bootstrap IDs are allowlisted and subtracted from governance leakage metrics—`instructions/health` should continue to report `recursionRisk: "none"` after activation.
+
+Reference-only deployments: set `MCP_REFERENCE_MODE=1` to expose catalog safely to exploratory agents without risk of mutation.
+
+
 ### Available Tools
 
 ## Instruction Governance (v0.7.0+)

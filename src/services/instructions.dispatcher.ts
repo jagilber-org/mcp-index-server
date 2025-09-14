@@ -3,6 +3,7 @@ import { instructionActions } from './handlers.instructions';
 import { semanticError } from './errors';
 import { traceEnabled, emitTrace } from './tracing';
 import { getInstructionsDir, ensureLoaded } from './catalogContext';
+import { mutationGatedReason } from './bootstrapGating';
 
 // Dispatcher input type (loosely typed for now; validation handled by upstream schema layer soon)
 interface DispatchBase { action: string }
@@ -126,6 +127,13 @@ registerHandler('instructions/dispatch', async (params: DispatchParams) => {
   // MCP_ENABLE_MUTATION is not globally enabled.
   (rest as Record<string, unknown>)._viaDispatcher = true;
   const hStart = timing? Date.now():0;
+  // Gating: block mutation targets if bootstrap confirmation required or reference mode active.
+  if(mutationMethods.has(target)){
+    const gated = mutationGatedReason();
+    if(gated){
+      return { error:'mutation_blocked', reason: gated, target: action, bootstrap: true };
+    }
+  }
   const out = await Promise.resolve(handler(rest));
   if(traceEnabled(1)){
     try { emitTrace('[trace:dispatch:handler]', { action, elapsed: timing? (Date.now()-hStart): undefined, total: timing? (Date.now()-t0): undefined }); } catch { /* ignore */ }

@@ -1,0 +1,13 @@
+{
+  "id": "001-lifecycle-bootstrap",
+  "title": "Lifecycle Bootstrap: Local-First Instruction Strategy",
+  "body": "Purpose: Provide early lifecycle guidance after bootstrap confirmation (or implicit activation in existing workspace).\n\nAgent Action Model (post-confirm or existing workspace):\n1. Add only minimal, local, high-signal instructions (P0/P1).\n2. Before adding, query via instructions/dispatch (actions: list/search/query) to avoid duplication.\n3. Monitor 'instructions/health' (recursionRisk should remain 'none') and 'bootstrap/status' (confirmed stays true).\n4. Promote instructions (priorityTier bump or export) only after usage stability (low churn, multi-session usage, cross-category relevance).\n5. Use feedback/submit for anomalies, improvements, or drift signals.\n6. Avoid embedding tool catalogs—use dynamic discovery (tools/list, help/overview).\n7. Reference mode (MCP_REFERENCE_MODE=1): treat catalog as immutable; do not attempt mutations.\n8. If confirmation ever needed in a derivative workspace: bootstrap/request → bootstrap/confirmFinalize.\n\nPromotion Signals (all strongly suggested):\n- Repeated multi-session invocation.\n- Cross-team or cross-scope applicability.\n- Stabilized wording (few edits across time).\n\nNever embed secrets, credentials, or volatile configuration. Governance markdown remains outside runtime catalog.",
+  "audience": "agents",
+  "requirement": "recommended",
+  "priorityTier": "p1",
+  "categories": ["bootstrap","lifecycle"],
+  "owner": "system",
+  "version": 1,
+  "sourceHash": "sha256:7d9c1b21",
+  "semanticSummary": "Lifecycle and promotion guardrails after bootstrap confirmation"
+}

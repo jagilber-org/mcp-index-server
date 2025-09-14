@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import os from 'node:os';
 
 // Utility to get numeric env with fallback
 function envNum(name: string, def: number): number {
@@ -26,10 +27,13 @@ async function gotoAdmin(page: Page){
   }
   throw lastErr || new Error('Failed to load /admin after retries');
 }
-const PLATFORM = process.platform; // used in snapshot file naming
+// (platform captured via os.platform() inside snap())
 
 function snap(region: string, browserName: string) {
-  return `${region}-${browserName}-${PLATFORM}.png`;
+  const platform = os.platform();
+  // Normalize (defensive) – if region already contains browser/platform suffix avoid duplication
+  const base = `${region}-${browserName}-${platform}`;
+  return base.replace(/(-chromium|-firefox|-webkit)?-(win32|darwin|linux)(?:-\1-(?:win32|darwin|linux))?/, `$1-$2`) + '.png';
 }
 
 // Tag: @baseline - used for drift detection runs
@@ -212,7 +216,8 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
     });
     test.info().annotations.push({ type: 'perf', description: 'graph-mermaid-raw-text-snapshot' });
     // Use a textual snapshot (adds .txt) rather than visual PNG
-    expect(normalized).toMatchSnapshot(`graph-mermaid-raw-${browserName}-${PLATFORM}.txt`);
+  const platform = os.platform();
+  expect(normalized).toMatchSnapshot(`graph-mermaid-raw-${browserName}-${platform}.txt`);
   });
 
   test('capture visual snapshot of graph mermaid (rendered diagram, best-effort)', async ({ page, browserName }) => {

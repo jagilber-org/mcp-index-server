@@ -630,6 +630,29 @@
                         if(cpuVal >=85 && !normalized.issues.some(i=>/high cpu/i.test(i))) normalized.issues.push('High CPU usage');
                     }
                 }
+                // Inject Memory check if not present (heap usage based) using resource trend cache or lastSystemStats
+                if(!normalized.checks.memory){
+                    let memPercent = undefined;
+                    // Prefer resource trend cache heap metrics if available
+                    if(window.__resourceTrendCache && typeof window.__resourceTrendCache.latestHeap === 'number' && typeof window.__resourceTrendCache.latestHeapTotal === 'number'){
+                        if(window.__resourceTrendCache.latestHeapTotal > 0){
+                            memPercent = (window.__resourceTrendCache.latestHeap / window.__resourceTrendCache.latestHeapTotal) * 100;
+                        }
+                    } else if(window.lastSystemStats && window.lastSystemStats.memoryUsage && typeof window.lastSystemStats.memoryUsage.heapUsed === 'number' && typeof window.lastSystemStats.memoryUsage.heapTotal === 'number') {
+                        if(window.lastSystemStats.memoryUsage.heapTotal > 0){
+                            memPercent = (window.lastSystemStats.memoryUsage.heapUsed / window.lastSystemStats.memoryUsage.heapTotal) * 100;
+                        }
+                    }
+                    if(typeof memPercent === 'number'){
+                        // Thresholds: <70 ok, 70-90 warn (still ok), >90 fail
+                        normalized.checks.memory = memPercent < 90;
+                        if(memPercent >= 90 && !normalized.issues.some(i=>/high memory/i.test(i))) normalized.issues.push('High memory usage');
+                        // Provide a leak / growth recommendation if increasing trend and above moderate threshold
+                        if(health.memoryTrend === 'increasing' && memPercent >= 75 && !normalized.recommendations.some(r=>/investigate memory growth/i.test(r))){
+                            normalized.recommendations.push('Investigate memory growth – potential leak risk');
+                        }
+                    }
+                }
             } catch{/*ignore*/}
             // Uptime regression styling escalation: if an issue contains 'Uptime regression' force critical indicator
             let statusOverride = normalized.status;

@@ -52,7 +52,8 @@
   "pw:baseline": "node scripts/run-playwright.mjs --grep @baseline --update",
   "pw:drift": "node scripts/run-playwright.mjs --grep @baseline",
   "pw:drift:report": "npm run pw:drift && node scripts/generate-drift-report.mjs",
-  "pw:drift:ci": "cross-env DRIFT_BROWSERS=chromium,firefox npm run pw:drift:report"
+  "pw:drift:ci": "cross-env DRIFT_BROWSERS=chromium,firefox npm run pw:drift:report",
+  "dash:seed": "node scripts/seed-dashboard-fixtures.mjs"
   },
   "devDependencies": {
   "@playwright/test": "^1.47.2",

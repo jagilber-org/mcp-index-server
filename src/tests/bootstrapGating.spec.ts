@@ -1,5 +1,7 @@
 import { spawn } from 'child_process';
 import path from 'path';
+import os from 'os';
+import fs from 'fs';
 import { describe, it, expect, afterAll } from 'vitest';
 
 function send(proc: ReturnType<typeof spawn>, msg: unknown){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
@@ -32,8 +34,12 @@ describe('bootstrap gating', () => {
   let proc: ReturnType<typeof spawn> | null = null;
   afterAll(() => { try { proc?.kill(); } catch { /* ignore */ } });
   it('blocks mutation until confirmation then allows', async () => {
-  // Explicitly disable auto-confirm so we validate genuine gating behavior.
-  proc = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', MCP_BOOTSTRAP_AUTOCONFIRM:'0' } });
+    // Use isolated temporary instructions directory so a previously persisted
+    // bootstrap.confirmed.json from other suites (auto-confirm path) does not
+    // short‑circuit gating. This ensures we exercise the true token flow.
+    const isolated = fs.mkdtempSync(path.join(os.tmpdir(), 'bootstrap-gating-'));
+    // Explicitly disable auto-confirm so we validate genuine gating behavior.
+    proc = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', MCP_BOOTSTRAP_AUTOCONFIRM:'0', INSTRUCTIONS_DIR: isolated } });
     // Handshake
     send(proc,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'bootstrap-test', version:'0.0.0' }, capabilities:{ tools:{} } } });
     await waitForId(proc,1);
@@ -62,8 +68,10 @@ describe('bootstrap gating', () => {
   }, 30000);
 
   it('handles expired token and reference mode block', async () => {
-    // Force very short TTL
-  proc = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', MCP_BOOTSTRAP_TOKEN_TTL_SEC:'1', MCP_BOOTSTRAP_AUTOCONFIRM:'0' } });
+    // Force very short TTL. Use isolated instructions directory again to avoid
+    // bleed-over from earlier tests.
+    const isolated = fs.mkdtempSync(path.join(os.tmpdir(), 'bootstrap-gating-expire-'));
+    proc = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', MCP_BOOTSTRAP_TOKEN_TTL_SEC:'1', MCP_BOOTSTRAP_AUTOCONFIRM:'0', INSTRUCTIONS_DIR: isolated } });
     send(proc,{ jsonrpc:'2.0', id:11, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'bootstrap-expire', version:'0.0.0' }, capabilities:{ tools:{} } } });
     await waitForId(proc,11);
     send(proc,{ jsonrpc:'2.0', id:12, method:'tools/call', params:{ name:'bootstrap/request', arguments:{ rationale:'expire test' } } });
@@ -80,7 +88,8 @@ describe('bootstrap gating', () => {
     proc.kill();
 
     // Reference mode test
-  const procRef = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_REFERENCE_MODE:'1', MCP_ENABLE_MUTATION:'1', MCP_BOOTSTRAP_AUTOCONFIRM:'0' } });
+    const isolatedRef = fs.mkdtempSync(path.join(os.tmpdir(), 'bootstrap-gating-ref-'));
+    const procRef = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_REFERENCE_MODE:'1', MCP_ENABLE_MUTATION:'1', MCP_BOOTSTRAP_AUTOCONFIRM:'0', INSTRUCTIONS_DIR: isolatedRef } });
     send(procRef,{ jsonrpc:'2.0', id:21, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'bootstrap-ref', version:'0.0.0' }, capabilities:{ tools:{} } } });
     await waitForId(procRef,21);
     send(procRef,{ jsonrpc:'2.0', id:22, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id:'ref-block-test', title:'ref', body:'r', priority:1, audience:'agents', requirement:'optional', categories:['test'] }, overwrite:true, lax:true } } });

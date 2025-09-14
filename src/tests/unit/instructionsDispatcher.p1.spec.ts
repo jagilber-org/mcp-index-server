@@ -21,6 +21,14 @@ describe('instructions dispatcher (P1)', () => {
   await import('../../services/handlers.instructions');
   // @ts-expect-error dynamic side-effect import path
   await import('../../services/instructions.dispatcher');
+  // Import bootstrap gating helper and force confirm to bypass gating for this
+  // legacy dispatcher unit test which focuses on ordering & catalog semantics.
+  try {
+  const gating = await import('../../services/bootstrapGating.js');
+    if((gating as any).forceBootstrapConfirmForTests){
+      (gating as any).forceBootstrapConfirmForTests('dispatcher.p1.spec auto-confirm');
+    }
+  } catch {/* ignore */}
   });
 
   it('add -> list(expectId) ordering + duplicate skip + search/diff/export/query/categories/remove cycle', async () => {

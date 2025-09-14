@@ -722,6 +722,38 @@ No client changes required. Enable `MCP_CATALOG_MEMOIZE=1` (and optionally `MCP_
 
 ## [1.5.0] - 2025-09-14
 
-### Added
+### Added (bootstrap gating & safety)
 
-- Bootstrap confirmation gating, minimal seed instructions, recursion risk refinement, perf baseline tooling
+- Bootstrap confirmation gating flow (`requestBootstrapToken` → `finalizeBootstrapToken`) requiring explicit human confirmation artifact before enabling broad mutation operations.
+- Minimal allow‑listed seed instruction IDs (000 / 001) excluded from recursion and leakage risk metrics to guarantee a safe tool discovery baseline.
+- Human confirmation persistence (`bootstrap.confirmed.json`) with token TTL enforcement and rejection reasons (`mutation_blocked`, `token_invalid`, `token_expired`).
+
+### Added (governance & risk instrumentation)
+
+- Recursion/leakage risk metrics capturing self‑referential or cyclic instruction body/category link detection; aggregated risk summary surfaced via governance hash pathways.
+- Performance baseline tooling (`perf-baseline.mjs`, compare, trend, summary scripts) now integrated with release workflow enabling drift detection on CPU time & RSS.
+- Baseline auto-confirm test helper (`forceBootstrapConfirmForTests`) gated by `MCP_BOOTSTRAP_AUTOCONFIRM` for legacy suite compatibility without weakening production gating semantics.
+
+### Changed (test infrastructure)
+
+- Global test setup (`setupDistReady.ts`) defaults `MCP_BOOTSTRAP_AUTOCONFIRM=1` unless explicitly disabled, restoring green for historical mutation suites while preserving a dedicated authentic gating spec.
+- `bootstrapGating.spec.ts` isolated via per‑test temporary `INSTRUCTIONS_DIR` ensuring real token lifecycle coverage (block → issue token → finalize → unblocked).
+- Dispatcher P1 unit test adapted to force confirmation post dynamic import keeping focus on catalog ordering semantics.
+
+### Governance (baseline change control)
+
+- Added §14.5 BASELINE-CR (noise‑suppression allow‑list) to `INTERNAL-BASELINE.md` covering bootstrap gating, manifest lifecycle & schema validation, governance recursion guard, search/versioning, graph export enriched/mermaid variants, onboarding helper, and visibility invariant spec (early warning only).
+- Updated baseline sentinel and guard allow-list (noise suppression only; minimal invariant suite unchanged per §6 baseline plan).
+
+### Notes (1.5.0)
+
+- Minor release justified by additive safety gating mechanism and new performance & risk instrumentation surfaces; no breaking tool schema changes.
+- Production deployments must perform a one‑time bootstrap confirmation; tests emulate confirmation automatically unless deliberately disabled.
+- Future hardening roadmap: elevate selected noise‑suppression specs (manifest fastload, recursion guard) to minimal invariant status via separate BASELINE-CR once semantics fully stabilized.
+
+### Upgrade Guidance (1.5.0)
+
+1. Pull & rebuild (`npm ci && npm run build`).
+2. Start server; obtain bootstrap token via governance tool / log prompt; finalize to enable general mutation.
+3. For CI deterministic runs ensure `MCP_BOOTSTRAP_AUTOCONFIRM=1` (unless explicitly validating gating flow) and keep `BASELINE_ENFORCE=1` for guard execution.
+4. Monitor performance baseline summaries for drift (`npm run perf:drift`).

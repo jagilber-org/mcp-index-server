@@ -288,6 +288,26 @@ Approval: Maintainers consensus (inline doc). Sentinel updated in this commit.
 Status: ACTIVE.
 ```
 
+### 14.5 Approved Change Request (2025-09-14) – Noise Suppression Allow‑List (Bootstrap Gating, Manifest Lifecycle, Search & Governance Recursion Guards)
+
+```text
+CHANGE REQUEST: Allow-list additional deterministic, low‑risk diagnostic and governance coverage specs (bootstrap gating, manifest lifecycle & schema validation, search & versioning governance, recursion guard, onboarding help, graph export visualization variants) to suppress baseline guard noise while preserving strict minimal invariant scope.
+Justification:
+   • `bootstrapGating.spec.ts` – Verifies human confirmation token flow (request → finalize) + negative mutation gating; essential safety signal but not yet a Phase 6 minimal invariant (human step dependency).
+   • `addVisibilityInvariant.spec.ts` – Strengthens immediate add→list visibility regression detection beyond minimal smoke; kept as early warning only.
+   • Manifest suite (`manifestEdgeCases.spec.ts`, `manifestFastload.spec.ts`, `manifestLifecycle.spec.ts`, `manifestSchemaValidation.spec.ts`, `manifestSkip.spec.ts`) – Validates emerging manifest observability & fastload roadmap; currently evolving, not frozen enough for minimal set.
+   • Governance & versioning (`instructionsGovernanceVersion.spec.ts`, `instructionsVersionChangeLog.spec.ts`) – Tracks version bump semantics & change log emission; still iterating on format stability.
+   • Search & relevance (`instructionsSearch.spec.ts`) – Functional correctness + ranking heuristics subject to near‑term refinement.
+   • Recursion / self‑reference guard (`governanceRecursionGuard.spec.ts`) – Ensures instruction self-referential recursion leakage is blocked; early warning only while policy stabilizes.
+   • Graph export enriched & mermaid variants (`graphExport.enriched.spec.ts`, `graphExport.mermaid.spec.ts`) – Visualization serialization formats (extended metadata + Mermaid DSL) are experimental; deterministic assertions may tighten later.
+   • Onboarding helper (`onboardingHelp.spec.ts`) – Validates curated onboarding / help catalog presence; content still iterative.
+Scope Clarification: NONE of these expand §6 Minimal Invariant Suite. They are noise‑suppression allow‑list additions whose failure does NOT constitute a baseline break; they serve as proactive regression detectors and feed future hardening CRs.
+Risk: Mild risk of brittle assertions amidst rapid manifest & visualization iteration; mitigated by isolation (temp directories) and soft‑scoped allow‑list (removable without destabilizing baseline invariants).
+Rollback Plan: Remove spec files (or park), delete their entries from `scripts/guard-baseline.mjs` allow-list, excise this §14.5 block, run `npm run baseline:sentinel:update`, commit with `BASELINE-CR:` marker.
+Approval: Maintainers consensus (inline per §14.1 process for low‑risk noise suppression).
+Status: ACTIVE – Sentinel updated in this commit.
+```
+
 NOTE: Future hardening will introduce a follow-up BASELINE-CR converting soft expectations in `governanceHashHardening.spec.ts` to strict invariants once semanticSummary + changeLog hash transitions are deterministic across all execution modes.
 
 ## 15. Execution Log (Authoritative)

@@ -150,6 +150,24 @@ allowedAdditional.push(
 // part of the minimal invariant suite; failures are early warning only. See INTERNAL-BASELINE.md §14.4.
 allowedAdditional.push('graphExport.spec.ts');
 
+// Noise suppression allow-list (2025-09-14 BASELINE-CR 14.5): bootstrap gating, manifest, search, governance recursion, visibility invariant, versioning, onboarding, graph export variants
+allowedAdditional.push(
+  'bootstrapGating.spec.ts',
+  'addVisibilityInvariant.spec.ts',
+  'manifestEdgeCases.spec.ts',
+  'manifestFastload.spec.ts',
+  'manifestLifecycle.spec.ts',
+  'manifestSchemaValidation.spec.ts',
+  'manifestSkip.spec.ts',
+  'instructionsSearch.spec.ts',
+  'instructionsGovernanceVersion.spec.ts',
+  'instructionsVersionChangeLog.spec.ts',
+  'governanceRecursionGuard.spec.ts',
+  'graphExport.enriched.spec.ts',
+  'graphExport.mermaid.spec.ts',
+  'onboardingHelp.spec.ts'
+);
+
 // Enforce no unexpected test expansion when BASELINE_ENFORCE=1
 if (process.env.BASELINE_ENFORCE === '1') {
   const allowed = new Set([...minimalTests, ...allowedAdditional]);

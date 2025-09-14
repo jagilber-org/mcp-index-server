@@ -25,7 +25,7 @@ test.describe('Dashboard Control Functionality @baseline', () => {
     }
   });
 
-  test('instructions section refresh & editor open optional', async ({ page }) => {
+  test('instructions section refresh & editor open', async ({ page }) => {
     await goto(page);
     await page.click('.nav-btn[data-section="instructions"]');
     await page.waitForSelector('#instructions-list');
@@ -36,23 +36,18 @@ test.describe('Dashboard Control Functionality @baseline', () => {
       await page.waitForTimeout(200);
     }
     const first = page.locator('#instructions-list .instruction-item').first();
-    if (await first.count()) {
-      await first.click();
-      await expect(page.locator('#instruction-editor')).toBeVisible({ timeout: 5000 });
-    }
+    await first.waitFor({ timeout: 5000 });
+    await first.click();
+    await expect(page.locator('#instruction-editor')).toBeVisible({ timeout: 5000 });
   });
 
   test('log tail start/stop cycle', async ({ page }) => {
     await goto(page);
     const btn = page.locator('#log-tail-btn');
-    try {
-      await expect(btn).toBeVisible({ timeout: 4000 });
-      await btn.click();
-      await page.waitForTimeout(300);
-      if (await btn.isVisible()) await btn.click();
-    } catch {
-      test.skip(true, 'Log tail button hidden');
-    }
+    await expect(btn).toBeVisible({ timeout: 4000 });
+    await btn.click();
+    await page.waitForTimeout(300);
+    if (await btn.isVisible()) await btn.click();
   });
 
   test('graph toggles enrichment/categories/usage', async ({ page }) => {
@@ -78,11 +73,7 @@ test.describe('Dashboard Control Functionality @baseline', () => {
     await goto(page);
     await expect(page.locator('#system-health')).toBeVisible();
     const perfCard = page.locator('.admin-card .card-title:has-text("Performance")');
-    try {
-      await perfCard.first().waitFor({ timeout: 2000 });
-      await expect(perfCard.first()).toBeVisible();
-    } catch {
-      test.skip(true, 'Performance card not present');
-    }
+    await perfCard.first().waitFor({ timeout: 4000 });
+    await expect(perfCard.first()).toBeVisible();
   });
 });

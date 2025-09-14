@@ -31,6 +31,7 @@ process.env.DRIFT_MAX_DIFF_PIXELS = process.env.DRIFT_MAX_DIFF_PIXELS || '250'; 
 
 export default defineConfig({
   testDir: 'tests/playwright',
+  globalSetup: require.resolve('./tests/playwright/global-setup'),
   timeout: 45_000,
   fullyParallel: true,
   expect: { timeout: 7_500 },

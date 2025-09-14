@@ -81,11 +81,8 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
       if (dbg && /"stage"\s*:\s*"renderInstructionList"/.test(dbg.textContent||'')) return true;
       return false;
     }, { timeout: 12000 });
-    if (await rows.count()) {
-      await expect(rows.first().locator('.instruction-name')).toBeVisible();
-    } else {
-      test.skip(true, 'No instructions present (empty catalog)');
-    }
+    // With deterministic seeding we expect at least one instruction
+    await expect(rows.first().locator('.instruction-name')).toBeVisible();
   });
 
   test('capture visual snapshot of system health card', async ({ page, browserName }) => {
@@ -148,20 +145,16 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
     await expect(list).toBeVisible();
     // Open first instruction row to reveal editor (if empty, skip)
   const firstRow = list.locator('.instruction-item').first();
-    try {
-      await firstRow.waitFor({ timeout: 15000 });
-      await firstRow.click();
-      const editor = page.locator('#instruction-editor');
-      await editor.waitFor({ state: 'visible', timeout: 10000 });
-      const shot = await editor.screenshot();
-      test.info().annotations.push({ type: 'perf', description: 'instruction-editor-screenshot' });
-  expect(shot).toMatchSnapshot(snap('instruction-editor', browserName), {
-        maxDiffPixelRatio: MAX_DIFF_RATIO,
-        maxDiffPixels: MAX_DIFF_PIXELS
-      });
-    } catch {
-      test.skip(true, 'No rows available to open editor');
-    }
+    await firstRow.waitFor({ timeout: 15000 });
+    await firstRow.click();
+    const editor = page.locator('#instruction-editor');
+    await editor.waitFor({ state: 'visible', timeout: 10000 });
+    const shot = await editor.screenshot();
+    test.info().annotations.push({ type: 'perf', description: 'instruction-editor-screenshot' });
+    expect(shot).toMatchSnapshot(snap('instruction-editor', browserName), {
+      maxDiffPixelRatio: MAX_DIFF_RATIO,
+      maxDiffPixels: MAX_DIFF_PIXELS
+    });
   });
 
   test('capture visual snapshot of log tail panel (activated if available)', async ({ page, browserName }) => {
@@ -169,12 +162,8 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
     await gotoAdmin(page);
     // Start tail
     const tailBtn = page.locator('#log-tail-btn');
-    try {
-      await expect(tailBtn).toBeVisible({ timeout: 4000 });
-      await tailBtn.click();
-    } catch {
-      test.skip(true, 'Log tail button not visible');
-    }
+    await expect(tailBtn).toBeVisible({ timeout: 4000 });
+    await tailBtn.click();
     // Heuristic wait for logs to populate (tail container assumed near button)
     await page.waitForTimeout(1200);
     // Narrow region: reuse surrounding container (assume button parent card)
@@ -231,15 +220,11 @@ test.describe('Admin Dashboard Baseline @baseline', () => {
   return (txt.includes('graph ') || txt.includes('flowchart ')) && !txt.includes('(loading');
     }, { timeout: 15000 });
     // Attempt to wait for rendered SVG (external mermaid script). If not present, skip to avoid flake.
-    try {
-      await page.waitForFunction(() => {
-        const rendered = document.getElementById('graph-mermaid-rendered');
-        const svgHost = document.querySelector('#graph-mermaid-svg svg');
-        return !!rendered && rendered.style.display !== 'none' && !!svgHost;
-      }, { timeout: 15000 });
-    } catch {
-      test.skip(true, 'Rendered mermaid diagram not available (CDN or timing)');
-    }
+    await page.waitForFunction(() => {
+      const rendered = document.getElementById('graph-mermaid-rendered');
+      const svgHost = document.querySelector('#graph-mermaid-svg svg');
+      return !!rendered && rendered.style.display !== 'none' && !!svgHost;
+    }, { timeout: 15000 });
     const renderedWrapper = page.locator('#graph-mermaid-rendered');
     await expect(renderedWrapper).toBeVisible();
     const shot = await renderedWrapper.screenshot();

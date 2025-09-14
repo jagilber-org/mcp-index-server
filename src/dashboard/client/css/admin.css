@@ -123,6 +123,35 @@ button.action-btn.warning { background:linear-gradient(45deg,#f39c12,#d68910); c
 button.action-btn.danger { background:linear-gradient(45deg,#c0392b,#922b21); color:#fff; }
 button.action-btn.warning:hover { filter:brightness(1.1); }
 button.action-btn.danger:hover { filter:brightness(1.08); }
+/* Size variants */
+button.action-btn.sm { padding:4px 10px; font-size:11px; border-radius:14px; }
+button.action-btn.xs { padding:3px 8px; font-size:10px; border-radius:12px; }
+
+/* Generic toolbar layout helpers for de-inline-izing admin.html styles */
+.toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; }
+.toolbar .stack { display:flex; flex-direction:column; gap:6px; font-size:11px; padding-top:2px; }
+.toolbar .stack.tight { gap:4px; }
+.toolbar .flags { display:flex; flex-direction:column; gap:4px; font-size:11px; }
+.toolbar .actions { display:flex; flex-direction:column; gap:6px; font-size:11px; padding-top:2px; }
+.toolbar label.block { font-size:12px; display:flex; flex-direction:column; gap:4px; }
+
+/* Graph toolbar refinements (applied to .graph-toolbar which now also has .toolbar) */
+.graph-toolbar select[multiple] { min-width:170px; background:#1f2a3a; color:#d0d7e2; border:1px solid #2d3b4f; border-radius:4px; padding:4px; }
+.graph-toolbar select[multiple]#drill-instructions { min-width:230px; max-width:320px; }
+.graph-toolbar .stack button.action-btn { padding:6px 10px; }
+.graph-toolbar .actions button.action-btn { padding:8px 14px; }
+.graph-toolbar .actions button.action-btn.danger { background:linear-gradient(45deg,#c0392b,#922b21); }
+
+/* Nav button unification with action-btn system */
+.admin-nav .nav-btn { text-transform:uppercase; letter-spacing:1px; border-radius:25px; font-weight:600; padding:12px 24px; transition:all .3s ease; }
+.admin-nav .nav-btn:hover { transform:translateY(-2px); box-shadow:0 5px 15px rgba(0,0,0,.35); }
+
+/* Utility spacing helpers (future-proof) */
+.gap-sm { gap:6px !important; }
+.gap-xs { gap:4px !important; }
+
+/* Root marker for easier test targeting (added to container) */
+/* .admin-root marker class intentionally has no styling (used by tests) */
 
 .action-buttons { gap:10px; }
 

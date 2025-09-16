@@ -9,7 +9,10 @@ import { ClassificationService } from './classificationService';
 import { resolveOwner } from './ownershipService';
 import { getBooleanEnv } from '../utils/envUtils';
 
-export interface CatalogState { loadedAt: string; hash: string; byId: Map<string, InstructionEntry>; list: InstructionEntry[]; fileCount: number; versionMTime: number; versionToken: string }
+// Extended CatalogState to retain loader diagnostics so we can expose precise rejection reasons
+// via a forthcoming instructions/diagnostics tool. Keeping optional properties so older code paths
+// remain unaffected if they don't need diagnostics.
+export interface CatalogState { loadedAt: string; hash: string; byId: Map<string, InstructionEntry>; list: InstructionEntry[]; fileCount: number; versionMTime: number; versionToken: string; loadErrors?: { file:string; error:string }[]; loadDebug?: { scanned:number; accepted:number; skipped:number; trace?: { file:string; accepted:boolean; reason?:string }[] }; loadSummary?: { scanned:number; accepted:number; skipped:number; reasons: Record<string,number>; cacheHits?: number; hashHits?: number } }
 let state: CatalogState | null = null;
 // Simple reliable invalidation: any mutation sets dirty=true; next ensureLoaded() performs full rescan.
 let dirty = false;
@@ -263,7 +266,7 @@ export function ensureLoaded(): CatalogState {
   const loader = new CatalogLoader(baseDir);
   const result = loader.load();
   const byId = new Map<string, InstructionEntry>(); result.entries.forEach(e=>byId.set(e.id,e));
-  state = { loadedAt: new Date().toISOString(), hash: result.hash, byId, list: result.entries, fileCount: result.entries.length, versionMTime: currentVersionMTime, versionToken: currentVersionToken };
+  state = { loadedAt: new Date().toISOString(), hash: result.hash, byId, list: result.entries, fileCount: result.entries.length, versionMTime: currentVersionMTime, versionToken: currentVersionToken, loadErrors: result.errors, loadDebug: result.debug, loadSummary: result.summary };
   dirty = false;
   // Overlay usage snapshot (simplified; no spin/repair loops here—existing invariant repairs still occur in getCatalogState)
   try {
@@ -383,6 +386,59 @@ export function getDebugCatalogSnapshot(){
     extraLoaded,
     loadedAt: current?.loadedAt,
     versionMTime: current?.versionMTime
+  };
+}
+
+// New diagnostics accessor (read-only) summarizing loader acceptance vs rejection reasons.
+// Does NOT trigger a reload beyond normal ensureLoaded execution; focuses on most recent load.
+export function getCatalogDiagnostics(opts?: { includeTrace?: boolean }){
+  const st = ensureLoaded();
+  const dir = getInstructionsDir();
+  const debug = st.loadDebug;
+  const errors = st.loadErrors || [];
+  let filesOnDisk: string[] = [];
+  try { filesOnDisk = fs.readdirSync(dir).filter(f=> f.endsWith('.json')); } catch { /* ignore */ }
+  const diskIds = new Set(filesOnDisk.map(f=> f.replace(/\.json$/,'')));
+  const missingOnCatalog = [...diskIds].filter(id=> !st.byId.has(id));
+  // Adjust anomaly: previously accepted template files (e.g. powershell.template.*) might appear
+  // in missing list if downstream exposure filters hide them. We only want genuinely skipped
+  // (never accepted) files here. Cross-check trace (if available) to prune accepted ones.
+  if(debug?.trace){
+    const acceptedSet = new Set(debug.trace.filter(t=> t.accepted).map(t=> t.file.replace(/\.json$/,'')));
+    for(let i=missingOnCatalog.length-1; i>=0; i--){
+      const id = missingOnCatalog[i];
+      if(acceptedSet.has(id)) missingOnCatalog.splice(i,1);
+    }
+  }
+  // Reason aggregation from trace (preferred) then fallback to errors array messages.
+  const reasonCounts: Record<string, number> = {};
+  if(debug?.trace){
+    for(const t of debug.trace){
+      if(!t.accepted){
+        const r = t.reason || 'rejected:unknown';
+        reasonCounts[r] = (reasonCounts[r]||0)+1;
+      }
+    }
+  } else if(errors.length){
+    for(const e of errors){
+      const key = e.error.split(':')[0];
+      reasonCounts[key] = (reasonCounts[key]||0)+1;
+    }
+  }
+  return {
+    dir,
+    loadedAt: st.loadedAt,
+    hash: st.hash,
+    scanned: debug?.scanned ?? (debug? debug.accepted + debug.skipped : st.fileCount),
+    accepted: debug?.accepted ?? st.fileCount,
+    skipped: debug?.skipped ?? Math.max(0, (debug? debug.scanned : st.fileCount) - st.fileCount),
+    fileCountOnDisk: filesOnDisk.length,
+    catalogCount: st.list.length,
+    missingOnCatalogCount: missingOnCatalog.length,
+    missingOnCatalog: missingOnCatalog.slice(0,25),
+    reasons: reasonCounts,
+    errorSamples: errors.slice(0,25),
+    traceSample: opts?.includeTrace && debug?.trace ? debug.trace.slice(0,50) : undefined
   };
 }
 

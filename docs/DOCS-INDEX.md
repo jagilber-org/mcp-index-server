@@ -42,7 +42,7 @@ This index distinguishes between **active** project documentation and **archived
 
 Two sequential P1 specifications are now active under the adapted spec-kit model:
 
-1. `000-bootstrapper.md` (category: bootstrapper) – establishes minimal shared contract & dual-layer (P0 local vs shared index) separation.
+1. `000-bootstrapper.md` (category: bootstrapper) – establishes minimal shared contract & dual-layer (P0 local vs shared index) separation (auto-seeded if missing).
 2. `001-knowledge-index-lifecycle.md` (category: lifecycle) – formalizes capture → validation → scoring → selective promotion workflow.
 
 Categories (see constitution for full list): bootstrapper, lifecycle, governance, integration, diagnostics, performance.

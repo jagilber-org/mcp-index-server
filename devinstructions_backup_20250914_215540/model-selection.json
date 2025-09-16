@@ -1,0 +1,33 @@
+{
+  "id": "model-selection",
+  "title": "Model Selection & Auto-Pick",
+  "body": "Model Selection: Frontend dropdown populated from /api/ai/models. Selected persisted in localStorage key ai.selectedModel. Server can auto-pick alternate model if OPENAI_MODEL_AUTO=true and original returns 401/403/404 (response includes originalModel + autoSelectedModel).",
+  "priority": 5,
+  "audience": "devs",
+  "requirement": "Document model selection and auto-pick.",
+  "categories": [
+    "uncategorized"
+  ],
+  "primaryCategory": "uncategorized",
+  "sourceHash": "a7abd0a3d48bd6f780372656acce5b305c77d3b5f29d8db68c0bb7996eae3ad5",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T17:30:47.229Z",
+  "updatedAt": "2025-09-12T17:30:47.229Z",
+  "riskScore": 95,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T17:30:47.229Z",
+  "nextReviewDue": "2025-10-12T17:30:47.229Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T17:30:47.229Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Model Selection: Frontend dropdown populated from /api/ai/models. Selected persisted in localStorage key ai.selectedModel. Server can auto-pick alternate mod..."
+}

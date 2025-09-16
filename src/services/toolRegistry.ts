@@ -121,6 +121,19 @@ const INPUT_SCHEMAS: Record<string, object> = {
     since: { type: 'string' }
   } },
   'feedback/health': { type: 'object', additionalProperties: true },
+  // instructions search tool - PRIMARY discovery mechanism
+  'instructions/search': { type: 'object', additionalProperties: false, required: ['keywords'], properties: {
+    keywords: { 
+      type: 'array', 
+      items: { type: 'string', minLength: 1, maxLength: 100 },
+      minItems: 1,
+      maxItems: 10,
+      description: 'Search keywords to match against instruction titles, bodies, and categories'
+    },
+    limit: { type: 'number', minimum: 1, maximum: 100, default: 50, description: 'Maximum number of instruction IDs to return' },
+    includeCategories: { type: 'boolean', default: false, description: 'Include categories in search scope' },
+    caseSensitive: { type: 'boolean', default: false, description: 'Perform case-sensitive matching' }
+  } },
   // bootstrap confirmation gating tools
   'bootstrap/request': { type: 'object', additionalProperties: false, properties: { rationale: { type: 'string' } } },
   'bootstrap/confirmFinalize': { type: 'object', additionalProperties: false, required: ['token'], properties: { token: { type: 'string' } } },
@@ -131,9 +144,15 @@ const INPUT_SCHEMAS: Record<string, object> = {
   'diagnostics/memoryPressure': { type: 'object', additionalProperties: false, properties: { mb: { type: 'number', minimum: 1, maximum: 512 } } }
 };
 
+// Inject new schema after definition block (kept outside literal to avoid large diff churn if ordering changes)
+// Provide permissive object with optional includeTrace boolean.
+(INPUT_SCHEMAS as Record<string, object>)['instructions/diagnostics'] = { type: 'object', additionalProperties: false, properties: { includeTrace: { type: 'boolean' } } };
+// Normalization / hash repair tool: allows optional dryRun and forceCanonical flags.
+(INPUT_SCHEMAS as Record<string, object>)['instructions/normalize'] = { type: 'object', additionalProperties: false, properties: { dryRun: { type: 'boolean' }, forceCanonical: { type: 'boolean' } } };
+
 // Stable & mutation classification lists (mirrors usage in toolHandlers; exported to remove duplication there).
-export const STABLE = new Set(['health/check','graph/export','instructions/dispatch','instructions/governanceHash','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools','help/overview','feedback/list','feedback/get','feedback/stats','feedback/health','manifest/status']);
-const MUTATION = new Set(['instructions/add','instructions/import','instructions/repair','instructions/reload','instructions/remove','instructions/groom','instructions/enrich','instructions/governanceUpdate','usage/flush','feedback/submit','feedback/update','manifest/refresh','manifest/repair']);
+export const STABLE = new Set(['health/check','graph/export','instructions/dispatch','instructions/search','instructions/governanceHash','prompt/review','integrity/verify','usage/track','usage/hotset','metrics/snapshot','gates/evaluate','meta/tools','help/overview','feedback/list','feedback/get','feedback/stats','feedback/health','manifest/status','instructions/diagnostics']);
+const MUTATION = new Set(['instructions/add','instructions/import','instructions/repair','instructions/reload','instructions/remove','instructions/groom','instructions/enrich','instructions/governanceUpdate','instructions/normalize','usage/flush','feedback/submit','feedback/update','manifest/refresh','manifest/repair']);
 
 export function getToolRegistry(): ToolRegistryEntry[] {
   const entries: ToolRegistryEntry[] = [];
@@ -160,6 +179,7 @@ function describeTool(name: string): string {
     case 'health/check': return 'Returns server health status & version.';
   case 'graph/export': return 'Export instruction relationship graph (schema v1 minimal or v2 enriched).';
   case 'instructions/dispatch': return 'Unified dispatcher for instruction catalog actions (list,get,search,diff,export,query,categories,dir & mutations).';
+  case 'instructions/search': return '🔍 PRIMARY: Search instructions by keywords - returns instruction IDs for targeted retrieval. Use this FIRST to discover relevant instructions, then use instructions/dispatch get for details. Essential discovery tool for MCP clients.';
   case 'instructions/governanceHash': return 'Return governance projection & deterministic governance hash.';
   // query & categories now accessed via dispatcher actions.
   // legacy read-only instruction descriptions removed (handled via dispatcher)
@@ -200,6 +220,8 @@ function describeTool(name: string): string {
   case 'diagnostics/memoryPressure': return 'Allocate & release transient memory to induce GC / memory pressure.';
   case 'diagnostics/handshake': return 'Return recent handshake events (ordering/ready/list_changed trace).';
   case 'help/overview': return 'Structured onboarding guidance for new agents (tool discovery, catalog lifecycle, promotion workflow).';
+  case 'instructions/diagnostics': return 'Summarize loader diagnostics: scanned vs accepted, skipped reasons, missing IDs, optional trace sample.';
+  case 'instructions/normalize': return 'Normalize instruction JSON files (hash repair, version hydrate, timestamps) with optional dryRun.';
     default: return 'Tool description pending.';
   }
 }

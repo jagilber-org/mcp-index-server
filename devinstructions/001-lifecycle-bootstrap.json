@@ -1,0 +1,32 @@
+{
+  "id": "001-lifecycle-bootstrap",
+  "title": "Lifecycle Bootstrap: Local-First Instruction Strategy",
+  "body": "Purpose: Early lifecycle guidance after bootstrap confirmation. Keep catalog minimal; prefer local-first P0/P1 additions; promote only after stability.",
+  "audience": "agents",
+  "requirement": "recommended",
+  "priority": 10,
+  "priorityTier": "P1",
+  "categories": [
+    "bootstrap",
+    "lifecycle"
+  ],
+  "owner": "system",
+  "version": "1.0.0",
+  "schemaVersion": "3",
+  "status": "approved",
+  "classification": "internal",
+  "sourceHash": "9bd6f557bdd35d631ff6fc03054ccc7cbd0104dc815998ab026da1b2503e91a4",
+  "createdAt": "2025-09-15T13:30:00.000Z",
+  "updatedAt": "2025-09-15T13:30:00.000Z",
+  "lastReviewedAt": "2025-09-15T13:30:00.000Z",
+  "nextReviewDue": "2026-01-13T13:30:00.000Z",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-15T13:30:00.000Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Lifecycle and promotion guardrails after bootstrap confirmation",
+  "reviewIntervalDays": 120
+}

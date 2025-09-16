@@ -1,0 +1,37 @@
+{
+  "id": "typescript-javascript-spec-patterns",
+  "title": "TypeScript/JavaScript Spec-Driven Development Patterns",
+  "body": "# TypeScript/JavaScript Spec-Driven Development Patterns\n\n## Overview\nSpec-driven development methodology for TypeScript and JavaScript projects integrating constitutional governance, test-driven specifications, and modern tooling patterns.\n\n## Specification Templates\n\n### TypeScript Interface Specifications\n```typescript\n/**\n * [SPECIFICATION]: Interface defining core data structure\n * \n * @specification\n * - Must enforce type safety at compile time\n * - Should provide clear property documentation\n * - Must support JSON serialization/deserialization\n */\ninterface UserSpecification {\n  readonly id: string;\n  name: string;\n  email: string;\n  readonly createdAt: Date;\n  preferences?: Record<string, unknown>;\n}\n```\n\n### Function Specification Pattern\n```typescript\n/**\n * [SPECIFICATION]: Process user data with validation\n * \n * @param userData - Input user data to process\n * @returns Promise resolving to processed user\n * \n * @specification\n * - Input validation: All required fields must be present\n * - Error handling: Must throw UserValidationError for invalid input\n * - Performance: Must complete within 100ms\n * - Output format: Must return UserSpecification-compliant object\n */\nasync function processUser(\n  userData: Partial<UserSpecification>\n): Promise<UserSpecification> {\n  // Specification validation\n  if (!userData.id || !userData.name || !userData.email) {\n    throw new UserValidationError('Required fields missing');\n  }\n  \n  // Implementation satisfying specification\n  return {\n    id: userData.id,\n    name: userData.name.trim(),\n    email: userData.email.toLowerCase(),\n    createdAt: new Date(),\n    preferences: userData.preferences || {}\n  };\n}\n```\n\n## Test-Driven Specifications\n\n### Jest Specification Tests\n```typescript\ndescribe('UserProcessor Specification', () => {\n  describe('SPECIFICATION: Input validation', () => {\n    it('MUST reject input missing required fields', async () => {\n      const invalidInput = { name: 'John' };\n      await expect(processUser(invalidInput))\n        .rejects.toThrow(UserValidationError);\n    });\n  });\n  \n  describe('SPECIFICATION: Performance requirements', () => {\n    it('MUST complete within 100ms', async () => {\n      const validInput = { id: '123', name: 'John', email: 'john@example.com' };\n      const startTime = Date.now();\n      await processUser(validInput);\n      const duration = Date.now() - startTime;\n      expect(duration).toBeLessThan(100);\n    });\n  });\n});\n```\n\n## Constitutional Governance\n\n### Project Constitution\n```typescript\nexport const PROJECT_CONSTITUTION = {\n  SPECIFICATION_AUTHORITY: {\n    principle: 'Specification before implementation',\n    enforcement: 'Pre-commit hooks validate specification presence'\n  },\n  \n  TYPE_SAFETY: {\n    principle: 'Strict TypeScript configuration required',\n    enforcement: 'No any types without explicit justification'\n  },\n  \n  TEST_DRIVEN_SPECS: {\n    principle: 'Specifications define test requirements',\n    enforcement: '100% specification coverage required'\n  }\n} as const;\n```\n\n## Success Metrics\n\n- **Specification Coverage**: 100% of functions have @specification blocks\n- **Type Safety**: Zero any types without justification\n- **Test Coverage**: 100% of specifications have executable tests\n- **Constitutional Compliance**: All code passes validation",
+  "priority": 85,
+  "audience": "developers",
+  "requirement": "recommended",
+  "categories": [
+    "governance",
+    "javascript",
+    "spec-driven-development",
+    "testing",
+    "typescript"
+  ],
+  "sourceHash": "7631d861a06fe541a2de89acd840ab1c79806141f128b47e697a6a069e0a034e",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-05T15:46:46.909Z",
+  "updatedAt": "2025-09-10T10:56:56.851Z",
+  "riskScore": 35,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-05T15:46:46.909Z",
+  "nextReviewDue": "2026-01-03T15:46:46.909Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-05T15:46:46.909Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "# TypeScript/JavaScript Spec-Driven Development Patterns",
+  "primaryCategory": "governance"
+}

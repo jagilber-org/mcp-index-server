@@ -165,6 +165,11 @@ export function scheduleManifestUpdate(){
   writeManifestFromCatalog();
 }
 export function onCatalogMutationManifestUpdate(){ scheduleManifestUpdate(); }
-export function attemptManifestUpdate(){ scheduleManifestUpdate(); }
+// attemptManifestUpdate previously always invoked a write regardless of the MCP_MANIFEST_WRITE flag
+// which caused tests expecting stability under MCP_MANIFEST_WRITE=0 to observe a timestamp change.
+// We now explicitly no-op unless write mode is enabled, making "attempt" semantics truly conditional.
+export function attemptManifestUpdate(){
+  if(process.env.MCP_MANIFEST_WRITE === '1') scheduleManifestUpdate();
+}
 
 export function manifestFastLoadEnabled(){ return process.env.MCP_MANIFEST_FASTLOAD === '1'; }

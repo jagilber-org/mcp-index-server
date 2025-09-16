@@ -1,0 +1,41 @@
+{
+  "id": "azure-devops-mcp-tools",
+  "title": "azure-devops-mcp-tools",
+  "body": "Azure DevOps MCP Server provides 62+ tools across 8 categories using activation functions. Discovery pattern: Use activate_azure_devops_<category>_management functions. Categories: core (projects/teams), repository (repos/PRs/branches), build (CI/CD pipelines), work_item (tasks/bugs), release (deployments), test (test plans/cases), wiki (documentation), alerts (security). Key tools: core_list_projects, repo_create_pull_request, build_list_builds, wit_create_work_item, release_list_releases. All tools use underscore naming convention. Requires Azure DevOps organization URL and PAT token for authentication.",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "azure",
+    "devops",
+    "mcp",
+    "tooling"
+  ],
+  "sourceHash": "8be20a6d7051194377a8b6e1a973b8d80b2566d73564efb9ca26645d022e33fe",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-04T18:09:21.961Z",
+  "updatedAt": "2025-09-10T11:42:11.691Z",
+  "riskScore": 55,
+  "version": "1.1.0",
+  "status": "approved",
+  "owner": "cloud-automation-team",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-10T11:42:00.000Z",
+  "nextReviewDue": "2025-12-09T11:42:00.000Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.1.0",
+      "changedAt": "2025-09-10T11:42:00.000Z",
+      "summary": "Add categories and assign owner cloud-automation-team"
+    },
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-04T18:09:21.961Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Azure DevOps MCP Server provides 62+ tools across 8 categories using activation functions. Discovery pattern: Use activate_azure_devops_<category>_management...",
+  "primaryCategory": "azure"
+}

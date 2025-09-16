@@ -1,0 +1,33 @@
+{
+  "id": "heuristic-fallback",
+  "title": "Heuristic Plan Fallback",
+  "body": "Heuristic Fallback: If AI plan gen fails or times out, categories built via regex patterns (Scripts, MCP, Extensions, Websites, Libraries, Applications, Misc). Toast indicates heuristic used.",
+  "priority": 4,
+  "audience": "devs",
+  "requirement": "Explain non-AI fallback logic.",
+  "categories": [
+    "uncategorized"
+  ],
+  "primaryCategory": "uncategorized",
+  "sourceHash": "a5b0a76a896b7fd41203997e09b0709d90ec5075196ad25f04e5d5cad04f3edb",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T17:30:47.233Z",
+  "updatedAt": "2025-09-12T17:30:47.233Z",
+  "riskScore": 96,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T17:30:47.233Z",
+  "nextReviewDue": "2025-10-12T17:30:47.233Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T17:30:47.233Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Heuristic Fallback: If AI plan gen fails or times out, categories built via regex patterns (Scripts, MCP, Extensions, Websites, Libraries, Applications, Misc..."
+}

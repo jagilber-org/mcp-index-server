@@ -16,6 +16,7 @@ import { atomicWriteJson } from './atomicFs';
 import { logAudit } from './auditLog';
 import { getToolRegistry } from './toolRegistry';
 import { getBooleanEnv } from '../utils/envUtils';
+import { hashBody as canonicalHashBody } from './canonical';
 
 // Evaluate mutation flag dynamically each invocation so tests that set env before calls (even after import) still work.
 function isMutationEnabled(){ return getBooleanEnv('MCP_ENABLE_MUTATION'); }
@@ -865,7 +866,7 @@ registerHandler('instructions/governanceHash', ()=>{
   return { count: projections.length, governanceHash, items: projections };
 });
 
-registerHandler('instructions/health', ()=>{ const st=ensureLoaded(); const governanceHash = computeGovernanceHash(st.list);
+registerHandler('instructions/health', ()=>{ const st=ensureLoaded(); const governanceHash = computeGovernanceHash(st.list); const summary = st.loadSummary || { scanned: st.loadDebug?.scanned ?? st.list.length, accepted: st.list.length, skipped: (st.loadDebug? (st.loadDebug.scanned - st.loadDebug.accepted): 0), reasons: {} };
   // Recursion / governance leakage assessment (refined: keyword hits alone no longer elevate risk).
   const total = st.list.length || 1; // avoid div by zero
   const governanceKeywords = ['constitution','quality gate','p1 ','p0 ','lifecycle','governance','bootstrapper'];
@@ -895,7 +896,7 @@ registerHandler('instructions/health', ()=>{ const st=ensureLoaded(); const gove
   } catch {
     recursionRisk = effectiveGovernanceLike === 0 ? 'none' : (leakageRatio < 0.01 ? 'warning' : 'critical');
   }
-  const snapshot=path.join(process.cwd(),'snapshots','canonical-instructions.json'); if(!fs.existsSync(snapshot)) return { snapshot:'missing', hash: st.hash, count: st.list.length, governanceHash, recursionRisk, leakage: { governanceLike, keywordHit, leakageRatio } }; try { const raw = JSON.parse(fs.readFileSync(snapshot,'utf8')) as { items?: { id:string; sourceHash:string }[] }; const snapItems=raw.items||[]; const snapMap=new Map(snapItems.map(i=>[i.id,i.sourceHash] as const)); const missing:string[]=[]; const changed:string[]=[]; for(const e of st.list){ const h=snapMap.get(e.id); if(h===undefined) missing.push(e.id); else if(h!==e.sourceHash) changed.push(e.id); } const extra=snapItems.filter(i=> !st.byId.has(i.id)).map(i=>i.id); return { snapshot:'present', hash: st.hash, count: st.list.length, missing, changed, extra, drift: missing.length+changed.length+extra.length, governanceHash, recursionRisk, leakage: { governanceLike, keywordHit, leakageRatio } }; } catch(e){ return { snapshot:'error', error: e instanceof Error? e.message: String(e), hash: st.hash, governanceHash, recursionRisk, leakage: { governanceLike, keywordHit, leakageRatio } }; } });
+  const snapshot=path.join(process.cwd(),'snapshots','canonical-instructions.json'); if(!fs.existsSync(snapshot)) return { snapshot:'missing', hash: st.hash, count: st.list.length, governanceHash, recursionRisk, leakage: { governanceLike, keywordHit, leakageRatio }, summary }; try { const raw = JSON.parse(fs.readFileSync(snapshot,'utf8')) as { items?: { id:string; sourceHash:string }[] }; const snapItems=raw.items||[]; const snapMap=new Map(snapItems.map(i=>[i.id,i.sourceHash] as const)); const missing:string[]=[]; const changed:string[]=[]; for(const e of st.list){ const h=snapMap.get(e.id); if(h===undefined) missing.push(e.id); else if(h!==e.sourceHash) changed.push(e.id); } const extra=snapItems.filter(i=> !st.byId.has(i.id)).map(i=>i.id); return { snapshot:'present', hash: st.hash, count: st.list.length, missing, changed, extra, drift: missing.length+changed.length+extra.length, governanceHash, recursionRisk, leakage: { governanceLike, keywordHit, leakageRatio }, summary }; } catch(e){ return { snapshot:'error', error: e instanceof Error? e.message: String(e), hash: st.hash, governanceHash, recursionRisk, leakage: { governanceLike, keywordHit, leakageRatio }, summary }; } });
   attemptManifestUpdate();
 
 // Enrichment persistence tool: rewrites placeholder governance fields on disk to normalized values
@@ -1020,6 +1021,56 @@ registerHandler('instructions/groom', guard('instructions/groom', (p:{ mode?: { 
       e.sourceHash=actualHash; repairedHashes++; e.updatedAt=new Date().toISOString(); updated.add(e.id); } } }
   deprecatedRemoved = toRemove.length; if(!dryRun){ const baseDir=getInstructionsDir(); for(const id of toRemove){ byId.delete(id); } for(const id of updated){ if(!byId.has(id)) continue; const e=byId.get(id)!; try { fs.writeFileSync(path.join(baseDir, `${id}.json`), JSON.stringify(e,null,2)); filesRewritten++; } catch(err){ notes.push(`write-failed:${id}:${(err as Error).message}`); } } for(const id of toRemove){ try { fs.unlinkSync(path.join(baseDir, `${id}.json`)); } catch(err){ notes.push(`delete-failed:${id}:${(err as Error).message}`); } } if(updated.size || toRemove.length){ touchCatalogVersion(); invalidate(); ensureLoaded(); } } else { if(updated.size) notes.push(`would-rewrite:${updated.size}`); if(toRemove.length) notes.push(`would-remove:${toRemove.length}`); }
   const stAfter = ensureLoaded(); const resp = { previousHash, hash: stAfter.hash, scanned, repairedHashes, normalizedCategories, deprecatedRemoved, duplicatesMerged, filesRewritten, purgedScopes, dryRun, notes }; if(!dryRun && (repairedHashes||normalizedCategories||deprecatedRemoved||duplicatesMerged||filesRewritten||purgedScopes)) { logAudit('groom', undefined, { repairedHashes, normalizedCategories, deprecatedRemoved, duplicatesMerged, filesRewritten, purgedScopes }); attemptManifestUpdate(); } return resp;
+}));
+
+// Normalization tool: consolidates logic from scripts/normalize-instructions.js and extends with
+// optional canonical hash enforcement (forceCanonical) plus dryRun. Recomputes sourceHash when body
+// mismatch found (raw sha256 or canonical depending on MCP_CANONICAL_DISABLE / forceCanonical flag),
+// hydrates semantic version (defaults 1.0.0), normalizes priorityTier casing, and adds createdAt/updatedAt
+// if missing. Returns summary + list of updated ids. Intentionally lightweight; does not bump versions
+// for hash repairs (non-semantic) and does not modify changeLog.
+registerHandler('instructions/normalize', guard('instructions/normalize', (p:{ dryRun?:boolean; forceCanonical?:boolean })=>{
+  const dryRun = !!p?.dryRun;
+  const forceCanonical = !!p?.forceCanonical;
+  const base = getInstructionsDir();
+  const dirs = [base, path.join(process.cwd(),'devinstructions')].filter(d=> fs.existsSync(d));
+  let scanned=0, changed=0, fixedHash=0, fixedVersion=0, fixedTier=0, addedTimestamps=0; const updated:string[]=[];
+  const SEMVER = /^\d+\.\d+\.\d+(?:[-+].*)?$/;
+  for(const dir of dirs){
+    let files: string[] = [];
+    try { files = fs.readdirSync(dir).filter(f=> f.endsWith('.json') && !f.startsWith('_')); } catch { continue; }
+    for(const f of files){
+      scanned++;
+      const full = path.join(dir,f);
+      let raw: string; try { raw = fs.readFileSync(full,'utf8'); } catch { continue; }
+      let data: unknown; try { data = JSON.parse(raw); } catch { continue; }
+      if(!data || typeof data !== 'object') continue;
+      let modified = false;
+      const rec = data as Record<string, unknown>;
+      const body = typeof rec.body==='string'? rec.body: '';
+      if(body){
+        const actual = (forceCanonical || process.env.MCP_CANONICAL_DISABLE!=='1') ? canonicalHashBody(body) : crypto.createHash('sha256').update(body,'utf8').digest('hex');
+        if(rec.sourceHash !== actual){ rec.sourceHash = actual; modified = true; fixedHash++; }
+      }
+      if(!rec.version || typeof rec.version!=='string' || !SEMVER.test(rec.version)){ rec.version = '1.0.0'; modified = true; fixedVersion++; }
+      if(rec.priorityTier){
+        const upper = String(rec.priorityTier).toUpperCase();
+        if(['P1','P2','P3','P4'].includes(upper) && upper !== rec.priorityTier){ rec.priorityTier = upper; modified = true; fixedTier++; }
+      }
+      const nowIso = new Date().toISOString();
+      if(!rec.createdAt){ rec.createdAt = nowIso; modified = true; addedTimestamps++; }
+      if(!rec.updatedAt){ rec.updatedAt = nowIso; modified = true; addedTimestamps++; }
+      if(modified){
+        if(!dryRun){ try { fs.writeFileSync(full, JSON.stringify(rec,null,2)+'\n','utf8'); } catch { continue; } }
+        changed++; updated.push(path.basename(full,'.json'));
+      }
+    }
+  }
+  if(changed && !dryRun){
+    try { touchCatalogVersion(); invalidate(); ensureLoaded(); } catch { /* ignore */ }
+    try { attemptManifestUpdate(); } catch { /* ignore */ }
+  }
+  return { scanned, changed, fixedHash, fixedVersion, fixedTier, addedTimestamps, dryRun, updated };
 }));
 
 // usage/flush (mutation)

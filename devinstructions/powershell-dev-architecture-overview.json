@@ -1,0 +1,35 @@
+{
+  "id": "powershell-dev-architecture-overview",
+  "title": "PowerShell Core Architecture and Development Overview",
+  "body": "PowerShell 7+ is built on .NET Core/.NET 5+ and uses a sophisticated architecture. Key components:\n\n**Build System:**\n- Uses dotnet CLI as primary build tool\n- ResGen and TypeCatalogGen for resource generation\n- crossgen2 for ahead-of-time optimization\n- Dummy dependencies structure for flexible builds\n\n**Module System:**\n- Version-specific subdirectories (e.g., 7.4.0/)\n- Automatic module discovery and loading\n- PSModulePath environment variable for module locations\n- Module manifests (.psd1) define metadata\n\n**Native Components:**\n- libpsl-native (cross-platform native library)\n- PSRP.Windows (Windows PowerShell Remoting Protocol)\n- Platform-specific assemblies for OS integration\n\n**Cross-Platform Support:**\n- .NET Standard 2.0 compatibility\n- Preprocessor macros: DEBUG, UNIX, CORECLR\n- Runtime checks for OS-specific features\n- Single binary for all Unix variants\n\n**Package Distribution:**\n- NuGet packages for modules and dependencies\n- MSI/DEB/RPM for platform installers\n- Portable builds for xcopy deployment",
+  "priority": 8,
+  "audience": "PowerShell developers, contributors, and advanced users",
+  "requirement": "Must understand PowerShell Core architecture for effective development",
+  "categories": [
+    "architecture",
+    "build system",
+    "powershell"
+  ],
+  "sourceHash": "2c295aa44fc799ad57821eaa478a92a1eeabfa22cb54f07d85ede5d75ed37f62",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-02T11:56:22.511Z",
+  "updatedAt": "2025-09-02T11:56:22.511Z",
+  "riskScore": 92,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-02T11:56:22.512Z",
+  "nextReviewDue": "2025-10-02T11:56:22.512Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-02T11:56:22.511Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PowerShell 7+ is built on .NET Core/.NET 5+ and uses a sophisticated architecture. Key components:",
+  "primaryCategory": "architecture"
+}

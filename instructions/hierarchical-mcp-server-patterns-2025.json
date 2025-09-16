@@ -1,0 +1,38 @@
+{
+  "id": "hierarchical-mcp-server-patterns-2025",
+  "title": "Hierarchical MCP Server Patterns 2025",
+  "body": "# Hierarchical MCP Server Patterns (2025)\n\nGuidance for layering MCP servers and tools to create a scalable, governed knowledge operations stack.\n\n## Layer Model\n1. Edge / UI Assist Layer\n2. Aggregation / Orchestration Layer\n3. Domain Knowledge Services Layer\n4. Persistence & Audit Layer\n5. Governance & Observability Layer\n\nEach layer publishes a narrow interface; lower layers never depend upward.\n\n## Pattern 1: Aggregator Fan-In\n- Multiple specialized domain servers (logs, instructions, metrics) feed an Aggregation server\n- Aggregator composes responses, handles fallback\n- Benefits: reduces client tool surface, centralizes retries\n\n## Pattern 2: Governance Interceptor\n- Insert governance layer between client and mutation-capable servers\n- Enforce: priority tiers, review intervals, change size limits\n- Records rationale on every overwrite\n\n## Pattern 3: Sidecar Analytics\n- Non-blocking usage tracking sidecar receives async usage events\n- Prevents latency spikes on critical path operations (add/list/get)\n\n## Pattern 4: Drift Sentinel\n- Scheduled drift checker compares live catalog hash vs signed baseline snapshot\n- Emits alert on divergence > allowed delta\n\n## Pattern 5: Promotion Pipeline\nStages: local draft → staging index → production index\n- Automated validation gates: schema, size, unsafe content screening\n- Promotion immutably logs diff summary\n\n## Pattern 6: Ephemeral Sandbox\n- Spin transient instruction spaces for test suites\n- Auto-expire after TTL; never mix with production catalog\n\n## Concurrency Guardrails\n- Serialize overwrite for same ID (optimistic locking or version compare)\n- Idempotent deletion (delete non-existing is no-op)\n\n## Observability Essentials\nMetrics: adds/sec, overwrites/sec, hash drift count, instruction count, median body size\nLogs: structured JSON with operationId & correlationId\nTracing: span per catalog operation (attribute: id, outcome)\n\n## Security / Integrity\n- Signed export snapshots (hash + signature)\n- Integrity verify before startup ready signal\n\n## Anti-Patterns\n- Flat monolith with direct client writes\n- Mixed test + production instructions\n- Silent overwrite without rationale\n\n## Success Indicators\n- Mean time to detect drift < 5m\n- No mixed environment contamination over 90d\n- Overwrite rationale coverage 100%\n\nAdopt incrementally; begin with Governance Interceptor + Drift Sentinel to reduce risk fastest.",
+  "rationale": "Establishes scalable, low-risk architectural patterns for multi-layer MCP deployments.",
+  "priority": 45,
+  "audience": "architects",
+  "requirement": "recommended",
+  "categories": [
+    "architecture",
+    "governance",
+    "mcp",
+    "patterns",
+    "scalability"
+  ],
+  "sourceHash": "9b5b38d5fb49309ccb7a681b8f04f2ca0a94bcb2f1ea3b9409a04a02615ea4d7",
+  "schemaVersion": "3",
+  "createdAt": "2025-08-30T23:34:58.066Z",
+  "updatedAt": "2025-08-31T19:26:46.618Z",
+  "riskScore": 75,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T23:34:58.066Z",
+  "nextReviewDue": "2025-09-29T23:34:58.066Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T23:34:58.066Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "# Hierarchical MCP Server Configuration Patterns",
+  "primaryCategory": "architecture"
+}

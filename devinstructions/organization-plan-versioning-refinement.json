@@ -1,0 +1,37 @@
+{
+  "id": "organization-plan-versioning-refinement",
+  "title": "Organization Plan Versioning & Refinement Workflow",
+  "body": "# Organization Plan Versioning & Refinement Workflow\n\n## Purpose\nEnable persistent, inspectable evolution of AI-generated organization plans with safe refinement cycles and explicit diff + validation feedback.\n\n## Data Model\n```\nOrgPlan {\n  id: string              // physical version id (uuid)\n  logicalId: string       // stable id grouping versions\n  createdAt: ISO8601\n  version: number         // monotonically increasing per logicalId\n  buckets: Bucket[]\n  diff?: PlanDiff         // relative to previous version (version>1)\n  warnings?: ValidationWarning[]\n  meta: { fallback?: boolean; reason?: string }\n}\n\nBucket { name: string; color?: string; repos: string[] }\nPlanDiff { added: string[]; removed: string[]; moved: { repo: string; from: string; to: string }[] }\nValidationWarning { code: string; message: string; repo?: string }\n```\n\n## Persistence\n- Stored in single JSON file (e.g. `plans.store.json`) with atomic write (temp file + rename) to prevent corruption.\n- Latest version retrieval by filtering on `logicalId` and max `version`.\n\n## Creation Flow\n1. Generate initial plan (AI or heuristic fallback).\n2. Validate buckets:\n   - Duplicate repo detection → warning code `DUPLICATE_REPO`\n   - Empty name or > N buckets (if enforced) → `INVALID_BUCKET`\n   - Unknown color format → `INVALID_COLOR`\n3. Persist as version 1 with any warnings attached.\n\n## Refinement Flow\n1. Fetch latest version by logicalId.\n2. Construct refinement prompt including:\n   - Prior buckets summary\n   - Validation warnings (if any) for corrective context\n   - User refinement instructions\n3. Invoke unified OpenAI call; attempt to parse JSON plan from model output.\n4. On parse failure: abort refinement (return 400 with parsing detail) rather than persisting ambiguous state.\n5. Compute diff vs previous version:\n   - Added: repos newly present (not in prior any bucket? or newly assigned) \n   - Removed: repos no longer assigned\n   - Moved: repos changing bucket name\n6. Re-run validation; attach new warnings.\n7. Persist new version (version = prev.version + 1).\n\n## Diff Semantics\n- Moved repos excluded from added/removed arrays.\n- Order of repos inside a bucket not diff-tracked (non-semantic ordering).\n- Empty diff object may be omitted.\n\n## API Endpoints (Representative)\n- POST /api/plans           → create initial plan (returns version 1)\n- GET  /api/plans           → list latest for all logical groups\n- GET  /api/plans/:id       → fetch specific physical version id\n- GET  /api/plans/:id/versions → list all versions for logicalId of :id\n- POST /api/plans/:id/refine  → create refined version from latest logicalId\n\n## Validation Philosophy\nNon-blocking warnings (never silently mutate). Caller/UI decides how to address.\n\n## Heuristic Fallback\nIf AI generation times out -> generate simple round‑robin distribution across default bucket set; mark `meta.fallback=true`.\n\n## Frontend Integration Patterns\n- Disable Save/Refine buttons while pending network call.\n- Display warnings inline with bucket summary.\n- Show diff summary counts (added/removed/moved) for each refinement.\n- Clear saved state when user regenerates an unsaved plan.\n\n## Error Handling\n- Refinement parse failure returns structured JSON: `{ error: 'parse_failed', detail, snippet }`.\n- Missing logicalId or prior version returns 404.\n\n## Success Criteria\n- Every persisted plan is reproducible from JSON store.\n- Refinements produce clear diff or explicit NO-CHANGE state.\n- No data loss on concurrent writes (atomic persistence guaranteed).\n\n## Usage Prompt Snippet\n\"Refine the organization plan: include previous buckets + warnings, output ONLY valid JSON conforming to Bucket[] schema.\"",
+  "rationale": "Codifies safe iterative plan evolution with diffing and validation to avoid opaque AI overwrites.",
+  "priority": 75,
+  "audience": "developers",
+  "requirement": "recommended",
+  "categories": [
+    "ai-refinement",
+    "data-model",
+    "planning",
+    "versioning"
+  ],
+  "primaryCategory": "ai-refinement",
+  "sourceHash": "0f8d92f284112f0716acde15d10e09d585af367e21e63f9bff18aa5d1a9ae57e",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T17:55:50.870Z",
+  "updatedAt": "2025-09-12T17:55:50.870Z",
+  "riskScore": 45,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T17:55:50.870Z",
+  "nextReviewDue": "2026-01-10T17:55:50.870Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T17:55:50.870Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "# Organization Plan Versioning & Refinement Workflow"
+}

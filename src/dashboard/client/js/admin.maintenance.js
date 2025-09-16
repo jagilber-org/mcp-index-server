@@ -75,6 +75,13 @@
             <div class="maintenance-status ${statusClass}">
                 ${statusText}
             </div>
+            <div style="margin-top:12px; font-weight:600; font-size:13px;">Catalog Normalization</div>
+            <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+              <button class="action-btn" id="normalize-dryrun-btn" style="padding:4px 10px; font-size:11px;">Dry Run Normalize</button>
+              <button class="action-btn warning" id="normalize-apply-btn" style="padding:4px 10px; font-size:11px;">Apply Normalize</button>
+              <label style="display:flex; align-items:center; gap:4px; font-size:11px; opacity:.8;"><input type="checkbox" id="normalize-force-canon"/> Force Canonical Hash</label>
+              <span id="normalize-status" style="font-size:11px; opacity:.7;"></span>
+            </div>
             <div class="stat-row">
                 <span class="stat-label">Last Backup</span>
                 <span class="stat-value">${maintenance.lastBackup ? new Date(maintenance.lastBackup).toLocaleString() : 'Never'}</span>
@@ -100,6 +107,35 @@
 
         const target = document.getElementById('maintenance-control');
         if (target) target.innerHTML = html;
+
+                // Wire normalization buttons after HTML injection
+                setTimeout(() => {
+                    const dryBtn = document.getElementById('normalize-dryrun-btn');
+                    const applyBtn = document.getElementById('normalize-apply-btn');
+                    const statusEl = document.getElementById('normalize-status');
+                    const forceBox = document.getElementById('normalize-force-canon');
+                    async function doNormalize(dryRun){
+                        if(!dryBtn || !applyBtn) return;
+                        dryBtn.disabled = true; applyBtn.disabled = true;
+                        if(statusEl) statusEl.textContent = dryRun? 'Running dry run...' : 'Normalizing...';
+                        try {
+                            const res = await fetch('/api/admin/maintenance/normalize', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ dryRun, forceCanonical: !!(forceBox&&forceBox.checked) }) });
+                            const data = await res.json();
+                            if(data.success){
+                                const s = data.summary || {};
+                                const msg = `${dryRun? 'DryRun':'Applied'}: changed=${s.changed||0} hash=${s.fixedHash||0} ver=${s.fixedVersion||0} tier=${s.fixedTier||0} ts=${s.addedTimestamps||0}`;
+                                if(statusEl) statusEl.textContent = msg;
+                                if(!dryRun && typeof loadOverviewData==='function') loadOverviewData();
+                                if(!dryRun && typeof currentSection !== 'undefined' && currentSection==='instructions' && typeof loadInstructions==='function') loadInstructions();
+                            } else {
+                                if(statusEl) statusEl.textContent = 'Normalize failed: ' + (data.error||'unknown');
+                            }
+                        } catch(e){ if(statusEl) statusEl.textContent = 'Normalize error'; }
+                        finally { if(dryBtn) dryBtn.disabled=false; if(applyBtn) applyBtn.disabled=false; }
+                    }
+                    if(dryBtn) dryBtn.addEventListener('click', ()=> doNormalize(true));
+                    if(applyBtn) applyBtn.addEventListener('click', ()=> { if(confirm('Apply normalization changes to disk?')) doNormalize(false); });
+                },0);
 
         // Async load & render full backup list (separate from restore dropdown)
         (async () => {

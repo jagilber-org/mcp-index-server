@@ -1,0 +1,33 @@
+{
+  "id": "mw-disabled-1757947466971",
+  "title": "mw disabled",
+  "body": "body",
+  "priority": 1,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "test"
+  ],
+  "primaryCategory": "test",
+  "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-15T14:44:27.002Z",
+  "updatedAt": "2025-09-15T14:44:27.002Z",
+  "riskScore": 104,
+  "version": "1.0.0",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-15T14:44:27.002Z",
+      "summary": "initial import"
+    }
+  ],
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-15T14:44:27.002Z",
+  "nextReviewDue": "2025-10-15T14:44:27.002Z",
+  "reviewIntervalDays": 30,
+  "semanticSummary": "body"
+}

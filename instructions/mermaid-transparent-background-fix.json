@@ -1,0 +1,37 @@
+{
+  "id": "mermaid-transparent-background-fix",
+  "title": "Mermaid Diagram Transparent Background Styling Fix",
+  "body": "# Mermaid Diagram Transparent Background Styling Fix\n\n## Problem\nMermaid sequence diagrams with grouping elements (alt, opt, loop) have visible background colors that can interfere with document styling or appear visually heavy.\n\n## Solution\nAdd custom theme configuration to make grouping box backgrounds transparent while maintaining readability.\n\n## Implementation\n\n### Standard Mermaid Block\n```mermaid\nsequenceDiagram\n    participant A\n    participant B\n    alt condition\n        A->>B: message\n    end\n```\n\n### Fixed with Transparent Background\n```mermaid\n%%{init: {'theme':'base', 'themeVariables': { 'altBackground': 'transparent', 'altBorderColor': '#cccccc' }}}%%\nsequenceDiagram\n    participant A\n    participant B\n    alt condition\n        A->>B: message\n    end\n```\n\n## Key Configuration Elements\n\n- `'theme':'base'` - Uses base theme for consistent styling\n- `'altBackground': 'transparent'` - Makes alt/opt/loop backgrounds invisible\n- `'altBorderColor': '#cccccc'` - Adds subtle gray border for structure\n\n## PowerShell Command for Bulk Fix\n\n```powershell\n# Fix single file\n$content = Get-Content \"path/to/file.md\" -Raw\n$newMermaid = $content -replace '```mermaid\\s*\\n', '```mermaid\\n%%{init: {''theme'':''base'', ''themeVariables'': { ''altBackground'': ''transparent'', ''altBorderColor'': ''#cccccc'' }}}%%\\n'\n$newMermaid | Set-Content \"path/to/file.md\"\n\n# Fix multiple files\nGet-ChildItem \"*.md\" | ForEach-Object {\n    $content = Get-Content $_.FullName -Raw\n    if ($content -match '```mermaid') {\n        $fixed = $content -replace '```mermaid\\s*\\n(?!%%{init)', '```mermaid\\n%%{init: {''theme'':''base'', ''themeVariables'': { ''altBackground'': ''transparent'', ''altBorderColor'': ''#cccccc'' }}}%%\\n'\n        if ($fixed -ne $content) {\n            $fixed | Set-Content $_.FullName\n            Write-Host \"Fixed: $($_.Name)\"\n        }\n    }\n}\n```\n\n## Common Mermaid Syntax Issues to Fix\n\n1. **Participant Declaration**: `parameter` → `participant`\n2. **Arrow Types**: Ensure proper `->`, `-->`, `->>`, `-->>` usage\n3. **Syntax Validation**: Check for unclosed blocks, missing colons\n\n## Use Cases\n\n- Architecture documentation with sequence diagrams\n- Authentication flow diagrams\n- System interaction documentation\n- API workflow documentation\n\n## Verification\n\nAfter applying fix:\n1. Render in markdown preview\n2. Check that grouping boxes are transparent\n3. Verify border visibility for structure\n4. Confirm diagram functionality intact\n\n## Related Issues\n\n- Mermaid syntax errors (parameter vs participant)\n- Theme compatibility across renderers\n- Accessibility considerations for transparent elements\n\nThis fix provides clean, professional-looking sequence diagrams while maintaining visual structure and readability.",
+  "priority": 85,
+  "audience": "all",
+  "requirement": "recommended",
+  "categories": [
+    "architecture",
+    "documentation",
+    "markdown",
+    "mermaid",
+    "styling"
+  ],
+  "sourceHash": "03bcaec22872c4c58dc715753722935706e26cd7e4c57eaf719cc40845b0655f",
+  "schemaVersion": "3",
+  "createdAt": "2025-08-31T23:50:39.729Z",
+  "updatedAt": "2025-08-31T23:50:39.729Z",
+  "riskScore": 35,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-31T23:50:39.730Z",
+  "nextReviewDue": "2025-12-29T23:50:39.730Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-31T23:50:39.729Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "# Mermaid Diagram Transparent Background Styling Fix",
+  "primaryCategory": "architecture"
+}

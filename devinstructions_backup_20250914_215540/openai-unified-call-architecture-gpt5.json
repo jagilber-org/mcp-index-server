@@ -1,0 +1,37 @@
+{
+  "id": "openai-unified-call-architecture-gpt5",
+  "title": "OpenAI Unified Call Architecture (GPT-5 Responses-First)",
+  "body": "# OpenAI Unified Call Architecture & Fallback Strategy (GPT-5 Focus)\n\n## Purpose\nProvide a resilient, observable, responses‑first invocation pattern for GPT‑5 family models while preserving backward compatibility with legacy chat/completions.\n\n## Core Principles\n1. Responses First: Attempt `POST /v1/responses` for any model matching `/^gpt-5/i`.\n2. Graceful Degradation: On hard failure (4xx schema / 5xx / network) fall back to chat or completions automatically.\n3. Multi-Variant Payload Ladder: Progressively simplify until provider accepts payload.\n4. Deterministic Logging: Emit structured diagnostics (requestId, model, primaryKind, variantStatuses) to accelerate triage.\n5. Environment Driven Behavior: Feature toggles via env flags without code changes.\n\n## Multi-Variant Ladder (Attempt Order)\n1. segments_text (messages → array of segment objects with role + text)\n2. segments_input_text (explicit input_text segment wrapper)\n3. combined_string (concatenate all user + system text into single input string)\n4. segments_text_no_extras (like #1 but omit optional fields)\n\nStop at first 2xx with valid content. Collect per-attempt status objects:\n```\nvariantStatuses = [\n  { variant: 'segments_text', status: 400, error: '...'},\n  { variant: 'segments_input_text', status: 400, error: '...'},\n  { variant: 'combined_string', status: 200, tokens: 812 }\n]\n```\nExpose `variantStatuses` in error objects when all fail.\n\n## Auto Model Fallback\nIf `OPENAI_MODEL_AUTO=1` and primary model access denied / not found:\n- Attempt sanitized base model (strip suffixes)\n- Optionally downgrade to stable default (e.g. `gpt-4.1-mini`)\nRecord chosen model in response meta.\n\n## Reasoning & Verbosity Flags\n- `OPENAI_VERBOSITY`: If set, request richer provider debugging (implementation: add debug headers or log expansions).\n- `OPENAI_REASONING_SUMMARY`: When truthy, surface provider reasoning summary if returned; store under `response.meta.reasoning`.\n\n## Timeout & Heuristic Fallback (Planning Endpoint)\n- Primary plan generation guarded by AbortController (e.g. 18s).\n- On timeout: emit warning + construct heuristic bucket plan (simple repo distribution) so UI remains responsive.\n- Mark plan object with `meta.fallback=true` and `meta.reason='timeout-heuristic'`.\n\n## Error Object Contract\n```\n{\n  message: string,\n  model: string,\n  requestId?: string,\n  primaryKind: 'responses' | 'chat' | 'completions',\n  fallbackTried?: boolean,\n  variantStatuses?: VariantStatus[],\n  rawPrimary?: any\n}\n```\nNever throw opaque strings—always structured objects.\n\n## Logging Checklist\nLog (at debug level): model, normalizedModel, primaryKind, attempt index, variant, latency ms, tokens (if success), error class.\n\n## Implementation Guardrails\n- Trim & lowercase model for detection (avoid whitespace mismatch).\n- Do not reuse partially mutated payload objects across variants (clone per attempt).\n- Keep variant order stable; treat order changes as versioned behavior.\n- Avoid infinite retry loops—max 4 variants then fallback.\n\n## Success Criteria\n- GPT‑5 models succeed via responses path >95% of time after ladder.\n- Mean triage time for 400 schema errors < 2 minutes with logged variantStatuses.\n- No UI blocking: plan route returns something within timeout window.\n\n## Usage Prompt Snippet\n\"Follow the unified OpenAI call instruction: responses-first, ladder variants until success, then fallback to chat if all fail; include variantStatuses on error.\"",
+  "rationale": "Documents resilient responses-first strategy reducing GPT-5 integration friction while maximizing observability.",
+  "priority": 80,
+  "audience": "developers",
+  "requirement": "recommended",
+  "categories": [
+    "ai-communication",
+    "diagnostics",
+    "openai",
+    "resilience"
+  ],
+  "primaryCategory": "ai-communication",
+  "sourceHash": "ec391adb3d247d36828ee851bac001101dd74d79c047cd16f1c369e8a24fd947",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T17:55:50.868Z",
+  "updatedAt": "2025-09-12T17:55:50.868Z",
+  "riskScore": 40,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T17:55:50.869Z",
+  "nextReviewDue": "2026-01-10T17:55:50.869Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T17:55:50.868Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "# OpenAI Unified Call Architecture & Fallback Strategy (GPT-5 Focus)"
+}

@@ -1,0 +1,41 @@
+{
+  "id": "azure-mcp-server-tools",
+  "title": "azure-mcp-server-tools",
+  "body": "Azure MCP Server provides 35+ hierarchical tools for complete Azure ecosystem management. Discovery pattern: Use commands with learn=true parameter to discover available tools. Key categories: kusto (data analysis), monitor (observability), subscription/group (resource management), storage/sql/postgres/mysql/redis/cosmos (data services), search/servicebus/keyvault/functionapp (platform services), aks/acr (containers), batch (compute). Tools use simple naming without prefixes. Authentication via Azure CLI or service principal. Essential for Azure cloud operations and data analysis workflows.",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "azure",
+    "cloud-operations",
+    "mcp",
+    "tooling"
+  ],
+  "sourceHash": "e2ecebdaf80363ace97e9b86d8a774c5ef630966b6b237f6aedd990c93006f11",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-04T18:09:42.067Z",
+  "updatedAt": "2025-09-10T11:42:26.005Z",
+  "riskScore": 55,
+  "version": "1.1.0",
+  "status": "approved",
+  "owner": "cloud-automation-team",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-10T11:42:05.000Z",
+  "nextReviewDue": "2025-12-09T11:42:05.000Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.1.0",
+      "changedAt": "2025-09-10T11:42:05.000Z",
+      "summary": "Add categories and assign owner cloud-automation-team"
+    },
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-04T18:09:42.067Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Azure MCP Server provides 35+ hierarchical tools for complete Azure ecosystem management. Discovery pattern: Use commands with learn=true parameter to discov...",
+  "primaryCategory": "azure"
+}

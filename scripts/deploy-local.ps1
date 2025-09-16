@@ -386,3 +386,53 @@ if($EmitSummary){
   # Emit as single JSON line (machine-friendly). Using Write-Host to ensure stdout visibility.
   Write-Host (ConvertTo-Json $summary -Depth 5)
 }
+
+# ---------------------------------------------------------------------------
+# Deployment Manifest (always written)
+# ---------------------------------------------------------------------------
+try {
+  $manifestServerPath = Join-Path $Destination 'dist/server/index.js'
+  $manifestSchemaPath = Join-Path $Destination 'schemas/instruction.schema.json'
+  $instrDir2 = Join-Path $Destination 'instructions'
+  $runtimeFiles2 = @(Get-ChildItem -Path $instrDir2 -Filter *.json -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\_templates\\" })
+  $mode2 = if($EmptyIndex){ 'empty-index' } elseif($ForceSeed){ 'force-seed' } elseif(-not $runtimeFiles2.Count){ 'empty-post-seed' } else { 'preserve-or-seeded-once' }
+  $serverHash2 = $null; if(Test-Path $manifestServerPath){ try { $serverHash2 = (Get-FileHash -Algorithm SHA256 -Path $manifestServerPath).Hash } catch { $serverHash2 = '<hash-error>' } }
+  $schemaHash2 = $null; if(Test-Path $manifestSchemaPath){ try { $schemaHash2 = (Get-FileHash -Algorithm SHA256 -Path $manifestSchemaPath).Hash } catch { $schemaHash2 = '<hash-error>' } }
+  $nodeVersion = $null; try { $nodeVersion = (node -v) } catch { $nodeVersion = '<node-unavailable>' }
+  $gitCommit = $null; if(Test-Path (Join-Path $PSScriptRoot '..' '.git')){ try { $gitCommit = (git rev-parse HEAD) } catch { $gitCommit = '<git-error>' } } else { $gitCommit = '<no-git-dir>' }
+  $deployManifest = [ordered]@{
+    name = $runtime.name
+    version = $runtime.version
+    deployedAt = (Get-Date).ToString('o')
+    destination = $Destination
+    gitCommit = $gitCommit
+    build = [ordered]@{
+      rebuild = [bool]$Rebuild
+      overwrite = [bool]$Overwrite
+      bundleDeps = [bool]$BundleDeps
+      allowStaleDistOnRebuildFailure = [bool]$AllowStaleDistOnRebuildFailure
+      forceSeed = [bool]$ForceSeed
+      emptyIndex = [bool]$EmptyIndex
+      pruneLegacy = [bool]$PruneLegacy
+      backupRetention = $BackupRetention
+    }
+    environment = [ordered]@{
+      nodeVersion = $nodeVersion
+      platform = $env:OS
+      processArch = $env:PROCESSOR_ARCHITECTURE
+    }
+    artifacts = [ordered]@{
+      serverIndex = [ordered]@{ exists = (Test-Path $manifestServerPath); sha256 = $serverHash2 }
+      instructionSchema = [ordered]@{ exists = (Test-Path $manifestSchemaPath); sha256 = $schemaHash2 }
+    }
+    instructions = [ordered]@{
+      runtimeCount = $runtimeFiles2.Count
+      mode = $mode2
+    }
+  }
+  $manifestPath = Join-Path $Destination 'deployment-manifest.json'
+  $deployManifest | ConvertTo-Json -Depth 10 | Out-File $manifestPath -Encoding UTF8
+  Write-Host "[deploy] Deployment manifest written: $manifestPath" -ForegroundColor Green
+} catch {
+  Write-Host "[deploy] Warning: failed to write deployment-manifest.json: $($_.Exception.Message)" -ForegroundColor Yellow
+}

@@ -99,12 +99,12 @@
                         <label class="chk simple"><input id="graph-categories" type="checkbox" checked> Categories</label>
                         <label class="chk simple"><input id="graph-usage" type="checkbox"> Usage</label>
                     </div>
-                    <div class="flags" style="order:4;">
-                        <label class="block">Edge Types
-                            <input id="graph-edgeTypes" class="form-input" placeholder="(all or comma list)">
+                    <div class="flags edge-layout-group" style="order:4;">
+                        <label class="block etypes-label" title="Filter specific edge types (comma separated). Leave blank for all."><span class="lbl-icon">🔗</span><span>Edge Types</span>
+                            <input id="graph-edgeTypes" class="form-input pill" placeholder="all (comma list)" autocomplete="off">
                         </label>
-                        <label class="block">Layout
-                            <select id="graph-layout" class="form-input">
+                        <label class="block layout-label" title="Graph layout engine (elk = hierarchical; default = Mermaid native)"><span class="lbl-icon">🧩</span><span>Layout</span>
+                            <select id="graph-layout" class="form-input pill">
                                 <option value="elk" selected>elk</option>
                                 <option value="default">default</option>
                             </select>

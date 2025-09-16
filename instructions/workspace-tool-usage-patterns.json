@@ -1,0 +1,35 @@
+{
+  "id": "workspace-tool-usage-patterns",
+  "title": "Workspace Tool Usage Patterns & Sequencing",
+  "body": "PATTERN ENRICHED: 1) discovery (list/search) 2) snapshot (export) 3) governance enrichment (add/overwrite) 4) integrity (verify + governanceHash future) 5) drift detection (diff + expected snapshot) 6) quality (prompt/review) 7) adoption metrics (usage/track + hotset) 8) lifecycle (groom + nextReviewDue roll). GOVERNANCE: owner assigned, P3, 30d review cadence.",
+  "rationale": "Standardizes how engineers interact with instruction catalog.",
+  "priority": 64,
+  "audience": "engineers",
+  "requirement": "recommended",
+  "categories": [
+    "governance",
+    "workflow"
+  ],
+  "sourceHash": "7ed9bfc23b00eeb84cd93f335f9a4062f18d19d64b73ee8de1749b1e778bb9f9",
+  "schemaVersion": "3",
+  "createdAt": "2025-08-30T21:31:02.905Z",
+  "updatedAt": "2025-08-30T21:31:02.905Z",
+  "riskScore": 56,
+  "owner": "team.platform-enablement",
+  "version": "1.0.0",
+  "status": "approved",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T21:31:02.905Z",
+  "nextReviewDue": "2025-11-28T21:31:02.905Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T21:31:02.905Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PATTERN ENRICHED: 1) discovery (list/search) 2) snapshot (export) 3) governance enrichment (add/overwrite) 4) integrity (verify + governanceHash future) 5) d...",
+  "primaryCategory": "governance"
+}

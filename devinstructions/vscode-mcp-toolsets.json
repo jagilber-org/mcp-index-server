@@ -1,0 +1,30 @@
+{
+  "id": "vscode-mcp-toolsets",
+  "title": "vscode-mcp-toolsets",
+  "body": "VS Code MCP toolsets require exact tool name matching. All tools must exist or toolset invisible. Discovery patterns: Azure DevOps (activate functions), Azure MCP (hierarchical+learn), GitHub (direct enum), Index (meta_tools), PowerShell (underscore canonical + hyphen aliases). PowerShell naming: canonical underscore names (run_powershell, emit_log) with hyphen aliases (run-powershell, emit-log). Use canonical names in toolsets for consistency. 13+ PowerShell tools available including AI agent capabilities. Toolsets are additive, don't block direct MCP access. 250+ tools across 11 servers achieved.",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "e7aae86c6990d77e6379cbf995229b031b6d32beff32f8e242bcae1fb346332d",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-04T18:06:59.417Z",
+  "updatedAt": "2025-09-04T20:09:07.484Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-04T18:06:59.417Z",
+  "nextReviewDue": "2025-12-03T18:06:59.417Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-04T18:06:59.417Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "VS Code MCP toolsets require exact tool name matching. All tools must exist or toolset invisible. Discovery patterns: Azure DevOps (activate functions), Azur..."
+}

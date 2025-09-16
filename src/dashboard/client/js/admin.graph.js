@@ -90,34 +90,58 @@
         if(effectiveLayout === 'elk') await ensureMermaidElk();
         // Merge or create frontmatter ensuring single config.theme + config.layout entries
         function mergeFrontmatter(src){
+          if(!src) return src;
           const wantThemeLine = theme ? `  theme: ${theme}` : null;
           const wantLayoutLine = (effectiveLayout === 'elk') ? '  layout: elk' : null;
+          const wantThemeVariables = `  themeVariables:\n    primaryColor: '#58a6ff'\n    primaryTextColor: '#f0f6fc'\n    primaryBorderColor: '#30363d'\n    lineColor: '#484f58'\n    secondaryColor: '#21262d'\n    tertiaryColor: '#161b22'\n    background: '#0d1117'\n    mainBkg: '#161b22'\n    secondBkg: '#21262d'`;
           const hasFrontmatter = src.startsWith('---\n');
-          if(!hasFrontmatter){
+          // If frontmatter missing OR malformed ensure we create a fresh one
+          const m = hasFrontmatter ? /^---\n([\s\S]*?)\n---\n([\s\S]*)$/m.exec(src) : null;
+          if(!m){
             const lines = ['config:'];
             if(wantThemeLine) lines.push(wantThemeLine);
             if(wantLayoutLine) lines.push(wantLayoutLine);
-            return `---\n${lines.join('\n')}\n---\n`+src;
+            lines.push(wantThemeVariables);
+            // If there was an orphan leading '---' without closing, strip it first
+            const cleaned = hasFrontmatter ? src.replace(/^---\n?/, '') : src;
+            return `---\n${lines.join('\n')}\n---\n${cleaned}`;
           }
-          // Split existing frontmatter header & body
-          const m = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/m.exec(src);
-          if(!m) return src; // malformed, skip
+          // Split existing frontmatter header & body (valid pattern)
           let header = m[1];
           const body = m[2];
           // Ensure config: section exists
           if(!/^config:/m.test(header)){
             header = 'config:\n'+header;
           }
-            // Remove existing theme/layout lines inside config: top-level to avoid duplicates
-          header = header.split(/\r?\n/).filter(l=>!(/(^\s*theme:\s)/.test(l)||/(^\s*layout:\s)/.test(l))).join('\n');
-          // Reconstruct with desired lines appended after config:
-          const rebuilt = header.split(/\r?\n/);
-          // Find index of 'config:'
+            // Remove existing simple theme/layout lines; keep a single themeVariables block (first occurrence)
+          const lines = header.split(/\r?\n/);
+          let seenThemeVars = false;
+          const filtered = [];
+          for(let i=0;i<lines.length;i++){
+            const l = lines[i];
+            if(/(^\s*theme:\s)/.test(l) || /(^\s*layout:\s)/.test(l)) continue;
+            if(/^\s*themeVariables:/.test(l)){
+              if(seenThemeVars){ continue; }
+              seenThemeVars = true;
+              filtered.push(l);
+              // retain following indented lines belonging to existing themeVariables block
+              for(let j=i+1;j<lines.length;j++){
+                const nl = lines[j];
+                if(/^\s{2,}\S/.test(nl)) { filtered.push(nl); i=j; continue; }
+                break;
+              }
+              continue;
+            }
+            filtered.push(l);
+          }
+          // Rebuild and inject desired lines after config:
+          const rebuilt = filtered;
           let cfgIdx = rebuilt.findIndex(l=>/^config:/.test(l));
           if(cfgIdx === -1){ rebuilt.unshift('config:'); cfgIdx = 0; }
           const inject = [];
           if(wantThemeLine) inject.push(wantThemeLine);
           if(wantLayoutLine) inject.push(wantLayoutLine);
+          if(!seenThemeVars) inject.push(wantThemeVariables);
           rebuilt.splice(cfgIdx+1,0,...inject);
           return `---\n${rebuilt.join('\n')}\n---\n${body}`;
         }
@@ -164,7 +188,11 @@
           window.graphOriginalSource = ensured;
           if(target) target.textContent = ensured;
         }
-        if(metaEl) metaEl.textContent = `schema=v${data.meta?.graphSchemaVersion} nodes=${data.meta?.nodeCount} edges=${data.meta?.edgeCount}`;
+            // Include scope filtering indicator so user sees when selection scoping applied
+            if(metaEl){
+              const scopeNote = scopeFiltered ? ' (scoped)' : '';
+              metaEl.textContent = `schema=v${data.meta?.graphSchemaVersion} nodes=${data.meta?.nodeCount} edges=${data.meta?.edgeCount}${scopeNote}`;
+            }
         setGraphMetaProgress('render-prep','a='+attemptId);
         try { await ensureMermaid(); } catch{}
         try { if(effectiveLayout === 'elk' && !window.mermaid?.mcpElkRegistered) await ensureMermaidElk(); } catch{}
@@ -420,5 +448,41 @@
   document.addEventListener('DOMContentLoaded', ()=>{
     const btn = document.getElementById('graph-refresh-btn');
     if(btn){ btn.addEventListener('click', ()=> window.reloadGraphMermaidForce()); }
+  });
+
+  // Inject selection change listeners to trigger reload and clear manual override mode
+  function bindScopeSelectionListeners(){
+    try {
+      const catSel = document.getElementById('drill-categories');
+      const instSel = document.getElementById('drill-instructions');
+      const handler = ()=>{
+        // Clear manual override so new scope fetch isn't masked
+        if(window.__GRAPH_MANUAL_OVERRIDE){
+          try { delete window.__GRAPH_MANUAL_OVERRIDE; } catch{}
+          try { localStorage.removeItem('mcp.graph.manualOverrideSource'); } catch{}
+          setGraphMetaProgress('scope-clear-override');
+        }
+        // If user is not editing custom graph text, trigger debounced reload
+        if(!graphEditing){
+          clearTimeout(window.__graphScopeReloadTimer);
+          setGraphMetaProgress('scope-change');
+          window.__graphScopeReloadTimer = setTimeout(()=>{ window.reloadGraphMermaid && window.reloadGraphMermaid(); }, 200);
+        }
+      };
+      if(catSel && !catSel.__mcpScopeBound){ catSel.addEventListener('change', handler); catSel.addEventListener('input', handler); catSel.__mcpScopeBound = true; }
+      if(instSel && !instSel.__mcpScopeBound){ instSel.addEventListener('change', handler); instSel.addEventListener('input', handler); instSel.__mcpScopeBound = true; }
+    } catch{}
+  }
+  window.bindScopeSelectionListeners = bindScopeSelectionListeners;
+
+  // Helper to explicitly clear manual override and force reload
+  window.clearGraphManualOverride = function(force){
+    try { delete window.__GRAPH_MANUAL_OVERRIDE; } catch{}
+    try { localStorage.removeItem('mcp.graph.manualOverrideSource'); } catch{}
+    if(force) window.reloadGraphMermaid && window.reloadGraphMermaid();
+  };
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    try { bindScopeSelectionListeners(); } catch{}
   });
 })();

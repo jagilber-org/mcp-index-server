@@ -115,6 +115,22 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
       
   // Prevent stale caching of build/version metadata in browsers / proxies
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        router.post('/admin/maintenance/normalize', async (req: Request, res: Response) => {
+          try {
+            const { dryRun, forceCanonical } = req.body || {};
+            // We call the handler directly (registered via handlers.instructions) ensuring mutation flag is respected.
+            const handler = getHandler('instructions/normalize');
+            if(!handler){
+              return res.status(503).json({ success:false, error:'normalize_tool_unavailable' });
+            }
+            const started = Date.now();
+            const summary = await Promise.resolve(handler({ dryRun: !!dryRun, forceCanonical: !!forceCanonical }));
+            const durationMs = Date.now() - started;
+            res.json({ success:true, durationMs, dryRun: !!dryRun, forceCanonical: !!forceCanonical, summary });
+          } catch(err){
+            res.status(500).json({ success:false, error:'normalize_failed', message: err instanceof Error? err.message: String(err) });
+          }
+        });
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
 
@@ -1072,58 +1088,101 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
         return res.status(500).json({ success:false, error:'failed_to_generate_mermaid'});
       }
 
-      // Optional post-filtering: When selectedCategories or selectedIds are provided we prune the
-      // mermaid source to only keep relevant node/edge lines. This is a pragmatic line-based filter
-      // relying on the stable "id[" pattern for nodes and "id --> id" (or other edge tokens).
+      // Optional post-filtering: When selectedCategories or selectedIds are provided we produce a
+      // narrowed mermaid diagram. Original implementation used heuristic line scanning which:
+      //  1. Failed to match instruction nodes by category (instruction lines rarely contain category text)
+      //  2. Dropped frontmatter body, retaining only '---' delimiters (breaking YAML)
+      //  3. Did not leverage already-built structured graph (graph.nodes / graph.edges)
+      // New approach:
+      //  - Build keep set from selectedIds and/or instruction nodes whose categories intersect selectedCategories
+      //  - Include explicit category:* nodes for selected categories when category nodes are enabled
+      //  - Preserve entire frontmatter block + directive line intact
+      //  - Filter node/edge lines strictly by kept ids
       let mermaidSource = graph.mermaid;
+      // buildGraph already injects YAML frontmatter + themeVariables; no repair needed now
       const catFilter = selectedCategories?.split(',').filter(Boolean) || [];
       const idFilter = selectedIds?.split(',').filter(Boolean) || [];
-      if(catFilter.length || idFilter.length){
+      let filteredNodeCount: number | undefined; let filteredEdgeCount: number | undefined; let scoped = false; let keptIdsSize = 0;
+      if((catFilter.length || idFilter.length) && mermaidSource){
         try {
           const keepIds = new Set<string>();
-          // When categories are specified we attempt to detect nodes whose labels include the category
-          // or an inline annotation. Because the raw mermaid source structure may evolve, this is best-effort.
-          const lines = mermaidSource.split(/\r?\n/);
-          // First pass: identify node ids lines like:    id[Label ...]
-          for(const ln of lines){
-            const m = ln.match(/^(\s*)([A-Za-z0-9_-]+)\[/);
-            if(m){
-              const nodeId = m[2];
-              if(idFilter.includes(nodeId)) { keepIds.add(nodeId); continue; }
-              if(catFilter.length){
-                const lower = ln.toLowerCase();
-                if(catFilter.some(c=> lower.includes(c.toLowerCase()))) keepIds.add(nodeId);
+          // Always honor explicit id selections
+            for(const id of idFilter) keepIds.add(id);
+          const wantCategoryNodes = (categories === '1' || categories === 'true');
+          if(catFilter.length){
+            const catSet = new Set(catFilter.map(c=> c.toLowerCase()));
+            // Add explicit category node ids even if no instruction currently selected (contextual anchor)
+            if(wantCategoryNodes){
+              for(const c of catFilter){ keepIds.add(`category:${c}`); }
+            }
+            // If enriched, leverage node metadata for precise category membership
+            if(graph.meta.graphSchemaVersion === 2){
+              type EnrichedNodeLike = { id: string; categories?: string[] };
+              for(const nodeRaw of graph.nodes as EnrichedNodeLike[]){
+                const nodeCats = nodeRaw.categories;
+                if(Array.isArray(nodeCats) && nodeCats.some(c=> catSet.has(c.toLowerCase()))){
+                  keepIds.add(nodeRaw.id);
+                  if(wantCategoryNodes){
+                    for(const c of nodeCats){ if(catSet.has(c.toLowerCase())) keepIds.add(`category:${c}`); }
+                  }
+                }
               }
             }
           }
-          // Union explicit idFilter even if not matched above
-          for(const id of idFilter) keepIds.add(id);
           if(keepIds.size){
+            // Extract and preserve complete frontmatter (if present) BEFORE line filtering
+            let frontmatterBlock = '';
+            let remainder = mermaidSource;
+            if(remainder.startsWith('---\n')){
+              const fmMatch = /^---\n[\s\S]*?\n---\n/.exec(remainder);
+              if(fmMatch){
+                frontmatterBlock = fmMatch[0];
+                remainder = remainder.slice(fmMatch[0].length);
+              }
+            }
+            const lines = remainder.split(/\r?\n/);
+            // Capture directive (flowchart TB / graph TD)
+            const directiveIdx = lines.findIndex(l=> /^\s*(flowchart|graph)\b/i.test(l));
+            let directiveLine = '';
+            if(directiveIdx >=0){
+              directiveLine = lines[directiveIdx];
+            }
             const nodeIdPattern = Array.from(keepIds).map(id=> id.replace(/[-/\\^$*+?.()|[\]{}]/g,'\\$&')).join('|');
-            const edgeRegex = new RegExp(`^(.*)(${nodeIdPattern})(.*)(${nodeIdPattern})(.*)$`);
             const nodeRegex = new RegExp(`^(\\s*)(${nodeIdPattern})\\[`);
+            const edgeRegex = new RegExp(`^(.*)(${nodeIdPattern})(.*)(${nodeIdPattern})(.*)$`);
             const filtered: string[] = [];
+            const styleRegexes = [
+              /^\s*classDef\s+/i,
+              /^\s*style\s+[A-Za-z0-9:_-]+\s+/i,
+              /^\s*class\s+[A-Za-z0-9:_-]+\s+/i,
+              /^\s*linkStyle\s+\d+/i
+            ];
             for(const ln of lines){
-              if(ln.trim().startsWith('%%')) { filtered.push(ln); continue; } // keep comments / config
-              if(nodeRegex.test(ln) || edgeRegex.test(ln)) { filtered.push(ln); }
+              if(!ln) continue;
+              if(directiveLine && ln === directiveLine){ continue; } // we'll add once later
+              const trimmed = ln.trim();
+              if(trimmed.startsWith('%%')) { filtered.push(ln); continue; }
+              // Preserve style/class directives globally so visual theming remains after scoping
+              if(styleRegexes.some(r=> r.test(trimmed))){ filtered.push(ln); continue; }
+              if(nodeRegex.test(ln) || edgeRegex.test(ln)) filtered.push(ln);
             }
-            // Preserve frontmatter (---) blocks if present
-            const frontmatterBlocks = lines.filter(l=> /^---/.test(l));
-            // Preserve directive line (e.g. 'flowchart TB' or legacy 'graph TD') which is required for mermaid parsing.
-            const directiveLine = lines.find(l=> /^\s*(flowchart|graph)\b/i.test(l));
-            // If directive accidentally matched filtering (future change) avoid duplicate.
             const parts: string[] = [];
-            if(frontmatterBlocks.length) parts.push(...frontmatterBlocks);
+            if(frontmatterBlock) parts.push(frontmatterBlock.trimEnd());
             if(directiveLine) parts.push(directiveLine);
-            for(const fl of filtered){
-              if(fl === directiveLine) continue; // de-dupe safeguard
-              parts.push(fl);
-            }
+            parts.push(...filtered);
             mermaidSource = parts.join('\n');
             if(process.env.MCP_DEBUG){
               // eslint-disable-next-line no-console
-              console.debug('[graph/mermaid][filter]', { kept: keepIds.size, totalLines: lines.length, emittedLines: parts.length });
+              console.debug('[graph/mermaid][filter:new]', { selectedIds: idFilter.length, selectedCategories: catFilter.length, kept: keepIds.size, totalLines: lines.length, emittedLines: parts.length });
             }
+            // Derive filtered counts (approximate by scanning filtered lines for node and edge patterns)
+            keptIdsSize = keepIds.size; scoped = true;
+            try {
+              const nodeLineRegex = /^(\s*)([A-Za-z0-9:_-]+)\[[^\]]*\]/;
+              const edgeLineRegex = /-->|===|~~>|\|-/; // heuristic for mermaid edge connectors
+              let n=0,eCnt=0; for(const ln of filtered){ if(nodeLineRegex.test(ln)) n++; else if(edgeLineRegex.test(ln)) eCnt++; }
+              filteredNodeCount = n; filteredEdgeCount = eCnt; }
+            catch{ /* ignore count derivation errors */ }
           }
         } catch(filterErr){
           console.warn('[graph/mermaid][filter-failed]', filterErr);
@@ -1133,7 +1192,21 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
         // eslint-disable-next-line no-console
         console.debug('[graph/mermaid][ok]', { ms: Date.now()-t0, nodes: graph.meta?.nodeCount, edges: graph.meta?.edgeCount, bytes: mermaidSource.length });
   } catch { /* ignore diag logging errors */ }
-      res.json({ success:true, meta: graph.meta, mermaid: mermaidSource });
+      // If scoped, clone meta to reflect filtered counts while preserving original for potential debugging.
+      let metaOut: typeof graph.meta = graph.meta;
+      if(scoped && graph.meta){
+        try {
+          type GraphMetaType = typeof graph.meta;
+          const base: GraphMetaType = { ...graph.meta } as GraphMetaType; // preserve required fields
+          const augmented = base as GraphMetaType & { scoped?: boolean; keptIds?: number };
+          if(typeof filteredNodeCount === 'number') (augmented as { nodeCount: number }).nodeCount = filteredNodeCount;
+          if(typeof filteredEdgeCount === 'number') (augmented as { edgeCount: number }).edgeCount = filteredEdgeCount;
+          augmented.scoped = true;
+          augmented.keptIds = keptIdsSize;
+          metaOut = augmented;
+        } catch { /* ignore meta cloning issues */ }
+      }
+      res.json({ success:true, meta: metaOut, mermaid: mermaidSource });
     } catch(err){
       const e = err as Error;
       try {

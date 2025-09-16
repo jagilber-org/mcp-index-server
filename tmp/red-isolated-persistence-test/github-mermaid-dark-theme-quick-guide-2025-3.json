@@ -14,14 +14,14 @@
   "primaryCategory": "documentation",
   "sourceHash": "bbb2b09d1860b0bd9f8abaeb6f70255766581beb41cb1fbf75538d7db33d0ac7",
   "schemaVersion": "3",
-  "createdAt": "2025-09-14T19:53:32.333Z",
-  "updatedAt": "2025-09-14T19:53:32.333Z",
+  "createdAt": "2025-09-16T14:51:47.477Z",
+  "updatedAt": "2025-09-16T14:51:47.477Z",
   "riskScore": 55,
   "version": "1.0.0",
   "changeLog": [
     {
       "version": "1.0.0",
-      "changedAt": "2025-09-14T19:53:32.333Z",
+      "changedAt": "2025-09-16T14:51:47.477Z",
       "summary": "initial import"
     }
   ],
@@ -29,8 +29,8 @@
   "owner": "unowned",
   "priorityTier": "P3",
   "classification": "internal",
-  "lastReviewedAt": "2025-09-14T19:53:32.334Z",
-  "nextReviewDue": "2025-12-13T19:53:32.334Z",
+  "lastReviewedAt": "2025-09-16T14:51:47.477Z",
+  "nextReviewDue": "2025-12-15T14:51:47.477Z",
   "reviewIntervalDays": 90,
   "semanticSummary": "Minimal body for isolated persistence divergence reproduction."
 }

@@ -1,0 +1,37 @@
+{
+  "id": "powershell-mcp-server-capabilities",
+  "title": "PowerShell MCP Server Capabilities and Usage",
+  "body": "The PowerShell MCP Server (mcp_powershell-mc_*) provides comprehensive PowerShell execution with advanced security, metrics, and analysis capabilities:\n\n## Core Functions:\n- **run-powershell**: Execute PowerShell scripts/commands with security classification\n- **powershell-syntax-check**: Validate PowerShell syntax with Script Analyzer integration\n- **server-stats**: Monitor performance metrics and command statistics\n- **help**: Get contextual help and usage guidance\n\n## Security Features:\n- Multi-tier classification: SAFE, RISKY, DANGEROUS, CRITICAL, UNKNOWN, BLOCKED\n- Confirmation gates for risky operations\n- Working directory policy enforcement\n- Authentication via MCP_AUTH_KEY environment variable\n\n## Performance Monitoring:\n- Command execution metrics (duration, p95 percentiles)\n- PowerShell process metrics (CPU, memory)\n- Overflow detection and handling\n- Timeout management with adaptive extensions\n\n## Syntax Analysis:\n- PowerShell Script Analyzer integration (PWSH_SYNTAX_ANALYZER=1)\n- Real-time syntax validation\n- Best practice recommendations\n- Rule-based diagnostics with severity levels\n\n## Environment Configuration:\n- MCP_CAPTURE_PS_METRICS=1: Enable performance capture\n- PWSH_SYNTAX_ANALYZER=1: Enable syntax analyzer\n- METRICS_PORT=9090: Metrics endpoint\n- Timeout defaults to 90s, configurable via timeoutSeconds parameter",
+  "rationale": "Essential reference for PowerShell MCP server usage and configuration",
+  "priority": 8,
+  "audience": "developers",
+  "requirement": "must",
+  "categories": [
+    "development-tools",
+    "mcp-servers",
+    "monitoring",
+    "powershell"
+  ],
+  "sourceHash": "e9d91ac44f8b2f67642913f2ca78c8decce2ef2c5da94f578efbd249f875d237",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-02T10:34:51.684Z",
+  "updatedAt": "2025-09-02T10:34:51.684Z",
+  "riskScore": 92,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-02T10:34:51.685Z",
+  "nextReviewDue": "2025-10-02T10:34:51.685Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-02T10:34:51.684Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "The PowerShell MCP Server (mcp_powershell-mc_*) provides comprehensive PowerShell execution with advanced security, metrics, and analysis capabilities:",
+  "primaryCategory": "development-tools"
+}

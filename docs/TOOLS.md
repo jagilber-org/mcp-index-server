@@ -464,9 +464,27 @@ graph Instructions {
   "instr.beta" -- "category:ai" [label="belongs"];
 }
 ```
-**Mermaid Output Example:** (enriched with category node and edge labels)
+**Mermaid Output Example (with YAML frontmatter & themeVariables)**  
+The server now emits a YAML frontmatter block as the first segment of Mermaid output. This block is authoritative for theming (including `themeVariables`) and high‑level metadata. The actual `flowchart TB` line appears *after* the terminating `---` marker. Tests and downstream tooling should not assume the first line starts with `flowchart` anymore—always scan for the `flowchart` directive after frontmatter.
 
 ```mermaid
+---
+title: Instruction Catalog Graph
+description: Deterministic instruction relationship graph (schema v2 enriched example)
+config:
+  theme: base
+  themeVariables:
+    primaryColor: '#1e3a8a'
+    primaryTextColor: '#ffffff'
+    lineColor: '#94a3b8'
+    secondaryColor: '#334155'
+    tertiaryColor: '#0f172a'
+    noteBkgColor: '#f1f5f9'
+    noteTextColor: '#0f172a'
+meta:
+  schemaVersion: 2
+  generatedAt: 2025-09-15T12:00:00.000Z  # example timestamp
+---
 flowchart TB
   instr_alpha["instr.alpha"]
   instr_beta["instr.beta"]
@@ -476,6 +494,14 @@ flowchart TB
   instr_beta ---|primary| category_ai
   instr_beta ---|belongs| category_ai
 ```
+
+Frontmatter / Theming Notes:
+
+* Exactly one frontmatter block is emitted—clients should preserve it when copying or re‑rendering.
+* `config.themeVariables` is the canonical place to customize colors; server may evolve defaults without breaking consumer parsing.
+* Additional keys (e.g., `meta`) may appear; consumers should ignore unknown keys for forward compatibility.
+* If you need to modify only visuals client‑side, prefer appending a second (non‑YAML) comment section rather than rewriting frontmatter to avoid drift.
+* The graph body (nodes & edges) intentionally has no leading indentation beyond two spaces for readability and regex stability.
 
 **Client Usage Examples:**
 

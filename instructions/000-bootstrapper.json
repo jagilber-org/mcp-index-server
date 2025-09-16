@@ -5,9 +5,14 @@
   "audience": "agents",
   "requirement": "required",
   "priorityTier": "p0",
-  "categories": ["bootstrap","lifecycle"],
+  "categories": [
+    "bootstrap",
+    "lifecycle"
+  ],
   "owner": "system",
-  "version": 1,
-  "sourceHash": "sha256:2f42a4c8",
-  "semanticSummary": "Bootstrap activation steps with confirmation token gating mutations"
+  "version": "1.0.0",
+  "sourceHash": "61f5dc37d8a3714c612e4ff7426facb365ad10e83ceaa7a2232d7b6c4796842a",
+  "semanticSummary": "Bootstrap activation steps with confirmation token gating mutations",
+  "createdAt": "2025-09-15T14:43:33.761Z",
+  "updatedAt": "2025-09-15T14:43:33.761Z"
 }

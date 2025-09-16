@@ -1,0 +1,35 @@
+{
+  "id": "powershell-module-development-patterns",
+  "title": "PowerShell Module Development Best Practices",
+  "body": "PowerShell Core module development patterns and best practices:\n\n**Module Structure:**\n```\nMyModule/\n├── MyModule.psd1          # Module manifest\n├── MyModule.psm1          # Root module script\n├── Public/                # Public functions\n│   ├── Get-Something.ps1\n│   └── Set-Something.ps1\n├── Private/               # Private helper functions\n│   └── Helper.ps1\n├── Types/                 # Custom type definitions\n│   └── MyModule.Types.ps1xml\n├── Formats/               # Custom format definitions\n│   └── MyModule.Format.ps1xml\n├── en-US/                 # Localization resources\n│   └── MyModule.psd1\n└── Tests/                 # Pester tests\n    ├── Unit/\n    └── Integration/\n```\n\n**Module Manifest Best Practices:**\n```powershell\n@{\n    RootModule = 'MyModule.psm1'\n    ModuleVersion = '1.0.0'\n    CompatiblePSEditions = @('Core', 'Desktop')\n    GUID = 'unique-guid-here'\n    Author = 'Author Name'\n    CompanyName = 'Company'\n    Copyright = 'Copyright statement'\n    Description = 'Module description'\n    \n    # Minimum PowerShell version\n    PowerShellVersion = '7.0'\n    \n    # Required modules\n    RequiredModules = @(\n        @{ ModuleName = 'RequiredModule'; ModuleVersion = '1.0.0' }\n    )\n    \n    # Exported functions (be explicit)\n    FunctionsToExport = @('Get-Something', 'Set-Something')\n    CmdletsToExport = @()\n    VariablesToExport = @()\n    AliasesToExport = @()\n    \n    # Help and metadata\n    HelpInfoURI = 'https://help.example.com/'\n    PrivateData = @{\n        PSData = @{\n            Tags = @('PowerShell', 'Utility')\n            LicenseUri = 'https://opensource.org/licenses/MIT'\n            ProjectUri = 'https://github.com/user/repo'\n            ReleaseNotes = 'Initial release'\n        }\n    }\n}\n```\n\n**Function Development:**\n```powershell\nfunction Get-Something {\n    [CmdletBinding(SupportsShouldProcess)]\n    [OutputType([PSCustomObject])]\n    param(\n        [Parameter(Mandatory, ValueFromPipeline)]\n        [ValidateNotNullOrEmpty()]\n        [string]$Name,\n        \n        [Parameter()]\n        [ValidateRange(1, 100)]\n        [int]$Count = 10\n    )\n    \n    begin {\n        Write-Verbose \"Starting $($MyInvocation.MyCommand)\"\n        $results = [System.Collections.Generic.List[PSCustomObject]]::new()\n    }\n    \n    process {\n        foreach ($item in $Name) {\n            if ($PSCmdlet.ShouldProcess($item, \"Get\")) {\n                try {\n                    # Main logic here\n                    $result = [PSCustomObject]@{\n                        Name = $item\n                        Value = $someValue\n                        Timestamp = Get-Date\n                    }\n                    $results.Add($result)\n                }\n                catch {\n                    $PSCmdlet.WriteError($_)\n                }\n            }\n        }\n    }\n    \n    end {\n        Write-Verbose \"Processed $($results.Count) items\"\n        return $results\n    }\n}\n```\n\n**Error Handling in Modules:**\n```powershell\n# Use appropriate error categories\n$errorRecord = [System.Management.Automation.ErrorRecord]::new(\n    $exception,\n    'UniqueErrorId',\n    [System.Management.Automation.ErrorCategory]::InvalidOperation,\n    $targetObject\n)\n$PSCmdlet.WriteError($errorRecord)\n\n# Throw terminating errors appropriately\n$PSCmdlet.ThrowTerminatingError($errorRecord)\n\n# Use Write-Warning for non-critical issues\nWrite-Warning \"This is deprecated, use New-Function instead\"\n```\n\n**Module Loading Optimization:**\n```powershell\n# In module root (.psm1)\n# Dot-source functions efficiently\n$functionFiles = Get-ChildItem -Path $PSScriptRoot\\Public\\*.ps1, $PSScriptRoot\\Private\\*.ps1 -ErrorAction SilentlyContinue\n\nforeach ($file in $functionFiles) {\n    try {\n        . $file.FullName\n    }\n    catch {\n        Write-Error \"Failed to import $($file.FullName): $($_)\"\n    }\n}\n\n# Export only public functions\n$publicFunctions = Get-ChildItem -Path $PSScriptRoot\\Public\\*.ps1 -ErrorAction SilentlyContinue\nExport-ModuleMember -Function $publicFunctions.BaseName\n```\n\n**Testing Integration:**\n```powershell\n# Module tests should be comprehensive\nDescribe \"MyModule\" -Tag \"Module\" {\n    BeforeAll {\n        Import-Module $PSScriptRoot\\..\\MyModule -Force\n    }\n    \n    Context \"Module loading\" {\n        It \"Should load without errors\" {\n            Get-Module MyModule | Should -Not -BeNullOrEmpty\n        }\n        \n        It \"Should export expected functions\" {\n            $commands = Get-Command -Module MyModule\n            $commands.Name | Should -Contain \"Get-Something\"\n        }\n    }\n}\n```\n\n**Backwards Compatibility:**\n- Support both PowerShell Core and Windows PowerShell when possible\n- Use CompatiblePSEditions in manifest\n- Test on multiple PowerShell versions\n- Use #Requires statements for version dependencies\n- Provide migration guides for breaking changes",
+  "priority": 8,
+  "audience": "PowerShell module authors and contributors",
+  "requirement": "Essential for PowerShell module authors",
+  "categories": [
+    "best practices",
+    "module development",
+    "powershell"
+  ],
+  "sourceHash": "8149f86d765a2d7baf2047ba647275c35d12a9dfb155c979df730ded7ad35857",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-02T11:57:35.856Z",
+  "updatedAt": "2025-09-02T11:57:35.856Z",
+  "riskScore": 92,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-02T11:57:35.856Z",
+  "nextReviewDue": "2025-10-02T11:57:35.856Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-02T11:57:35.856Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PowerShell Core module development patterns and best practices:",
+  "primaryCategory": "best practices"
+}

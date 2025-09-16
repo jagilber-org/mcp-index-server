@@ -1,0 +1,38 @@
+{
+  "id": "microsoft-emu-authentication",
+  "title": "Microsoft Enterprise Managed Users (EMU) Authentication Setup",
+  "body": "## Microsoft Enterprise Managed Users (EMU) Authentication Setup\n\n### Overview\nMicrosoft Enterprise Managed Users (EMU) provides centralized identity management for GitHub Enterprise accounts through Microsoft Entra ID (formerly Azure AD). EMU accounts have usernames ending with `_microsoft` and require Single Sign-On (SSO) authentication.\n\n### Prerequisites\n- Microsoft EMU GitHub account (username ends with `_microsoft`)\n- Access to Microsoft's GitHub Enterprise at https://github.com/enterprises/microsoft\n- Microsoft Entra ID credentials\n\n### Authentication Methods\n\n#### Method 1: Personal Access Token (Recommended)\n1. **Navigate to GitHub Settings**:\n   - Go to https://github.com/settings/tokens\n   - Click \"Generate new token (classic)\"\n\n2. **Configure Token**:\n   - **Note**: Provide descriptive name (e.g., \"Git Operations - DevMachine\")\n   - **Scopes**: Select `repo` (full repository access) and `workflow` (if using GitHub Actions)\n   - Click \"Generate token\"\n\n3. **Authorize for SAML SSO**:\n   - After creating the token, click \"Configure SSO\" next to it\n   - Click \"Authorize\" for your organization\n   - Complete Microsoft SSO authentication\n\n4. **Configure Git Credentials**:\n   ```bash\n   # Set EMU username for GitHub\n   git config --global credential.https://github.com.username \"your_username_microsoft\"\n   \n   # For repository-specific setup\n   git config credential.https://github.com.username \"your_username_microsoft\"\n   \n   # Use credential manager\n   git config credential.helper manager\n   ```\n\n5. **First Git Operation**:\n   - When prompted for credentials:\n     - **Username**: `your_username_microsoft`\n     - **Password**: Use your Personal Access Token (not your password)\n\n#### Method 2: GitHub CLI with EMU\n1. **Install GitHub CLI** (if not already installed)\n2. **Authenticate with EMU**:\n   ```bash\n   gh auth login --hostname github.com --web\n   ```\n3. **Follow browser authentication** through Microsoft SSO\n\n### Repository Configuration\n\n#### For New Repository Setup:\n```bash\n# Clone with EMU authentication\ngit clone https://github.com/your_username_microsoft/repository.git\ncd repository\n\n# Configure user identity for this repo\ngit config user.name \"your_username_microsoft\"\ngit config user.email \"your.email@microsoft.com\"\n```\n\n#### For Existing Repository:\n```bash\n# Set EMU identity\ngit config user.name \"your_username_microsoft\"\ngit config user.email \"your.email@microsoft.com\"\n\n# Configure EMU authentication\ngit config credential.https://github.com.username \"your_username_microsoft\"\n\n# Add/update remotes\ngit remote set-url origin https://github.com/your_username_microsoft/repository.git\n```\n\n### Common Workflows\n\n#### Setting up Fork and Upstream:\n```bash\n# Add your EMU fork as origin\ngit remote add origin https://github.com/your_username_microsoft/repository.git\n\n# Add original repository as upstream\ngit remote add upstream https://github.com/original-owner/repository.git\n\n# Verify remotes\ngit remote -v\n```\n\n#### Syncing with Upstream:\n```bash\n# Fetch from upstream\ngit fetch upstream\n\n# Merge upstream changes\ngit checkout main\ngit merge upstream/main\n\n# Push to your fork\ngit push origin main\n```\n\n### Troubleshooting\n\n#### Authentication Failures:\n1. **Ensure SAML SSO authorization** on your Personal Access Token\n2. **Check username format**: Must end with `_microsoft`\n3. **Verify token scopes**: Ensure `repo` scope is selected\n4. **Clear cached credentials**:\n   ```bash\n   # Windows\n   git config --global --unset credential.helper\n   git config credential.helper manager\n   ```\n\n#### Browser Authentication:\n- If prompted for browser authentication, complete the Microsoft SSO flow\n- Ensure you're signed in to the correct Microsoft account\n- Check that you have access to the GitHub Enterprise organization\n\n#### Token Expiration:\n- Personal Access Tokens may expire based on organization policy\n- Regenerate tokens as needed and update stored credentials\n- Consider using fine-grained tokens for better security\n\n### Security Best Practices\n\n1. **Use fine-grained tokens** when possible for minimal access\n2. **Regularly rotate tokens** based on your organization's policy\n3. **Never commit tokens** to repositories\n4. **Use different tokens** for different purposes/machines\n5. **Enable 2FA** on your Microsoft account\n\n### Organization-Specific Notes\n\n- **Microsoft Enterprise**: Access through https://github.com/enterprises/microsoft\n- **SSO Required**: All operations require Microsoft Entra ID authentication\n- **Managed Identity**: Your GitHub account is managed by Microsoft IT\n- **Policy Compliance**: Follow your organization's GitHub usage policies\n\n### Additional Resources\n\n- [GitHub EMU Documentation](https://docs.github.com/en/enterprise-cloud@latest/admin/authentication/managing-your-enterprise-users-with-your-identity-provider/about-enterprise-managed-users)\n- [Microsoft Entra ID SAML SSO](https://learn.microsoft.com/en-us/entra/identity/saas-apps/github-enterprise-managed-user-tutorial)\n- [Personal Access Tokens](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)",
+  "rationale": "Essential guide for developers working with Microsoft Enterprise Managed Users (EMU) GitHub accounts, covering authentication setup, troubleshooting, and best practices.",
+  "priority": 5,
+  "audience": "developers",
+  "requirement": "essential",
+  "categories": [
+    "authentication",
+    "emu",
+    "git",
+    "github",
+    "microsoft"
+  ],
+  "primaryCategory": "authentication",
+  "sourceHash": "94036a5977e3253e20a8c6023829b141af186c9866913ec841c6383e556e03f1",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-14T18:12:07.878Z",
+  "updatedAt": "2025-09-14T18:12:07.878Z",
+  "riskScore": 95,
+  "version": "1.0.0",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-14T18:12:07.878Z",
+      "summary": "initial import"
+    }
+  ],
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-14T18:12:07.878Z",
+  "nextReviewDue": "2025-10-14T18:12:07.878Z",
+  "reviewIntervalDays": 30,
+  "semanticSummary": "## Microsoft Enterprise Managed Users (EMU) Authentication Setup"
+}

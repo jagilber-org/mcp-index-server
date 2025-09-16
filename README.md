@@ -252,7 +252,18 @@ If VS Code shows "Configured but Not Connected":
 
 ### 🔑 Bootstrap Flow (Activation & Gating)
 
-The server ships with two minimal bootstrap seed instructions (`000-bootstrapper`, `001-lifecycle-bootstrap`). They enable a clean agent to understand how to safely activate mutation while preventing governance recursion.
+The server guarantees presence of two minimal bootstrap seed instructions (`000-bootstrapper`, `001-lifecycle-bootstrap`). On startup, if they are missing (fresh or empty instructions directory) they are automatically created (non-destructive – existing files are never overwritten). Disable with `MCP_AUTO_SEED=0`. Verbose seed logging: `MCP_SEED_VERBOSE=1`.
+
+Auto-seeding summary events are logged as `seed_summary` with fields: `created[]`, `existing[]`, `disabled`, and a deterministic `hash` of canonical seed content for audit reproducibility.
+
+Environment variables relevant to seeding:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MCP_AUTO_SEED` | 1 | Create missing bootstrap seeds if absent (never overwrite) |
+| `MCP_SEED_VERBOSE` | 0 | Emit stderr diagnostic line with counts and hash |
+
+Idempotency: Subsequent restarts find existing seeds and perform no writes; multi-instance race conditions are harmless due to atomic write + rename pattern.
 
 Bootstrap tools:
 
@@ -354,6 +365,57 @@ Rationale: Keeps authoring friction low while making CRUD semantics deterministi
 node dist/server/index.js
 ```
 
+### 🔍 **Recommended Search-First Workflow**
+
+**For MCP clients and agents, use this pattern to efficiently discover and retrieve instructions:**
+
+1. **🔍 Search First** - Use `instructions/search` to find relevant instruction IDs:
+
+   ```json
+   {
+     "method": "tools/call",
+     "params": {
+       "name": "instructions/search",
+       "arguments": {
+         "keywords": ["javascript", "arrays"],
+         "limit": 10,
+         "includeCategories": true
+       }
+     }
+   }
+   ```
+
+2. **📝 Get Details** - Use `instructions/dispatch` with `get` action for full instruction content:
+
+   ```json
+   {
+     "method": "tools/call", 
+     "params": {
+       "name": "instructions/dispatch",
+       "arguments": {
+         "action": "get",
+         "id": "instruction-id-from-search"
+       }
+     }
+   }
+   ```
+
+**Why This Pattern?**
+
+* ✅ **Efficient**: Search returns only IDs, not full content
+* ✅ **Fast**: Keyword search is optimized for performance  
+* ✅ **Scalable**: Works well with large instruction catalogs
+* ✅ **Targeted**: Get only the instructions you need
+* ✅ **MCP Compliant**: Follows MCP tool discovery best practices
+
+**Search Features:**
+
+* Multi-keyword support with relevance scoring
+* Case-sensitive and case-insensitive options
+* Search across titles, bodies, and optionally categories
+* Input validation and error handling
+* Configurable result limits (1-100)
+
 ## Local Production Deployment (c:\mcp)
 
 Quick script creates a trimmed runtime copy (dist + minimal package.json + seed instructions) at `C:\mcp\mcp-index-server`.
@@ -420,6 +482,80 @@ Notes:
 * Governance & usage data live inside the instruction JSON files; keeping backups provides full recoverability.
 
 Optional: Create a scheduled task or Windows Service wrapper invoking `pwsh -File C:\mcp\mcp-index-server\start.ps1 -EnableMutation` for auto-start.
+
+### Deployment Manifest & Post-Deploy Smoke Test (1.5.x)
+
+Every invocation of `scripts/deploy-local.ps1` now writes `deployment-manifest.json` at the deployment root.
+This manifest is an immutable audit record of what was deployed, how, and with which core artifacts.
+
+Manifest fields (stable, additive only):
+
+| Field | Description |
+|-------|-------------|
+| `name` / `version` | Runtime package identity copied from trimmed `package.json` |
+| `deployedAt` | ISO 8601 UTC timestamp of manifest creation |
+| `destination` | Absolute deployment path |
+| `gitCommit` | Source HEAD commit (or placeholder if no `.git` present) |
+| `build.rebuild` / `overwrite` / `bundleDeps` | Flags passed to deploy script |
+| `build.allowStaleDistOnRebuildFailure` | Indicates fallback to existing `dist/` was permitted |
+| `build.forceSeed` / `emptyIndex` | Instruction seeding strategy captured for provenance |
+| `build.backupRetention` | Retention limit applied to timestamped instruction backups |
+| `environment.nodeVersion` | Node runtime version at deploy time (used for drift / repro) |
+| `artifacts.serverIndex.sha256` | Hash of `dist/server/index.js` (deploy-time integrity anchor) |
+| `artifacts.instructionSchema.sha256` | Hash of runtime schema file (if present) |
+| `instructions.runtimeCount` | Count of non-template instruction JSON files deployed |
+| `instructions.mode` | Derived classification of instruction seeding (`empty-index`, `force-seed`, etc.) |
+
+Integrity Rationale:
+
+* Guarantees reproducibility (exact server bundle + schema hash).
+* Facilitates post-deploy diff checks (compare manifests across versions).
+* Decouples operational drift detection from live filesystem state.
+
+#### Smoke Validation
+
+Use the new script `scripts/smoke-deploy.ps1` to verify a deployment quickly before pointing clients at it:
+
+```powershell
+pwsh scripts/smoke-deploy.ps1 -Path C:\mcp\mcp-index-server -Json
+```
+
+Checks performed:
+
+1. `dist/server/index.js` exists and its SHA256 matches the manifest.
+2. `schemas/instruction.schema.json` presence + hash (soft-fail unless `-Strict`).
+3. Instruction runtime count matches manifest record.
+4. Derived instruction mode matches persisted `instructions.mode`.
+5. Local `node -v` equals recorded `environment.nodeVersion` (drift detection).
+
+Exit Codes:
+
+* `0` – All required checks passed
+* `1` – One or more integrity checks failed
+
+Flags:
+
+* `-Json` – Emit machine-readable summary (always safe for CI ingestion)
+* `-Strict` – Treat missing optional artifacts (schema) as failures
+
+Typical CI pattern after deployment:
+
+```powershell
+pwsh scripts/deploy-local.ps1 -Destination C:\mcp\mcp-index-server -Rebuild -Overwrite -BundleDeps
+pwsh scripts/smoke-deploy.ps1 -Path C:\mcp\mcp-index-server -Json
+```
+
+Manifest Comparison Example (PowerShell):
+
+```powershell
+Compare-Object \
+  (Get-Content C:\mcp\mcp-index-server\deployment-manifest.json | ConvertFrom-Json) \
+  (Get-Content C:\mcp\mcp-index-server-prev\deployment-manifest.json | ConvertFrom-Json) -Property version, gitCommit, artifacts
+```
+
+This surfaces version / commit / hash drift succinctly without scanning full directory trees.
+
+Recommended Next Step (future enhancement): integrate a lightweight live tool probe (`health/check`, `meta/tools`) into an extended smoke script for end-to-end process validation after starting the server. The current script intentionally avoids starting processes to remain side-effect free.
 
 
 ### Admin Dashboard Usage (Optional)

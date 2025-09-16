@@ -1,0 +1,30 @@
+{
+  "id": "mcp-obfuscation-server-guide",
+  "title": "MCP Obfuscation Server - Comprehensive Tool Guide",
+  "body": "# MCP Obfuscation Server - Complete Tool Reference\n\n## Server Overview\n- **Authentication**: JWT-based admin access for sensitive operations\n- **Tool Count**: 35+ tools across 8 categories\n- **Core Feature**: Bidirectional obfuscation/deobfuscation with session consistency\n\n## Tool Activation Categories\nTools must be activated by category before use:\n\n### 1. Configuration Tools\n`activate_mcp_obfuscate_configuration_tools()`\n- Logging and runtime behavior management\n- Proxy target configuration\n- Health checks and system monitoring\n\n### 2. User Management Tools\n`activate_mcp_obfuscate_user_management_tools()`\n- Authentication and registration\n- API key management\n- User guidance and documentation\n\n### 3. Obfuscation Tools\n`activate_mcp_obfuscate_obfuscation_tools()`\n- **mcp_obfuscate-mcp_unified_obfuscate**: Primary file obfuscation\n- **mcp_obfuscate-mcp_obfuscate_text**: In-memory text processing\n- **mcp_obfuscate-mcp_enhanced_obfuscate**: Advanced pattern filtering\n- **mcp_obfuscate-mcp_bulk_unified_obfuscate**: Batch file processing\n- **mcp_obfuscate-mcp_process_kusto_results**: Azure Kusto integration\n- **mcp_obfuscate-mcp_read_file_redacted**: File reading with PII redaction\n\n### 4. Key Management Tools\n`activate_mcp_obfuscate_key_management_tools()`\n- **mcp_obfuscate-mcp_list_obfuscation_keys**: List available keys\n- **mcp_obfuscate-mcp_get_obfuscation_key_info**: Key metadata retrieval\n- **mcp_obfuscate-mcp_get_key_metadata_only**: Safe metadata access\n\n### 5. Report Tools (Admin Only)\n`activate_mcp_obfuscate_report_tools()`\n- **mcp_obfuscate-mcp_report_deobfuscate**: Decrypt obfuscated data\n\n### 6. Schema Management Tools\n`activate_mcp_obfuscate_schema_management_tools()`\n- Data schema learning and analysis\n- Custom schema creation\n- Schema retrieval and management\n\n### 7. Session Management Tools\n`activate_mcp_obfuscate_session_management_tools()`\n- Agent session tracking\n- Session cleanup and maintenance\n- Active session monitoring\n\n### 8. Additional Categories\n- **Feedback & Metrics**: Performance monitoring, user feedback\n- **Proxy Tools**: Proxy target management, connectivity testing\n- **Ad-hoc Expression Tools**: Dynamic PII detection patterns\n- **Token Management**: Access token refresh and management\n\n## Security Levels\n1. **permissive**: Basic PII detection, minimal false positives\n2. **standard**: Balanced detection (recommended)\n3. **strict**: Comprehensive detection with higher sensitivity\n4. **paranoid**: Maximum detection with potential false positives\n\n## Session Scopes\n- **agent**: Tokens consistent within agent session\n- **file**: Tokens consistent within single file\n- **global**: Tokens consistent across all operations\n\n## Key Workflow Example\n\n### Complete Obfuscation/Deobfuscation Cycle\n```javascript\n// 1. Activate required tools\nactivate_mcp_obfuscate_obfuscation_tools()\nactivate_mcp_obfuscate_key_management_tools()\nactivate_mcp_obfuscate_report_tools()\n\n// 2. Obfuscate file\nmcp_obfuscate-mcp_unified_obfuscate({\n  \"filePath\": \"/path/to/data.csv\",\n  \"agentId\": \"session-001\",\n  \"securityLevel\": \"standard\",\n  \"outputMode\": \"both\"\n})\n\n// 3. List available keys (requires admin token)\nmcp_obfuscate-mcp_list_obfuscation_keys({\n  \"authToken\": \"admin-jwt-token\"\n})\n\n// 4. Deobfuscate using key (admin only)\nmcp_obfuscate-mcp_report_deobfuscate({\n  \"keyId\": \"returned-key-id\",\n  \"filePath\": \"/path/to/data.csv.obfuscated\",\n  \"authToken\": \"admin-jwt-token\"\n})\n```\n\n## Authentication Notes\n- **Basic Operations**: Optional authentication\n- **Admin Operations**: Required JWT token with admin privileges\n- **Deobfuscation**: Always requires admin authentication\n- **Key Management**: Admin access required for sensitive operations\n\n## Integration Points\n- **Azure Kusto**: Native support for query result obfuscation\n- **File Processing**: Supports CSV, JSON, text, and structured data\n- **Bulk Operations**: Concurrent processing with configurable limits\n- **Session Consistency**: Maintains token mappings across operations",
+  "priority": 90,
+  "audience": "developers",
+  "requirement": "recommended",
+  "categories": [],
+  "sourceHash": "f4f70f0083abe233af542cd540c5dc6c0f4e9edcc6d08334dbc430bec02af444",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-08T22:29:34.241Z",
+  "updatedAt": "2025-09-08T22:29:34.241Z",
+  "riskScore": 30,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-08T22:29:34.241Z",
+  "nextReviewDue": "2026-01-06T22:29:34.241Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-08T22:29:34.241Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "# MCP Obfuscation Server - Complete Tool Reference"
+}

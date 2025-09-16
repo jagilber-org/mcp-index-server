@@ -1,0 +1,37 @@
+{
+  "id": "mcp-tools-inventory-2025",
+  "title": "Complete MCP Server Tools Inventory - August 2025",
+  "body": "INVENTORY (ENRICHED): Core index endpoints (list,get,search,import,reload,repair,diff,groom); analytics (usage/track,usage/hotset,usage/flush,metrics); quality (prompt/review); integrity (integrity/verify); health/check plus auxiliary servers (obfuscate, powershell, azure, docs). FLOW: discover -> quality review -> track adoption -> governance drift check. GOVERNANCE: owner set, tier P3, 30d review cadence, curated summary.",
+  "rationale": "Accurate inventory guides tool selection and governance sequencing",
+  "priority": 72,
+  "audience": "all",
+  "requirement": "recommended",
+  "categories": [
+    "capabilities",
+    "inventory",
+    "tools",
+    "workspace"
+  ],
+  "sourceHash": "d7078bbdbc8d923478e5db0e50aaa162949b24b570cb94765af9df1a3c427ddb",
+  "schemaVersion": "3",
+  "createdAt": "2025-08-30T21:30:48.073Z",
+  "updatedAt": "2025-08-30T21:30:48.073Z",
+  "riskScore": 48,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T21:30:48.073Z",
+  "nextReviewDue": "2025-12-28T21:30:48.073Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T21:30:48.073Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "INVENTORY (ENRICHED): Core index endpoints (list,get,search,import,reload,repair,diff,groom); analytics (usage/track,usage/hotset,usage/flush,metrics); quali...",
+  "primaryCategory": "capabilities"
+}

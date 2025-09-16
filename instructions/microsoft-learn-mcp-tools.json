@@ -1,0 +1,30 @@
+{
+  "id": "microsoft-learn-mcp-tools",
+  "title": "microsoft-learn-mcp-tools",
+  "body": "Microsoft Learn MCP Server provides 2 tools for official Microsoft documentation access. Tools: mcp_microsoft-doc_microsoft_docs_search (search Microsoft Learn content with up to 10 high-quality excerpts), mcp_microsoft-doc_microsoft_docs_fetch (retrieve complete documentation pages in markdown format). Discovery pattern: Direct tool enumeration. Use search first for overview, then fetch for complete content when specific high-value pages identified. Covers Azure, .NET, Microsoft 365, and other Microsoft technologies. Essential for accurate Microsoft documentation reference and troubleshooting.",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "00d5856d83f22f462d76c59e5021fedf1fd7a9c9bcc06a48f9fe0b1a77b57311",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-04T18:10:35.279Z",
+  "updatedAt": "2025-09-04T18:10:35.279Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-04T18:10:35.279Z",
+  "nextReviewDue": "2025-12-03T18:10:35.279Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-04T18:10:35.279Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Microsoft Learn MCP Server provides 2 tools for official Microsoft documentation access. Tools: mcp_microsoft-doc_microsoft_docs_search (search Microsoft Lea..."
+}

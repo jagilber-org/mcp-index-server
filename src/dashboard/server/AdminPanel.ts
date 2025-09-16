@@ -12,6 +12,7 @@
 import fs from 'fs';
 import path from 'path';
 import { getMetricsCollector, ToolMetrics } from './MetricsCollector';
+import { getCatalogState } from '../../services/catalogContext';
 
 interface AdminConfig {
   serverSettings: {
@@ -93,10 +94,14 @@ interface AdminStats {
   };
   toolMetrics: { [toolName: string]: ToolMetrics };
   catalogStats: {
-    totalInstructions: number;
+    /** Accepted (validated) instruction count – kept also as totalInstructions for backward compatibility */
+    totalInstructions: number; // DEPRECATED semantic (was raw file count) now equals acceptedInstructions
+    acceptedInstructions: number; // primary metric the MCP tools expose
+    rawFileCount: number; // physical *.json files discovered (scanned)
+    skippedInstructions: number; // rejected/skipped after validation/normalization
     lastUpdated: Date;
-  version: string; // build/server version at snapshot time
-  schemaVersion: string; // aggregated instruction schema version(s)
+    version: string; // build/server version at snapshot time
+    schemaVersion: string; // aggregated instruction schema version(s)
   };
 }
 
@@ -105,7 +110,7 @@ export class AdminPanel {
   private activeSessions: Map<string, AdminSession> = new Map();
   private maintenanceInfo: SystemMaintenance;
   // Cache catalog stats so lastUpdated only changes when instruction count changes
-  private catalogStatsCache: { totalInstructions: number; lastUpdated: Date; version: string; schemaVersion: string } | null = null;
+  private catalogStatsCache: { totalInstructions: number; acceptedInstructions: number; rawFileCount: number; skippedInstructions: number; lastUpdated: Date; version: string; schemaVersion: string } | null = null;
   // Track last observed uptime (seconds) to detect regression / restarts
   private lastUptimeSeconds = 0;
   // Historical session log (most recent first)
@@ -610,20 +615,36 @@ export class AdminPanel {
     let totalRequests = 0;
     Object.values(snapshot.tools).forEach(t => { totalRequests += t.callCount; });
 
-    // Count instruction JSON files deterministically
-    const catalogDir = process.env.MCP_INSTRUCTIONS_DIR || path.join(process.cwd(), 'instructions');
-    let instructionCount = 0;
+    // Get catalog validation summary for accurate accepted vs raw counts
+    let accepted = 0, scanned = 0, skipped = 0;
+    interface LoadSummaryLike { scanned:number; accepted:number; skipped:number }
     try {
-      if (fs.existsSync(catalogDir)) {
-        instructionCount = fs.readdirSync(catalogDir).filter(f => f.toLowerCase().endsWith('.json')).length;
+      const st = getCatalogState() as { list: unknown[]; loadSummary?: LoadSummaryLike; loadDebug?: { scanned:number; accepted:number } };
+      if (st.loadSummary) {
+        accepted = st.loadSummary.accepted;
+        scanned = st.loadSummary.scanned;
+        skipped = st.loadSummary.skipped;
+      } else {
+        accepted = st.list.length;
+        scanned = st.loadDebug?.scanned ?? accepted;
+        skipped = Math.max(0, scanned - accepted);
       }
     } catch {
-      // ignore filesystem errors
+      /* ignore */
     }
 
-    if (!this.catalogStatsCache || this.catalogStatsCache.totalInstructions !== instructionCount) {
-      // Derive aggregated schemaVersion(s) by scanning a sample of instruction files (bounded for perf)
-      const catalogDir = process.env.MCP_INSTRUCTIONS_DIR || path.join(process.cwd(), 'instructions');
+    // Count physical *.json files (raw) deterministically from FS (may equal scanned; retained for transparency)
+    const catalogDir = process.env.MCP_INSTRUCTIONS_DIR || path.join(process.cwd(), 'instructions');
+    let rawFileCount = scanned; // default to scanned
+    try {
+      if (fs.existsSync(catalogDir)) {
+        rawFileCount = fs.readdirSync(catalogDir).filter(f => f.toLowerCase().endsWith('.json')).length;
+      }
+    } catch { /* ignore */ }
+
+    // Recompute schema version snapshot only when any of these counts change
+    const cacheNeedsUpdate = !this.catalogStatsCache || this.catalogStatsCache.acceptedInstructions !== accepted || this.catalogStatsCache.rawFileCount !== rawFileCount || this.catalogStatsCache.skippedInstructions !== skipped;
+    if (cacheNeedsUpdate) {
       const schemaVersions = new Set<string>();
       try {
         if (fs.existsSync(catalogDir)) {
@@ -639,7 +660,10 @@ export class AdminPanel {
       } catch { /* ignore */ }
       const schemaVersion = schemaVersions.size === 0 ? 'unknown' : (schemaVersions.size === 1 ? Array.from(schemaVersions)[0] : `mixed(${Array.from(schemaVersions).join(',')})`);
       this.catalogStatsCache = {
-        totalInstructions: instructionCount,
+        totalInstructions: accepted, // maintain backward compatibility; semantic now accepted
+        acceptedInstructions: accepted,
+        rawFileCount,
+        skippedInstructions: skipped,
         lastUpdated: new Date(),
         version: snapshot.server.version,
         schemaVersion
@@ -648,6 +672,19 @@ export class AdminPanel {
 
     const memUsage = snapshot.server.memoryUsage; // already captured in snapshot
     const cpuUsage = this.calculateCpuUsage(); // Calculate current CPU usage
+
+    // Ensure cache populated (should be by logic above, but safeguard for strict types)
+    if(!this.catalogStatsCache){
+      this.catalogStatsCache = {
+        totalInstructions: accepted,
+        acceptedInstructions: accepted,
+        rawFileCount,
+        skippedInstructions: skipped,
+        lastUpdated: new Date(),
+        version: snapshot.server.version,
+        schemaVersion: 'unknown'
+      };
+    }
 
     return {
   // Total historical websocket connections (connected + disconnected)

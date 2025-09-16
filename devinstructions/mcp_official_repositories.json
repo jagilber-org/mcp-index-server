@@ -1,0 +1,36 @@
+{
+  "id": "mcp_official_repositories",
+  "title": "Official Model Context Protocol Repositories",
+  "body": "Key official repositories for Model Context Protocol (MCP) development and reference:\n\n## Core Repositories\n\n### MCP Servers Collection\n- **URL**: https://github.com/modelcontextprotocol/servers\n- **Purpose**: Official collection of MCP servers and examples\n- **Content**: Reference implementations, server templates, community contributions\n- **Use Case**: Find existing MCP servers, learn implementation patterns, contribute new servers\n\n### MCP Specification\n- **URL**: https://github.com/modelcontextprotocol/specification\n- **Purpose**: Official MCP protocol specification and documentation\n- **Content**: Protocol definitions, API specifications, standards documentation\n- **Use Case**: Understanding MCP protocol, implementing compliant servers/clients\n\n### TypeScript SDK\n- **URL**: https://github.com/modelcontextprotocol/typescript-sdk\n- **Purpose**: Official TypeScript SDK for MCP development\n- **Content**: TypeScript libraries, utilities, development tools\n- **Use Case**: Building MCP servers and clients in TypeScript/JavaScript\n\n## Development Workflow\n1. **Start with Specification**: Review protocol requirements and standards\n2. **Explore Servers**: Find existing implementations and patterns\n3. **Use TypeScript SDK**: Leverage official tools for rapid development\n4. **Contribute Back**: Share useful servers with the community\n\n## Additional Resources\n- Organization: https://github.com/modelcontextprotocol\n- Community: Active development and contributions welcome\n- Documentation: Comprehensive guides and API references available",
+  "priority": 90,
+  "audience": "developers",
+  "requirement": "essential",
+  "categories": [
+    "development",
+    "mcp",
+    "repositories",
+    "resources"
+  ],
+  "sourceHash": "811b1ace3bcb22c65bc44dfd513a8b593b51c06ece49ffe25db1d29bb1c24ef1",
+  "schemaVersion": "3",
+  "createdAt": "2025-08-31T23:27:50.905Z",
+  "updatedAt": "2025-08-31T23:27:50.905Z",
+  "riskScore": 10,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-31T23:27:50.906Z",
+  "nextReviewDue": "2025-12-29T23:27:50.906Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-31T23:27:50.905Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Key official repositories for Model Context Protocol (MCP) development and reference:",
+  "primaryCategory": "development"
+}

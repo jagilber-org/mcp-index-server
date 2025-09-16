@@ -37,13 +37,14 @@ describe('CatalogLoader (unit)', () => {
     expect(res.errors).toHaveLength(0);
   });
 
-  it('rejects schema-invalid instruction (bad id) and reports error', () => {
+  it('normalizes previously schema-invalid id (bad casing/spaces) instead of rejecting', () => {
     writeJson(path.join(DIR, 'bad.json'), { ...minimal('Bad Upper'), id: 'Bad Upper' });
     const loader = new CatalogLoader(DIR, new ClassificationService());
     const res = loader.load();
-    expect(res.entries.length).toBe(0);
-    expect(res.errors.length).toBe(1);
-    expect(res.errors[0].file).toBe('bad.json');
+    expect(res.errors.length).toBe(0);
+    expect(res.entries.length).toBe(1);
+    // Expect sanitized id: lower-case, spaces -> hyphens, trimmed
+    expect(res.entries[0].id).toBe('bad-upper');
   });
 
   it('memoizes unchanged file when MCP_CATALOG_MEMOIZE=1', () => {

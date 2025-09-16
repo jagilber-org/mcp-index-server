@@ -1,0 +1,30 @@
+{
+  "id": "powershell-mcp-naming",
+  "title": "powershell-mcp-naming",
+  "body": "PowerShell MCP Server tool naming conventions: Uses canonical underscore names with hyphen aliases. Core tools: run_powershell (run-powershell), emit_log (emit-log), powershell_syntax_check (powershell-syntax-check), working_directory_policy (working-directory-policy), server_stats (server-stats), help. Additional tools: run_powershellscript, capture_ps_sample (capture-ps-sample), memory_stats (memory-stats), agent_prompts (agent-prompts), threat_analysis (threat-analysis), learn, ai_agent_tests (ai-agent-tests), health, tool_tree (tool-tree). Legacy minimal list for backward compatibility. Always use canonical underscore names in VS Code toolsets for consistency. Aliases available for command-line usage. Total 15 tools including advanced AI agent and security analysis capabilities.",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "6c1333869c07e70b0619fc000a9bc77a03d594fb6c9646053c50dee5e78790cc",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-04T20:10:20.765Z",
+  "updatedAt": "2025-09-04T20:10:20.765Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-04T20:10:20.765Z",
+  "nextReviewDue": "2025-12-03T20:10:20.765Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-04T20:10:20.765Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PowerShell MCP Server tool naming conventions: Uses canonical underscore names with hyphen aliases. Core tools: run_powershell (run-powershell), emit_log (em..."
+}

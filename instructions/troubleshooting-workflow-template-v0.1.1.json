@@ -1,0 +1,37 @@
+{
+  "id": "troubleshooting-workflow-template-v0.1.1",
+  "title": "Living Troubleshooting Workflow Template",
+  "body": "Purpose: Repeatable end-to-end incident investigation workflow leveraging established MCP toolsets (azureDebugging, codeAnalysis, powerShellDiagnostics, devOpsIntelligence) to reduce MTTD/MTTM and standardize outputs.\n\nPhases:\n1. Intake & Scope: Capture incident metadata (scope, impact, severity, owner) + decision log.\n2. Reproduce / Confirm Signal: Validate current/fresh issue; establish measurable failure condition.\n3. Initial Fact Pack: Low-cost evidence (deploy state, metrics deltas, hot code paths, policy constraints) within 10 minutes.\n4. Hypothesis Drafting: Structured H# entries (statement, supporting signals, risk, test method) prioritized by Impact * Likelihood.\n5. Deep Dive: Targeted telemetry & lineage correlation (kusto, datadog, build logs, workflow logs, code references).\n6. Narrow & Validate: Confirm mechanistic root cause; verify reproducibility; ensure fix path viability.\n7. Fix Implementation & Verification: Patch, CI pass, staged deploy, canary metrics, rollout, rollback plan recorded.\n8. Post-Incident Consolidation: Timeline, root cause statement, contributing factors, blast radius, MT* metrics.\n9. Preventative Actions & Backlog: Action table + sunset criteria (all high-impact items complete & no recurrence window).\n\nToolset Mapping:\n- azureDebugging → monitor, kusto, azureActivityLog, datadog\n- codeAnalysis → codebase, search, usages, problems\n- powerShellDiagnostics → powershell-syntax-check, run-powershell, server-stats, working-directory-policy\n- devOpsIntelligence → build_get_log, build_get_status, get_job_logs, get_workflow_run_logs\n\nPrompt Library Seeds:\n1. Baseline Metrics Delta (compare current vs prior window deviations > 2σ).\n2. Build Failure Trace (map failing steps to changed files).\n3. PowerShell Script Root Cause (validate syntax + constraints + hotspots).\n4. Cross-System Correlation (kusto + workflow logs align errors to artifact versions).\n\nAcceptance Criteria for Root Cause: Mechanistic, reproducible (or strongly correlated), fix vector identified.\nValidation Checklist: Controlled patch test, metric regression absence, clean pipeline.\n\nVersioning Policy: Patch = formatting; Minor = new section/prompt/metric; Major = structural overhaul or phase redefinition.\nMaintenance: Monthly review or post P1/P2. Current Version: 0.1.1.\n\nAnti-Patterns: Premature deep-dive before fact pack; hypothesis sprawl without pruning; mixing destructive tools; skipping rollback definition.\n\nUsage Prompt Template: \"Apply phases 1–3; return fact pack + top 3 hypotheses ranked with proposed validation steps.\"",
+  "priority": 55,
+  "audience": "all",
+  "requirement": "Provide structured reusable incident troubleshooting workflow aligned with available MCP toolsets.",
+  "categories": [
+    "incident-response",
+    "mcp",
+    "templates",
+    "troubleshooting",
+    "workflow"
+  ],
+  "sourceHash": "5095a58ccf1df3179e992f23bcf5917e250b8b046c8502cb458ad36911ce9e64",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-03T13:11:45.959Z",
+  "updatedAt": "2025-09-03T13:11:45.959Z",
+  "riskScore": 45,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-03T13:11:45.960Z",
+  "nextReviewDue": "2025-12-02T13:11:45.960Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-03T13:11:45.959Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Purpose: Repeatable end-to-end incident investigation workflow leveraging established MCP toolsets (azureDebugging, codeAnalysis, powerShellDiagnostics, devO...",
+  "primaryCategory": "incident-response"
+}

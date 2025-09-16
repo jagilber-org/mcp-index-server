@@ -1,0 +1,36 @@
+{
+  "id": "toolsets-debug-analysis-v1",
+  "title": "Debug & Analysis MCP Toolsets",
+  "body": "Purpose: Provide a stable, enterprise-safe grouping of configured MCP tools for troubleshooting, code analysis, PowerShell diagnostics, and CI/CD investigation.\n\nSource Servers (already configured & trusted):\n- Azure MCP Server: monitor, kusto, azureActivityLog\n- Datadog MCP: datadog\n- PowerShell MCP Server: powershell-syntax-check, run-powershell, server-stats, working-directory-policy\n- Azure DevOps MCP: build_get_log, build_get_status\n- GitHub MCP: get_job_logs, get_workflow_run_logs\n\nToolsets:\n1. azureDebugging\n   - monitor, kusto, azureActivityLog, datadog\n   - Focus: Platform & workload telemetry (logs, queries, performance)\n2. codeAnalysis\n   - codebase, search, usages, problems\n   - Focus: Code navigation, static indicators, reference tracing\n3. powerShellDiagnostics\n   - powershell-syntax-check, run-powershell, server-stats, working-directory-policy\n   - Focus: Script correctness, controlled execution, environment policy\n4. devOpsIntelligence\n   - build_get_log, build_get_status, get_job_logs, get_workflow_run_logs\n   - Focus: Pipeline failures, workflow traceability, cross-system build triage\n\nSelection Criteria:\n- Safety: Only tools from currently registered servers (no speculative additions)\n- Debugging relevance: Direct contribution to investigation loops (observe -> hypothesize -> validate)\n- Complementarity: Each set forms a minimal self-contained diagnostic slice\n- Uniform size: 4 tools per set for cognitive consistency & prompt economy\n- Repo alignment: Supports PowerShell automation + Azure operations focus\n\nUsage Guidance:\n- Use set name when prompting for multi-step diagnosis (e.g., \"Leverage devOpsIntelligence to gather failing workflow context\")\n- Combine azureDebugging + powerShellDiagnostics for runtime vs script cause isolation\n- Start with codeAnalysis before deep runtime telemetry if failure reproduces locally\n\nVersioning & Maintenance:\n- Increment minor version (v1 -> v1.1) when swapping or adding a tool within an existing set\n- Increment major version (v1 -> v2) if adding/removing an entire set or redefining selection criteria\n- Defer expansion until a clear investigative gap recurs >= 3 times\n\nAnti-Patterns to Avoid:\n- Mixing write/destructive tools into these read-focused sets\n- Expanding with overlapping synonyms (keeps signals crisp)\n- Adding experimental servers before internal vetting\n\nFuture Extension Candidates (Not Included Yet):\n- metrics_snapshot (observability meta)\n- health_check / feature_status (infrastructure meta integrity)\n- feedback_list (if adopting structured incident capture)\n\nPrompt Hint Template:\n\"Using <toolsetName>, gather initial signals; summarize anomalies; propose next focused probe.\"",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "Provide reusable safe debugging tool grouping for consistent AI reasoning.",
+  "categories": [
+    "debugging",
+    "mcp",
+    "operations",
+    "toolsets"
+  ],
+  "sourceHash": "a7876bc864342b4a34de121315a91bdf5af26893aed5c19a675c01348e1b949b",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-03T13:03:08.411Z",
+  "updatedAt": "2025-09-03T13:03:08.411Z",
+  "riskScore": 50,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-03T13:03:08.411Z",
+  "nextReviewDue": "2025-12-02T13:03:08.411Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-03T13:03:08.411Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Purpose: Provide a stable, enterprise-safe grouping of configured MCP tools for troubleshooting, code analysis, PowerShell diagnostics, and CI/CD investigation.",
+  "primaryCategory": "debugging"
+}

@@ -1,4 +1,5 @@
 import { registerHandler, getMetricsRaw } from '../server/registry';
+import { getCatalogState } from '../services/catalogContext';
 import { featureStatus } from '../services/features';
 import fs from 'fs';
 import path from 'path';
@@ -14,6 +15,17 @@ try {
 		const raw = JSON.parse(fs.readFileSync(pkgPath,'utf8')); if(raw.version) VERSION = raw.version;
 	}
 } catch { /* ignore */ }
-registerHandler('health/check', ()=>({ status:'ok', timestamp:new Date().toISOString(), version: VERSION }));
+interface HealthCatalogSummary { scanned: number; accepted: number; skipped: number; reasons: Record<string,number>; salvage?: Record<string,number>; softWarnings?: Record<string,number>; }
+registerHandler('health/check', ()=>{
+	let summary: HealthCatalogSummary | undefined;
+	try {
+		const st = getCatalogState() as unknown as { loadSummary?: HealthCatalogSummary };
+		if(st.loadSummary){
+			const s = st.loadSummary;
+			summary = { scanned: s.scanned, accepted: s.accepted, skipped: s.skipped, reasons: s.reasons, salvage: s.salvage, softWarnings: s.softWarnings };
+		}
+	} catch { /* swallow to keep health resilient */ }
+	return { status:'ok', timestamp:new Date().toISOString(), version: VERSION, catalog: summary };
+});
 
 export {};

@@ -50,6 +50,7 @@ try { if(__bufferEnabled) process.stdin.on('data', __earlyCapture); } catch { /*
 import { listRegisteredMethods } from './registry';
 import { startSdkServer } from './sdkServer';
 import '../services/handlers.instructions';
+import '../services/handlers.search';
 // Register unified dispatcher (was missing causing instructions/dispatch tests to timeout)
 import '../services/instructions.dispatcher';
 import '../services/handlers.integrity';
@@ -63,6 +64,7 @@ import '../services/handlers.feedback';
 import '../services/handlers.help';
 import '../services/handlers.bootstrap';
 import { getCatalogState, diagnoseInstructionsDir, startCatalogVersionPoller } from '../services/catalogContext';
+import { autoSeedBootstrap } from '../services/seedBootstrap';
 import { createDashboardServer } from '../dashboard/server/DashboardServer.js';
 import { getMetricsCollector } from '../dashboard/server/MetricsCollector.js';
 import { getMemoryMonitor } from '../utils/memoryMonitor';
@@ -71,6 +73,7 @@ import fs from 'fs';
 import path from 'path';
 import { logInfo } from '../services/logger';
 import { forceBootstrapConfirmForTests } from '../services/bootstrapGating';
+import { emitPreflightAndMaybeExit } from '../services/preflight';
 
 // ---------------------------------------------------------------------------
 // Unified global diagnostics guard (installs once) for uncaught errors, promise
@@ -249,6 +252,12 @@ async function startDashboard(cfg: CliConfig): Promise<{ url: string; close: () 
 }
 
 export async function main(){
+  // Run startup preflight (module/data presence). Non-fatal unless MCP_PREFLIGHT_STRICT=1
+  try { emitPreflightAndMaybeExit(); } catch { /* ignore preflight wrapper errors */ }
+  // -------------------------------------------------------------
+  // Automatic bootstrap seeding (executes before any catalog load)
+  // -------------------------------------------------------------
+  try { autoSeedBootstrap(); } catch { /* ignore seeding errors (non-fatal) */ }
   // -------------------------------------------------------------
   // Idle keepalive support (multi-client shared server test aid)
   // -------------------------------------------------------------

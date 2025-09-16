@@ -1,0 +1,33 @@
+{
+  "id": "repo-overview",
+  "title": "Repository Overview",
+  "body": "High-level repository purpose: A Vite + React + TS app to analyze and reorganize GitHub repositories using GitHub OAuth or GitHub App mode plus OpenAI-backed AI planning/chat endpoints.",
+  "priority": 5,
+  "audience": "devs",
+  "requirement": "Provide a concise overview.",
+  "categories": [
+    "uncategorized"
+  ],
+  "primaryCategory": "uncategorized",
+  "sourceHash": "725f29e9d8e5c1d8ee1af2d164a11edd8a8f607809d5d5e49670ad9f3dddd278",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T17:30:47.226Z",
+  "updatedAt": "2025-09-12T17:30:47.226Z",
+  "riskScore": 95,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T17:30:47.226Z",
+  "nextReviewDue": "2025-10-12T17:30:47.226Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T17:30:47.226Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "High-level repository purpose: A Vite + React + TS app to analyze and reorganize GitHub repositories using GitHub OAuth or GitHub App mode plus OpenAI-backed..."
+}

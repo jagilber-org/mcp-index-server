@@ -1,0 +1,30 @@
+{
+  "id": "vscode-toolset-file-example",
+  "title": "vscode-toolset-file-example",
+  "body": "Complete VS Code MCP toolset configuration file example with 11 MCP servers and 260+ tools. File location: %APPDATA%/Code/User/prompts/tool-minimum-surface.toolsets.jsonc. Key sections: 1) Comprehensive header documentation with schema, naming patterns, troubleshooting, 2) Azure DevOps toolset (62 tools: core_, repo_, build_, wit_, release_, testplan_, work_, wiki_, advsec_), 3) Azure MCP Server (35 tools: kusto, monitor, storage, sql, postgres, mysql, redis, cosmos, search, etc.), 4) GitHub (80 tools: repository management, issues, PRs, workflows, security), 5) PowerShell MCP (13 tools: run_powershell, emit_log, powershell_syntax_check, server_stats, working_directory_policy, help, plus AI agent tools), 6) Microsoft Learn (2 tools: docs search/fetch), 7) Obfuscate MCP (45 tools: data privacy, PII detection, proxy services), 8) MCP Index Server (32 tools: instruction management, diagnostics, feedback). Critical: ALL tools must exist or toolset invisible. Use canonical underscore names for PowerShell tools.",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "8a4eca34d4d057d30269b9feeaf361551c9dbf2c5c44c1cc6b0f2ff5968815ab",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-04T18:12:37.519Z",
+  "updatedAt": "2025-09-04T20:09:51.486Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-04T18:12:37.519Z",
+  "nextReviewDue": "2025-12-03T18:12:37.519Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-04T18:12:37.519Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Complete VS Code MCP toolset configuration file example with 11 MCP servers and 250+ tools. File location: %APPDATA%/Code/User/prompts/tool-minimum-surface.t..."
+}

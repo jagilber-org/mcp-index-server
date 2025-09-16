@@ -1,0 +1,30 @@
+{
+  "id": "powershell-mcp-tools",
+  "title": "powershell-mcp-tools",
+  "body": "PowerShell MCP Server provides 13+ tools with canonical underscore names plus hyphen aliases. Core tools (6): emit_log (emit-log), run_powershell (run-powershell), powershell_syntax_check (powershell-syntax-check), working_directory_policy (working-directory-policy), server_stats (server-stats), help. Additional callable tools (7): run_powershellscript, capture_ps_sample (capture-ps-sample), memory_stats (memory-stats), agent_prompts (agent-prompts), threat_analysis (threat-analysis), learn, ai_agent_tests (ai-agent-tests), health, tool_tree (tool-tree). Legacy minimal list for compatibility. Discovery: Use activate_powershell_tools or direct MCP protocol. Security classification system (SAFE/RISKY/DANGEROUS/CRITICAL), enterprise controls, performance monitoring. Essential for Windows automation with advanced AI agent capabilities.",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "02b36db22bbb9472a923586bb30ed272dc0eb5518c16e4ac3073bdcb2d0a3eed",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-04T18:10:17.769Z",
+  "updatedAt": "2025-09-04T20:08:47.788Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-04T18:10:17.769Z",
+  "nextReviewDue": "2025-12-03T18:10:17.769Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-04T18:10:17.769Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PowerShell MCP Server provides 6 tools for PowerShell script execution and management. Tools: mcp_powershell-mc_run-powershell (execute scripts/commands), mc..."
+}

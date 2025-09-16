@@ -306,6 +306,42 @@ export const schemas: Record<string, unknown> = {
       dryRun: { type: 'boolean' },
       notes: { type: 'array', items: { type: 'string' } }
     }
+  },
+  'instructions/search': {
+    type: 'object',
+    additionalProperties: false,
+    required: ['results', 'totalMatches', 'query', 'executionTimeMs'],
+    properties: {
+      results: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['instructionId', 'relevanceScore', 'matchedFields'],
+          properties: {
+            instructionId: { type: 'string' },
+            relevanceScore: { type: 'number' },
+            matchedFields: {
+              type: 'array',
+              items: { enum: ['title', 'body', 'categories'] }
+            }
+          }
+        }
+      },
+      totalMatches: { type: 'number' },
+      query: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['keywords', 'limit', 'includeCategories', 'caseSensitive'],
+        properties: {
+          keywords: { type: 'array', items: { type: 'string' } },
+          limit: { type: 'number' },
+          includeCategories: { type: 'boolean' },
+          caseSensitive: { type: 'boolean' }
+        }
+      },
+      executionTimeMs: { type: 'number' }
+    }
   }
 };
 

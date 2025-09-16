@@ -1,0 +1,36 @@
+{
+  "id": "powershell-syntax-common-mistakes",
+  "title": "PowerShell Syntax Patterns and Common Mistakes",
+  "body": "Common PowerShell syntax issues and best practices to avoid them:\n\n**Parameter Binding Issues:**\n```powershell\n# WRONG: Mixing positional and named parameters inconsistently\nGet-ChildItem C:\\ -Recurse $true\n\n# CORRECT: Use proper parameter syntax\nGet-ChildItem -Path C:\\ -Recurse\n\n# WRONG: Incorrect array syntax\n$array = @(\"item1\" \"item2\")  # Missing commas\n\n# CORRECT: Proper array syntax\n$array = @(\"item1\", \"item2\")\n$array = \"item1\", \"item2\"  # Comma operator\n```\n\n**Variable Scoping:**\n```powershell\n# WRONG: Unintended global variable modification\nfunction Test { $global:var = \"changed\" }\n\n# CORRECT: Use appropriate scope\nfunction Test {\n    param($InputVar)\n    $local:result = $InputVar + \"_processed\"\n    return $result\n}\n```\n\n**String Handling:**\n```powershell\n# WRONG: Inefficient string concatenation\n$result = \"\"\nforeach ($item in $items) {\n    $result = $result + $item  # Creates new string each time\n}\n\n# CORRECT: Use -join operator\n$result = $items -join \"\"\n\n# CORRECT: Use StringBuilder for complex concatenation\n$sb = [System.Text.StringBuilder]::new()\n$items | ForEach-Object { $sb.Append($_) }\n$result = $sb.ToString()\n```\n\n**Pipeline Best Practices:**\n```powershell\n# WRONG: Unnecessary ForEach-Object\nGet-Process | ForEach-Object { $_.Name }\n\n# CORRECT: Use pipeline efficiently\nGet-Process | Select-Object -ExpandProperty Name\n\n# WRONG: Breaking pipeline with intermediate variables\n$processes = Get-Process\n$filtered = $processes | Where-Object { $_.CPU -gt 100 }\n$names = $filtered | Select-Object Name\n\n# CORRECT: Use full pipeline\nGet-Process | Where-Object CPU -gt 100 | Select-Object Name\n```\n\n**Error-Prone Patterns:**\n```powershell\n# WRONG: Not handling null/empty values\nif ($variable.Length -gt 0) { }  # Fails if $variable is $null\n\n# CORRECT: Proper null checking\nif (![string]::IsNullOrEmpty($variable)) { }\nif ($variable -and $variable.Length -gt 0) { }\n\n# WRONG: Comparing with $null incorrectly\nif ($null -eq $variable) { }  # Always put $null on left\n\n# WRONG: Not using -eq with arrays properly\n@(1,2,3) -eq 2  # Returns 2, not $true\n\n# CORRECT: Use comparison operators correctly\n(@(1,2,3) -eq 2).Count -gt 0  # Check if array contains value\n```\n\n**Security Issues:**\n```powershell\n# WRONG: String concatenation for commands (injection risk)\n$cmd = \"Get-Process -Name \" + $userInput\nInvoke-Expression $cmd\n\n# CORRECT: Use parameters and splatting\n$params = @{ Name = $userInput }\nGet-Process @params\n```",
+  "priority": 9,
+  "audience": "PowerShell script authors and developers",
+  "requirement": "Essential for writing correct and secure PowerShell code",
+  "categories": [
+    "best practices",
+    "common mistakes",
+    "powershell",
+    "syntax"
+  ],
+  "sourceHash": "26b25134af69a5444b08a3924ba542a289bfc083176314b10ae257d0e689cc5f",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-02T11:56:22.517Z",
+  "updatedAt": "2025-09-02T11:56:22.517Z",
+  "riskScore": 91,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-02T11:56:22.517Z",
+  "nextReviewDue": "2025-10-02T11:56:22.517Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-02T11:56:22.517Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Common PowerShell syntax issues and best practices to avoid them:",
+  "primaryCategory": "best practices"
+}

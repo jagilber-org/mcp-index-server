@@ -1,0 +1,83 @@
+{
+  "timestamp": 1758030209337,
+  "server": {
+    "uptime": 600055,
+    "version": "1.5.0",
+    "memoryUsage": {
+      "rss": 64651264,
+      "heapTotal": 19648512,
+      "heapUsed": 18528784,
+      "external": 2547003,
+      "arrayBuffers": 41810
+    },
+    "cpuUsage": {
+      "user": 0,
+      "system": 0
+    },
+    "startTime": 1758029609282
+  },
+  "tools": {
+    "bootstrap/status": {
+      "callCount": 1,
+      "successCount": 1,
+      "errorCount": 0,
+      "totalResponseTime": 10.2411,
+      "errorTypes": {},
+      "lastCalled": 1758029982564
+    },
+    "health/check": {
+      "callCount": 1,
+      "successCount": 1,
+      "errorCount": 0,
+      "totalResponseTime": 10.0855,
+      "errorTypes": {},
+      "lastCalled": 1758029986240
+    },
+    "meta/tools": {
+      "callCount": 1,
+      "successCount": 1,
+      "errorCount": 0,
+      "totalResponseTime": 11.2711,
+      "errorTypes": {},
+      "lastCalled": 1758030016080
+    },
+    "instructions/search": {
+      "callCount": 2,
+      "successCount": 0,
+      "errorCount": 2,
+      "totalResponseTime": 55.1483,
+      "errorTypes": {
+        "error": 2
+      },
+      "lastCalled": 1758030036933
+    },
+    "feature/status": {
+      "callCount": 1,
+      "successCount": 1,
+      "errorCount": 0,
+      "totalResponseTime": 8.3159,
+      "errorTypes": {},
+      "lastCalled": 1758030039323
+    },
+    "instructions/dispatch": {
+      "callCount": 1,
+      "successCount": 1,
+      "errorCount": 0,
+      "totalResponseTime": 38.843,
+      "errorTypes": {},
+      "lastCalled": 1758030042481
+    }
+  },
+  "connections": {
+    "activeConnections": 1,
+    "totalConnections": 1,
+    "disconnectedConnections": 0,
+    "avgSessionDuration": 599830
+  },
+  "performance": {
+    "requestsPerMinute": 0,
+    "successRate": 71.42857142857143,
+    "avgResponseTime": 19.12927142857143,
+    "errorRate": 28.57142857142857
+  }
+}

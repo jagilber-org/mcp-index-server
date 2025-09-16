@@ -1,0 +1,35 @@
+{
+  "id": "powershell-debugging-techniques",
+  "title": "PowerShell Debugging Techniques and Tools",
+  "body": "PowerShell provides comprehensive debugging capabilities for script and module development:\n\n**Breakpoint Types:**\n```powershell\n# Line breakpoints\nSet-PSBreakpoint -Script \"script.ps1\" -Line 10\n\n# Command breakpoints\nSet-PSBreakpoint -Command \"Get-Process\"\n\n# Variable breakpoints\nSet-PSBreakpoint -Variable \"myVar\" -Mode Write\n\n# Conditional breakpoints\nSet-PSBreakpoint -Script \"script.ps1\" -Line 5 -Action { if ($count -gt 10) { break } }\n```\n\n**Debugger Commands:**\n- s (Step Into): Step into functions/cmdlets\n- v (Step Over): Execute current line\n- o (Step Out): Exit current function\n- c (Continue): Resume execution\n- q (Quit): Exit debugger\n- k (Get-PSCallStack): Show call stack\n- ? (Help): Show debugger commands\n\n**Debug Preferences:**\n```powershell\n# Enable debugging globally\n$DebugPreference = \"Inquire\"  # Prompt on Write-Debug\n$DebugPreference = \"Continue\" # Show debug messages\n\n# Control error debugging\n$ErrorActionPreference = \"Break\"  # Break into debugger on errors\n```\n\n**Remote Debugging:**\n- Enter-PSSession for remote debugging\n- Debug-Runspace for background jobs\n- Wait-Debugger for just-in-time debugging\n\n**Script Debugging Best Practices:**\n- Use Write-Debug for diagnostic output\n- Add strategic breakpoints in complex logic\n- Use $PSDebugContext in breakpoint actions\n- Test with different execution policies\n- Debug with -noprofile to avoid environment issues\n\n**Advanced Debugging:**\n```powershell\n# Debug background jobs\n$job = Start-Job { Get-Process }\nDebug-Job $job\n\n# Debug with specific runspace\nGet-Runspace | Debug-Runspace\n\n# Custom debugger handlers\nRegister-ObjectEvent -InputObject $host.Runspace.Debugger -EventName DebuggerStop -Action {\n    # Custom debug logic\n}\n```",
+  "priority": 8,
+  "audience": "PowerShell developers and script authors",
+  "requirement": "Critical for effective PowerShell development and troubleshooting",
+  "categories": [
+    "debugging",
+    "powershell",
+    "troubleshooting"
+  ],
+  "sourceHash": "58f54734b31c7266f234016556123061359da4f38c712ec46d4cccd0dc578f38",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-02T11:56:22.516Z",
+  "updatedAt": "2025-09-02T11:56:22.516Z",
+  "riskScore": 92,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-02T11:56:22.516Z",
+  "nextReviewDue": "2025-10-02T11:56:22.516Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-02T11:56:22.516Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PowerShell provides comprehensive debugging capabilities for script and module development:",
+  "primaryCategory": "debugging"
+}

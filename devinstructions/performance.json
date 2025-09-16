@@ -1,0 +1,33 @@
+{
+  "id": "performance",
+  "title": "Performance & Timeouts",
+  "body": "Performance Tooling: PERF_LOG=1 enables timing logs for AI endpoints and /api/repos fetch. AI plan generation now includes an 18s timeout with heuristic fallback if AI unavailable.",
+  "priority": 4,
+  "audience": "devs",
+  "requirement": "Note perf instrumentation.",
+  "categories": [
+    "uncategorized"
+  ],
+  "primaryCategory": "uncategorized",
+  "sourceHash": "78ae89c90a40aa2ba09a31b8e523859c6218d298858eae5b0d364299e6778956",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T17:30:47.232Z",
+  "updatedAt": "2025-09-12T17:30:47.232Z",
+  "riskScore": 96,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T17:30:47.232Z",
+  "nextReviewDue": "2025-10-12T17:30:47.232Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T17:30:47.232Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Performance Tooling: PERF_LOG=1 enables timing logs for AI endpoints and /api/repos fetch. AI plan generation now includes an 18s timeout with heuristic fall..."
+}

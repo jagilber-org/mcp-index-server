@@ -1,0 +1,36 @@
+{
+  "id": "service-fabric-diagnostic-methodology",
+  "title": "Service Fabric Case Diagnostic Methodology",
+  "body": "PLAYBOOK ENRICHED: 1) Triage signals (cluster health, node status, recent upgrades) 2) Scope impact (tenants, partitions, services) 3) Gather artifacts (DCA logs, Crash Dumps, ETW if available) 4) Form failure hypotheses (placement, resource exhaustion, upgrade regression) 5) Targeted deep-dive (perf counters, cluster manifest deltas) 6) Remediation & guard-rail proposal 7) Post-mortem + instruction catalog update. GOVERNANCE: owner assigned, P2 priority, 30d review cadence.",
+  "rationale": "Consistent, faster Service Fabric incident resolution.",
+  "priority": 80,
+  "audience": "engineers",
+  "requirement": "mandatory",
+  "categories": [
+    "diagnostics",
+    "playbook",
+    "service-fabric"
+  ],
+  "sourceHash": "c8149d6d2c0896f6446f5f3a1f35692ced3559a2992864cf6b04a46b5c221721",
+  "schemaVersion": "3",
+  "createdAt": "2025-08-30T21:30:58.345Z",
+  "updatedAt": "2025-08-30T21:30:58.345Z",
+  "riskScore": 70,
+  "owner": "team.platform-enablement",
+  "version": "1.0.0",
+  "status": "approved",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T21:30:58.345Z",
+  "nextReviewDue": "2025-09-29T21:30:58.345Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T21:30:58.345Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PLAYBOOK ENRICHED: 1) Triage signals (cluster health, node status, recent upgrades) 2) Scope impact (tenants, partitions, services) 3) Gather artifacts (DCA ...",
+  "primaryCategory": "diagnostics"
+}

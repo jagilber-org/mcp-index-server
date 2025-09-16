@@ -1,0 +1,37 @@
+{
+  "id": "mcp-servers-integration-guide",
+  "title": "MCP Servers Integration and Best Practices Guide",
+  "body": "Best practices for integrating PowerShell MCP Server and MCP Index Server:\n\n## PowerShell MCP Server Integration:\n1. **Security Configuration**: Always set confirmation gates for production environments\n2. **Performance Monitoring**: Enable MCP_CAPTURE_PS_METRICS=1 for performance tracking\n3. **Syntax Validation**: Use PWSH_SYNTAX_ANALYZER=1 for real-time code quality checks\n4. **Error Handling**: Implement proper timeout and overflow strategies\n5. **Authentication**: Use MCP_AUTH_KEY for secure server access\n\n## MCP Index Server Integration:\n1. **Instruction Lifecycle**: Use add → track usage → groom → health cycle\n2. **Governance**: Implement regular governanceUpdate and health checks\n3. **Quality Gates**: Use gates_evaluate before deploying instruction sets\n4. **Analytics**: Leverage usage_hotset for optimization insights\n5. **Maintenance**: Schedule regular groom and repair operations\n\n## Combined Workflows:\n1. **Development**: Use PowerShell server for execution, Index server for storing reusable patterns\n2. **Testing**: Syntax-check with PowerShell server, validate instruction quality with Index server\n3. **Production**: Monitor PowerShell execution metrics, track instruction usage patterns\n4. **Maintenance**: Use Index server governance for instruction lifecycle management\n\n## Configuration Examples:\n```json\n{\n  \"powershell-mcp-server\": {\n    \"env\": {\n      \"MCP_CAPTURE_PS_METRICS\": \"1\",\n      \"PWSH_SYNTAX_ANALYZER\": \"1\",\n      \"METRICS_PORT\": \"9090\"\n    }\n  }\n}\n```\n\n## Security Considerations:\n- Always use confirmation for RISKY/DANGEROUS operations\n- Implement working directory policies\n- Monitor security assessment classifications\n- Regular feedback submission for security issues",
+  "rationale": "Critical guidance for effective MCP server integration and operational excellence",
+  "priority": 9,
+  "audience": "developers",
+  "requirement": "must",
+  "categories": [
+    "best-practices",
+    "governance",
+    "mcp-integration",
+    "powershell"
+  ],
+  "sourceHash": "4b599ee504776eef40b2dc5d4fd3220fba4f9b7d778ed45246b103e4c540224a",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-02T10:35:31.897Z",
+  "updatedAt": "2025-09-02T10:35:31.897Z",
+  "riskScore": 91,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-02T10:35:31.897Z",
+  "nextReviewDue": "2025-10-02T10:35:31.897Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-02T10:35:31.897Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Best practices for integrating PowerShell MCP Server and MCP Index Server:",
+  "primaryCategory": "best-practices"
+}

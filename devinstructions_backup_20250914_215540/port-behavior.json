@@ -1,0 +1,33 @@
+{
+  "id": "port-behavior",
+  "title": "Dev Port Fallback",
+  "body": "Port Behavior: Defaults to fallback (strictPort false). Set STRICT_PORT=true to force failure if preferred port busy. FORCE_DEV_PORT=false disables final reassert plugin. Debug endpoint /api/dev/port shows preferred vs actual.",
+  "priority": 5,
+  "audience": "devs",
+  "requirement": "Describe dev port logic.",
+  "categories": [
+    "uncategorized"
+  ],
+  "primaryCategory": "uncategorized",
+  "sourceHash": "6b17d3cd5d02c2af1545aba0660f3ba2186fd1a5b1ef482d3d637b442e8aca78",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T17:30:47.231Z",
+  "updatedAt": "2025-09-12T17:30:47.231Z",
+  "riskScore": 95,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T17:30:47.231Z",
+  "nextReviewDue": "2025-10-12T17:30:47.231Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T17:30:47.231Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Port Behavior: Defaults to fallback (strictPort false). Set STRICT_PORT=true to force failure if preferred port busy. FORCE_DEV_PORT=false disables final rea..."
+}

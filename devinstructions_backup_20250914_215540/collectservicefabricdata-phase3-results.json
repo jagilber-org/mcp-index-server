@@ -1,0 +1,35 @@
+{
+  "id": "collectservicefabricdata-phase3-results",
+  "title": "CollectServiceFabricData Phase 3 Test Results",
+  "body": "Phase 3 test execution completed with 98.8% success rate (84/85 tests passed). Key findings:\n\n**SUCCESSES:**\n- All data processing tests passed (CsvCounterRecord functionality)\n- All collection orchestration tests passed (task management, component coordination)\n- File management tests largely successful (PopulateCollection, stream operations)\n- Configuration validation working correctly\n\n**ISSUES DISCOVERED:**\n1. FileObject null handling: Expected ArgumentNullException but FileObjectCollection.AddRange throws NullReferenceException at line 34\n2. Kusto federated security limitation in .NET Framework 4.6.2 (works on newer frameworks)\n\n**API CORRECTIONS VALIDATED:**\n- CsvCounterRecord.CounterValue as Decimal type ✓\n- FileObject.RelativeUri readonly property ✓\n- Instance.Totals() method accessibility ✓\n- Non-virtual method testing patterns ✓\n\n**TESTING APPROACH:**\n- Real instance usage instead of mocking non-virtual methods\n- Multi-framework testing reveals framework-specific limitations\n- Phase 3 represents significant step up in complexity from Phase 2\n\nPhase 3 establishes robust data processing and orchestration testing foundation for CollectServiceFabricData.",
+  "priority": 90,
+  "audience": "developers",
+  "requirement": "required",
+  "categories": [
+    "api-analysis",
+    "collectservicefabricdata",
+    "testing"
+  ],
+  "primaryCategory": "api-analysis",
+  "sourceHash": "d5eb7c48b25e2a1eb49b49384eba8f8799e173a5a6d4f1d3fa223d041edf0f7f",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T11:48:13.544Z",
+  "updatedAt": "2025-09-12T11:48:13.544Z",
+  "riskScore": 10,
+  "version": "1.0.0",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T11:48:13.544Z",
+      "summary": "initial import"
+    }
+  ],
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T11:48:13.545Z",
+  "nextReviewDue": "2026-01-10T11:48:13.545Z",
+  "reviewIntervalDays": 120,
+  "semanticSummary": "Phase 3 test execution completed with 98.8% success rate (84/85 tests passed). Key findings:"
+}

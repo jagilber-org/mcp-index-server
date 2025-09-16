@@ -68,8 +68,29 @@ function initializeFileLogging(): void {
       }
     });
 
-    // Log successful initialization
+    // Log successful initialization (human readable and structured diagnostic)
     console.error(`[logger] File logging enabled: ${logFile}`);
+    try {
+      const stats = fs.existsSync(logFile) ? fs.statSync(logFile) : null;
+      // Emit a structured JSON diagnostic line (always stderr; also written to file once handle active)
+      const diag = {
+        ts: new Date().toISOString(),
+        level: 'info',
+        evt: 'logger_init',
+        file: logFile,
+        created: !!stats,
+        size: stats?.size ?? 0,
+        pid: process.pid,
+        sentinel: process.env.MCP_LOG_FILE === logFile ? false : /^(1|true|yes|on)$/i.test(process.env.MCP_LOG_FILE || ''),
+        cwd: process.cwd()
+      };
+      // Write structured line directly (do not recurse emit to avoid double header or recursion risk)
+      const line = process.env.MCP_LOG_JSON === '1' ? JSON.stringify(diag) : `${diag.ts} INFO logger_init ${diag.file} size=${diag.size} cwd=${diag.cwd}`;
+      console.error(line);
+      if (logFileHandle && !logFileHandle.destroyed) {
+        try { logFileHandle.write(line + '\n'); } catch { /* ignore */ }
+      }
+    } catch { /* ignore diagnostics error */ }
 
   } catch (error) {
     // Fallback to stderr only if file logging fails
@@ -115,6 +136,10 @@ function emit(rec: LogRecord){
   if (logFileHandle && !logFileHandle.destroyed) {
     try {
       logFileHandle.write(logLine + '\n');
+      // Optional deterministic flushing for tests / critical observability. Enabled with MCP_LOG_SYNC=1
+      if(process.env.MCP_LOG_SYNC === '1') {
+        try { fs.fsyncSync((logFileHandle as unknown as { fd: number }).fd); } catch { /* ignore fsync errors */ }
+      }
     } catch { /* ignore file write failures */ }
   }
 }

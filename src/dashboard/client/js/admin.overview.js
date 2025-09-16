@@ -60,8 +60,16 @@
             </div>
             <hr style="opacity:.15;margin:6px 0;"/>
             <div class="stat-row">
-                <span class="stat-label" style="opacity:.8">Catalog Total</span>
-                <span class="stat-value">${stats.catalogStats?.totalInstructions ?? '—'}</span>
+                <span class="stat-label" style="opacity:.8">Catalog Accepted</span>
+                <span class="stat-value">${stats.catalogStats?.acceptedInstructions ?? stats.catalogStats?.totalInstructions ?? '—'}</span>
+            </div>
+            <div class="stat-row" title="Physical *.json files discovered (raw). May exceed accepted due to validation skips">
+                <span class="stat-label" style="opacity:.8">Catalog Files</span>
+                <span class="stat-value">${stats.catalogStats?.rawFileCount ?? '—'}</span>
+            </div>
+            <div class="stat-row" title="Rejected/skipped after validation/normalization">
+                <span class="stat-label" style="opacity:.8">Catalog Skipped</span>
+                <span class="stat-value">${stats.catalogStats?.skippedInstructions ?? '—'}</span>
             </div>
             <div class="stat-row">
                 <span class="stat-label" style="opacity:.8">Catalog Version</span>

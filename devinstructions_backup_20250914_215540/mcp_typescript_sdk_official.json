@@ -1,0 +1,37 @@
+{
+  "id": "mcp_typescript_sdk_official",
+  "title": "Official MCP TypeScript SDK",
+  "body": "The official TypeScript SDK for Model Context Protocol (MCP) development, providing comprehensive tools for building both servers and clients.\n\n## Installation\n```bash\nnpm install @modelcontextprotocol/sdk\n```\n\n## Key Features\n\n### Server Development\n- **Easy Registration**: Simple methods for tools, resources, and prompts\n- **Type Safety**: Full TypeScript support with Zod schema validation\n- **Dynamic Servers**: Add/remove capabilities at runtime with auto-notifications\n- **Resource Templates**: Dynamic resources with parameter substitution\n- **Sampling Support**: Servers can request LLM completions from clients\n- **Context-Aware Completions**: Intelligent argument auto-completion\n\n### Client Development\n- **Full Protocol Support**: Complete MCP client implementation\n- **Multiple Transports**: stdio, Streamable HTTP, SSE compatibility\n- **Connection Management**: Automatic protocol handling and lifecycle events\n\n### Transport Options\n1. **stdio Transport**: Perfect for CLI tools and local development\n2. **Streamable HTTP**: Remote servers with session management, CORS support\n3. **SSE Transport**: Legacy compatibility mode\n\n## Quick Start Examples\n\n### Basic Server\n```typescript\nimport { McpServer } from \"@modelcontextprotocol/sdk/server/mcp.js\";\nimport { StdioServerTransport } from \"@modelcontextprotocol/sdk/server/stdio.js\";\nimport { z } from \"zod\";\n\nconst server = new McpServer({\n  name: \"demo-server\",\n  version: \"1.0.0\"\n});\n\n// Register a tool\nserver.registerTool(\"add\", {\n  title: \"Addition Tool\",\n  description: \"Add two numbers\",\n  inputSchema: { a: z.number(), b: z.number() }\n}, async ({ a, b }) => ({\n  content: [{ type: \"text\", text: String(a + b) }]\n}));\n\n// Register a dynamic resource\nserver.registerResource(\n  \"greeting\",\n  new ResourceTemplate(\"greeting://{name}\", { list: undefined }),\n  { title: \"Greeting Resource\" },\n  async (uri, { name }) => ({\n    contents: [{ uri: uri.href, text: `Hello, ${name}!` }]\n  })\n);\n\nconst transport = new StdioServerTransport();\nawait server.connect(transport);\n```\n\n### Basic Client\n```typescript\nimport { Client } from \"@modelcontextprotocol/sdk/client/index.js\";\nimport { StdioClientTransport } from \"@modelcontextprotocol/sdk/client/stdio.js\";\n\nconst client = new Client({\n  name: \"my-client\",\n  version: \"1.0.0\"\n});\n\nconst transport = new StdioClientTransport({\n  command: \"node\",\n  args: [\"server.js\"]\n});\n\nawait client.connect(transport);\n\n// Use the client\nconst result = await client.callTool({\n  name: \"add\",\n  arguments: { a: 5, b: 3 }\n});\n```\n\n### Streamable HTTP Server\n```typescript\nimport express from \"express\";\nimport { StreamableHTTPServerTransport } from \"@modelcontextprotocol/sdk/server/streamableHttp.js\";\n\nconst app = express();\napp.use(express.json());\n\napp.post('/mcp', async (req, res) => {\n  const transport = new StreamableHTTPServerTransport({\n    sessionIdGenerator: () => randomUUID(),\n    enableDnsRebindingProtection: true,\n    allowedHosts: ['127.0.0.1']\n  });\n  \n  await server.connect(transport);\n  await transport.handleRequest(req, res, req.body);\n});\n```\n\n## Advanced Features\n\n### Sampling (LLM Requests)\n```typescript\nserver.registerTool(\"summarize\", {\n  description: \"Summarize text using LLM\",\n  inputSchema: { text: z.string() }\n}, async ({ text }) => {\n  const response = await server.server.createMessage({\n    messages: [{\n      role: \"user\",\n      content: { type: \"text\", text: `Summarize: ${text}` }\n    }],\n    maxTokens: 500\n  });\n  return {\n    content: [{ type: \"text\", text: response.content.text }]\n  };\n});\n```\n\n### Context-Aware Completions\n```typescript\nserver.registerPrompt(\"team-greeting\", {\n  argsSchema: {\n    department: completable(z.string(), (value) =>\n      [\"engineering\", \"sales\", \"marketing\"].filter(d => d.startsWith(value))\n    )\n  }\n}, ({ department, name }) => ({\n  messages: [{\n    role: \"assistant\",\n    content: { type: \"text\", text: `Hello ${name}, welcome to ${department}!` }\n  }]\n}));\n```\n\n### Dynamic Server Updates\n```typescript\n// Tools can be enabled/disabled/updated at runtime\nconst putMessageTool = server.tool(\"putMessage\", /* config */, /* handler */);\nputMessageTool.disable(); // Won't show in listTools\nputMessageTool.enable();  // Now available again\nputMessageTool.update({ /* new config */ }); // Update parameters\nputMessageTool.remove();  // Completely remove\n```\n\n## Production Features\n- **Session Management**: Stateful server support with session IDs\n- **CORS Configuration**: Browser-friendly setup with exposed headers\n- **DNS Rebinding Protection**: Built-in security features\n- **Notification Debouncing**: Efficient bulk updates\n- **Error Handling**: Comprehensive error management\n- **Testing Integration**: Works with MCP Inspector\n\n## Repository & Resources\n- **GitHub**: https://github.com/modelcontextprotocol/typescript-sdk\n- **NPM Package**: @modelcontextprotocol/sdk\n- **Stars**: 9.5k+ (highly popular)\n- **Documentation**: https://modelcontextprotocol.io/\n- **Examples**: Comprehensive example servers included\n- **License**: MIT\n\n## Requirements\n- Node.js v18.x or higher\n- TypeScript support recommended\n- Zod for schema validation",
+  "priority": 95,
+  "audience": "developers",
+  "requirement": "essential",
+  "categories": [
+    "development",
+    "mcp",
+    "official",
+    "sdk",
+    "typescript"
+  ],
+  "sourceHash": "41e57474ee99af96cd9fc0e4a1d53d35715a8b53836d22931e54ee97db492992",
+  "schemaVersion": "3",
+  "createdAt": "2025-08-31T23:32:17.113Z",
+  "updatedAt": "2025-09-10T10:56:56.843Z",
+  "riskScore": 5,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-31T23:32:17.113Z",
+  "nextReviewDue": "2025-12-29T23:32:17.113Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-31T23:32:17.113Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "The official TypeScript SDK for Model Context Protocol (MCP) development, providing comprehensive tools for building both servers and clients.",
+  "primaryCategory": "development"
+}

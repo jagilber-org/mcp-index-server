@@ -1,0 +1,30 @@
+{
+  "id": "obfuscate-mcp-tools",
+  "title": "obfuscate-mcp-tools",
+  "body": "Obfuscate MCP Server provides 45+ tools across 8 categories for enterprise data privacy and PII protection. Discovery pattern: Use activate_mcp_obfuscate_<category>_tools functions. Categories: configuration (logging/proxy setup), user_management (auth/API keys), schema_management (PII detection patterns), obfuscation (data masking/redaction), session_management (agent sessions/cleanup), feedback_and_metrics (performance monitoring), adhoc_expression (temporary PII patterns), proxy_management (secure forwarding). Key tools: mcp_unified_obfuscate, mcp_read_file_redacted, mcp_learn_file_schema. Uses mixed naming conventions. Critical for GDPR compliance and sensitive data handling.",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "02c14c5b76acfa7dda569cb3dd8f77f703984813709b202c96cad5003305bfee",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-04T18:10:53.082Z",
+  "updatedAt": "2025-09-04T18:10:53.082Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-04T18:10:53.082Z",
+  "nextReviewDue": "2025-12-03T18:10:53.082Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-04T18:10:53.082Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Obfuscate MCP Server provides 45+ tools across 8 categories for enterprise data privacy and PII protection. Discovery pattern: Use activate_mcp_obfuscate_<ca..."
+}

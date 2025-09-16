@@ -1,0 +1,36 @@
+{
+  "id": "powershell-build-development-workflow",
+  "title": "PowerShell Core Build System and Development Workflow",
+  "body": "Understanding the PowerShell build system is essential for contributors and advanced users:\n\n**Build Prerequisites:**\n- .NET 8.0 SDK or later\n- Git for source control\n- Platform-specific tools (Windows SDK, build-essential on Linux)\n\n**Build Commands:**\n```powershell\n# Import build module\nImport-Module ./build.psm1\n\n# Full build\nStart-PSBuild\n\n# Build for specific configuration\nStart-PSBuild -Configuration Release\n\n# Cross-platform build\nStart-PSBuild -CrossGen  # Enable crossgen optimization\n\n# Build with specific runtime\nStart-PSBuild -Runtime win-x64\n```\n\n**Key Build Components:**\n- **ResGen**: Generates resource files from .resx\n- **TypeCatalogGen**: Creates type catalogs for better performance\n- **crossgen2**: Ahead-of-time compilation for improved startup\n- **Dummy dependencies**: Flexible dependency management system\n\n**Testing Integration:**\n```powershell\n# Run PowerShell tests\nStart-PSPester -Path test/powershell\n\n# Run with specific tags\nStart-PSPester -Tag CI -ExcludeTag Slow\n\n# Run xUnit tests  \nStart-PSxUnit\n\n# Package tests\nStart-PSPackage -Type msi  # Windows\nStart-PSPackage -Type deb  # Debian/Ubuntu\nStart-PSPackage -Type rpm  # RedHat/CentOS\n```\n\n**Module Development:**\n```powershell\n# Generate module manifest\nNew-ModuleManifest -Path MyModule.psd1 -ModuleVersion \"1.0.0\"\n\n# Test module loading\nImport-Module ./MyModule -Force -Verbose\n\n# Publish to PowerShell Gallery\nPublish-Module -Name MyModule -Repository PSGallery\n```\n\n**Debugging Build Issues:**\n- Check build logs in artifacts directory\n- Use -Verbose for detailed build output  \n- Verify .NET SDK version compatibility\n- Clean build artifacts with Start-PSBuild -Clean\n\n**Development Environment:**\n```powershell\n# Setup development environment\n./tools/installpsh-osx.sh    # macOS\n./tools/installpsh-debian.sh # Debian/Ubuntu\n\n# Use VS Code with PowerShell extension\ncode --install-extension ms-vscode.PowerShell\n\n# Configure PowerShell for development\n$profile | ni -Force\n# Add development-specific configuration\n```\n\n**CI/CD Integration:**\n- Azure Pipelines configuration in .vsts-ci/\n- Automated testing on Windows, Linux, macOS\n- Package generation and signing\n- Release deployment automation",
+  "priority": 7,
+  "audience": "PowerShell contributors and advanced developers",
+  "requirement": "Important for contributing to PowerShell Core development",
+  "categories": [
+    "build system",
+    "ci/cd",
+    "development",
+    "powershell"
+  ],
+  "sourceHash": "5447f26da6cf2c31103ed77c3f39d014b318d07acd2c3ce10462e3857bc3ea26",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-02T11:56:22.517Z",
+  "updatedAt": "2025-09-02T11:56:22.517Z",
+  "riskScore": 93,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-02T11:56:22.517Z",
+  "nextReviewDue": "2025-10-02T11:56:22.517Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-02T11:56:22.517Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Understanding the PowerShell build system is essential for contributors and advanced users:",
+  "primaryCategory": "build system"
+}

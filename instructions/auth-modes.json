@@ -1,0 +1,33 @@
+{
+  "id": "auth-modes",
+  "title": "Authentication Modes",
+  "body": "Auth Modes: (1) OAuth for per-user private repo access; (2) GitHub App for metadata-only access to installations. App mode triggers when GITHUB_APP_ID and private key file exist. /api/mode returns 'app' or 'oauth'.",
+  "priority": 5,
+  "audience": "devs",
+  "requirement": "Clarify dual auth strategy.",
+  "categories": [
+    "uncategorized"
+  ],
+  "primaryCategory": "uncategorized",
+  "sourceHash": "6e1c88dbe64783514ac893883de0ed6feeeb3793d30f81083474b2b5bdfa23d3",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T17:30:47.227Z",
+  "updatedAt": "2025-09-12T17:30:47.227Z",
+  "riskScore": 95,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T17:30:47.227Z",
+  "nextReviewDue": "2025-10-12T17:30:47.227Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T17:30:47.227Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Auth Modes: (1) OAuth for per-user private repo access; (2) GitHub App for metadata-only access to installations. App mode triggers when GITHUB_APP_ID and pr..."
+}

@@ -204,14 +204,34 @@ export function buildGraph(params: GraphExportParams): GraphResult {
     for(const n of nodes){
       // Escape minimal invalid chars (leave colon and hyphen intact)
       const safeId = n.id.replace(/[^A-Za-z0-9_:.-]/g,'_');
-      lines.push(`  ${safeId}["${n.id}"]`);
+      lines.push(`${safeId}["${n.id}"]`);
     }
     for(const e of finalEdges){
       const fromSafe = e.from.replace(/[^A-Za-z0-9_:.-]/g,'_');
       const toSafe = e.to.replace(/[^A-Za-z0-9_:.-]/g,'_');
-      lines.push(`  ${fromSafe} ---|${e.type}| ${toSafe}`);
+      lines.push(`${fromSafe} ---|${e.type}| ${toSafe}`);
     }
-    result.mermaid = lines.join('\n');
+    const mermaidBody = lines.join('\n');
+    // Provide standard YAML frontmatter with theme + layout + themeVariables so tests can assert presence
+    // independent of client dashboard augmentation. Keep single themeVariables block.
+    const fm = [
+      '---',
+      'config:',
+      '  theme: base',
+      '  layout: elk',
+      '  themeVariables:',
+      "    primaryColor: '#58a6ff'",
+      "    primaryTextColor: '#f0f6fc'",
+      "    primaryBorderColor: '#30363d'",
+      "    lineColor: '#484f58'",
+      "    secondaryColor: '#21262d'",
+      "    tertiaryColor: '#161b22'",
+      "    background: '#0d1117'",
+      "    mainBkg: '#161b22'",
+      "    secondBkg: '#21262d'",
+      '---'
+    ].join('\n');
+    result.mermaid = fm + '\n' + mermaidBody;
   }
 
   return result;

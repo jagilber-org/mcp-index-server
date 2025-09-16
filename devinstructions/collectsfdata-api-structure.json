@@ -1,0 +1,36 @@
+{
+  "id": "collectsfdata-api-structure",
+  "title": "CollectServiceFabricData API Structure Reference",
+  "body": "Critical API structure discoveries for CollectServiceFabricData Phase 3 testing: CsvCounterRecord properties are (Counter: string, CounterName: string, CounterValue: Decimal, FileType: string, Instance: string, NodeName: string, Object: string, RelativeUri: string, ResourceUri: string, Timestamp: DateTime). FileStatus enum values are (unknown=0, enumerated=1, existing=2, queued=4, downloading=8, formatting=16, formatted=32, uploading=64, failed=128, succeeded=256, all=512). Instance has public properties (TotalErrors, TotalFilesDownloaded, TotalFilesConverted, TotalFilesEnumerated, TotalFilesFormatted, TotalFilesMatched, TotalFilesSkipped, TotalRecords) and Totals() method. CustomTaskManager methods are TaskAction(Action) and TaskFunction(Func<object,object>). FileManager.PopulateCollection<T> returns FileObjectCollection. FileObject.RelativeUri is read-only property. StreamManager does not implement IDisposable. FileObjectCollection.Count(FileStatus) method filters by status flags.",
+  "rationale": "Essential API reference discovered through systematic source code analysis to prevent future compilation errors and ensure proper integration",
+  "priority": 8,
+  "audience": "developers",
+  "requirement": "API compatibility reference",
+  "categories": [
+    "api",
+    "collectsfdata",
+    "reference"
+  ],
+  "primaryCategory": "api",
+  "sourceHash": "cfeacf6e074c3a79185a23b4d51713181ee39ccd2236f9660a0d5f4ae58540a5",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T04:26:29.972Z",
+  "updatedAt": "2025-09-12T04:26:29.972Z",
+  "riskScore": 92,
+  "version": "1.0.0",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T04:26:29.972Z",
+      "summary": "initial import"
+    }
+  ],
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T04:26:29.972Z",
+  "nextReviewDue": "2025-10-12T04:26:29.972Z",
+  "reviewIntervalDays": 30,
+  "semanticSummary": "Critical API structure discoveries for CollectServiceFabricData Phase 3 testing: CsvCounterRecord properties are (Counter: string, CounterName: string, Count..."
+}

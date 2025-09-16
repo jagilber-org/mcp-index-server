@@ -1,0 +1,35 @@
+{
+  "id": "azure-mcp-server-tool-discovery",
+  "title": "Azure MCP Server Hierarchical Tool Discovery",
+  "body": "Azure MCP Server Tool Discovery: Azure MCP server uses hierarchical command structure with learn=true pattern. Key tool categories: kusto (7 commands: kusto_query, kusto_cluster_list, kusto_database_list, kusto_table_list, kusto_table_schema, kusto_sample, kusto_cluster_get), monitor (8 commands: monitor_metrics_query, monitor_metrics_definitions, monitor_resource_log_query, monitor_workspace_log_query, monitor_table_list, monitor_table_type_list, monitor_workspace_list, monitor_healthmodels_entity_gethealth), subscription (subscription info), group (resource groups), and more. Each category has dedicated sub-commands discoverable with learn=true. Tools use simple names for VS Code toolsets (kusto, monitor, subscription, group, etc.).",
+  "priority": 88,
+  "audience": "ai-agents",
+  "requirement": "SHOULD",
+  "categories": [
+    "azure-mcp",
+    "hierarchical-commands",
+    "tool-discovery"
+  ],
+  "sourceHash": "d7407524ee7b8674bb9e46a564fac079bd02214f654b1911f0d96896228d9999",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-04T17:38:05.608Z",
+  "updatedAt": "2025-09-04T17:38:05.608Z",
+  "riskScore": 12,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-04T17:38:05.608Z",
+  "nextReviewDue": "2026-01-02T17:38:05.608Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-04T17:38:05.608Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Azure MCP Server Tool Discovery: Azure MCP server uses hierarchical command structure with learn=true pattern. Key tool categories: kusto (7 commands: kusto_...",
+  "primaryCategory": "azure-mcp"
+}

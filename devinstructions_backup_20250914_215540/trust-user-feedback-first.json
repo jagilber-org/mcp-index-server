@@ -1,0 +1,36 @@
+{
+  "id": "trust-user-feedback-first",
+  "title": "Trust User Feedback As Ground Truth",
+  "body": "Guiding Bias: Treat all user-provided operational feedback as correct unless the user explicitly requests validation. Assume discrepancies arise from server code, configuration, or analysis—not from inaccurate user input.\n\nPrinciples:\n1. Presume correctness of user feedback (telemetry, configs, logs, environment snippets) by default.\n2. Diagnose code and configuration failure modes first; do NOT suggest user error without explicit contrary evidence and user invitation.\n3. When uncertainty exists, frame it as verification opportunities (\"collect X to localize\"), never as doubt in the provided data.\n4. Produce a failure-mode matrix tied to concrete code paths instead of speculative user mistakes.\n5. Embed server identity / storage path metadata in diagnostic responses to reduce ambiguity (e.g., persistDirResolved, instanceId).\n6. Escalate remediation recommendations (instrumentation, logging, health probes) before questioning initial premises.\n7. If a prior conclusion is superseded by new user data, explicitly state the incorrect assumption and its corrective action.\n\nDo / Do Not:\nDO: Enumerate plausible internal causes (race conditions, path resolution differences, multi-instance drift, silent write failures).\nDO: Offer targeted patches or tools (e.g., get_feedback_storage_info) for clarity.\nDO NOT: Attribute mismatch to user misreporting or environment misunderstanding without hard contradictory evidence.\n\nSuccess Criteria:\n- Response narratives show user feedback as authoritative context.\n- Root cause analysis sections start with internal vectors.\n- Added instrumentation reduces recurrence of ambiguity.\n\nOperational Follow-ups:\n- Add diagnostics tools when repeated ambiguity appears.\n- Maintain changelog notes when this bias leads to code adjustments.",
+  "rationale": "Reduces friction, accelerates debugging accuracy, and encodes collaborative trust model.",
+  "priority": 80,
+  "audience": "system",
+  "requirement": "Always ground analysis in user-provided feedback as authoritative; investigate internal causes first.",
+  "categories": [
+    "diagnostics",
+    "governance",
+    "quality"
+  ],
+  "sourceHash": "d995063b56cc9337f4a4bcc435ac1937069f29ea67b15e4708d1e50eb007b8a6",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-07T17:25:15.930Z",
+  "updatedAt": "2025-09-07T17:25:15.930Z",
+  "riskScore": 20,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-07T17:25:15.930Z",
+  "nextReviewDue": "2026-01-05T17:25:15.930Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-07T17:25:15.930Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Guiding Bias: Treat all user-provided operational feedback as correct unless the user explicitly requests validation. Assume discrepancies arise from server ...",
+  "primaryCategory": "diagnostics"
+}

@@ -1,0 +1,36 @@
+{
+  "id": "vs-code-mcp-toolsets-configuration",
+  "title": "VS Code MCP User-Defined Tool Sets Configuration Guide",
+  "body": "VS Code MCP integration supports user-defined tool sets for organizing MCP tools into logical collections. CRITICAL REQUIREMENTS: 1) Tool sets use SIMPLE tool reference names, not full namespaced names (use 'kusto' not 'mcp_azure_server_kusto'), 2) A toolset only appears if ALL tools in its 'tools' array actually exist and are available, 3) Tool names must match exactly what MCP servers provide, 4) Invalid characters are normalized (dots→underscores), 5) Names are case-sensitive lowercase with underscores/hyphens. SCHEMA: {'toolsetName': {'tools': ['tool_name_1', 'tool-name-2'], 'description': 'Purpose description', 'icon': 'vscode-icon-name'}}. TOOL NAMING PATTERNS: PowerShell MCP uses 'powershell-syntax-check', 'run-powershell', 'server-stats', 'working-directory-policy'; Azure MCP uses 'kusto', 'monitor', 'activity_log', 'batch'; GitHub MCP uses 'github_repo', 'list_issues', 'create_issue'. TROUBLESHOOTING: If toolset doesn't appear, verify ALL tool names exist using 'MCP: List Tools' command; Use simple names not server-prefixed format; Standard VS Code icons include 'pulse', 'search', 'terminal', 'gear', 'files', 'debug', 'tools', 'graph', 'database', 'cloud', 'shield', 'book', 'beaker', 'library'. FILE LOCATION: User toolsets stored in VS Code User settings at prompts/toolsetname.toolsets.jsonc with comprehensive documentation header including schema, naming patterns, troubleshooting, and source server mapping.",
+  "priority": 85,
+  "audience": "developers",
+  "requirement": "SHOULD",
+  "categories": [
+    "configuration",
+    "mcp",
+    "toolsets",
+    "vscode"
+  ],
+  "sourceHash": "5e1a41624dcba2f0e7a5f9d6f545abb90594d9a2f718f32a98a434b6c8cc17ac",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-04T17:23:33.086Z",
+  "updatedAt": "2025-09-04T17:23:33.086Z",
+  "riskScore": 15,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-04T17:23:33.086Z",
+  "nextReviewDue": "2026-01-02T17:23:33.087Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-04T17:23:33.086Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "VS Code MCP integration supports user-defined tool sets for organizing MCP tools into logical collections. CRITICAL REQUIREMENTS: 1) Tool sets use SIMPLE too...",
+  "primaryCategory": "configuration"
+}

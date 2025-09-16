@@ -1,0 +1,30 @@
+{
+  "id": "vscode-toolset-schema",
+  "title": "vscode-toolset-schema",
+  "body": "VS Code MCP toolset file schema and configuration details. Location: %APPDATA%/Code/User/prompts/tool-minimum-surface.toolsets.jsonc. Schema: {toolsetName: {tools: [canonical_tool_names], description: string, icon: vscode_icon_name}}. Critical requirements: 1) Use canonical tool names (run_powershell not alias run-powershell), 2) ALL tools must exist or entire toolset invisible, 3) Tool names case-sensitive lowercase with underscores preferred, 4) Icons: pulse, search, terminal, gear, files, debug, tools, graph, database, cloud, shield, book, beaker, library. Naming patterns: PowerShell (canonical underscore: run_powershell, emit_log), Azure DevOps (underscores: core_list_projects), Azure MCP (simple: kusto), GitHub (mixed: create_issue). Troubleshooting: Use 'MCP: List Tools' command to verify tool existence.",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "81369aabb1e94a2cb98a787356dc611a7837d3ce3eb801f32c382606950782ae",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-04T18:12:57.889Z",
+  "updatedAt": "2025-09-04T20:09:28.695Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-04T18:12:57.889Z",
+  "nextReviewDue": "2025-12-03T18:12:57.889Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-04T18:12:57.889Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "VS Code MCP toolset file schema and configuration details. Location: %APPDATA%/Code/User/prompts/tool-minimum-surface.toolsets.jsonc. Schema: {toolsetName: {..."
+}

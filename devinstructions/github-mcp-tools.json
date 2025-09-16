@@ -1,0 +1,30 @@
+{
+  "id": "github-mcp-tools",
+  "title": "github-mcp-tools",
+  "body": "GitHub MCP Server provides 80+ tools across 12 categories for complete GitHub workflow management. Discovery pattern: Direct enumeration via activation functions. Categories: issue_management (create/update issues), pull_request (PRs/reviews), repository (repos/files/branches), workflow (GitHub Actions), security (alerts/advisories), search (code/repos/users), notification (updates), commit (history), discussion (community), release (versioning), team (org management), file (content access). Key tools: mcp_github_create_issue, mcp_github_create_pull_request, mcp_github_search_repositories. Uses mcp_github_ prefix with underscores. Requires GitHub PAT for authentication.",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [],
+  "sourceHash": "b9cb1981e7b551d4ce58fef91dd45afd8873f20adde905b365b2f9164f5e983a",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-04T18:10:01.342Z",
+  "updatedAt": "2025-09-04T18:10:01.342Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-04T18:10:01.342Z",
+  "nextReviewDue": "2025-12-03T18:10:01.342Z",
+  "reviewIntervalDays": 90,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-04T18:10:01.342Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "GitHub MCP Server provides 80+ tools across 12 categories for complete GitHub workflow management. Discovery pattern: Direct enumeration via activation funct..."
+}

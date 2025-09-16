@@ -1,0 +1,34 @@
+{
+  "id": "activate-azure-devops-discovery",
+  "title": "Azure DevOps MCP Server Discovery Session",
+  "body": "Activating Azure DevOps MCP server for tool discovery and toolset configuration. This server provides project management and CI/CD capabilities.",
+  "priority": 100,
+  "audience": "system",
+  "requirement": "MUST",
+  "categories": [
+    "activation",
+    "azure-devops"
+  ],
+  "sourceHash": "2e226b08fba123f4fdf2c26316d3ad0af1525937c93e3639e3eab5000ef15ae4",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-04T17:27:06.869Z",
+  "updatedAt": "2025-09-04T17:27:06.869Z",
+  "riskScore": 0,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-04T17:27:06.869Z",
+  "nextReviewDue": "2026-01-02T17:27:06.869Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-04T17:27:06.869Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Activating Azure DevOps MCP server for tool discovery and toolset configuration. This server provides project management and CI/CD capabilities.",
+  "primaryCategory": "activation"
+}

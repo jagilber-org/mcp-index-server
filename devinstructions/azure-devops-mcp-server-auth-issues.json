@@ -1,0 +1,36 @@
+{
+  "id": "azure-devops-mcp-server-auth-issues",
+  "title": "Azure DevOps MCP Server Authentication Issues",
+  "body": "Azure DevOps MCP servers require separate authentication configuration independent of Azure CLI (az devops) authentication.\n\n**Current Status**:\n- ✅ Azure CLI `az devops` commands work after `az login`\n- ❌ Azure DevOps MCP server tools fail with identity materialization errors\n\n**MCP Server Authentication Requirements**:\n1. **Environment Variables**:\n   ```powershell\n   $env:AZDO_ORG_URL = \"https://dev.azure.com/YOUR_ORG\"\n   $env:AZDO_PAT = \"your_personal_access_token\"\n   ```\n\n2. **Create Personal Access Token**:\n   - Go to: https://dev.azure.com/YOUR_ORG/_usersSettings/tokens\n   - Create token with scopes: Code (read), Project and team (read), Build (read)\n\n**Common Error**:\n```\nIdentity [ID] has not been materialized, please use interactive login over the browser first\n```\n\n**Root Cause**: MCP servers don't leverage Azure CLI authentication tokens and require explicit PAT configuration.\n\n**Workaround**: Use Azure CLI (`az devops`) commands directly instead of MCP server tools when authentication is problematic.",
+  "priority": 80,
+  "audience": "developers",
+  "requirement": "should",
+  "categories": [
+    "authentication",
+    "azure-devops",
+    "mcp-server",
+    "troubleshooting"
+  ],
+  "sourceHash": "a0ef0720be16879a39a9e98cb67e88dd4dbfb34d6f2f16207e703788dfa8c7bd",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-03T14:10:30.534Z",
+  "updatedAt": "2025-09-03T14:10:30.534Z",
+  "riskScore": 20,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-03T14:10:30.534Z",
+  "nextReviewDue": "2026-01-01T14:10:30.534Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-03T14:10:30.534Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Azure DevOps MCP servers require separate authentication configuration independent of Azure CLI (az devops) authentication.",
+  "primaryCategory": "authentication"
+}

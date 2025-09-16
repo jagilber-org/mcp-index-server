@@ -1,0 +1,37 @@
+{
+  "id": "github-mermaid-dark-theme-quick-guide-2025",
+  "title": "GitHub Mermaid Dark Theme Quick Guide 2025",
+  "body": "# GitHub Mermaid Dark Theme Quick Guide (2025)\n\nFast rules to ensure Mermaid diagrams stay legible in GitHub's dark & light themes.\n\n## Core Principles\n1. Avoid hardcoded light-theme colors (#000, #fff, pure primaries)\n2. Lean on defaults: GitHub auto-applies color tokens\n3. Use semantic groupings (subgraphs) instead of color-only distinctions\n\n## Safe Styling Snippets\n```\n%% MINIMAL custom styling (keeps theme adaptive)\n%% Avoid setting fill/background; only tweak spacing or stroke-width\nflowchart TD\n  classDef accent stroke-width:2px;\n  A[Start]:::accent --> B{Decision}\n  B -->|Yes| C[Path]\n  B -->|No| D[Alternate]\n```\n\n## Subgraph Grouping\n```\nflowchart LR\n  subgraph Ingress\n    A[Client]\n    B[Edge]\n  end\n  subgraph Core\n    S[Service]\n    DB[(Store)]\n  end\n  A --> B --> S --> DB\n```\nPrefer structural grouping over color to maintain theme neutrality.\n\n## Do Not\n- Force background: `style A fill:#fff` (breaks dark mode contrast)\n- Pick low-contrast grays (#666 on dark, #bbb on light)\n- Depend on emojis as sole meaning carriers\n\n## Font & Text\n- Keep labels short; wrap logic with subgraphs instead of long node text\n- Use sentence case for readability\n\n## Contrast Testing\nChecklist:\n- No text on saturated custom fills\n- Borders still visible in dark (2px stroke for key nodes if emphasis needed)\n\n## Validation Flow\n1. Paste diagram into PR description\n2. Toggle GitHub theme (Settings > Appearance)\n3. Confirm: legible, aligned, no clipped nodes\n4. Iterate minimally; avoid cosmetic over-tuning\n\n## Accessibility\n- Provide surrounding markdown alt/context\n- Avoid relying solely on edge color or shape to convey branching\n\n## Quick Lint (Mental)\n- Fewer than 25 nodes\n- Single primary direction (LR or TD)\n- Consistent decision diamond usage\n\nAdhere to this guide for fast, reliable, dark-mode-ready diagrams with minimal maintenance.",
+  "rationale": "Ensures Mermaid diagrams remain accessible and readable across GitHub themes while minimizing brittle styling.",
+  "priority": 25,
+  "audience": "developers",
+  "requirement": "recommended",
+  "categories": [
+    "accessibility",
+    "documentation",
+    "github",
+    "mermaid"
+  ],
+  "sourceHash": "39961df3456c25af369896350f6a08ba77d4ca31e3f09d727a513a9e1ca63358",
+  "schemaVersion": "3",
+  "createdAt": "2025-08-31T12:42:13.492Z",
+  "updatedAt": "2025-08-31T19:27:06.479Z",
+  "riskScore": 95,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-31T12:42:13.493Z",
+  "nextReviewDue": "2025-10-30T12:42:13.493Z",
+  "reviewIntervalDays": 60,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-31T12:42:13.492Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "# GitHub Mermaid Dark Theme Quick Reference",
+  "primaryCategory": "accessibility"
+}

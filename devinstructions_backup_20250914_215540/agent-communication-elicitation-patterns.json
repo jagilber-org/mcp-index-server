@@ -1,0 +1,38 @@
+{
+  "id": "agent-communication-elicitation-patterns",
+  "title": "Agent Communication & Elicitation Patterns",
+  "body": "# Agent Communication & Elicitation Patterns\n\n## Overview\nStructured patterns for AI agents to effectively communicate, collaborate, and elicit detailed information for complex multi-step tasks.\n\n## Core Communication Patterns\n\n### 1. Structured Elicitation Pattern\n```\n**Context Gathering:**\n- Current situation assessment\n- Goal clarification\n- Constraint identification\n- Success criteria definition\n\n**Iterative Refinement:**\n- Present options with trade-offs\n- Seek preference feedback\n- Validate understanding\n- Adjust approach based on input\n```\n\n### 2. Task Decomposition Communication\n```\n**Phase 1: Problem Understanding**\nAgent: \"I understand you need [goal]. Let me break this into phases:\n1. [Phase A description]\n2. [Phase B description] \n3. [Phase C description]\n\nDoes this approach align with your expectations? Are there specific constraints I should consider?\"\n\n**Phase 2: Detailed Planning**\nAgent: \"For Phase 1, I'll need to:\n- [Specific action A]\n- [Specific action B]\n\nBefore proceeding, should I prioritize [X] or [Y] first?\"\n```\n\n### 3. Progress Communication Pattern\n```\n**Status Updates:**\n- \"Completed: [specific achievement]\"\n- \"Currently working on: [current task]\"\n- \"Next: [upcoming task]\"\n- \"Blocked on: [specific dependency]\"\n\n**Decision Points:**\n- \"I have two options: [A] or [B]. Option A offers [benefits] but requires [tradeoff]. Option B provides [different benefits] with [different tradeoff]. Which would you prefer?\"\n```\n\n### 4. Error Recovery Communication\n```\n**Problem Identification:**\n- \"I encountered [specific issue] while [specific action]\"\n- \"The error indicates [root cause analysis]\"\n- \"I can try [alternative approach A] or [alternative approach B]\"\n\n**Resolution Seeking:**\n- \"Would you like me to proceed with [preferred solution] or explore other options?\"\n- \"This might require [additional permission/resource]. Should I continue?\"\n```\n\n## Agent-to-Agent Coordination\n\n### 5. Handoff Pattern\n```\n**Context Transfer:**\nAgent A: \"Transferring to [Agent B] with context:\n- Goal: [specific objective]\n- Completed: [list of finished tasks]\n- Current state: [relevant status]\n- Next required: [specific next steps]\n- Constraints: [important limitations]\"\n\nAgent B: \"Received context. I understand the goal is [restate goal] and I need to [next steps]. Confirmed?\"\n```\n\n### 6. Collaborative Problem-Solving\n```\n**Expertise Coordination:**\nAgent A: \"I can handle [domain expertise], but this also requires [other domain]. Agent B, can you provide guidance on [specific aspect]?\"\n\nAgent B: \"For the [domain] aspect, I recommend [approach] because [reasoning]. This should integrate with your [Agent A's domain] work by [integration method].\"\n```\n\n## Advanced Elicitation Techniques\n\n### 7. Assumption Surfacing\n```\nAgent: \"I'm proceeding based on these assumptions:\n1. [Assumption A with reasoning]\n2. [Assumption B with reasoning]\n3. [Assumption C with reasoning]\n\nPlease correct any that don't align with your expectations.\"\n```\n\n### 8. Option Space Exploration\n```\nAgent: \"I see several approaches:\n\n**Conservative approach:** [description, pros, cons, timeline]\n**Balanced approach:** [description, pros, cons, timeline]\n**Aggressive approach:** [description, pros, cons, timeline]\n\nEach has different risk/reward profiles. Which aligns best with your priorities?\"\n```\n\n### 9. Incremental Commitment\n```\nAgent: \"Rather than committing to the full plan upfront, let's proceed incrementally:\n\nStep 1: [small, low-risk action] (5 minutes)\n- If successful: proceed to Step 2\n- If issues arise: adjust approach\n\nShall I start with Step 1?\"\n```\n\n## Implementation Guidelines\n\n### For Task Planning\n1. **Always confirm understanding** before beginning work\n2. **Surface assumptions explicitly** early in the conversation\n3. **Provide multiple options** when significant decisions are required\n4. **Seek feedback at natural breakpoints** rather than after completion\n5. **Communicate uncertainty honestly** with proposed mitigation strategies\n\n### For Progress Management\n1. **Regular status updates** for long-running tasks\n2. **Proactive blocker identification** with proposed solutions\n3. **Success criteria validation** before declaring completion\n4. **Course correction** based on intermediate results\n\n### For Error Handling\n1. **Clear error explanation** with specific details\n2. **Root cause analysis** when possible\n3. **Alternative approaches** ready to propose\n4. **Learning capture** for future similar situations\n\n## Quality Metrics\n\n- **Understanding accuracy**: Percentage of tasks completed as intended\n- **Efficiency**: Time to completion vs. estimated time\n- **User satisfaction**: Feedback on communication clarity and helpfulness\n- **Error recovery**: Time and success rate of error resolution\n\n## Common Anti-Patterns to Avoid\n\n1. **Assumption overload**: Making too many unstated assumptions\n2. **Information dump**: Providing too much information without structure\n3. **Premature commitment**: Agreeing to approaches without sufficient understanding\n4. **Silent work**: Long periods without communication or updates\n5. **Binary options**: Only offering yes/no choices when gradations exist\n\n## Example Templates\n\n### Task Initiation Template\n```\n\"I understand you need [goal]. To ensure I approach this correctly:\n\n1. Are there specific constraints I should be aware of?\n2. What does success look like for this task?\n3. Do you have preferences for the approach?\n4. What's the timeline expectation?\n\nBased on your answers, I'll propose a structured approach.\"\n```\n\n### Progress Checkpoint Template\n```\n\"Progress update:\n✅ Completed: [specific accomplishments]\n🔄 Currently: [current activity with ETA]\n⏭️ Next: [upcoming task]\n❓ Question: [any clarification needed]\n\nEverything proceeding as expected?\"\n```\n\n### Decision Support Template\n```\n\"I need to make a decision about [specific choice].\n\nOption A: [approach] → [outcomes] (confidence: X%)\nOption B: [approach] → [outcomes] (confidence: Y%)\n\nRecommendation: [preferred option] because [reasoning]\n\nDoes this align with your thinking?\"\n```",
+  "rationale": "Provides structured communication patterns for effective AI agent collaboration and user interaction",
+  "priority": 85,
+  "audience": "all",
+  "requirement": "recommended",
+  "categories": [
+    "agent-communication",
+    "collaboration",
+    "elicitation",
+    "patterns",
+    "workflow"
+  ],
+  "primaryCategory": "agent-communication",
+  "sourceHash": "6ba99e6431759095eef63a27b807ab300b7488a6a69f9385127f5947ba76c962",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T12:09:22.204Z",
+  "updatedAt": "2025-09-12T12:09:22.204Z",
+  "riskScore": 35,
+  "version": "1.0.0",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T12:09:22.204Z",
+      "summary": "initial import"
+    }
+  ],
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T12:09:22.204Z",
+  "nextReviewDue": "2026-01-10T12:09:22.204Z",
+  "reviewIntervalDays": 120,
+  "semanticSummary": "# Agent Communication & Elicitation Patterns"
+}

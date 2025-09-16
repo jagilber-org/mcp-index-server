@@ -1,0 +1,35 @@
+{
+  "id": "azure-devops-mcp-tool-discovery",
+  "title": "Azure DevOps MCP Tool Discovery Methods",
+  "body": "Azure DevOps MCP Server Tool Discovery: Use activation functions for systematic tool discovery since meta_tools is not available. Key activation functions: activate_azure_devops_core_management (core_*, search_*), activate_azure_devops_repository_management (repo_*), activate_azure_devops_build_management (build_*), activate_azure_devops_work_item_management (wit_*), activate_azure_devops_release_management (release_*), activate_azure_devops_test_management (testplan_*), activate_azure_devops_advanced_security (advsec_*). Tools use simple reference names (e.g., 'core_list_projects') not full namespaced names. Total 62+ tools discovered across project management, repositories, CI/CD, work items, testing, and security.",
+  "priority": 85,
+  "audience": "ai-agents",
+  "requirement": "SHOULD",
+  "categories": [
+    "azure-devops",
+    "mcp-patterns",
+    "tool-discovery"
+  ],
+  "sourceHash": "1b77610d7a009e3755b21a7010d82cb15c5cecfcaa76c3eff576cb815d3d85ad",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-04T17:35:40.438Z",
+  "updatedAt": "2025-09-04T17:35:40.438Z",
+  "riskScore": 15,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-04T17:35:40.438Z",
+  "nextReviewDue": "2026-01-02T17:35:40.438Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-04T17:35:40.438Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Azure DevOps MCP Server Tool Discovery: Use activation functions for systematic tool discovery since meta_tools is not available. Key activation functions: a...",
+  "primaryCategory": "azure-devops"
+}

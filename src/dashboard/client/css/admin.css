@@ -148,6 +148,25 @@ button.action-btn.xs { padding:3px 8px; font-size:10px; border-radius:12px; }
 }
 .graph-toolbar select[multiple]:focus, .drill-toolbar select[multiple]:focus { outline:1px solid var(--admin-accent); }
 
+/* Edge Types + Layout refined grouping */
+.graph-toolbar .edge-layout-group { flex-direction:row; align-items:stretch; gap:10px; }
+.graph-toolbar .edge-layout-group label.block { flex:1 1 150px; background:#151f2c; border:1px solid #263549; border-radius:10px; padding:8px 10px 10px; position:relative; box-shadow:0 2px 4px rgba(0,0,0,0.25); }
+.graph-toolbar .edge-layout-group label.block:hover { border-color:#345072; }
+.graph-toolbar .edge-layout-group label.block:focus-within { border-color:var(--admin-accent); box-shadow:0 0 0 1px var(--admin-accent),0 2px 6px rgba(0,0,0,0.35); }
+.graph-toolbar .edge-layout-group .lbl-icon { font-size:12px; opacity:.8; margin-right:4px; }
+.graph-toolbar .edge-layout-group label.block span { font-size:11px; text-transform:uppercase; letter-spacing:.75px; opacity:.65; display:flex; align-items:center; gap:4px; }
+.graph-toolbar .edge-layout-group input.form-input.pill,
+.graph-toolbar .edge-layout-group select.form-input.pill { margin-top:4px; background:#1d2735; border:1px solid #2d3b4f; border-radius:20px; padding:6px 10px; font-size:12px; transition:background .25s,border-color .25s, box-shadow .25s; width:100%; }
+.graph-toolbar .edge-layout-group input.form-input.pill:focus,
+.graph-toolbar .edge-layout-group select.form-input.pill:focus { outline:none; background:#223142; border-color:var(--admin-accent); box-shadow:0 0 0 1px var(--admin-accent); }
+.graph-toolbar .edge-layout-group input.form-input.pill::placeholder { color:#5a6b80; font-size:11px; }
+.graph-toolbar .edge-layout-group select.form-input.pill { cursor:pointer; }
+.graph-toolbar .edge-layout-group select.form-input.pill option { background:#1d2735; color:var(--admin-text); }
+@media (max-width: 1100px){
+    .graph-toolbar .edge-layout-group { flex-direction:column; }
+    .graph-toolbar .edge-layout-group label.block { width:100%; }
+}
+
 /* Checkbox label normalization */
 label.chk { display:flex; align-items:center; gap:6px; background:#1f2a3a; color:#d0d7e2; border:1px solid #2d3b4f; border-radius:6px; padding:4px 8px; font-size:11px; line-height:1.2; }
 label.chk.simple { background:transparent; border:1px solid #2d3b4f; }

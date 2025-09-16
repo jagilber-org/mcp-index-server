@@ -1,0 +1,35 @@
+{
+  "id": "powershell-error-handling-best-practices",
+  "title": "PowerShell Error Handling and Exception Management",
+  "body": "PowerShell has a unique error handling model that differs from traditional .NET exception handling:\n\n**Error Types:**\n- Terminating errors: Stop execution, can be caught with try/catch\n- Non-terminating errors: Continue execution, written to error stream\n- Use $ErrorActionPreference = 'Stop' to make non-terminating errors terminating\n\n**Exception Hierarchy:**\n- RuntimeException: Base for PowerShell-specific exceptions\n- ErrorRecord: Contains detailed error information\n- ActionPreference: Controls error behavior (Stop, Continue, SilentlyContinue, Inquire, Break)\n\n**Best Practices:**\n```powershell\n# Proper error handling pattern\ntry {\n    Get-Item \"NonExistentFile\" -ErrorAction Stop\n} catch [System.Management.Automation.ItemNotFoundException] {\n    Write-Error \"File not found: $_\"\n} finally {\n    # Cleanup code always runs\n}\n\n# Check for specific error IDs\ntry {\n    Get-Item \"test\" -ErrorAction Stop  \n} catch {\n    if ($_.Exception.ErrorId -eq \"PathNotFound\") {\n        # Handle specific error\n    }\n}\n```\n\n**Trap Statements:**\n- Use for handling errors in script blocks\n- Can continue, break, or stop execution\n- Scope-aware error handling\n\n**Debugging Integration:**\n- Set-PSBreakpoint for conditional debugging\n- $ErrorActionPreference affects debugger behavior\n- Use -ErrorAction parameter for per-command control",
+  "priority": 9,
+  "audience": "PowerShell script authors and developers",
+  "requirement": "Critical for robust PowerShell script development",
+  "categories": [
+    "debugging",
+    "error handling",
+    "powershell"
+  ],
+  "sourceHash": "c5150d3902032ee3434e71554c425b38eb094ad036038007d95bce54ea2c82ba",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-02T11:56:22.513Z",
+  "updatedAt": "2025-09-02T11:56:22.513Z",
+  "riskScore": 91,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-02T11:56:22.513Z",
+  "nextReviewDue": "2025-10-02T11:56:22.513Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-02T11:56:22.513Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PowerShell has a unique error handling model that differs from traditional .NET exception handling:",
+  "primaryCategory": "debugging"
+}

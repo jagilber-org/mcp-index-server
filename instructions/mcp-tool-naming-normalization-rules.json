@@ -1,0 +1,36 @@
+{
+  "id": "mcp-tool-naming-normalization-rules",
+  "title": "MCP Tool Naming and VS Code Normalization Rules",
+  "body": "MCP tool naming in VS Code follows specific normalization rules that developers must understand to create working toolsets. VS Code converts MCP tool names using toolInvalidCharRe regex pattern replacing invalid characters with underscores and converting dots to underscores. CRITICAL DISCOVERY: VS Code toolsets use toolReferenceName (simple names) NOT full namespaced tool identifiers. Display name hierarchy: tool.definition.annotations?.title → tool.definition.title → tool.definition.name. COMMON MISTAKES: Using 'mcp_server_name_tool_name' format instead of simple 'tool_name'; Including non-existent tools causing entire toolset to be hidden; Case sensitivity errors; Using original tool names instead of normalized versions. VALIDATION METHOD: Use VS Code Command Palette 'MCP: List Tools' to see actual available tool names; Verify ALL tools in toolset exist before adding; Test with minimal toolset first then expand. NORMALIZATION EXAMPLES: 'powershell.syntax-check' becomes 'powershell_syntax_check'; 'azure.kusto.query' becomes 'azure_kusto_query'. SOURCE CODE REFERENCE: mcpServer.ts handles tool normalization via toolInvalidCharRe = /[^a-z0-9_-]/gi pattern; mcpLanguageModelToolContribution.ts manages display name mapping and tool reference generation.",
+  "priority": 90,
+  "audience": "developers",
+  "requirement": "MUST",
+  "categories": [
+    "mcp",
+    "tool-naming",
+    "troubleshooting",
+    "vscode"
+  ],
+  "sourceHash": "19db60ebe6cae56f9e6fb24dd1259f7f93b14c23d700093c0d4b2dd0ec21fe3b",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-04T17:23:55.255Z",
+  "updatedAt": "2025-09-04T17:23:55.255Z",
+  "riskScore": 10,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-04T17:23:55.256Z",
+  "nextReviewDue": "2026-01-02T17:23:55.256Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-04T17:23:55.255Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "MCP tool naming in VS Code follows specific normalization rules that developers must understand to create working toolsets. VS Code converts MCP tool names u...",
+  "primaryCategory": "mcp"
+}

@@ -1,0 +1,36 @@
+{
+  "id": "powershell-testing-pester-guidelines",
+  "title": "PowerShell Testing with Pester Framework",
+  "body": "Pester is PowerShell's testing framework with specific patterns and best practices:\n\n**Test Structure:**\n```powershell\nDescribe \"Feature Name\" -Tag \"CI\" {\n    BeforeAll {\n        # Setup code runs once before all tests\n    }\n    \n    Context \"Specific scenario\" {\n        BeforeEach {\n            # Setup before each test\n        }\n        \n        It \"Should perform specific behavior\" {\n            $result = Get-Something\n            $result | Should -Be \"Expected\"\n        }\n        \n        AfterEach {\n            # Cleanup after each test\n        }\n    }\n    \n    AfterAll {\n        # Cleanup after all tests\n    }\n}\n```\n\n**Tag Requirements:**\n- CI: Fast tests run in continuous integration\n- Feature: Longer tests run daily\n- Scenario: Integration tests for broader functionality\n- RequireAdminOnWindows: Elevated privilege tests on Windows\n- RequireSudoOnUnix: Root privilege tests on Unix\n- Slow: Tests taking longer than 1 second\n\n**Best Practices:**\n- Use TestDrive: for file operations (auto-cleanup)\n- Use -TestCases for parameterized tests\n- Mock external dependencies\n- Test one thing per It block\n- Use descriptive test names\n- Avoid free code in Describe blocks\n- Use Should -Throw -ErrorId for exception testing\n\n**Test Execution:**\n```powershell\n# Run all tests\nStart-PSPester\n\n# Run specific tests\nStart-PSPester -Path \"test/powershell/engine\"\n\n# Run with specific tags\nStart-PSPester -Tag \"CI\" -ExcludeTag \"Slow\"\n```\n\n**Platform Considerations:**\n```powershell\n# Platform-specific tests\nIt \"Should work on Windows\" -Skip:($IsLinux -Or $IsMacOS) {\n    # Windows-only test\n}\n\nIt \"Should work on Unix\" -Skip:$IsWindows {\n    # Unix-only test\n}\n```",
+  "priority": 8,
+  "audience": "PowerShell developers and testers",
+  "requirement": "Essential for maintaining PowerShell code quality",
+  "categories": [
+    "pester",
+    "powershell",
+    "quality assurance",
+    "testing"
+  ],
+  "sourceHash": "836a23b144738d851e4e656581f72f171ce979a467cbc7aa840db5698283fb68",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-02T11:56:22.515Z",
+  "updatedAt": "2025-09-02T11:56:22.515Z",
+  "riskScore": 92,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-02T11:56:22.515Z",
+  "nextReviewDue": "2025-10-02T11:56:22.515Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-02T11:56:22.515Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Pester is PowerShell's testing framework with specific patterns and best practices:",
+  "primaryCategory": "pester"
+}

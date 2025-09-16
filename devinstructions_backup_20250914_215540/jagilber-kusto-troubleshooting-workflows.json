@@ -1,0 +1,38 @@
+{
+  "id": "jagilber-kusto-troubleshooting-workflows",
+  "title": "Kusto Query Patterns for Azure Service Troubleshooting",
+  "body": "Based on extensive Azure Data Explorer usage patterns (3,238 visits over 3 months), this instruction provides common Kusto query workflows for Azure service troubleshooting and log analysis. USER CONTEXT: Heavy daily usage of Azure Data Explorer (57.8 visits/day) with peak activity 9-11AM during deep analysis sessions. Primary use cases include customer support case investigation, Azure service monitoring, and operational troubleshooting across multiple Azure services.\n\nCOMMON QUERY PATTERNS:\n1. Service Health Analysis:\n   - AzureActivity table for resource operations\n   - AzureDiagnostics for service-specific logs\n   - Heartbeat table for VM/agent connectivity\n   - Time-range filtering for incident correlation\n\n2. Support Case Investigation:\n   - Cross-service log correlation using timestamps\n   - Error pattern identification across multiple tables\n   - Performance metric analysis for degradation issues\n   - Authentication failure troubleshooting\n\n3. Operational Monitoring:\n   - Daily/hourly aggregations for trend analysis\n   - Alert correlation and root cause analysis\n   - Resource utilization patterns\n   - Security event investigation\n\nWORKFLOW INTEGRATION: Queries are typically used in conjunction with Azure Support Center case management (2,935 visits) and Azure Portal resource investigation (854 visits). Results often inform GitHub documentation updates and PowerShell automation scripts.\n\nTIME-BASED USAGE: Peak usage during 9-11AM suggests morning triage and analysis workflows. Evening usage (7PM) indicates research and learning activities on Microsoft Learn platform.",
+  "rationale": "High-frequency usage pattern (3,238 visits) indicates this is a core daily workflow that would benefit significantly from agent assistance and optimization.",
+  "priority": 95,
+  "audience": "azure-engineers, support-specialists, devops-engineers",
+  "requirement": "should",
+  "categories": [
+    "azure",
+    "kusto",
+    "monitoring",
+    "support",
+    "troubleshooting"
+  ],
+  "sourceHash": "d2c8ef0ce5d9f18b9d2b1b13bb212e581b10ba6979f92a2590ec78f7386e6904",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-01T14:44:30.364Z",
+  "updatedAt": "2025-09-01T14:44:30.364Z",
+  "riskScore": 5,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-01T14:44:30.365Z",
+  "nextReviewDue": "2025-12-30T14:44:30.365Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-01T14:44:30.364Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Based on extensive Azure Data Explorer usage patterns (3,238 visits over 3 months), this instruction provides common Kusto query workflows for Azure service ...",
+  "primaryCategory": "azure"
+}

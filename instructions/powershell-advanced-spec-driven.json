@@ -1,0 +1,37 @@
+{
+  "id": "powershell-advanced-spec-driven",
+  "title": "PowerShell Advanced Spec-Driven Development",
+  "body": "# PowerShell Advanced Spec-Driven Development\n\n## Overview\nAdvanced PowerShell development methodology integrating GitHub spec-kit constitutional governance principles with PowerShell-specific patterns, MCP tool integration, and repository best practices.\n\n## Constitutional Framework for PowerShell\n\n### Article I: Specification Authority\n- **Principle**: All PowerShell scripts begin with executable specifications\n- **Implementation**: Comment-based help serves as living specification\n- **Governance**: Specifications define success criteria before implementation\n- **Validation**: Use `powershell-syntax-check` and `run-powershell` MCP tools\n\n### Template-Driven Development\n```powershell\n<#\n.SYNOPSIS\n    [SPECIFICATION]: Brief description of what the script accomplishes\n\n.DESCRIPTION\n    [DETAILED SPEC]: Comprehensive behavior specification including:\n    - Input validation requirements\n    - Processing logic specification\n    - Output format specification\n    - Error handling requirements\n    - Performance expectations\n\n.PARAMETER ParameterName\n    [SPEC]: Parameter specification with validation rules\n\n.EXAMPLE\n    [BEHAVIORAL SPEC]: Example demonstrating expected usage and output\n    \n    ScriptName.ps1 -Parameter \"Value\"\n    \n    Expected Output:\n    [Specific output format specification]\n\n.NOTES\n    Author: [Author]\n    Version: [SemVer]\n    Specification Date: [ISO Date]\n    Implementation Status: [Planned|In Progress|Complete|Validated]\n#>\n\n[CmdletBinding()]\nparam(\n    [Parameter(Mandatory = $true, HelpMessage = \"Specification-driven parameter description\")]\n    [ValidateNotNullOrEmpty()]\n    [string]$RequiredParameter,\n    \n    [Parameter()]\n    [switch]$TestMode = $false\n)\n\n# Specification Validation Block\nfunction Test-Specification {\n    [CmdletBinding()]\n    param([hashtable]$SpecificationCriteria)\n    \n    # Validate all specification requirements are met\n    # Return validation results\n}\n\n# Main Implementation (must satisfy specification)\ntry {\n    if ($TestMode) {\n        Write-Host \"Running in specification validation mode\" -ForegroundColor Yellow\n        # Execute specification tests\n    }\n    \n    # Implementation logic here\n    \n} catch {\n    Write-Error \"Implementation failed specification: $($_.Exception.Message)\"\n    exit 1\n}\n```\n\n## MCP Tool Integration\n\n### Validation Workflow\n```powershell\nfunction Invoke-SpecificationValidation {\n    [CmdletBinding()]\n    param([Parameter(Mandatory)][string]$ScriptPath)\n    \n    # 1. Syntax validation using MCP tools\n    $syntaxResult = Invoke-MCPTool -Tool 'powershell-syntax-check' -Parameters @{\n        script = Get-Content $ScriptPath -Raw\n    }\n    \n    if (-not $syntaxResult.IsValid) {\n        throw \"Specification validation failed: Syntax errors detected\"\n    }\n    \n    # 2. Specification compliance check\n    $specCompliance = Test-SpecificationCompliance -Path $ScriptPath\n    \n    return @{\n        SyntaxValid = $syntaxResult.IsValid\n        SpecCompliant = $specCompliance.IsCompliant\n    }\n}\n```\n\n### Repository Integration\n```powershell\nfunction Initialize-SpecDrivenRepository {\n    [CmdletBinding()]\n    param([Parameter(Mandatory)][string]$RepositoryPath)\n    \n    # Create spec-driven structure\n    $directories = @(\n        'specifications',\n        'implementations', \n        'plans',\n        'tasks',\n        'templates',\n        'validation'\n    )\n    \n    foreach ($dir in $directories) {\n        New-Item -Path \"$RepositoryPath\\$dir\" -ItemType Directory -Force\n    }\n    \n    # Initialize constitutional governance\n    $constitution = @\"\n# Repository Constitution\n\n## Article I: Specification Authority\nAll scripts must begin with complete specifications before implementation.\n\n## Article II: Implementation Fidelity\nImplementations must satisfy all specification requirements.\n\n## Article III: Validation Mandate\nAll changes must pass specification validation before integration.\n\n## Article IV: Template Consistency\nAll scripts must follow established templates and patterns.\n\n## Article V: MCP Integration\nValidation must leverage available MCP tools for consistency.\n\"@\n    \n    Set-Content -Path \"$RepositoryPath\\CONSTITUTION.md\" -Value $constitution\n}\n```\n\n## Constitutional Testing\n```powershell\nfunction Test-ConstitutionalCompliance {\n    [CmdletBinding()]\n    param(\n        [Parameter(Mandatory)][string]$ScriptPath,\n        [string]$ConstitutionPath = \"$PSScriptRoot\\CONSTITUTION.md\"\n    )\n    \n    $script = Get-Content $ScriptPath -Raw\n    \n    $compliance = @{\n        HasSpecification = $script -match '\\.SYNOPSIS'\n        HasDetailedDescription = $script -match '\\.DESCRIPTION'\n        HasExamples = $script -match '\\.EXAMPLE'\n        HasParameterValidation = $script -match '\\[Parameter\\('\n        HasErrorHandling = $script -match 'try\\s*{|catch\\s*{'\n        HasCommentBasedHelp = $script -match '<#[\\s\\S]*#>'\n    }\n    \n    $compliance.IsCompliant = -not ($compliance.Values -contains $false)\n    return $compliance\n}\n```\n\n## Success Metrics\n\n- **Specification Coverage**: 100% of scripts have complete specifications\n- **Implementation Fidelity**: All implementations satisfy specifications\n- **Validation Success**: 100% pass constitutional compliance tests\n- **Template Consistency**: All scripts follow established templates\n- **MCP Integration**: Validation leverages available MCP tools",
+  "priority": 88,
+  "audience": "developers",
+  "requirement": "recommended",
+  "categories": [
+    "governance",
+    "mcp-integration",
+    "powershell",
+    "spec-driven-development",
+    "templates"
+  ],
+  "sourceHash": "fc8cec7e06facfc47e28aeef729b5a6fa3323bbbb1c3a168a79b8f2ed2c3dc62",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-05T15:48:27.541Z",
+  "updatedAt": "2025-09-10T10:56:56.844Z",
+  "riskScore": 32,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-05T15:48:27.541Z",
+  "nextReviewDue": "2026-01-03T15:48:27.541Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-05T15:48:27.541Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "# PowerShell Advanced Spec-Driven Development",
+  "primaryCategory": "governance"
+}

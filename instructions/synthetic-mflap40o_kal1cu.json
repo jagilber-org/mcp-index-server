@@ -1,0 +1,34 @@
+{
+  "id": "synthetic-mflap40o_kal1cu",
+  "title": "Synthetic Instruction Updated",
+  "body": "Updated body",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "synthetic",
+    "updated"
+  ],
+  "primaryCategory": "synthetic",
+  "sourceHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-15T15:45:07.190Z",
+  "updatedAt": "2025-09-15T15:45:07.190Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-15T15:45:07.190Z",
+      "summary": "initial import"
+    }
+  ],
+  "owner": "synthetic",
+  "status": "approved",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-15T15:45:07.191Z",
+  "nextReviewDue": "2025-12-14T15:45:07.191Z",
+  "reviewIntervalDays": 90,
+  "semanticSummary": "Updated body"
+}

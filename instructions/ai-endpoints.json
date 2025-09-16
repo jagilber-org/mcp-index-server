@@ -1,0 +1,33 @@
+{
+  "id": "ai-endpoints",
+  "title": "AI Endpoint Behavior",
+  "body": "AI Endpoints: /api/ai/chat and /api/ai/plan use unifiedOpenAiCall with fallback. For non-gpt-5 models: /chat/completions primary then /responses fallback. For gpt-5* models: /responses primary enabling text_verbosity and reasoning_summary if OPENAI_VERBOSITY / OPENAI_REASONING_SUMMARY are set.",
+  "priority": 5,
+  "audience": "devs",
+  "requirement": "Explain unified AI call behavior.",
+  "categories": [
+    "uncategorized"
+  ],
+  "primaryCategory": "uncategorized",
+  "sourceHash": "343c97b6d8d846ac41c64d442827ea123af8bfba89d9579b2ea1a7817bb6373d",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T17:30:47.228Z",
+  "updatedAt": "2025-09-12T17:30:47.228Z",
+  "riskScore": 95,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T17:30:47.228Z",
+  "nextReviewDue": "2025-10-12T17:30:47.228Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T17:30:47.228Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "AI Endpoints: /api/ai/chat and /api/ai/plan use unifiedOpenAiCall with fallback. For non-gpt-5 models: /chat/completions primary then /responses fallback. Fo..."
+}

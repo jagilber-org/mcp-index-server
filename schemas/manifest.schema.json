@@ -9,6 +9,8 @@
     "version": { "type": "integer", "enum": [1] },
     "generatedAt": { "type": "string", "format": "date-time" },
     "count": { "type": "integer", "minimum": 0 },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "summary": { "type": "object", "additionalProperties": true },
     "entries": {
       "type": "array",
       "items": {
@@ -18,7 +20,12 @@
         "properties": {
           "id": { "type": "string" },
           "sourceHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-          "bodyHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+          "bodyHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "title": { "type": "string" },
+          "priority": { "type": "number" },
+          "priorityTier": { "type": "string" },
+          "audience": { "type": "string" },
+          "requirement": { "type": "string" }
         }
       }
     }

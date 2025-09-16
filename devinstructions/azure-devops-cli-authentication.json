@@ -1,0 +1,35 @@
+{
+  "id": "azure-devops-cli-authentication",
+  "title": "Azure DevOps CLI Authentication Setup",
+  "body": "To use Azure DevOps CLI (az devops) after Azure CLI authentication, follow these steps:\n\n1. **Install Azure DevOps Extension**:\n   ```powershell\n   az extension add --name azure-devops\n   ```\n\n2. **Authenticate with Azure CLI**:\n   ```powershell\n   # Option 1: Default login (uses WAM on Windows)\n   az login\n   \n   # Option 2: Force browser-based authentication\n   az login --use-device-code\n   \n   # Option 3: Login to specific tenant\n   az login --tenant TENANT_ID\n   ```\n\n3. **Configure Default Organization**:\n   ```powershell\n   az devops configure --defaults organization=https://dev.azure.com/YOUR_ORG\n   ```\n\n4. **Verify Authentication**:\n   ```powershell\n   az devops project list --output table\n   ```\n\n**Key Authentication Options**:\n- `--use-device-code`: Forces browser-based authentication (recommended for MCP server compatibility)\n- `--tenant TENANT_ID`: Authenticate against specific Azure AD tenant\n- No PAT token required when using az login authentication\n\n**Note**: Azure DevOps MCP servers may still require separate PAT token authentication via environment variables (AZDO_PAT, AZDO_ORG_URL) even when Azure CLI authentication works.",
+  "priority": 85,
+  "audience": "developers",
+  "requirement": "should",
+  "categories": [
+    "authentication",
+    "azure-devops",
+    "cli-tools"
+  ],
+  "sourceHash": "28b4ff2a6ccd07ffc1863c779130b2ec78f38b2a35bdfa9dca6689e02563710d",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-03T14:10:12.156Z",
+  "updatedAt": "2025-09-10T10:56:56.834Z",
+  "riskScore": 15,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P4",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-03T14:10:12.157Z",
+  "nextReviewDue": "2026-01-01T14:10:12.157Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-03T14:10:12.156Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "To use Azure DevOps CLI (az devops) after Azure CLI authentication, follow these steps:",
+  "primaryCategory": "authentication"
+}

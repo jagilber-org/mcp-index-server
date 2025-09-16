@@ -1,0 +1,33 @@
+{
+  "id": "gpt5-handling",
+  "title": "GPT-5 Specific Handling",
+  "body": "GPT-5 Handling: /responses first; supports OPENAI_VERBOSITY (low|medium|high) and OPENAI_REASONING_SUMMARY (auto|detailed). Reverse fallback to /chat is skipped for gpt-5 family.",
+  "priority": 5,
+  "audience": "devs",
+  "requirement": "Capture special GPT-5 logic.",
+  "categories": [
+    "uncategorized"
+  ],
+  "primaryCategory": "uncategorized",
+  "sourceHash": "302a3a99e9800d7c85e477eaf54d9d1d5e19b68cb992716b9c2d67f55cf1b501",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T17:30:47.230Z",
+  "updatedAt": "2025-09-12T17:30:47.230Z",
+  "riskScore": 95,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T17:30:47.230Z",
+  "nextReviewDue": "2025-10-12T17:30:47.230Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T17:30:47.230Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "GPT-5 Handling: /responses first; supports OPENAI_VERBOSITY (low|medium|high) and OPENAI_REASONING_SUMMARY (auto|detailed). Reverse fallback to /chat is skip..."
+}

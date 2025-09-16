@@ -1,0 +1,19 @@
+{
+  "id": "000-bootstrapper",
+  "title": "Bootstrap: Initial Workspace Activation",
+  "body": "Purpose: Provide a clean agent the first actionable steps to safely enable catalog mutation. See README bootstrap section for full flow.",
+  "audience": "agents",
+  "requirement": "required",
+  "priorityTier": "p0",
+  "categories": [
+    "bootstrap",
+    "lifecycle"
+  ],
+  "owner": "system",
+  "version": "1.0.0",
+  "schemaVersion": "3",
+  "semanticSummary": "Bootstrap activation steps with confirmation token gating mutations",
+  "sourceHash": "8fcd834108f1a5e7badb8291e966e0346e1dbbc6197359eaf8ec5045ac352f25",
+  "createdAt": "2025-09-15T14:43:33.833Z",
+  "updatedAt": "2025-09-15T14:43:33.833Z"
+}

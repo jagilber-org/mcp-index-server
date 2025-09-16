@@ -1,0 +1,37 @@
+{
+  "id": "github-mermaid-diagrams-reference-2025",
+  "title": "GitHub Mermaid Diagrams Reference 2025",
+  "body": "# GitHub Mermaid Diagrams Reference (2025)\n\nConcise, GitHub renderer-aligned Mermaid syntax & features cheat sheet with dark-friendly styling notes.\n\n## Core Diagram Types\n- Flowchart: `flowchart TD` or `flowchart LR`\n- Sequence: `sequenceDiagram`\n- Class: `classDiagram`\n- State: `stateDiagram-v2`\n- ER: `erDiagram`\n- Gantt: `gantt`\n- Pie: `pie title`\n- Journey: `journey`\n\n## Flowchart Essentials\n```\nflowchart TD\n  A[Start] --> B{Decision}\n  B -->|Yes| C[Path 1]\n  B -->|No| D[Path 2]\n  C --> E((End))\n  D --> E\n```\nShapes: `[Text]` rectangle, `(Text)` round, `((Text))` circle, `{Text}` diamond, `[(Text)]` subroutine, `>Text]` lean-right, `[[Text]]` hexagon.\nEdges: `-->` solid, `---` line, `-.->` dashed, `==>` thick, labels with `|Label|`.\n\n## Sequence Highlights\nParticipants implicit; activate/deactivate optional.\n```\nsequenceDiagram\n  autonumber\n  participant UI\n  participant API\n  UI->>API: GET /items\n  API-->>UI: 200 JSON\n  alt Empty\n    UI->>UI: Render empty state\n  else Items\n    UI->>UI: Render list\n  end\n```\nNotes: `Note over UI,API: text`.\n\n## Class Diagram Snippet\n```\nclassDiagram\n  class User {\n    +string id\n    +string name\n    +login()\n  }\n  class Session {\n    +string token\n    +Date expiresAt\n  }\n  User --> Session : creates >\n```\nVisibility: `+` public, `-` private, `#` protected, `~` package.\n\n## State Diagram v2\n```\nstateDiagram-v2\n  [*] --> Idle\n  Idle --> Active : event/start\n  state Active {\n    [*] --> Working\n    Working --> Paused : event/pause\n  }\n  Active --> [*] : event/stop\n```\n\n## ER Diagram Primitive\n```\nerDiagram\n  USER ||--o{ ORDER : places\n  ORDER ||--|{ LINE_ITEM : contains\n  USER ||--o{ ADDRESS : uses\n```\nCrow's foot: `||` mandatory one, `o{` zero or many, `|{` one or many.\n\n## Gantt Minimal\n```\ngantt\ndateFormat  YYYY-MM-DD\ntitle Release Plan\nsection Core\nDev    :a1, 2025-09-01, 7d\nTest   :after a1, 4d\nRelease:milestone, 2025-09-15, 0d\n```\n\n## Styling (GitHub)\n- No `theme` override; GitHub auto-selects light/dark.\n- Prefer accessible colors: rely on default palette for text/lines.\n- Avoid `style` blocks with fixed light-only colors.\n- Use subgraphs to group logically: `subgraph Group A` ... `end`.\n\n## Accessibility & Readability\n- Keep node labels <= 3 words if possible.\n- Use sentence case; avoid shouting caps.\n- Provide alt-text in surrounding markdown.\n\n## Performance Tips\n- Limit large graphs (<150 nodes) for GitHub rendering reliability.\n- Split complex flows into multiple diagrams referencing each other.\n\n## Validation Checklist\n- Renders both light & dark (no hardcoded color conflicts)\n- No orphan nodes\n- Edges labeled where decision branches diverge\n- Consistent directional layout (favor TD or LR, not mixed)\n\nUse this as a quick authoring accelerator for consistent diagrams in documentation and design discussions.",
+  "rationale": "Provides a compact, GitHub-compatible Mermaid syntax reference for consistent documentation.",
+  "priority": 30,
+  "audience": "developers",
+  "requirement": "recommended",
+  "categories": [
+    "documentation",
+    "github",
+    "mermaid",
+    "reference"
+  ],
+  "sourceHash": "aea87a7491d67a6407e8fc47718f2ae2655b248b28aa388b5bc4e9ab83075cdb",
+  "schemaVersion": "3",
+  "createdAt": "2025-08-31T10:14:55.112Z",
+  "updatedAt": "2025-08-31T19:27:02.942Z",
+  "riskScore": 90,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-31T10:14:55.113Z",
+  "nextReviewDue": "2025-10-30T10:14:55.113Z",
+  "reviewIntervalDays": 60,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-31T10:14:55.112Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "# GitHub Markdown Advanced Formatting - Mermaid Diagrams",
+  "primaryCategory": "documentation"
+}

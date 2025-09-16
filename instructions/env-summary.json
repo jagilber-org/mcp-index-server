@@ -1,0 +1,33 @@
+{
+  "id": "env-summary",
+  "title": "Core Environment Variables",
+  "body": "Environment Keys Summary: OPENAI_API_KEY, OPENAI_MODEL, OPENAI_MODEL_AUTO, OPENAI_VERBOSITY, OPENAI_REASONING_SUMMARY, GITHUB_CLIENT_ID/SECRET, GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY_FILE, STRICT_PORT, FORCE_DEV_PORT, PERF_LOG.",
+  "priority": 4,
+  "audience": "devs",
+  "requirement": "List core env vars.",
+  "categories": [
+    "uncategorized"
+  ],
+  "primaryCategory": "uncategorized",
+  "sourceHash": "3d412296974ba11ae5a360d6b40de8436d0bb55a5d7af049f641d616b1d954e4",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-12T17:30:47.234Z",
+  "updatedAt": "2025-09-12T17:30:47.234Z",
+  "riskScore": 96,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-12T17:30:47.234Z",
+  "nextReviewDue": "2025-10-12T17:30:47.234Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-12T17:30:47.234Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "Environment Keys Summary: OPENAI_API_KEY, OPENAI_MODEL, OPENAI_MODEL_AUTO, OPENAI_VERBOSITY, OPENAI_REASONING_SUMMARY, GITHUB_CLIENT_ID/SECRET, GITHUB_APP_ID..."
+}

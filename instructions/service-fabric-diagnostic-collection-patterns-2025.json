@@ -1,0 +1,38 @@
+{
+  "id": "service-fabric-diagnostic-collection-patterns-2025",
+  "title": "Service Fabric Diagnostic Collection Patterns 2025",
+  "body": "# Service Fabric Diagnostic Collection Patterns (2025)\n\nStructured approaches for capturing, organizing, and promoting diagnostic artifacts across Service Fabric based systems.\n\n## Objectives\n- Rapid anomaly triage\n- Forensic persistence of transient state\n- Noise reduction & signal amplification\n\n## Collection Layers\n1. Node Runtime (perf counters, event traces)\n2. App Service Layer (structured logs, custom health reports)\n3. Platform Control Plane (cluster manifest, upgrade history)\n4. External Dependencies (storage latency, queue depth)\n\n## Pattern 1: Tiered Capture Trigger\n- Light continuous capture (rolling window)\n- Escalate to deep capture on anomaly (error rate spike, latency p95 breach)\n\n## Pattern 2: Correlated Bundle Export\n- Single operation bundles: logs + traces + config snapshot + timeline index\n- Deterministic naming: `<cluster>-<utc>-bundle.json`\n\n## Pattern 3: Diagnostic Promotion Flow\nlocal scratch → shared triage space → curated long-term store\n- Promotion adds rationale + tags (issue id, severity)\n- Immutable once curated\n\n## Pattern 4: Structured Log Schema\nFields: timestamp|level|service|node|code|corrId|msg|kv...\n- Enforce numeric latency fields (ms)\n- Reject giant messages (>8k chars) unless flagged\n\n## Pattern 5: Timeline Index\n- Lightweight manifest enumerating artifact slices with monotonic offsets\n- Enables partial rehydration & binary search on time window\n\n## Noise Reduction Techniques\n- Sample identical stack traces after N repeats\n- Collapse heartbeat logs (aggregate counts)\n- Use severity remapping (warn->info) for known benign patterns\n\n## Integrity & Chain of Custody\n- Hash each bundle (SHA-256) + manifest signature\n- Record uploader principal & tool version\n\n## Automation Recommendations\n- Nightly retention enforcement (TTL on raw deep captures)\n- Weekly curated store integrity scan\n\n## Metrics\n- Mean anomaly detection → deep capture start latency\n- Bundle completeness ratio (required artifacts present)\n- Duplication factor (dedup efficiency)\n\n## Success Criteria\n- Deep capture initiated <60s from trigger\n- Bundle assembly success > 99%\n- Curated artifacts zero hash drift over 180d\n\nApply incrementally: start with structured log schema + correlated bundles to accelerate triage ROI.",
+  "rationale": "Improves reliability and forensic readiness for Service Fabric based systems via disciplined diagnostic capture.",
+  "priority": 50,
+  "audience": "engineers",
+  "requirement": "recommended",
+  "categories": [
+    "diagnostics",
+    "observability",
+    "patterns",
+    "reliability",
+    "service-fabric"
+  ],
+  "sourceHash": "3cf558f18c4db55b2d26782709ed7c6e8c0d45beeb7098f99d1128ddb1c805e9",
+  "schemaVersion": "3",
+  "createdAt": "2025-08-30T23:35:46.993Z",
+  "updatedAt": "2025-08-31T19:26:50.285Z",
+  "riskScore": 70,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P2",
+  "classification": "internal",
+  "lastReviewedAt": "2025-08-30T23:35:46.993Z",
+  "nextReviewDue": "2025-10-29T23:35:46.993Z",
+  "reviewIntervalDays": 60,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-08-30T23:35:46.993Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "# Service Fabric Diagnostic Data Collection Patterns",
+  "primaryCategory": "diagnostics"
+}

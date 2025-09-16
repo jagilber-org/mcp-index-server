@@ -1,0 +1,35 @@
+{
+  "id": "powershell-performance-optimization",
+  "title": "PowerShell Performance Optimization Techniques",
+  "body": "PowerShell performance optimization strategies based on core development practices:\n\n**Pipeline Optimization:**\n```powershell\n# SLOW: Multiple pipeline breaks\n$data = Get-ChildItem\n$filtered = $data | Where-Object Name -like \"*.txt\"\n$result = $filtered | Select-Object Name, Length\n\n# FAST: Single pipeline\nGet-ChildItem | \n    Where-Object Name -like \"*.txt\" | \n    Select-Object Name, Length\n\n# FASTER: Use -Filter parameter when available\nGet-ChildItem -Filter \"*.txt\" | Select-Object Name, Length\n```\n\n**Collection Handling:**\n```powershell\n# SLOW: Array concatenation in loop\n$result = @()\nforeach ($item in $items) {\n    $result += $item  # Creates new array each time\n}\n\n# FAST: Use ArrayList or List<T>\n$result = [System.Collections.Generic.List[object]]::new()\nforeach ($item in $items) {\n    $result.Add($item)\n}\n\n# FASTEST: Use pipeline when possible\n$result = $items | Where-Object { $condition }\n```\n\n**String Operations:**\n```powershell\n# SLOW: String concatenation\n$result = \"\"\nforeach ($item in $items) {\n    $result = $result + $item + \"`n\"\n}\n\n# FAST: Use -join\n$result = $items -join \"`n\"\n\n# FAST: StringBuilder for complex operations\n$sb = [System.Text.StringBuilder]::new()\n$items | ForEach-Object { $sb.AppendLine($_) }\n$result = $sb.ToString()\n```\n\n**Memory Management:**\n```powershell\n# Avoid LINQ - creates unnecessary garbage\n# SLOW:\n$result = $data | Linq.Where({ $_.Property -gt 5 })\n\n# FAST: Use PowerShell operators\n$result = $data | Where-Object Property -gt 5\n\n# Pre-size collections when possible\n$list = [System.Collections.Generic.List[string]]::new($expectedCount)\n\n# Use static arrays for reusable separators\n$separators = @(',', ';', '|')  # Reuse this array\n```\n\n**Avoid Performance Killers:**\n```powershell\n# AVOID: params arrays when possible\nfunction SlowFunction([params] $items) { }\n\n# PREFER: Specific overloads\nfunction FastFunction($item1) { }\nfunction FastFunction($item1, $item2) { }\n\n# AVOID: Exceptions for control flow\ntry { \n    $value = $dict[$key] \n} catch { \n    $value = $null \n}\n\n# PREFER: TryGetValue pattern\nif ($dict.TryGetValue($key, [ref]$value)) {\n    # Use $value\n}\n```\n\n**Measure Performance:**\n```powershell\n# Use Measure-Command for timing\n$time = Measure-Command {\n    # Code to measure\n}\nWrite-Host \"Execution time: $($time.TotalMilliseconds) ms\"\n\n# Profile with detailed metrics\n$trace = Trace-Command -Name * -Expression {\n    # Code to profile  \n} -PSHost\n```\n\n**Advanced Optimization:**\n- Use .NET methods directly when appropriate\n- Prefer `for` loops over `foreach` for arrays\n- Use `[ref]` for large objects passed to functions\n- Cache expensive operations\n- Use hashtables for lookups instead of arrays\n- Consider compiled cmdlets for compute-intensive operations",
+  "priority": 7,
+  "audience": "PowerShell developers focusing on performance",
+  "requirement": "Important for high-performance PowerShell applications",
+  "categories": [
+    "optimization",
+    "performance",
+    "powershell"
+  ],
+  "sourceHash": "a703f62788756db4b9b96a2297215929089077a84b7b7c0aac0b0c33d16989d0",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-02T11:56:22.518Z",
+  "updatedAt": "2025-09-02T11:56:22.518Z",
+  "riskScore": 93,
+  "version": "1.0.0",
+  "status": "approved",
+  "owner": "unowned",
+  "priorityTier": "P1",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-02T11:56:22.518Z",
+  "nextReviewDue": "2025-10-02T11:56:22.518Z",
+  "reviewIntervalDays": 30,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-02T11:56:22.518Z",
+      "summary": "initial import"
+    }
+  ],
+  "semanticSummary": "PowerShell performance optimization strategies based on core development practices:",
+  "primaryCategory": "optimization"
+}

@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 // blocking routine commits/pushes with a known intermittent anomaly under investigation.
 const runRed = [ '1','true','yes','on' ].includes(String(process.env.MCP_RUN_RED_IMPORT_DUP_ADD || '').toLowerCase());
 if (!runRed) {
-  describe.skip('RED (gated): import -> duplicate add -> immediate get visibility (mcp-server-testing-patterns-2025)', () => {
+  describe.skip('RED (gated): import -> duplicate add -> immediate get visibility (mcp-server-testing-patterns-2025)', () => { // SKIP_OK - gated by MCP_RUN_RED_IMPORT_DUP_ADD env var
     it('skipped pending explicit MCP_RUN_RED_IMPORT_DUP_ADD=1', () => {
       // Intentionally empty – executed only when env var set
     });

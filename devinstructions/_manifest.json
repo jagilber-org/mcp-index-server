@@ -1,26 +1,25 @@
 {
   "version": 1,
-  "generatedAt": "2025-09-16T14:53:03.771Z",
-  "count": 98,
-  "hash": "b8517c73c3641bfcc109adbf0838d3c98e680d215579b580008b042ef1b96f47",
+  "generatedAt": "2025-09-18T16:03:28.115Z",
+  "count": 99,
+  "hash": "c980ea67ccd04fac675dfd2743bddabcd450bb6bbbfbb99057cea8ebb45d2979",
   "summary": {
-    "scanned": 102,
-    "accepted": 98,
+    "scanned": 103,
+    "accepted": 99,
     "skipped": 4,
     "reasons": {
       "ignored:governance-denylist": 1,
       "ignored:non-instruction-config": 3
     },
     "salvage": {
-      "audience": 45,
-      "requirement": 26,
-      "bodyTruncated": 3,
+      "audience": 44,
+      "requirement": 27,
       "requirementFreeform": 26,
       "audienceInvalid": 15,
       "requirementInvalid": 4
     },
     "softWarnings": {
-      "body:truncated": 3
+      "body:near-limit": 3
     }
   },
   "entries": [
@@ -51,7 +50,7 @@
       "priorityTier": "P4",
       "audience": "all",
       "requirement": "recommended",
-      "sourceHash": "ee27a97d7c84d6a34061aac09b5e14e0dbba84bb7d18be6d4339508f87aeda31",
+      "sourceHash": "51ad06b83094e5a2e1213f3ecbd03cef25fceff9c4114934af90be88d88795e7",
       "bodyHash": "51ad06b83094e5a2e1213f3ecbd03cef25fceff9c4114934af90be88d88795e7"
     },
     {
@@ -791,7 +790,7 @@
       "priorityTier": "P1",
       "audience": "all",
       "requirement": "recommended",
-      "sourceHash": "684c58819b2301c897a53bab7ca3303d25c9a8f542fae691099249dc5c1ddfe9",
+      "sourceHash": "fc24d7d9c096914993bc90061d5923e37424b66a8b4457851d00d7ded20004fb",
       "bodyHash": "fc24d7d9c096914993bc90061d5923e37424b66a8b4457851d00d7ded20004fb"
     },
     {
@@ -841,7 +840,7 @@
       "priorityTier": "P4",
       "audience": "group",
       "requirement": "recommended",
-      "sourceHash": "e6cb0d6dbfc6c9b856418b9fbd8e6535cc3d97fcd87c9383b06ece83cafa7150",
+      "sourceHash": "7a31655d31a18c7b1937766961e9ec5c32f28d94d77866e3e3af09940965ccec",
       "bodyHash": "7a31655d31a18c7b1937766961e9ec5c32f28d94d77866e3e3af09940965ccec"
     },
     {
@@ -913,6 +912,16 @@
       "requirement": "optional",
       "sourceHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c",
       "bodyHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c"
+    },
+    {
+      "id": "synthetic-mfplnxmz_67kxsr",
+      "title": "Synthetic Instruction",
+      "priority": 50,
+      "priorityTier": "P3",
+      "audience": "all",
+      "requirement": "optional",
+      "sourceHash": "a7eb25377592667b0e37c5fedfdb733edd9b8f1728838ae86ee657f8eedda0cc",
+      "bodyHash": "a7eb25377592667b0e37c5fedfdb733edd9b8f1728838ae86ee657f8eedda0cc"
     },
     {
       "id": "toolsets-debug-analysis-v1",

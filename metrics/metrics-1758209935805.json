@@ -1,0 +1,41 @@
+{
+  "timestamp": 1758209935805,
+  "server": {
+    "uptime": 660091,
+    "version": "1.6.0",
+    "memoryUsage": {
+      "rss": 63062016,
+      "heapTotal": 19431424,
+      "heapUsed": 18059616,
+      "external": 2585786,
+      "arrayBuffers": 57619
+    },
+    "cpuUsage": {
+      "user": 0,
+      "system": 0
+    },
+    "startTime": 1758209275714
+  },
+  "tools": {
+    "http/request": {
+      "callCount": 90,
+      "successCount": 90,
+      "errorCount": 0,
+      "totalResponseTime": 144.47570000000007,
+      "errorTypes": {},
+      "lastCalled": 1758209912373
+    }
+  },
+  "connections": {
+    "activeConnections": 2,
+    "totalConnections": 2,
+    "disconnectedConnections": 0,
+    "avgSessionDuration": 656847.5
+  },
+  "performance": {
+    "requestsPerMinute": 8,
+    "successRate": 100,
+    "avgResponseTime": 1.6052855555555563,
+    "errorRate": 0
+  }
+}

@@ -9,6 +9,8 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { Server as HttpServer } from 'http';
 import { randomUUID } from 'crypto';
 import { MetricsSnapshot, getMetricsCollector } from './MetricsCollector.js';
+import { SessionPersistenceManager } from './SessionPersistenceManager';
+import { PersistedWebSocketConnection } from '../../models/SessionPersistence';
 
 export interface DashboardMessage {
   type: string;
@@ -93,6 +95,9 @@ interface ExtendedWebSocket extends WebSocket {
   isAlive?: boolean;
   clientId?: string;
   connectedAt?: number;
+  lastActivity?: number;
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 export interface WebSocketManagerOptions {
@@ -107,6 +112,7 @@ export class WebSocketManager {
   private clients: Set<ExtendedWebSocket> = new Set();
   private options: Required<WebSocketManagerOptions>;
   private pingTimer?: NodeJS.Timeout;
+  private persistenceManager: SessionPersistenceManager;
 
   constructor(options: WebSocketManagerOptions = {}) {
     this.options = {
@@ -115,6 +121,9 @@ export class WebSocketManager {
       pingInterval: options.pingInterval ?? 30000, // 30 seconds
       pongTimeout: options.pongTimeout ?? 5000, // 5 seconds
     };
+    
+    // Initialize session persistence manager
+    this.persistenceManager = new SessionPersistenceManager();
   }
 
   /**
@@ -235,6 +244,18 @@ export class WebSocketManager {
       ws.clientId = `client-${Date.now()}-${Math.floor(Math.random()*1000)}`;
     }
     ws.connectedAt = Date.now();
+    ws.lastActivity = Date.now();
+    
+    // Extract client info from request if available
+    try {
+      const request = (ws as unknown as { _socket?: { remoteAddress?: string } })._socket?.remoteAddress;
+      if (request) {
+        ws.ipAddress = request;
+      }
+      // Note: User-Agent would come from upgrade request headers if needed
+    } catch {
+      // Ignore if not available
+    }
 
     // Record connection in metrics
     try {
@@ -242,6 +263,11 @@ export class WebSocketManager {
     } catch (err) {
       console.error('[WebSocket] metrics recordConnection failed:', err);
     }
+
+    // Persist connection state
+    this.persistConnectionState().catch((error: unknown) => {
+      console.error('Failed to persist WebSocket connection state:', error);
+    });
 
     // Broadcast connection event
     this.broadcast({
@@ -253,6 +279,9 @@ export class WebSocketManager {
     // Setup client event handlers
     ws.on('message', (data: Buffer) => {
       try {
+        // Update activity timestamp
+        ws.lastActivity = Date.now();
+        
         const message = JSON.parse(data.toString());
         this.handleClientMessage(ws, message);
       } catch (error) {
@@ -286,6 +315,12 @@ export class WebSocketManager {
           data: { clientId: ws.clientId, timestamp: disconnectTs, duration }
         });
       }
+      
+      // Persist connection state after disconnect
+      this.persistConnectionState().catch((error: unknown) => {
+        console.error('Failed to persist WebSocket state after disconnect:', error);
+      });
+      
       // Push fresh metrics snapshot after disconnect
       this.broadcastMetricsSnapshot();
     });
@@ -463,6 +498,67 @@ export class WebSocketManager {
       connectedAt: c.connectedAt || now,
       durationMs: c.connectedAt ? now - c.connectedAt : 0
     }));
+  }
+
+  /**
+   * Persist current WebSocket connection state to disk
+   */
+  private async persistConnectionState(): Promise<void> {
+    try {
+      // Convert current connections to persistable format
+      const webSocketConnections: PersistedWebSocketConnection[] = this.getClients().map(client => ({
+        id: client.clientId || 'unknown',
+        clientId: client.clientId || 'unknown',
+        connectedAt: client.connectedAt ? new Date(client.connectedAt).toISOString() : new Date().toISOString(),
+        lastActivity: client.lastActivity ? new Date(client.lastActivity).toISOString() : new Date().toISOString(),
+        ipAddress: client.ipAddress,
+        userAgent: client.userAgent,
+        isActive: client.readyState === WebSocket.OPEN,
+        persistedAt: new Date().toISOString(),
+        version: 1
+      }));
+
+      // Get existing data and update connections
+      const existingData = await this.persistenceManager.loadData();
+      const persistedData = {
+        adminSessions: existingData?.adminSessions || [],
+        webSocketConnections,
+        sessionHistory: existingData?.sessionHistory || [],
+        metadata: {
+          lastPersisted: new Date().toISOString(),
+          version: 1,
+          totalSessions: existingData?.adminSessions?.length || 0,
+          totalConnections: webSocketConnections.length,
+          totalHistoryEntries: existingData?.sessionHistory?.length || 0,
+          checksums: {
+            sessions: '',
+            connections: '',
+            history: ''
+          }
+        }
+      };
+
+      await this.persistenceManager.persistData(persistedData);
+    } catch (error) {
+      console.error('Failed to persist WebSocket connection state:', error);
+      // Don't throw - continue operation
+    }
+  }
+
+  /**
+   * Update connection activity timestamp
+   */
+  updateConnectionActivity(clientId: string): boolean {
+    const client = Array.from(this.clients).find(c => c.clientId === clientId);
+    if (client) {
+      client.lastActivity = Date.now();
+      // Persist activity update (but don't await to avoid blocking)
+      this.persistConnectionState().catch((error: unknown) => {
+        console.error('Failed to persist connection activity update:', error);
+      });
+      return true;
+    }
+    return false;
   }
 }
 

@@ -1,0 +1,33 @@
+{
+  "id": "synthetic-mfplnxmz_67kxsr",
+  "title": "Synthetic Instruction",
+  "body": "Temporary synthetic entry",
+  "priority": 50,
+  "audience": "all",
+  "requirement": "optional",
+  "categories": [
+    "synthetic"
+  ],
+  "primaryCategory": "synthetic",
+  "sourceHash": "a7eb25377592667b0e37c5fedfdb733edd9b8f1728838ae86ee657f8eedda0cc",
+  "schemaVersion": "3",
+  "createdAt": "2025-09-18T16:03:22.164Z",
+  "updatedAt": "2025-09-18T16:03:22.164Z",
+  "riskScore": 55,
+  "version": "1.0.0",
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-18T16:03:22.164Z",
+      "summary": "initial import"
+    }
+  ],
+  "owner": "synthetic",
+  "status": "approved",
+  "priorityTier": "P3",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-18T16:03:22.164Z",
+  "nextReviewDue": "2025-12-17T16:03:22.164Z",
+  "reviewIntervalDays": 90,
+  "semanticSummary": "Temporary synthetic entry"
+}

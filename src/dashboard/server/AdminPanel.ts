@@ -13,6 +13,11 @@ import fs from 'fs';
 import path from 'path';
 import { getMetricsCollector, ToolMetrics } from './MetricsCollector';
 import { getCatalogState } from '../../services/catalogContext';
+import { SessionPersistenceManager } from './SessionPersistenceManager';
+import { 
+  PersistedAdminSession, 
+  PersistedSessionHistoryEntry 
+} from '../../models/SessionPersistence';
 
 interface AdminConfig {
   serverSettings: {
@@ -118,6 +123,8 @@ export class AdminPanel {
   private readonly maxSessionHistory = parseInt(process.env.MCP_ADMIN_MAX_SESSION_HISTORY || '200');
   // Quick index for history lookup
   private sessionHistoryIndex: Map<string, AdminSessionHistoryEntry> = new Map();
+  // Session persistence manager
+  private persistenceManager: SessionPersistenceManager;
   
   // CPU tracking for leak detection
   private cpuHistory: Array<{ timestamp: number; user: number; system: number; percent: number }> = [];
@@ -140,6 +147,114 @@ export class AdminPanel {
         recommendations: []
       }
     };
+    
+    // Initialize session persistence manager
+    this.persistenceManager = new SessionPersistenceManager();
+    this.initializePersistence();
+  }
+
+  /**
+   * Initialize session persistence - load existing data from disk
+   */
+  private async initializePersistence(): Promise<void> {
+    try {
+      const persistedData = await this.persistenceManager.loadData();
+      if (persistedData) {
+        // Convert persisted sessions back to AdminSession format
+        this.activeSessions.clear();
+        persistedData.adminSessions.forEach(persistedSession => {
+          const adminSession: AdminSession = {
+            id: persistedSession.id,
+            userId: persistedSession.userId,
+            startTime: new Date(persistedSession.startTime),
+            lastActivity: new Date(persistedSession.lastActivity),
+            ipAddress: persistedSession.ipAddress,
+            userAgent: persistedSession.userAgent,
+            permissions: persistedSession.permissions
+          };
+          this.activeSessions.set(adminSession.id, adminSession);
+        });
+
+        // Convert persisted history back to AdminSessionHistoryEntry format
+        this.sessionHistory = [];
+        this.sessionHistoryIndex.clear();
+        persistedData.sessionHistory.forEach(persistedEntry => {
+          const historyEntry: AdminSessionHistoryEntry = {
+            id: persistedEntry.id,
+            userId: persistedEntry.userId,
+            startTime: new Date(persistedEntry.startTime),
+            endTime: persistedEntry.endTime ? new Date(persistedEntry.endTime) : undefined,
+            ipAddress: persistedEntry.ipAddress,
+            userAgent: persistedEntry.userAgent,
+            terminated: persistedEntry.terminated,
+            terminationReason: persistedEntry.terminationReason
+          };
+          this.sessionHistory.push(historyEntry);
+          this.sessionHistoryIndex.set(historyEntry.id, historyEntry);
+        });
+
+        console.log(`Loaded ${this.activeSessions.size} active sessions and ${this.sessionHistory.length} history entries from persistence`);
+      }
+    } catch (error) {
+      console.error('Failed to initialize session persistence:', error);
+      // Continue without persistence - don't fail startup
+    }
+  }
+
+  /**
+   * Persist current session state to disk
+   */
+  private async persistSessionState(): Promise<void> {
+    try {
+      // Convert current state to persistable format
+      const adminSessions: PersistedAdminSession[] = Array.from(this.activeSessions.values()).map(session => ({
+        id: session.id,
+        userId: session.userId,
+        startTime: session.startTime.toISOString(),
+        lastActivity: session.lastActivity.toISOString(),
+        ipAddress: session.ipAddress,
+        userAgent: session.userAgent,
+        permissions: session.permissions,
+        persistedAt: new Date().toISOString(),
+        version: 1
+      }));
+
+      const sessionHistory: PersistedSessionHistoryEntry[] = this.sessionHistory.map(entry => ({
+        id: entry.id,
+        userId: entry.userId,
+        startTime: entry.startTime.toISOString(),
+        endTime: entry.endTime?.toISOString(),
+        ipAddress: entry.ipAddress,
+        userAgent: entry.userAgent,
+        terminated: entry.terminated,
+        terminationReason: entry.terminationReason,
+        persistedAt: new Date().toISOString(),
+        version: 1
+      }));
+
+      const persistedData = {
+        adminSessions,
+        webSocketConnections: [], // Will be populated when integrating WebSocketManager
+        sessionHistory,
+        metadata: {
+          lastPersisted: new Date().toISOString(),
+          version: 1,
+          totalSessions: adminSessions.length,
+          totalConnections: 0,
+          totalHistoryEntries: sessionHistory.length,
+          checksums: {
+            sessions: '',
+            connections: '',
+            history: ''
+          }
+        }
+      };
+
+      await this.persistenceManager.persistData(persistedData);
+    } catch (error) {
+      console.error('Failed to persist session state:', error);
+      // Don't throw - continue operation
+    }
   }
 
   private loadDefaultConfig(): AdminConfig {
@@ -244,6 +359,12 @@ export class AdminPanel {
       const removed = this.sessionHistory.pop();
       if (removed) this.sessionHistoryIndex.delete(removed.id);
     }
+    
+    // Persist session state
+    this.persistSessionState().catch(error => {
+      console.error('Failed to persist session state after creation:', error);
+    });
+    
     return session;
   }
 
@@ -259,6 +380,11 @@ export class AdminPanel {
         hist.terminated = true;
         hist.terminationReason = 'manual';
       }
+      
+      // Persist session state
+      this.persistSessionState().catch(error => {
+        console.error('Failed to persist session state after termination:', error);
+      });
     }
     return existed;
   }
@@ -266,6 +392,7 @@ export class AdminPanel {
   private cleanupExpiredSessions(): void {
     const now = new Date();
     const timeout = this.config.securitySettings.sessionTimeout;
+    let hasChanges = false;
 
     for (const [id, session] of this.activeSessions.entries()) {
       if (now.getTime() - session.lastActivity.getTime() > timeout) {
@@ -276,7 +403,15 @@ export class AdminPanel {
           hist.terminated = true;
           hist.terminationReason = 'expired';
         }
+        hasChanges = true;
       }
+    }
+    
+    // Persist if we cleaned up any sessions
+    if (hasChanges) {
+      this.persistSessionState().catch(error => {
+        console.error('Failed to persist session state after cleanup:', error);
+      });
     }
   }
 
@@ -806,6 +941,48 @@ export class AdminPanel {
     const slice = typeof limit === 'number' ? this.sessionHistory.slice(0, Math.max(0, limit)) : this.sessionHistory;
     // Deep clone dates
     return slice.map(h => ({ ...h }));
+  }
+
+  /**
+   * Clear session history with confirmation
+   */
+  async clearSessionHistory(): Promise<{ success: boolean; message: string; clearedCount: number }> {
+    try {
+      const clearedCount = this.sessionHistory.length;
+      this.sessionHistory = [];
+      this.sessionHistoryIndex.clear();
+      
+      // Persist the cleared state
+      await this.persistSessionState();
+      
+      return {
+        success: true,
+        message: `Successfully cleared ${clearedCount} session history entries`,
+        clearedCount
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to clear session history: ${error instanceof Error ? error.message : String(error)}`,
+        clearedCount: 0
+      };
+    }
+  }
+
+  /**
+   * Update session activity timestamp
+   */
+  updateSessionActivity(sessionId: string): boolean {
+    const session = this.activeSessions.get(sessionId);
+    if (session) {
+      session.lastActivity = new Date();
+      // Persist activity update (but don't await to avoid blocking)
+      this.persistSessionState().catch(error => {
+        console.error('Failed to persist session activity update:', error);
+      });
+      return true;
+    }
+    return false;
   }
 
   private getTotalConnections(): number {

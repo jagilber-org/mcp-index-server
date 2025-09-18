@@ -1,25 +1,25 @@
 {
   "version": 1,
-  "generatedAt": "2025-09-16T14:53:09.178Z",
-  "count": 150,
-  "hash": "08d85cc62b4fdd1b0260e13c73bf778012006e55b8b2633de33740d906b488f4",
+  "generatedAt": "2025-09-16T14:59:38.207Z",
+  "count": 155,
+  "hash": "917fd3f6ac90cf6ca9399ae3adcd2e5bf497ea627e2c817baed3202fcad9da60",
   "summary": {
-    "scanned": 158,
-    "accepted": 150,
-    "skipped": 8,
+    "scanned": 164,
+    "accepted": 155,
+    "skipped": 9,
     "reasons": {
       "ignored:governance-denylist": 1,
       "ignored:non-instruction-config": 3,
-      "schema": 4
+      "schema": 5
     },
     "salvage": {
       "audience": 45,
-      "requirement": 71,
+      "requirement": 74,
       "bodyTruncated": 3,
       "requirementFreeform": 26,
       "audienceInvalid": 15,
       "requirementInvalid": 4,
-      "priorityInvalid": 4
+      "priorityInvalid": 5
     },
     "softWarnings": {
       "body:truncated": 3
@@ -717,6 +717,16 @@
       "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
     },
     {
+      "id": "mw-disabled-1758034531612",
+      "title": "mw disabled",
+      "priority": 1,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "optional",
+      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
+      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
+    },
+    {
       "id": "mw-repair-1757906661892",
       "title": "mw repair",
       "priority": 2,
@@ -828,6 +838,16 @@
     },
     {
       "id": "mw-repair-1758034361659",
+      "title": "mw repair",
+      "priority": 2,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "optional",
+      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
+      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
+    },
+    {
+      "id": "mw-repair-1758034539677",
       "title": "mw repair",
       "priority": 2,
       "priorityTier": "P1",
@@ -1197,6 +1217,26 @@
       "bodyHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277"
     },
     {
+      "id": "smoke-1758034575822",
+      "title": "Smoke",
+      "priority": 10,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "recommended",
+      "sourceHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277",
+      "bodyHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277"
+    },
+    {
+      "id": "smoke-1758034762210",
+      "title": "Smoke",
+      "priority": 10,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "recommended",
+      "sourceHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277",
+      "bodyHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277"
+    },
+    {
       "id": "spec-driven-new-project-setup-guide",
       "title": "Spec-Driven New Project Setup Guide - GitHub Spec-Kit Integration",
       "priority": 90,
@@ -1468,6 +1508,16 @@
     },
     {
       "id": "vis-1758034316926",
+      "title": "Visibility Invariant",
+      "priority": 5,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "optional",
+      "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
+      "bodyHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7"
+    },
+    {
+      "id": "vis-1758034580461",
       "title": "Visibility Invariant",
       "priority": 5,
       "priorityTier": "P1",

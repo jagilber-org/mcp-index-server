@@ -19,8 +19,8 @@ import { writeFileSync } from 'node:fs';
 
 const INIT_ID = 'init_1';
 const HEALTH_ID = 'hc_1';
-const TIMEOUT_MS = 12_000; // overall upper bound
-const INIT_TIMEOUT_MS = 6_000; // init phase bound
+const TIMEOUT_MS = 60_000; // overall upper bound (increased for large catalog)
+const INIT_TIMEOUT_MS = 40_000; // init phase bound (increased for large catalog)
 
 /** Very small line-oriented JSON parser (server emits one JSON per line). */
 function tryParse(line) {
@@ -65,7 +65,18 @@ async function main(){
       } else if(msg.id === HEALTH_ID){
         healthDone = true;
         healthResponseObj = msg;
-        healthOk = !!(msg.result && msg.result.status === 'ok');
+        // For tools/call response, the actual health data is in result.content[0].text
+        let actualStatus = null;
+        if(msg.result && msg.result.content && msg.result.content[0] && msg.result.content[0].text){
+          try {
+            const healthData = JSON.parse(msg.result.content[0].text);
+            actualStatus = healthData.status;
+          } catch(e) {
+            log(`Failed to parse health response JSON: ${e.message}`);
+          }
+        }
+        healthOk = actualStatus === 'ok';
+        if(!healthOk) log(`Health check failed: status = ${actualStatus}`);
         finish();
       }
     }
@@ -86,7 +97,7 @@ async function main(){
   }
 
   function sendHealth(){
-    const frame = { jsonrpc: '2.0', id: HEALTH_ID, method: 'health/check', params: {} };
+    const frame = { jsonrpc: '2.0', id: HEALTH_ID, method: 'tools/call', params: { name: 'health/check', arguments: {} } };
     child.stdin.write(JSON.stringify(frame) + '\n');
   }
 

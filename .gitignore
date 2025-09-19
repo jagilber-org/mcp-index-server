@@ -128,10 +128,24 @@ snapshots/*.sha256
 # Performance and usage data
 data/performance-*.json
 data/usage-*.json
+data/sessions/
 
 # Generated documentation artifacts
 docs/**/*.pdf
 docs/**/*.docx
+
+# Test health files and temporary diagnostics
+test-health*.json
+health_response.json
+
+# Metrics timestamp files (keep only aggregated metrics)
+metrics/metrics-*.json
+
+# Test-generated instruction files with specific patterns
+instructions/mw-disabled-*.json
+instructions/mw-repair-*.json
+instructions/vis-*.json
+instructions/synthetic-*.json
 
 # Backup and archive files
 *.bak

@@ -551,7 +551,9 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   const semanticSummaryChanged = eRec.semanticSummary !== undefined && eRec.semanticSummary !== existing.semanticSummary;
   const classificationChanged = eRec.classification !== undefined && eRec.classification !== existing.classification;
       const versionChanged = e.version !== undefined && e.version !== existing.version;
-      const governanceMetaChanged = titleChanged || ownerChanged || semanticSummaryChanged || classificationChanged || versionChanged;
+      // Check for category changes by comparing normalized arrays
+      const categoriesChanged = categories.length > 0 && JSON.stringify(categories.sort()) !== JSON.stringify((existing.categories || []).sort());
+      const governanceMetaChanged = titleChanged || ownerChanged || semanticSummaryChanged || classificationChanged || versionChanged || categoriesChanged;
       // Early no-op shortcut: no body change AND no governance meta value change => treat as true no-op.
       if(overwrite && !bodyChanged && !governanceMetaChanged){
         // Return fast response reflecting no mutation. We still expose verified:true since

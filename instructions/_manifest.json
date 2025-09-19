@@ -1,25 +1,25 @@
 {
   "version": 1,
-  "generatedAt": "2025-09-16T14:59:38.207Z",
-  "count": 155,
-  "hash": "917fd3f6ac90cf6ca9399ae3adcd2e5bf497ea627e2c817baed3202fcad9da60",
+  "generatedAt": "2025-09-19T16:21:24.129Z",
+  "count": 118,
+  "hash": "8ff35c560b343f2f18360fbc6de40c316f3a149f67c003016b55b4aed07c5a8e",
   "summary": {
-    "scanned": 164,
-    "accepted": 155,
-    "skipped": 9,
+    "scanned": 134,
+    "accepted": 118,
+    "skipped": 16,
     "reasons": {
       "ignored:governance-denylist": 1,
       "ignored:non-instruction-config": 3,
-      "schema": 5
+      "schema": 12
     },
     "salvage": {
       "audience": 45,
-      "requirement": 74,
+      "requirement": 31,
       "bodyTruncated": 3,
       "requirementFreeform": 26,
       "audienceInvalid": 15,
       "requirementInvalid": 4,
-      "priorityInvalid": 5
+      "priorityInvalid": 12
     },
     "softWarnings": {
       "body:truncated": 3
@@ -597,7 +597,7 @@
       "bodyHash": "00256344504f33bd0caa910c2292e88facd80e82106379d22bbe785e11d55e55"
     },
     {
-      "id": "mw-disabled-1757906660919",
+      "id": "mw-disabled-1758298852153",
       "title": "mw disabled",
       "priority": 1,
       "priorityTier": "P1",
@@ -607,247 +607,7 @@
       "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
     },
     {
-      "id": "mw-disabled-1757940323484",
-      "title": "mw disabled",
-      "priority": 1,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-disabled-1757941007749",
-      "title": "mw disabled",
-      "priority": 1,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-disabled-1757941230135",
-      "title": "mw disabled",
-      "priority": 1,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-disabled-1757945045510",
-      "title": "mw disabled",
-      "priority": 1,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-disabled-1757945487528",
-      "title": "mw disabled",
-      "priority": 1,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-disabled-1757947233766",
-      "title": "mw disabled",
-      "priority": 1,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-disabled-1757947466971",
-      "title": "mw disabled",
-      "priority": 1,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-disabled-1757951118641",
-      "title": "mw disabled",
-      "priority": 1,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-disabled-1757951681601",
-      "title": "mw disabled",
-      "priority": 1,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-disabled-1757952348791",
-      "title": "mw disabled",
-      "priority": 1,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-disabled-1758034353795",
-      "title": "mw disabled",
-      "priority": 1,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-disabled-1758034531612",
-      "title": "mw disabled",
-      "priority": 1,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-repair-1757906661892",
-      "title": "mw repair",
-      "priority": 2,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-repair-1757940329021",
-      "title": "mw repair",
-      "priority": 2,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-repair-1757941013321",
-      "title": "mw repair",
-      "priority": 2,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-repair-1757941236036",
-      "title": "mw repair",
-      "priority": 2,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-repair-1757945052685",
-      "title": "mw repair",
-      "priority": 2,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-repair-1757945495448",
-      "title": "mw repair",
-      "priority": 2,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-repair-1757947242047",
-      "title": "mw repair",
-      "priority": 2,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-repair-1757947475761",
-      "title": "mw repair",
-      "priority": 2,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-repair-1757951128329",
-      "title": "mw repair",
-      "priority": 2,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-repair-1757951690851",
-      "title": "mw repair",
-      "priority": 2,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-repair-1757952358409",
-      "title": "mw repair",
-      "priority": 2,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-repair-1758034361659",
-      "title": "mw repair",
-      "priority": 2,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
-      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
-    },
-    {
-      "id": "mw-repair-1758034539677",
+      "id": "mw-repair-1758298858769",
       "title": "mw repair",
       "priority": 2,
       "priorityTier": "P1",
@@ -1237,6 +997,66 @@
       "bodyHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277"
     },
     {
+      "id": "smoke-1758212288492",
+      "title": "Smoke",
+      "priority": 10,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "recommended",
+      "sourceHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277",
+      "bodyHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277"
+    },
+    {
+      "id": "smoke-1758212478828",
+      "title": "Smoke",
+      "priority": 10,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "recommended",
+      "sourceHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277",
+      "bodyHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277"
+    },
+    {
+      "id": "smoke-1758216886727",
+      "title": "Smoke",
+      "priority": 10,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "recommended",
+      "sourceHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277",
+      "bodyHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277"
+    },
+    {
+      "id": "smoke-1758217246328",
+      "title": "Smoke",
+      "priority": 10,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "recommended",
+      "sourceHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277",
+      "bodyHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277"
+    },
+    {
+      "id": "smoke-1758218737446",
+      "title": "Smoke",
+      "priority": 10,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "recommended",
+      "sourceHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277",
+      "bodyHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277"
+    },
+    {
+      "id": "smoke-1758219098514",
+      "title": "Smoke",
+      "priority": 10,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "recommended",
+      "sourceHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277",
+      "bodyHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277"
+    },
+    {
       "id": "spec-driven-new-project-setup-guide",
       "title": "Spec-Driven New Project Setup Guide - GitHub Spec-Kit Integration",
       "priority": 90,
@@ -1255,76 +1075,6 @@
       "requirement": "recommended",
       "sourceHash": "856ccebabd6d2d1b300aa2027a416ae253888b0e3cf5f8180716749f78fd8b1e",
       "bodyHash": "856ccebabd6d2d1b300aa2027a416ae253888b0e3cf5f8180716749f78fd8b1e"
-    },
-    {
-      "id": "synthetic-mfj4252y_9yo8hh",
-      "title": "Synthetic Instruction Updated",
-      "priority": 50,
-      "priorityTier": "P3",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c",
-      "bodyHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c"
-    },
-    {
-      "id": "synthetic-mfkiyvbm_7ex2jj",
-      "title": "Synthetic Instruction",
-      "priority": 50,
-      "priorityTier": "P3",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "a7eb25377592667b0e37c5fedfdb733edd9b8f1728838ae86ee657f8eedda0cc",
-      "bodyHash": "a7eb25377592667b0e37c5fedfdb733edd9b8f1728838ae86ee657f8eedda0cc"
-    },
-    {
-      "id": "synthetic-mfl73vyv_guv34h",
-      "title": "Synthetic Instruction",
-      "priority": 50,
-      "priorityTier": "P3",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "a7eb25377592667b0e37c5fedfdb733edd9b8f1728838ae86ee657f8eedda0cc",
-      "bodyHash": "a7eb25377592667b0e37c5fedfdb733edd9b8f1728838ae86ee657f8eedda0cc"
-    },
-    {
-      "id": "synthetic-mfl8du7c_zo466l",
-      "title": "Synthetic Instruction Updated",
-      "priority": 50,
-      "priorityTier": "P3",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c",
-      "bodyHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c"
-    },
-    {
-      "id": "synthetic-mfl8iu7b_8u2wpd",
-      "title": "Synthetic Instruction Updated",
-      "priority": 50,
-      "priorityTier": "P3",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c",
-      "bodyHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c"
-    },
-    {
-      "id": "synthetic-mflap40o_kal1cu",
-      "title": "Synthetic Instruction Updated",
-      "priority": 50,
-      "priorityTier": "P3",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c",
-      "bodyHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c"
-    },
-    {
-      "id": "synthetic-mflb0ym9_lv3ja9",
-      "title": "Synthetic Instruction Updated",
-      "priority": 50,
-      "priorityTier": "P3",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c",
-      "bodyHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c"
     },
     {
       "id": "toolsets-debug-analysis-v1",
@@ -1397,127 +1147,7 @@
       "bodyHash": "658077a58f4fdd2a1089a36076c795b74815e86f618ec811daa1aa50d892c893"
     },
     {
-      "id": "vis-1757906681092",
-      "title": "Visibility Invariant",
-      "priority": 5,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
-      "bodyHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7"
-    },
-    {
-      "id": "vis-1757940356240",
-      "title": "Visibility Invariant",
-      "priority": 5,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
-      "bodyHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7"
-    },
-    {
-      "id": "vis-1757941060759",
-      "title": "Visibility Invariant",
-      "priority": 5,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
-      "bodyHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7"
-    },
-    {
-      "id": "vis-1757941280409",
-      "title": "Visibility Invariant",
-      "priority": 5,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
-      "bodyHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7"
-    },
-    {
-      "id": "vis-1757945077972",
-      "title": "Visibility Invariant",
-      "priority": 5,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
-      "bodyHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7"
-    },
-    {
-      "id": "vis-1757945533209",
-      "title": "Visibility Invariant",
-      "priority": 5,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
-      "bodyHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7"
-    },
-    {
-      "id": "vis-1757947264047",
-      "title": "Visibility Invariant",
-      "priority": 5,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
-      "bodyHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7"
-    },
-    {
-      "id": "vis-1757947518746",
-      "title": "Visibility Invariant",
-      "priority": 5,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
-      "bodyHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7"
-    },
-    {
-      "id": "vis-1757951165235",
-      "title": "Visibility Invariant",
-      "priority": 5,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
-      "bodyHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7"
-    },
-    {
-      "id": "vis-1757951727202",
-      "title": "Visibility Invariant",
-      "priority": 5,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
-      "bodyHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7"
-    },
-    {
-      "id": "vis-1757952390192",
-      "title": "Visibility Invariant",
-      "priority": 5,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
-      "bodyHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7"
-    },
-    {
-      "id": "vis-1758034316926",
-      "title": "Visibility Invariant",
-      "priority": 5,
-      "priorityTier": "P1",
-      "audience": "all",
-      "requirement": "optional",
-      "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
-      "bodyHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7"
-    },
-    {
-      "id": "vis-1758034580461",
+      "id": "vis-1758298821813",
       "title": "Visibility Invariant",
       "priority": 5,
       "priorityTier": "P1",

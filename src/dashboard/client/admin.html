@@ -90,9 +90,9 @@
                         <select id="drill-instructions" multiple size="5" onchange="coordinatedFilterChanged()"></select>
                     </label>
                     <div class="stack" style="order:2;">
-                        <button class="action-btn sm" title="Reload categories list">🔄 Load Categories</button>
-                        <button class="action-btn sm" style="background:linear-gradient(45deg,#3498db,#2980b9)" title="Load instructions (all or filtered by selected categories)">📥 Load Instructions</button>
-                        <button class="action-btn sm" style="background:linear-gradient(45deg,#27ae60,#1e8449)" title="Clear selections">🧹 Clear Selections</button>
+                        <button class="action-btn sm" title="Reload categories list" onclick="refreshDrillCategories()">🔄 Load Categories</button>
+                        <button class="action-btn sm" style="background:linear-gradient(45deg,#3498db,#2980b9)" title="Load instructions (all or filtered by selected categories)" onclick="loadDrillInstructions()">📥 Load Instructions</button>
+                        <button class="action-btn sm" style="background:linear-gradient(45deg,#27ae60,#1e8449)" title="Clear selections" onclick="clearDrillSvg()">🧹 Clear Selections</button>
                     </div>
                     <div class="flags" style="order:3;">
                         <label class="chk simple"><input id="graph-enrich" type="checkbox" checked> Enrich</label>
@@ -1541,8 +1541,23 @@
         function clearDrillSvg(){
             const svg = document.getElementById('drill-svg');
             const status = document.getElementById('drill-status');
+            const catSel = document.getElementById('drill-categories');
+            const instSel = document.getElementById('drill-instructions');
+            
             if(svg) svg.innerHTML='';
-            if(status) status.textContent='cleared';
+            if(status) status.textContent='selections cleared';
+            
+            // Clear selections in both dropdowns
+            if(catSel) {
+                for(let i = 0; i < catSel.options.length; i++) {
+                    catSel.options[i].selected = false;
+                }
+            }
+            if(instSel) {
+                for(let i = 0; i < instSel.options.length; i++) {
+                    instSel.options[i].selected = false;
+                }
+            }
         }
         async function renderDrillSvg(){
             const instSel = document.getElementById('drill-instructions');

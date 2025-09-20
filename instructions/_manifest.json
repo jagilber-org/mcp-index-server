@@ -1,16 +1,16 @@
 {
   "version": 1,
-  "generatedAt": "2025-09-20T13:56:12.700Z",
-  "count": 169,
-  "hash": "7f97a6da6f5b320d8b8ace2e8a3f6001527fa138cdecef8bdf834278c1d03020",
+  "generatedAt": "2025-09-20T13:57:08.995Z",
+  "count": 170,
+  "hash": "88acdc582bf464198c5b2ea160d05c37732ca7ff6a56e78ce29a13f43c7d147e",
   "summary": {
-    "scanned": 202,
-    "accepted": 169,
-    "skipped": 33,
+    "scanned": 204,
+    "accepted": 170,
+    "skipped": 34,
     "reasons": {
       "ignored:governance-denylist": 2,
       "ignored:non-instruction-config": 3,
-      "schema": 28
+      "schema": 29
     },
     "salvage": {
       "audience": 44,
@@ -19,7 +19,7 @@
       "requirementFreeform": 26,
       "audienceInvalid": 15,
       "requirementInvalid": 4,
-      "priorityInvalid": 28
+      "priorityInvalid": 29
     },
     "softWarnings": {
       "body:truncated": 3
@@ -1408,6 +1408,16 @@
     },
     {
       "id": "smoke-1758376506839",
+      "title": "Smoke",
+      "priority": 10,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "recommended",
+      "sourceHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277",
+      "bodyHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277"
+    },
+    {
+      "id": "smoke-1758376605106",
       "title": "Smoke",
       "priority": 10,
       "priorityTier": "P1",

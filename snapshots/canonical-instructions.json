@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2025-09-20T13:52:20.256Z",
-  "count": 191,
+  "generatedAt": "2025-09-20T14:02:31.139Z",
+  "count": 200,
   "items": [
     {
       "id": "activate-azure-devops-discovery",
@@ -2403,6 +2403,39 @@
       "semanticSummary": "body"
     },
     {
+      "id": "mw-disabled-1758376452108",
+      "title": "mw disabled",
+      "body": "body",
+      "priority": 1,
+      "audience": "all",
+      "requirement": "optional",
+      "categories": [
+        "test"
+      ],
+      "primaryCategory": "test",
+      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
+      "schemaVersion": "3",
+      "createdAt": "2025-09-20T13:54:12.132Z",
+      "updatedAt": "2025-09-20T13:54:12.132Z",
+      "riskScore": 104,
+      "version": "1.0.0",
+      "changeLog": [
+        {
+          "version": "1.0.0",
+          "changedAt": "2025-09-20T13:54:12.132Z",
+          "summary": "initial import"
+        }
+      ],
+      "status": "approved",
+      "owner": "unowned",
+      "priorityTier": "P1",
+      "classification": "internal",
+      "lastReviewedAt": "2025-09-20T13:54:12.132Z",
+      "nextReviewDue": "2025-10-20T13:54:12.132Z",
+      "reviewIntervalDays": 30,
+      "semanticSummary": "body"
+    },
+    {
       "id": "mw-repair-1758298858769",
       "title": "mw repair",
       "body": "body",
@@ -2762,6 +2795,39 @@
       "classification": "internal",
       "lastReviewedAt": "2025-09-20T13:34:35.175Z",
       "nextReviewDue": "2025-10-20T13:34:35.175Z",
+      "reviewIntervalDays": 30,
+      "semanticSummary": "body"
+    },
+    {
+      "id": "mw-repair-1758376461125",
+      "title": "mw repair",
+      "body": "body",
+      "priority": 2,
+      "audience": "all",
+      "requirement": "optional",
+      "categories": [
+        "repair"
+      ],
+      "primaryCategory": "repair",
+      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
+      "schemaVersion": "3",
+      "createdAt": "2025-09-20T13:54:21.154Z",
+      "updatedAt": "2025-09-20T13:54:21.154Z",
+      "riskScore": 103,
+      "version": "1.0.0",
+      "changeLog": [
+        {
+          "version": "1.0.0",
+          "changedAt": "2025-09-20T13:54:21.154Z",
+          "summary": "initial import"
+        }
+      ],
+      "status": "approved",
+      "owner": "unowned",
+      "priorityTier": "P1",
+      "classification": "internal",
+      "lastReviewedAt": "2025-09-20T13:54:21.155Z",
+      "nextReviewDue": "2025-10-20T13:54:21.155Z",
       "reviewIntervalDays": 30,
       "semanticSummary": "body"
     },
@@ -4710,6 +4776,105 @@
       "semanticSummary": "Smoke test entry"
     },
     {
+      "id": "smoke-1758376478329",
+      "title": "Smoke",
+      "body": "Smoke test entry",
+      "priority": 10,
+      "audience": "all",
+      "requirement": "recommended",
+      "categories": [
+        "test"
+      ],
+      "primaryCategory": "test",
+      "sourceHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277",
+      "schemaVersion": "3",
+      "createdAt": "2025-09-20T13:54:38.875Z",
+      "updatedAt": "2025-09-20T13:54:38.875Z",
+      "riskScore": 110,
+      "version": "1.0.0",
+      "changeLog": [
+        {
+          "version": "1.0.0",
+          "changedAt": "2025-09-20T13:54:38.875Z",
+          "summary": "initial import"
+        }
+      ],
+      "status": "approved",
+      "owner": "unowned",
+      "priorityTier": "P1",
+      "classification": "internal",
+      "lastReviewedAt": "2025-09-20T13:54:38.875Z",
+      "nextReviewDue": "2025-10-20T13:54:38.876Z",
+      "reviewIntervalDays": 30,
+      "semanticSummary": "Smoke test entry"
+    },
+    {
+      "id": "smoke-1758376506839",
+      "title": "Smoke",
+      "body": "Smoke test entry",
+      "priority": 10,
+      "audience": "all",
+      "requirement": "recommended",
+      "categories": [
+        "test"
+      ],
+      "primaryCategory": "test",
+      "sourceHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277",
+      "schemaVersion": "3",
+      "createdAt": "2025-09-20T13:55:07.366Z",
+      "updatedAt": "2025-09-20T13:55:07.366Z",
+      "riskScore": 110,
+      "version": "1.0.0",
+      "changeLog": [
+        {
+          "version": "1.0.0",
+          "changedAt": "2025-09-20T13:55:07.366Z",
+          "summary": "initial import"
+        }
+      ],
+      "status": "approved",
+      "owner": "unowned",
+      "priorityTier": "P1",
+      "classification": "internal",
+      "lastReviewedAt": "2025-09-20T13:55:07.367Z",
+      "nextReviewDue": "2025-10-20T13:55:07.367Z",
+      "reviewIntervalDays": 30,
+      "semanticSummary": "Smoke test entry"
+    },
+    {
+      "id": "smoke-1758376605106",
+      "title": "Smoke",
+      "body": "Smoke test entry",
+      "priority": 10,
+      "audience": "all",
+      "requirement": "recommended",
+      "categories": [
+        "test"
+      ],
+      "primaryCategory": "test",
+      "sourceHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277",
+      "schemaVersion": "3",
+      "createdAt": "2025-09-20T13:56:45.691Z",
+      "updatedAt": "2025-09-20T13:56:45.691Z",
+      "riskScore": 110,
+      "version": "1.0.0",
+      "changeLog": [
+        {
+          "version": "1.0.0",
+          "changedAt": "2025-09-20T13:56:45.691Z",
+          "summary": "initial import"
+        }
+      ],
+      "status": "approved",
+      "owner": "unowned",
+      "priorityTier": "P1",
+      "classification": "internal",
+      "lastReviewedAt": "2025-09-20T13:56:45.692Z",
+      "nextReviewDue": "2025-10-20T13:56:45.692Z",
+      "reviewIntervalDays": 30,
+      "semanticSummary": "Smoke test entry"
+    },
+    {
       "id": "spec-driven-new-project-setup-guide",
       "title": "Spec-Driven New Project Setup Guide - GitHub Spec-Kit Integration",
       "body": "# Spec-Driven New Project Setup Guide - GitHub Spec-Kit Integration\n\n## Overview\nComprehensive guide for initiating new software projects using GitHub's Spec-Kit framework for Specification-Driven Development (SDD). This methodology inverts traditional development by making specifications executable and the primary source of truth, with code as the generated implementation.\n\n**Repository**: https://github.com/github/spec-kit  \n**Methodology**: Specification-Driven Development (SDD)  \n**Philosophy**: Specifications drive implementation, not the other way around\n\n## What is Spec-Driven Development?\n\nSpec-Driven Development fundamentally changes how we build software:\n- **Traditional**: Code is king, specifications serve code\n- **SDD**: Specifications are king, code serves specifications\n- **Key Principle**: Specifications become executable, directly generating working implementations\n- **Result**: Eliminates the gap between intent and implementation\n\n### Core Benefits\n1. **Intent-Driven Development**: Express requirements in natural language\n2. **Executable Specifications**: Specs generate code, not just guide it\n3. **Rapid Iteration**: Changes to specs automatically propagate to implementation\n4. **Parallel Exploration**: Generate multiple implementations from same spec\n5. **Living Documentation**: Specs stay synchronized with code\n\n## Prerequisites\n\n### System Requirements\n- **OS**: Linux/macOS (or WSL2 on Windows)\n- **Python**: 3.11+ for spec-kit tooling\n- **Package Manager**: [uv](https://docs.astral.sh/uv/) for Python dependencies\n- **Version Control**: Git with credential management\n- **AI Coding Agent**: One of:\n  - [Claude Code](https://www.anthropic.com/claude-code)\n  - [GitHub Copilot](https://code.visualstudio.com/)\n  - [Gemini CLI](https://github.com/google-gemini/gemini-cli)\n\n### Installation Commands\n```bash\n# Install uv package manager (if not present)\ncurl -LsSf https://astral.sh/uv/install.sh | sh\n\n# Verify Python 3.11+\npython3 --version\n\n# Verify Git setup\ngit --version\ngit config --global user.name \"Your Name\"\ngit config --global user.email \"your.email@example.com\"\n```\n\n## Project Initialization Workflow\n\n### Step 1: Install Specify CLI\n```bash\n# Install specify from spec-kit repository\nuvx --from git+https://github.com/github/spec-kit.git specify init <PROJECT_NAME>\n\n# Alternative: Install in current directory\nuvx --from git+https://github.com/github/spec-kit.git specify init --here --ai copilot\n```\n\n### Step 2: Initialize Project Structure\n```bash\n# Basic initialization with AI assistant\nspecify init my-new-project --ai claude\n\n# Initialize with specific options\nspecify init my-project --ai copilot --no-git  # Skip git initialization\nspecify init --here --ai gemini                # Use current directory\n```\n\n### Step 3: Verify Installation\n```bash\n# Check system prerequisites\nspecify check\n\n# Expected output shows:\n# ✓ Git installed\n# ✓ AI assistant configured\n# ✓ Project structure created\n```\n\n## Core SDD Workflow\n\n### Phase 1: Specification Creation (`/specify`)\nTransform ideas into structured specifications:\n\n```bash\n# Example: Create a photo organization app specification\n/specify Build an application that can help me organize my photos in separate photo albums. Albums are grouped by date and can be re-organized by dragging and dropping on the main page. Albums are never in other nested albums. Within each album, photos are previewed in a tile-like interface.\n```\n\n**What this does**:\n- Automatically assigns feature number (001, 002, etc.)\n- Creates semantic branch name from description\n- Generates `specs/[branch-name]/spec.md` with structured requirements\n- Populates template with user stories and acceptance criteria\n- Marks ambiguities with `[NEEDS CLARIFICATION]` tags\n\n### Phase 2: Implementation Planning (`/plan`)\nCreate detailed technical implementation plan:\n\n```bash\n# Example: Define technical approach\n/plan The application uses Vite with minimal number of libraries. Use vanilla HTML, CSS, and JavaScript as much as possible. Images are not uploaded anywhere and metadata is stored in a local SQLite database.\n```\n\n**What this generates**:\n- `plan.md`: Detailed implementation strategy\n- `research.md`: Technology comparisons and rationale\n- `data-model.md`: Entity schemas and relationships\n- `contracts/`: API specifications and interfaces\n- `quickstart.md`: Key validation scenarios\n\n### Phase 3: Task Breakdown (`/tasks`)\nGenerate executable task list from implementation plan:\n\n```bash\n# Generate actionable tasks\n/tasks\n```\n\n**Output**:\n- `tasks.md`: Prioritized task list with dependencies\n- Parallel execution markers `[P]` for independent tasks\n- Clear deliverables and acceptance criteria\n- Ready for AI agent implementation\n\n## Project Directory Structure\n\nSpec-kit creates a standardized structure:\n\n```\nmy-project/\n├── .github/\n│   ├── workflows/          # CI/CD automation\n│   └── ISSUE_TEMPLATE/     # Standard issue templates\n├── docs/                   # Project documentation\n├── memory/\n│   ├── constitution.md     # Architectural principles\n│   └── context.md         # Project context and constraints\n├── scripts/               # Build and deployment scripts\n├── specs/                 # Feature specifications\n│   ├── 001-feature-name/\n│   │   ├── spec.md        # Feature specification\n│   │   ├── plan.md        # Implementation plan\n│   │   ├── tasks.md       # Executable task list\n│   │   ├── research.md    # Technology research\n│   │   ├── data-model.md  # Data schemas\n│   │   ├── contracts/     # API contracts\n│   │   └── quickstart.md  # Validation scenarios\n│   └── templates/         # Specification templates\n├── src/                   # Source code (generated from specs)\n├── tests/                 # Test suites (generated from specs)\n├── .gitignore\n├── README.md\n├── pyproject.toml         # Python dependencies for spec tooling\n└── spec-driven.md         # Complete SDD methodology\n```\n\n## Constitutional Framework\n\nSpec-kit includes a constitutional framework (`memory/constitution.md`) that enforces architectural discipline:\n\n### Nine Articles of Development\n\n1. **Library-First Principle**: Every feature begins as a standalone library\n2. **CLI Interface Mandate**: All libraries expose CLI interfaces for observability\n3. **Test-First Imperative**: No code before comprehensive tests\n4. **Dependency Minimalism**: Prefer standard libraries over external dependencies\n5. **Configuration Externalization**: All configuration via environment or files\n6. **Error Transparency**: Detailed error messages with context\n7. **Simplicity Gates**: Maximum 3 projects initially, justify complexity\n8. **Anti-Abstraction**: Use framework features directly, avoid wrapper layers\n9. **Integration-First Testing**: Test with real databases and services\n\n### Constitutional Enforcement\nImplementation plans include checkpoint gates:\n\n```markdown\n### Phase -1: Pre-Implementation Gates\n#### Simplicity Gate (Article VII)\n- [ ] Using ≤3 projects?\n- [ ] No future-proofing?\n\n#### Anti-Abstraction Gate (Article VIII)\n- [ ] Using framework directly?\n- [ ] Single model representation?\n\n#### Integration-First Gate (Article IX)\n- [ ] Contracts defined?\n- [ ] Contract tests written?\n```\n\n## Advanced Features\n\n### Multi-Implementation Exploration\nGenerate multiple implementations from the same specification:\n\n```bash\n# Create parallel implementation branches\n/plan Implementation A: React with TypeScript and Supabase\n/plan Implementation B: Vanilla JS with SQLite and Web Components\n/plan Implementation C: Vue.js with Pinia and IndexedDB\n```\n\n### Specification Refinement\nContinuous improvement cycle:\n\n1. **Production Feedback**: Metrics and incidents update specifications\n2. **Performance Insights**: Bottlenecks become new non-functional requirements\n3. **Security Updates**: Vulnerabilities become constraints for future generations\n4. **User Feedback**: Feature requests update user stories and acceptance criteria\n\n### Research Integration\nSpecs include research agents that gather:\n- Library compatibility matrices\n- Performance benchmarks\n- Security considerations\n- Organizational constraints\n- Best practice documentation\n\n## Best Practices\n\n### Specification Quality\n1. **Focus on WHAT and WHY**: Avoid implementation details in specs\n2. **Mark Uncertainties**: Use `[NEEDS CLARIFICATION]` for ambiguities\n3. **Testable Requirements**: Every requirement must be verifiable\n4. **User-Centric Language**: Write from user perspective\n5. **Acceptance Criteria**: Define clear success conditions\n\n### Implementation Planning\n1. **Technology Rationale**: Document why choices were made\n2. **Constraint Documentation**: Record organizational limitations\n3. **Risk Assessment**: Identify potential implementation challenges\n4. **Performance Targets**: Define measurable performance criteria\n5. **Security Requirements**: Specify security constraints early\n\n### Task Management\n1. **Dependency Mapping**: Clearly identify task prerequisites\n2. **Parallel Execution**: Mark independent tasks for concurrent work\n3. **Deliverable Definition**: Specify exact outputs for each task\n4. **Acceptance Testing**: Include validation steps in task definitions\n5. **Progress Tracking**: Use branching strategy for feature development\n\n## Integration with Existing Workflows\n\n### Version Control Integration\n```bash\n# Feature branch workflow\ngit checkout -b 001-photo-albums\n/specify Build photo album management system\n/plan React with SQLite backend\n/tasks\ngit add specs/001-photo-albums/\ngit commit -m \"Add photo album feature specification\"\n```\n\n### CI/CD Integration\nSpec-kit projects include GitHub Actions workflows:\n- **Specification Validation**: Check spec completeness\n- **Implementation Testing**: Run tests generated from specs\n- **Constitutional Compliance**: Verify architectural principles\n- **Documentation Generation**: Auto-update docs from specs\n\n### Team Collaboration\n1. **Specification Reviews**: Review specs before implementation\n2. **Constitutional Compliance**: Team validation of architectural decisions\n3. **Implementation Options**: Collaborative evaluation of technical approaches\n4. **Knowledge Sharing**: Spec-driven documentation stays current\n\n## Troubleshooting\n\n### Common Issues\n\n#### Git Authentication on Linux\n```bash\n# Install Git Credential Manager\nwget https://github.com/git-ecosystem/git-credential-manager/releases/download/v2.6.1/gcm-linux_amd64.2.6.1.deb\nsudo dpkg -i gcm-linux_amd64.2.6.1.deb\ngit config --global credential.helper manager\nrm gcm-linux_amd64.2.6.1.deb\n```\n\n#### AI Agent Configuration\n```bash\n# Verify AI agent installation\nspecify check\n\n# Configure specific AI agent\nspecify init my-project --ai claude --ignore-agent-tools\n```\n\n#### SSL/TLS Issues\n```bash\n# Skip TLS verification (not recommended for production)\nspecify init my-project --skip-tls\n```\n\n### Validation Checklist\n- [ ] All prerequisites installed and configured\n- [ ] AI coding agent accessible and functional\n- [ ] Git repository initialized with proper credentials\n- [ ] Project structure matches spec-kit template\n- [ ] Constitutional framework understood by team\n- [ ] Specification templates customized for organization\n\n## Success Metrics\n\n### Project Health Indicators\n- **Specification Coverage**: 100% of features have complete specs\n- **Implementation Alignment**: Code matches specification requirements\n- **Constitutional Compliance**: All implementations pass architectural gates\n- **Test Coverage**: Comprehensive test suites generated from specs\n- **Documentation Currency**: Specs and docs stay synchronized\n\n### Development Velocity\n- **Specification Speed**: Requirements to complete spec in under 30 minutes\n- **Implementation Planning**: Technical plans generated in under 15 minutes\n- **Task Breakdown**: Executable tasks ready in under 10 minutes\n- **Change Velocity**: Requirement changes propagate to code within hours\n- **Parallel Development**: Multiple implementations from single specification\n\n### Quality Outcomes\n- **Reduced Technical Debt**: Constitutional principles prevent over-engineering\n- **Improved Testability**: Test-first approach ensures comprehensive coverage\n- **Better Maintainability**: Modular, library-first architecture\n- **Enhanced Collaboration**: Clear specifications improve team communication\n- **Faster Onboarding**: Self-documenting projects with living specifications\n\n## Next Steps\n\n### Immediate Actions\n1. **Install Prerequisites**: Set up development environment\n2. **Initialize First Project**: Practice with simple application\n3. **Review Constitution**: Understand architectural principles\n4. **Create Sample Specification**: Work through complete workflow\n5. **Validate with Team**: Ensure organizational alignment\n\n### Advanced Implementation\n1. **Customize Templates**: Adapt specifications for organization needs\n2. **CI/CD Integration**: Set up automated validation pipelines\n3. **Team Training**: Educate team on SDD methodology\n4. **Measurement Setup**: Track specification quality and development velocity\n5. **Constitutional Evolution**: Adapt principles based on experience\n\n## Resources\n\n### Documentation\n- [Complete SDD Methodology](https://github.com/github/spec-kit/blob/main/spec-driven.md)\n- [GitHub Spec-Kit Repository](https://github.com/github/spec-kit)\n- [Specification Templates](https://github.com/github/spec-kit/tree/main/templates)\n- [Constitutional Framework](https://github.com/github/spec-kit/blob/main/memory/constitution.md)\n\n### Community\n- [GitHub Issues](https://github.com/github/spec-kit/issues) - Bug reports and feature requests\n- [GitHub Discussions](https://github.com/github/spec-kit/discussions) - Community support\n- [Release Notes](https://github.com/github/spec-kit/releases) - Latest updates and improvements\n\n### Examples\n- Photo Album Management System\n- Real-time Chat Application\n- Task Management Platform\n- API Gateway Implementation\n- Documentation Generator\n\nThis guide provides the foundation for adopting Specification-Driven Development using GitHub's Spec-Kit. The methodology represents a fundamental shift from code-centric to specification-centric development, enabling faster iteration, better quality, and more maintainable software systems.",
@@ -5980,6 +6145,96 @@
       "semanticSummary": "Sample body"
     },
     {
+      "id": "unit_p0_materialize_1758376500170",
+      "title": "Title unit_p0_materialize_1758376500170",
+      "body": "Sample body",
+      "version": "1.0.0",
+      "categories": [
+        "type:test"
+      ],
+      "updatedAt": "2025-09-20T13:55:00.171Z",
+      "createdAt": "2025-09-20T13:55:00.171Z",
+      "schemaVersion": "3",
+      "sourceHash": "658077a58f4fdd2a1089a36076c795b74815e86f618ec811daa1aa50d892c893",
+      "riskScore": null,
+      "workspaceId": "unit",
+      "status": "approved",
+      "owner": "unowned",
+      "priorityTier": "P4",
+      "classification": "internal",
+      "lastReviewedAt": "2025-09-20T13:55:00.171Z",
+      "nextReviewDue": "2026-01-18T13:55:00.171Z",
+      "reviewIntervalDays": 120,
+      "changeLog": [
+        {
+          "version": "1.0.0",
+          "changedAt": "2025-09-20T13:55:00.171Z",
+          "summary": "initial import"
+        }
+      ],
+      "semanticSummary": "Sample body"
+    },
+    {
+      "id": "unit_p0_materialize_1758376572705",
+      "title": "Title unit_p0_materialize_1758376572705",
+      "body": "Sample body",
+      "version": "1.0.0",
+      "categories": [
+        "type:test"
+      ],
+      "updatedAt": "2025-09-20T13:56:12.705Z",
+      "createdAt": "2025-09-20T13:56:12.705Z",
+      "schemaVersion": "3",
+      "sourceHash": "658077a58f4fdd2a1089a36076c795b74815e86f618ec811daa1aa50d892c893",
+      "riskScore": null,
+      "workspaceId": "unit",
+      "status": "approved",
+      "owner": "unowned",
+      "priorityTier": "P4",
+      "classification": "internal",
+      "lastReviewedAt": "2025-09-20T13:56:12.705Z",
+      "nextReviewDue": "2026-01-18T13:56:12.705Z",
+      "reviewIntervalDays": 120,
+      "changeLog": [
+        {
+          "version": "1.0.0",
+          "changedAt": "2025-09-20T13:56:12.705Z",
+          "summary": "initial import"
+        }
+      ],
+      "semanticSummary": "Sample body"
+    },
+    {
+      "id": "unit_p0_materialize_1758376628999",
+      "title": "Title unit_p0_materialize_1758376628999",
+      "body": "Sample body",
+      "version": "1.0.0",
+      "categories": [
+        "type:test"
+      ],
+      "updatedAt": "2025-09-20T13:57:08.999Z",
+      "createdAt": "2025-09-20T13:57:08.999Z",
+      "schemaVersion": "3",
+      "sourceHash": "658077a58f4fdd2a1089a36076c795b74815e86f618ec811daa1aa50d892c893",
+      "riskScore": null,
+      "workspaceId": "unit",
+      "status": "approved",
+      "owner": "unowned",
+      "priorityTier": "P4",
+      "classification": "internal",
+      "lastReviewedAt": "2025-09-20T13:57:08.999Z",
+      "nextReviewDue": "2026-01-18T13:57:08.999Z",
+      "reviewIntervalDays": 120,
+      "changeLog": [
+        {
+          "version": "1.0.0",
+          "changedAt": "2025-09-20T13:57:08.999Z",
+          "summary": "initial import"
+        }
+      ],
+      "semanticSummary": "Sample body"
+    },
+    {
       "id": "vis-1758298821813",
       "title": "Visibility Invariant",
       "body": "Body for visibility invariant test",
@@ -6339,6 +6594,39 @@
       "classification": "internal",
       "lastReviewedAt": "2025-09-20T13:35:13.515Z",
       "nextReviewDue": "2025-10-20T13:35:13.515Z",
+      "reviewIntervalDays": 30,
+      "semanticSummary": "Body for visibility invariant test"
+    },
+    {
+      "id": "vis-1758376490612",
+      "title": "Visibility Invariant",
+      "body": "Body for visibility invariant test",
+      "priority": 5,
+      "audience": "all",
+      "requirement": "optional",
+      "categories": [
+        "invariant"
+      ],
+      "primaryCategory": "invariant",
+      "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
+      "schemaVersion": "3",
+      "createdAt": "2025-09-20T13:54:51.098Z",
+      "updatedAt": "2025-09-20T13:54:51.098Z",
+      "riskScore": 100,
+      "version": "1.0.0",
+      "changeLog": [
+        {
+          "version": "1.0.0",
+          "changedAt": "2025-09-20T13:54:51.098Z",
+          "summary": "initial import"
+        }
+      ],
+      "status": "approved",
+      "owner": "unowned",
+      "priorityTier": "P1",
+      "classification": "internal",
+      "lastReviewedAt": "2025-09-20T13:54:51.098Z",
+      "nextReviewDue": "2025-10-20T13:54:51.098Z",
       "reviewIntervalDays": 30,
       "semanticSummary": "Body for visibility invariant test"
     },

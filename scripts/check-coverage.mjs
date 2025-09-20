@@ -23,9 +23,18 @@ for(const file of Object.keys(data)){
   }
 }
 const pct = totalLines? (covered/totalLines)*100: 0;
-const min = 80;
-if(pct < min){
-  console.error(`[coverage-check] FAIL lines=${pct.toFixed(2)} < ${min}`);
+// Support dual gate via env:
+// COVERAGE_HARD_MIN: failing threshold (default 80)
+// COVERAGE_TARGET: advisory target (logs warning if not met)
+const hardMin = Number(process.env.COVERAGE_HARD_MIN || 80);
+const target = Number(process.env.COVERAGE_TARGET || hardMin);
+if(pct < hardMin){
+  console.error(`[coverage-check] FAIL lines=${pct.toFixed(2)} < hardMin=${hardMin}`);
   process.exit(1);
 }
-console.log(`[coverage-check] PASS lines=${pct.toFixed(2)} >= ${min}`);
+if(pct < target){
+  console.warn(`[coverage-check] WARN lines=${pct.toFixed(2)} < target=${target} (>= hardMin=${hardMin})`);
+  process.exitCode = 0;
+} else {
+  console.log(`[coverage-check] PASS lines=${pct.toFixed(2)} >= target=${target}`);
+}

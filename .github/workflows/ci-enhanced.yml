@@ -76,9 +76,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-node${{ matrix.node-version }}
-          path: |
-            coverage/
-            coverage.xml
+          # Single-line path to avoid unintended newline LCA causing 'No files were found' warning.
+          # The coverage:ci script ensures coverage/coverage.xml exists (alias script copies if necessary).
+          path: coverage/coverage.xml
           retention-days: 7
 
   dist-freshness:

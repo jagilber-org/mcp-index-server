@@ -134,7 +134,12 @@ export class CatalogLoader {
   const salvage = (k: string) => { salvageCounts[k] = (salvageCounts[k]||0)+1; };
   const warnSoft = (k: string) => { softWarnings[k] = (softWarnings[k]||0)+1; };
   // Helper for unconditional lightweight event emission (stdout/stderr JSON line) independent of trace flags.
+  // Emission gating: in high-volume scenarios (CI coverage runs), per-file events can create
+  // extremely large logs that exceed fetch limits. Set MCP_CATALOG_EVENT_SILENT=1 to suppress
+  // individual file events while preserving trace (when enabled) and the final summary.
+  const suppressCatalogEvents = process.env.MCP_CATALOG_EVENT_SILENT === '1';
   const emitCatalogEvent = (ev: Record<string, unknown>) => {
+    if (suppressCatalogEvents) return; // fast path
     try {
       const line = JSON.stringify({ level: 'info', event: 'catalog-file', ...ev });
       (process.stderr.write as (chunk: string) => boolean)(line + '\n');

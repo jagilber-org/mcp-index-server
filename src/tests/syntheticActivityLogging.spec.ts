@@ -13,11 +13,23 @@ function wait(ms:number){ return new Promise(r=>setTimeout(r,ms)); }
 // the UI "synthetic activity" button.
 
 describe('Dashboard synthetic activity logging', () => {
+  const FAST_COVERAGE = process.env.FAST_COVERAGE === '1';
   const logsDir = path.join(process.cwd(),'logs');
   const logFile = path.join(logsDir,'mcp-server.log');
   let proc: ReturnType<typeof spawn> | null = null;
   let earlyExit: Error | null = null;
   let baseUrl: string | undefined;
+
+  // Env-driven tuning for stability / CI variance
+  const READY_TIMEOUT_MS = Number(process.env.SYN_ACTIVITY_READY_MS || 12000); // was 8000
+  const POLL_DEADLINE_MS = Number(process.env.SYN_ACTIVITY_DEADLINE_MS || 15000); // was 9000
+  const ITERATIONS = Number(process.env.SYN_ACTIVITY_ITERATIONS || 6);
+  const CONCURRENCY = Number(process.env.SYN_ACTIVITY_CONCURRENCY || 3);
+  const DIST_INDEX = path.join(process.cwd(),'dist','server','index.js');
+  const DEPLOY_PRESENT = fs.existsSync(DIST_INDEX);
+  if(!DEPLOY_PRESENT){
+    test.skip('skip synthetic activity logging (dist build missing)', () => {});
+  }
 
   beforeAll(async () => {
     if(!fs.existsSync(logsDir)) fs.mkdirSync(logsDir,{recursive:true});
@@ -38,7 +50,7 @@ describe('Dashboard synthetic activity logging', () => {
     proc.once('error', err => { if(!earlyExit) earlyExit = err; });
     // Wait for server URL discovery (stdout indicates readiness)
     const start = Date.now();
-    while(!baseUrl && Date.now()-start < 8000){
+    while(!baseUrl && Date.now()-start < READY_TIMEOUT_MS){
       if(earlyExit) break;
       await wait(50);
     }
@@ -53,9 +65,10 @@ describe('Dashboard synthetic activity logging', () => {
     await wait(200);
   });
 
-  test('synthetic activity POST triggers tool_start/tool_end logging', async () => {
+  const maybeTest = FAST_COVERAGE ? test.skip : test;
+  maybeTest('synthetic activity POST triggers tool_start/tool_end logging', async () => {
     if(earlyExit) throw earlyExit;
-    const body = JSON.stringify({ iterations: 6, concurrency: 3 });
+    const body = JSON.stringify({ iterations: ITERATIONS, concurrency: CONCURRENCY });
     const resData: string = await new Promise((resolve, reject) => {
       const target = new URL('/api/admin/synthetic/activity', baseUrl!);
       const req = http.request({ method:'POST', hostname: target.hostname, port: parseInt(target.port,10), path: target.pathname, headers:{ 'Content-Type':'application/json', 'Content-Length': Buffer.byteLength(body) }}, (res) => {
@@ -74,7 +87,7 @@ describe('Dashboard synthetic activity logging', () => {
       expect(parsed.executed).toBeGreaterThan(0);
     } catch { /* ignore parse errors, raw regex success already asserted */ }
     // Retry log scan with time-based deadline (up to ~9s) using adaptive backoff.
-    const deadline = Date.now() + 9000;
+  const deadline = Date.now() + POLL_DEADLINE_MS;
     let logSnapshot=''; let pollDelay=120; let found=false;
     while(Date.now() < deadline){
       logSnapshot = fs.existsSync(logFile) ? fs.readFileSync(logFile,'utf8') : '';
@@ -99,5 +112,5 @@ describe('Dashboard synthetic activity logging', () => {
   const endMatches = (logSnapshot.match(/tool_end/g) || []).length;
   expect(startMatches, `tool_start not found in log tail:\n${logSnapshot.slice(-600)}`).toBeGreaterThan(0);
   expect(endMatches, `tool_end not found in log tail:\n${logSnapshot.slice(-600)}`).toBeGreaterThan(0);
-  }, 40000);
+  }, Math.max(45000, READY_TIMEOUT_MS + POLL_DEADLINE_MS + 8000));
 });

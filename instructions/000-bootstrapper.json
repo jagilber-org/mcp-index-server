@@ -14,5 +14,19 @@
   "sourceHash": "61f5dc37d8a3714c612e4ff7426facb365ad10e83ceaa7a2232d7b6c4796842a",
   "semanticSummary": "Bootstrap activation steps with confirmation token gating mutations",
   "createdAt": "2025-09-15T14:43:33.761Z",
-  "updatedAt": "2025-09-15T14:43:33.761Z"
+  "updatedAt": "2025-09-15T14:43:33.761Z",
+  "schemaVersion": "3",
+  "riskScore": null,
+  "status": "approved",
+  "classification": "internal",
+  "lastReviewedAt": "2025-09-20T12:18:55.418Z",
+  "nextReviewDue": "2026-01-18T12:18:55.418Z",
+  "reviewIntervalDays": 120,
+  "changeLog": [
+    {
+      "version": "1.0.0",
+      "changedAt": "2025-09-15T14:43:33.761Z",
+      "summary": "initial import"
+    }
+  ]
 }

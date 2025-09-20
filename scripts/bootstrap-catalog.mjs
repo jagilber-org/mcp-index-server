@@ -24,6 +24,8 @@ const files = fs.readdirSync(instructionsDir).filter(f => f.endsWith('.json'));
 const enriched = [];
 for(const f of files){
   if(f === 'gates.json') continue;
+  // Skip metadata files that are not instructions
+  if(f.startsWith('_') || f.startsWith('bootstrap.')) continue;
   const full = path.join(instructionsDir,f);
   try {
     const raw = JSON.parse(fs.readFileSync(full,'utf8'));

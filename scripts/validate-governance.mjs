@@ -13,6 +13,8 @@ if(!fs.existsSync(dir)){
 }
 for(const f of fs.readdirSync(dir).filter(f=>f.endsWith('.json'))){
   if(f==='gates.json') continue;
+  // Skip metadata files that are not instructions
+  if(f.startsWith('_') || f.startsWith('bootstrap.')) continue;
   const full = path.join(dir,f);
   try {
     const raw = JSON.parse(fs.readFileSync(full,'utf8'));

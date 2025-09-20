@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2025-09-19T16:21:24.132Z",
-  "count": 12,
+  "generatedAt": "2025-09-20T12:15:44.533Z",
+  "count": 20,
   "items": [
     {
       "file": "unit_p0_materialize_1757951263272.json",
@@ -48,6 +48,38 @@
     },
     {
       "file": "unit_p0_materialize_1758219175610.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758299908133.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758300032917.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758315654014.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758315950487.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758316459598.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758370221507.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758370320032.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758370485096.json",
       "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
     }
   ]

@@ -11,6 +11,36 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 - Tests: Promoted performance card snapshot to mandatory Playwright baseline; removed legacy optional skips via deterministic seeding.
 - Logging: Introduced dual-format (structured JSON vs concise plain) logging for WebSocket connect/disconnect/error and memory deltas using existing `MCP_DEBUG` / `MCP_VERBOSE_LOGGING` flags (no new env vars added). Multi-line memory change logs replaced with single-line structured or concise output to eliminate downstream JSON parse warnings.
 
+## [1.6.2] - 2025-09-20
+
+### Changed (configuration & mutation gating)
+
+- Unified mutation enable flag under consolidated `MCP_MUTATION`; legacy `MCP_ENABLE_MUTATION` still accepted with one-time deprecation warning via `runtimeConfig.parseMutation()`.
+- Server transport, instruction handlers, and dashboard admin panel now all query `getRuntimeConfig().mutationEnabled` ensuring consistent behavior in tests and production.
+- Updated gating error message to reference `MCP_MUTATION=1` (retains legacy mention for transition).
+
+### Added (test infrastructure)
+
+- Introduced shared dashboard readiness helper `waitForDashboard.ts` eliminating ad‑hoc polling loops across graph-related tests.
+
+### Fixed (flaky tests)
+
+- Stabilized `graphFiltering.spec.ts`, `graphFilteringStyles.spec.ts`, and `graphThemeVariables.spec.ts` by awaiting deterministic dashboard startup (previous 15s timeouts reduced to reliable ~15s execution within extended 20s cap).
+
+### Internal (refactor / hygiene)
+
+- Removed direct `process.env.MCP_ENABLE_MUTATION` hot path checks in favor of runtime configuration accessor (dynamic reload when only legacy flag present preserves prior semantics).
+- Minor import cleanup after consolidation (removed unused `getBooleanEnv` references where replaced by runtime config).
+
+### Upgrade Guidance (1.6.2)
+
+- Prefer setting `MCP_MUTATION=1` going forward. Existing automation using `MCP_ENABLE_MUTATION=1` continues to work (deprecation window). Plan future release to drop legacy flag once downstream usage metrics indicate adoption.
+- No schema or tool contract changes; safe patch update.
+
+### Future (1.6.2 follow-up)
+
+- Schedule removal of legacy mutation flag references in help text and admin dashboard after confirming negligible usage (target ≥90% replacement) and possibly introduce `MCP_CONFIG_STRICT` to enforce consolidated variable set.
+
 ### Configuration Consolidation (Phases 1–4)
 
 - Added unified runtime configuration loader `src/config/runtimeConfig.ts` centralizing parsing & normalization of environment variables.

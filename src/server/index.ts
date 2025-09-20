@@ -69,6 +69,7 @@ import { createDashboardServer } from '../dashboard/server/DashboardServer.js';
 import { getMetricsCollector } from '../dashboard/server/MetricsCollector.js';
 import { getMemoryMonitor } from '../utils/memoryMonitor';
 import { getBooleanEnv } from '../utils/envUtils';
+import { getRuntimeConfig, reloadRuntimeConfig } from '../config/runtimeConfig';
 import fs from 'fs';
 import path from 'path';
 import { logInfo } from '../services/logger';
@@ -362,7 +363,8 @@ export async function main(){
   const methods = listRegisteredMethods();
       // Force catalog load to report initial count/hash
       const catalog = getCatalogState();
-      const mutation = getBooleanEnv('MCP_ENABLE_MUTATION');
+  if(process.env.MCP_ENABLE_MUTATION && !process.env.MCP_MUTATION){ reloadRuntimeConfig(); }
+  const mutation = getRuntimeConfig().mutationEnabled;
   const dirDiag = diagnoseInstructionsDir();
   process.stderr.write(`[startup] toolsRegistered=${methods.length} mutationEnabled=${mutation} catalogCount=${catalog.list.length} catalogHash=${catalog.hash} instructionsDir="${dirDiag.dir}" exists=${dirDiag.exists} writable=${dirDiag.writable}${dirDiag.error?` dirError=${dirDiag.error.replace(/\s+/g,' ')}`:''}\n`);
       try {

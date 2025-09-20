@@ -1,6 +1,6 @@
 {
   "name": "mcp-index-server",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "private": true,
   "type": "commonjs",
   "scripts": {
@@ -41,7 +41,8 @@
     "perf:trend": "node scripts/perf-trend.mjs",
     "perf:summary": "node scripts/perf-summary-md.mjs",
     "perf:ci": "npm run perf:drift && npm run perf:trend && npm run perf:summary",
-    "build:verify": "pwsh scripts/build.ps1 -SkipTests && npm run test:fast && npm run guard:decl",
+    "guard:env": "ts-node scripts/enforce-config-usage.ts",
+    "build:verify": "pwsh scripts/build.ps1 -SkipTests && npm run test:fast && npm run guard:env && npm run guard:decl",
     "test:fast": "node scripts/test-fast.mjs",
     "test:slow": "node scripts/test-slow.mjs",
     "docs:tools": "node scripts/generate-tools-doc.cjs",

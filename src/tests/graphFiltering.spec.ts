@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { spawn } from 'child_process';
+import { startDashboardServer } from './util/waitForDashboard';
 
 // Verifies that the /api/graph/mermaid endpoint applies server-side filtering
 // when selectedIds (or later selectedCategories) are provided and that the
@@ -9,32 +9,13 @@ import { spawn } from 'child_process';
 // covered by an automated test. Fast runtime (< 2s typical).
 describe('graph filtering (mermaid)', () => {
   it('returns reduced mermaid + scoped meta when filtered by selectedIds', async () => {
-    const env = { ...process.env, MCP_DASHBOARD: '1' };
-    const proc = spawn('node', ['dist/server/index.js', '--dashboard-port=0', '--dashboard-host=127.0.0.1'], {
-      env,
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-
-    let baseUrl: string | undefined;
-    const pattern = /Server started on (http:\/\/[^\s]+)/;
-    const capture = (d: string) => {
-      const m = pattern.exec(d);
-      if (m) baseUrl = m[1];
-    };
-    proc.stdout.setEncoding('utf8');
-    proc.stderr.setEncoding('utf8');
-    proc.stdout.on('data', capture);
-    proc.stderr.on('data', capture);
-
-    // Wait up to 7s for server
-    const start = Date.now();
-    while (!baseUrl && Date.now() - start < 7000) {
-      await new Promise(r => setTimeout(r, 50));
+    let dash: Awaited<ReturnType<typeof startDashboardServer>> | undefined;
+    try {
+      dash = await startDashboardServer();
+    } catch (e) {
+      return expect.fail((e as Error).message || 'dashboard failed to start');
     }
-    if (!baseUrl) {
-      try { proc.kill(); } catch { /* noop */ }
-      return expect.fail('dashboard failed to start');
-    }
+    const baseUrl = dash.url;
 
     async function getGraph(params: string) {
       const res = await fetch(baseUrl + '/api/graph/mermaid?' + params);
@@ -80,6 +61,6 @@ describe('graph filtering (mermaid)', () => {
       }
     }
 
-    try { proc.kill(); } catch { /* ignore */ }
-  }, 15000);
+    dash.kill();
+  }, 20000);
 });

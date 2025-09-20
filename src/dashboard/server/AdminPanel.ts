@@ -263,7 +263,7 @@ export class AdminPanel {
         maxConnections: parseInt(process.env.MCP_MAX_CONNECTIONS || '100'),
         requestTimeout: parseInt(process.env.MCP_REQUEST_TIMEOUT || '30000'),
         enableVerboseLogging: process.env.MCP_VERBOSE_LOGGING === '1',
-        enableMutation: process.env.MCP_ENABLE_MUTATION === '1',
+  enableMutation: (process.env.MCP_MUTATION === '1') || (process.env.MCP_ENABLE_MUTATION === '1'),
         rateLimit: {
           windowMs: 60000, // 1 minute
           maxRequests: 100
@@ -316,7 +316,8 @@ export class AdminPanel {
         process.env.MCP_VERBOSE_LOGGING = updates.serverSettings.enableVerboseLogging ? '1' : '0';
       }
       if (updates.serverSettings.enableMutation !== undefined) {
-        process.env.MCP_ENABLE_MUTATION = updates.serverSettings.enableMutation ? '1' : '0';
+  process.env.MCP_MUTATION = updates.serverSettings.enableMutation ? '1' : '0';
+  process.env.MCP_ENABLE_MUTATION = updates.serverSettings.enableMutation ? '1' : '0';
       }
     }
   }

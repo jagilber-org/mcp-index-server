@@ -15,11 +15,19 @@ import { resolveOwner } from './ownershipService';
 import { atomicWriteJson } from './atomicFs';
 import { logAudit } from './auditLog';
 import { getToolRegistry } from './toolRegistry';
-import { getBooleanEnv } from '../utils/envUtils';
+import { getRuntimeConfig, reloadRuntimeConfig } from '../config/runtimeConfig';
 import { hashBody as canonicalHashBody } from './canonical';
 
-// Evaluate mutation flag dynamically each invocation so tests that set env before calls (even after import) still work.
-function isMutationEnabled(){ return getBooleanEnv('MCP_ENABLE_MUTATION'); }
+// Evaluate mutation flag via unified runtime config (MCP_MUTATION). Legacy MCP_ENABLE_MUTATION
+// still honored by parseMutation() with a one-time warning. We preserve dynamic semantics
+// (tests may flip env at runtime) by reloading runtime config when only the legacy flag is set.
+function isMutationEnabled(){
+  const legacyActive = process.env.MCP_ENABLE_MUTATION && !process.env.MCP_MUTATION;
+  if(legacyActive){
+    reloadRuntimeConfig();
+  }
+  return getRuntimeConfig().mutationEnabled;
+}
 
 // CI Environment Detection and Response Size Limiting
 function isCI(): boolean {
@@ -55,7 +63,7 @@ function guard<TParams, TResult>(name:string, fn:(p:TParams)=>TResult){
   return (p:TParams)=>{
     const viaDispatcher = !!(p && typeof p === 'object' && (p as unknown as { _viaDispatcher?: boolean })._viaDispatcher);
     if(!isMutationEnabled() && !viaDispatcher){
-      throw { code:-32601, message:`Mutation disabled. Use instructions/dispatch with action parameter instead of direct ${name} calls. Set MCP_ENABLE_MUTATION=1 to enable direct calls.`, data:{ method:name, alternative: 'instructions/dispatch', reason:'mutation_disabled' } };
+      throw { code:-32601, message:`Mutation disabled. Use instructions/dispatch with action parameter instead of direct ${name} calls. Set MCP_MUTATION=1 (or legacy MCP_ENABLE_MUTATION=1) to enable direct calls.`, data:{ method:name, alternative: 'instructions/dispatch', reason:'mutation_disabled' } };
     }
     return fn(p);
   };

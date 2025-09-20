@@ -15,7 +15,7 @@
     "check:dist": "npm run build && git diff --quiet --exit-code dist || (echo Dist out of date. Run npm run build and commit generated files.& exit 1)",
     "coverage": "vitest run --coverage",
     "sbom": "npx syft packages dir:. -o json > sbom.json || echo 'Syft not installed'",
-    "coverage:core": "vitest run --coverage --reporter=dot --reporter=json --reporter=text-summary",
+    "coverage:core": "vitest run --coverage --reporter=dot --reporter=json",
     "coverage:ci": "npm run coverage:core && node scripts/coverage-alias.js && node scripts/check-coverage.mjs",
     "manifest:generate": "node scripts/generate-manifest.mjs",
     "contract:tools": "node scripts/generate-tools-snapshot.mjs",

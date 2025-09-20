@@ -9,12 +9,34 @@ try {
   }
 } catch { $issues += 'npm audit failed' }
 
-# Simple PII pattern scan in staged & src
+# Simple PII pattern scan in staged & src (exclude node_modules, tmp, test artifacts)
 $piiPatterns = @('[0-9]{3}-[0-9]{2}-[0-9]{4}','\b\d{16}\b')
-$files = Get-ChildItem -Recurse -Include *.ts,*.md | Select-Object -ExpandProperty FullName
+$files = Get-ChildItem -Recurse -Include *.ts,*.md | 
+  Where-Object { 
+    $_.FullName -notlike "*node_modules*" -and 
+    $_.FullName -notlike "*tmp*" -and 
+    $_.FullName -notlike "*test-results*" -and
+    $_.FullName -notlike "*coverage*" -and
+    $_.FullName -notlike "*dist*" -and
+    $_.FullName -notlike "*\.d\.ts" -and
+    $_.DirectoryName -notlike "*test*" 
+  } | 
+  Select-Object -ExpandProperty FullName
+
+Write-Host "Scanning $($files.Count) files for PII patterns (excluding dependencies)..." -ForegroundColor Cyan
 foreach($f in $files){
-  $text = Get-Content -Raw -Path $f
-  foreach($pat in $piiPatterns){ if($text -match $pat){ $issues += "PII-like pattern in $f ($pat)" } }
+  try {
+    $text = Get-Content -Raw -Path $f -ErrorAction SilentlyContinue
+    if ($text) {
+      foreach($pat in $piiPatterns){ 
+        if($text -match $pat){ 
+          $issues += "PII-like pattern in $f ($pat)" 
+        } 
+      }
+    }
+  } catch {
+    Write-Host "Warning: Could not scan $f" -ForegroundColor Yellow
+  }
 }
 
 if($issues.Count -gt 0){

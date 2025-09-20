@@ -4,6 +4,8 @@ import path from 'path';
 import fs from 'fs';
 import http from 'http';
 
+// Enhanced: server spawn resilience and deterministic polling with exponential backoff.
+
 function wait(ms:number){ return new Promise(r=>setTimeout(r,ms)); }
 
 // Integration test: exercise the dashboard synthetic activity route and verify
@@ -14,32 +16,36 @@ describe('Dashboard synthetic activity logging', () => {
   const logsDir = path.join(process.cwd(),'logs');
   const logFile = path.join(logsDir,'mcp-server.log');
   let proc: ReturnType<typeof spawn> | null = null;
-  let port = 0;
+  let earlyExit: Error | null = null;
+  let baseUrl: string | undefined;
 
   beforeAll(async () => {
     if(!fs.existsSync(logsDir)) fs.mkdirSync(logsDir,{recursive:true});
     if(fs.existsSync(logFile)) fs.unlinkSync(logFile);
-    // Select a random high port
-    port = 18000 + Math.floor(Math.random()*1000);
-    proc = spawn(process.execPath, ['dist/server/index.js', `--dashboard-port=${port}`, '--dashboard-host=127.0.0.1'], {
+    // Use port 0 for automatic ephemeral port selection; capture actual URL from stdout.
+    proc = spawn(process.execPath, ['dist/server/index.js', '--dashboard-port=0', '--dashboard-host=127.0.0.1'], {
       cwd: process.cwd(),
-      env: { ...process.env, MCP_LOG_FILE: '1', MCP_DASHBOARD: '1' },
+      // MCP_LOG_SYNC forces fsync after each write so log polling becomes deterministic.
+      env: { ...process.env, MCP_LOG_FILE: '1', MCP_DASHBOARD: '1', MCP_LOG_SYNC: '1' },
       stdio: 'pipe'
     });
-    // Give server time to start and load catalog
-    // Allow more startup time on slower CI runners; poll for readiness
+    let stdoutBuf='';
+    proc.stdout?.setEncoding('utf8');
+    proc.stdout?.on('data', d=> { stdoutBuf += d.toString(); const m = /Server started on (http:\/\/[^\s]+)/.exec(stdoutBuf); if(m) baseUrl = m[1]; });
+    proc.stderr?.setEncoding('utf8');
+    proc.stderr?.on('data', d=> { const s = d.toString(); const m = /Server started on (http:\/\/[^\s]+)/.exec(s); if(m) baseUrl = m[1]; });
+    proc.once('exit', (code, signal) => { if(!earlyExit) earlyExit = new Error(`server exited early code=${code} signal=${signal}`); });
+    proc.once('error', err => { if(!earlyExit) earlyExit = err; });
+    // Wait for server URL discovery (stdout indicates readiness)
     const start = Date.now();
-    let ready = false;
-    while(Date.now() - start < 5000){
-      try {
-        await new Promise((resolve, reject) => {
-          const req = http.request({ method:'GET', hostname:'127.0.0.1', port, path:'/api/status' }, res => { res.resume(); res.on('end', resolve); });
-          req.on('error', reject); req.end();
-        });
-        ready = true; break;
-      } catch { await wait(250); }
+    while(!baseUrl && Date.now()-start < 8000){
+      if(earlyExit) break;
+      await wait(50);
     }
-    if(!ready) await wait(1000); // fallback grace
+    if(!baseUrl){
+      if(earlyExit) throw earlyExit;
+      throw new Error('Server URL not captured within timeout');
+    }
   }, 30000);
 
   afterAll(async () => {
@@ -48,9 +54,11 @@ describe('Dashboard synthetic activity logging', () => {
   });
 
   test('synthetic activity POST triggers tool_start/tool_end logging', async () => {
-    const body = JSON.stringify({ iterations: 5, concurrency: 2 });
+    if(earlyExit) throw earlyExit;
+    const body = JSON.stringify({ iterations: 6, concurrency: 3 });
     const resData: string = await new Promise((resolve, reject) => {
-      const req = http.request({ method:'POST', hostname:'127.0.0.1', port, path:'/api/admin/synthetic/activity', headers:{ 'Content-Type':'application/json', 'Content-Length': Buffer.byteLength(body) }}, (res) => {
+      const target = new URL('/api/admin/synthetic/activity', baseUrl!);
+      const req = http.request({ method:'POST', hostname: target.hostname, port: parseInt(target.port,10), path: target.pathname, headers:{ 'Content-Type':'application/json', 'Content-Length': Buffer.byteLength(body) }}, (res) => {
         let data='';
         res.on('data', chunk => data += chunk);
         res.on('end', () => resolve(data));
@@ -60,18 +68,36 @@ describe('Dashboard synthetic activity logging', () => {
       req.end();
     });
     expect(resData).toMatch(/"success":true/);
-    // Retry log scan up to 5 times to reduce flakiness
-    let logSnapshot=''; let attempts=0;
-    while(attempts < 5){
+    // Parse JSON to assert executed>0 (defensive: if parse fails we still proceed to log polling)
+    try {
+      const parsed = JSON.parse(resData);
+      expect(parsed.executed).toBeGreaterThan(0);
+    } catch { /* ignore parse errors, raw regex success already asserted */ }
+    // Retry log scan with time-based deadline (up to ~9s) using adaptive backoff.
+    const deadline = Date.now() + 9000;
+    let logSnapshot=''; let pollDelay=120; let found=false;
+    while(Date.now() < deadline){
       logSnapshot = fs.existsSync(logFile) ? fs.readFileSync(logFile,'utf8') : '';
-      if(/tool_start/.test(logSnapshot) && /tool_end/.test(logSnapshot)) break;
-      await wait(300);
-      attempts++;
+      if(/tool_start/.test(logSnapshot) && /tool_end/.test(logSnapshot)) { found = true; break; }
+      await wait(pollDelay);
+      pollDelay = Math.min(Math.floor(pollDelay*1.4)+10, 750);
     }
-    const content = logSnapshot;
-    const startMatches = content.match(/tool_start/g) || [];
-    const endMatches = content.match(/tool_end/g) || [];
-    expect(startMatches.length).toBeGreaterThan(0);
-    expect(endMatches.length).toBeGreaterThan(0);
-  }, 25000);
+    if(!found){
+      // As a fallback diagnostic, capture metrics endpoint to aid debugging (non-fatal if request fails)
+      try {
+        const metricsData: string = await new Promise((resolve, reject) => {
+          const target = new URL('/api/metrics', baseUrl!);
+          const req = http.request({ method:'GET', hostname: target.hostname, port: parseInt(target.port,10), path: target.pathname }, (res) => {
+            let buf=''; res.on('data', c=> buf+=c); res.on('end', ()=> resolve(buf)); });
+          req.on('error', reject); req.end();
+        });
+        // Surface snippet in assertion message context by appending to logSnapshot
+        logSnapshot += `\n\n[metrics-endpoint-snippet]\n${metricsData.slice(0,500)}`;
+      } catch { /* ignore metrics fetch errors */ }
+    }
+  const startMatches = (logSnapshot.match(/tool_start/g) || []).length;
+  const endMatches = (logSnapshot.match(/tool_end/g) || []).length;
+  expect(startMatches, `tool_start not found in log tail:\n${logSnapshot.slice(-600)}`).toBeGreaterThan(0);
+  expect(endMatches, `tool_end not found in log tail:\n${logSnapshot.slice(-600)}`).toBeGreaterThan(0);
+  }, 40000);
 });

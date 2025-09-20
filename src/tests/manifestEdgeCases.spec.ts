@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { performHandshake } from './util/handshakeHelper.js';
+import { getRuntimeConfig } from '../config/runtimeConfig.js';
 import { buildContentLengthFrame } from './util/stdioFraming.js';
 
 /*
@@ -25,10 +26,11 @@ function writeCorruptedManifest(){
 describe('manifest edge cases', () => {
   const FAST_COVERAGE = process.env.FAST_COVERAGE === '1';
   const maybeIt = FAST_COVERAGE ? it.skip : it;
-  // Allow consumers to tune per-id wait via env; default higher for large instruction sets
-  const WAIT_DISABLED_MS = Number(process.env.MANIFEST_TEST_WAIT_DISABLED_MS || 18000);
-  const WAIT_REPAIR_MS = Number(process.env.MANIFEST_TEST_WAIT_REPAIR_MS || 20000);
-  const POST_KILL_FLUSH_MS = Number(process.env.MANIFEST_TEST_POST_KILL_MS || 250);
+  // Centralized timing via runtimeConfig (with legacy env fallback captured in loader)
+  const cfg = getRuntimeConfig();
+  const WAIT_DISABLED_MS = cfg.timing('manifest.waitDisabled', 18000)!;
+  const WAIT_REPAIR_MS = cfg.timing('manifest.waitRepair', 20000)!;
+  const POST_KILL_FLUSH_MS = cfg.timing('manifest.postKill', 250)!;
   const DIST_INDEX = path.join(process.cwd(),'dist','server','index.js');
   const DEPLOY_PRESENT = fs.existsSync(DIST_INDEX);
   if(!DEPLOY_PRESENT){

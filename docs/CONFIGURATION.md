@@ -199,6 +199,39 @@ Get help with all configuration options:
 node dist/server/index.js --help
 ```
 
+---
+
+## Consolidated Runtime Configuration (New)
+
+A unified configuration loader (`runtimeConfig.ts`) reduces scattered environment flag usage. Key consolidated variables:
+
+| New Variable | Purpose | Notes |
+|--------------|---------|-------|
+| `MCP_CATALOG_MODE` | Catalog load strategy | Replaces combination of `MCP_CATALOG_MEMOIZE`, `MCP_CATALOG_MEMOIZE_HASH`, `INSTRUCTIONS_ALWAYS_RELOAD` |
+| `MCP_TIMING_JSON` | Structured test/integration timing overrides | Replaces granular `MANIFEST_TEST_*`, `SYN_ACTIVITY_*`, `SMOKE_WAIT_ID_TIMEOUT_MS` |
+| `MCP_TRACE` | Comma list of trace tokens | Consolidates multiple *TRACE / verbose flags |
+| `MCP_INIT_FEATURES` | Startup feature toggles | Consolidates init fallback / sniff disable flags |
+| `MCP_LOG_LEVEL` | Explicit logging level | Works with (and supersedes) `MCP_LOG_VERBOSE`, `MCP_DEBUG`, `MCP_VERBOSE_LOGGING` |
+| `MCP_MUTATION` | Enable mutation tools | Supersedes `MCP_ENABLE_MUTATION` |
+| `MCP_TEST_MODE` | Testing strategy presets | `coverage-fast` recognizes fast coverage path |
+
+### Timing Keys (MCP_TIMING_JSON)
+`manifest.waitDisabled`, `manifest.waitRepair`, `manifest.postKill`, `synthetic.ready`, `synthetic.deadline`, `synthetic.iterations`, `synthetic.concurrency`, `smoke.waitId`.
+
+Example inline override:
+```bash
+MCP_TIMING_JSON='{"manifest.waitRepair":25000,"synthetic.deadline":18000}' npm test -- src/tests/manifestEdgeCases.spec.ts
+```
+
+### Trace Tokens
+`handshake`, `initFrame`, `healthMixed`, `portableHandshake`, `portableConnect`, `verbose`.
+
+### Deprecation Warnings
+Legacy flags still function; a one-time `[config:deprecation]` warning is emitted when only legacy forms are used. Migrate incrementally; no hard failures yet.
+
+For full details see in-code documentation at `src/config/runtimeConfig.ts`.
+
+
 ## Troubleshooting
 
 ### Dashboard Not Starting

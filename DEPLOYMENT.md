@@ -79,21 +79,58 @@ Test harness shortcut: `MCP_BOOTSTRAP_AUTOCONFIRM=1` (never use in prod).
  
 ## 4. Environment Variable Matrix (Key Operational Controls)
 
-| Variable | Purpose | Typical Prod | Typical Dev |
-|----------|---------|--------------|-------------|
-| `INSTRUCTIONS_DIR` | Catalog root | Stable prod path | `devinstructions/` |
-| `MCP_ENABLE_MUTATION` | Enable write ops after gating | 1 (if governed) | 1 |
-| `MCP_REFERENCE_MODE` | Force read-only | 0 | 0 or 1 (testing) |
-| `MCP_AUTO_SEED` | Auto-create baseline seeds | 1 | 1 |
-| `MCP_SEED_VERBOSE` | Extra stderr seed log | 0 | 1 |
-| `MCP_LOG_FILE` | Enable file logging | 1 | 1 |
-| `MCP_LOG_VERBOSE` | Verbose transport logs | 0 | 1 |
-| `MCP_LOG_DIAG` | Diagnostic internals | 0 | 1 (selective) |
-| `MCP_TRACE_FILE` | Structured tracing file | 0 | 1 (targeted) |
-| `MCP_METRICS_FILE_STORAGE` | Persist metrics ring | 1 | 1 or 0 |
-| `MCP_METRICS_MAX_FILES` | Metrics rotation depth | 720 | 120 (faster turnover) |
-| `MCP_BOOTSTRAP_AUTOCONFIRM` | Test auto-confirm | 0 | 1 (tests only) |
-| `MCP_LOG_SYNC` | Synchronous log fsync (tests) | 0 | 1 (CI deterministic) |
+| Variable | Purpose | Typical Prod | Typical Dev | Migration Notes |
+|----------|---------|--------------|-------------|----------------|
+| `INSTRUCTIONS_DIR` | Catalog root | Stable prod path | `devinstructions/` | (Will be normalized to `MCP_INSTRUCTIONS_DIR` alias internally) |
+| `MCP_MUTATION` | Enable/disable write ops | `enabled` (if governed) | `enabled` | Replaces `MCP_ENABLE_MUTATION` (still accepted) |
+| `MCP_ENABLE_MUTATION` | Legacy mutation flag | 1 | 1 | Deprecated (mapped to `MCP_MUTATION`) |
+| `MCP_REFERENCE_MODE` | Force read-only | 0 | 0 or 1 (testing) | Unchanged |
+| `MCP_AUTO_SEED` | Auto-create baseline seeds | 1 | 1 | Unchanged |
+| `MCP_SEED_VERBOSE` | Extra stderr seed log | 0 | 1 | Unchanged |
+| `MCP_LOG_LEVEL` | Unified log level | `info` | `debug` | Consolidates verbose/diag flags over time |
+| `MCP_LOG_VERBOSE` | Legacy verbose toggle | 0 | 1 | Deprecated (maps to `MCP_LOG_LEVEL=debug`) |
+| `MCP_LOG_DIAG` | Legacy diagnostic toggle | 0 | 1 | Deprecated (maps to `MCP_LOG_LEVEL=trace`) |
+| `MCP_TRACE` | Fine-grained trace tokens | `manifest` selectively | `manifest,bootstrap` | Use tokens instead of new booleans |
+| `MCP_TRACE_FILE` | Structured tracing file | 0 | 1 (targeted) | Unchanged |
+| `MCP_METRICS_FILE_STORAGE` | Persist metrics ring | 1 | 1 or 0 | Unchanged |
+| `MCP_METRICS_MAX_FILES` | Metrics rotation depth | 720 | 120 | Unchanged |
+| `MCP_BOOTSTRAP_AUTOCONFIRM` | Test auto-confirm | 0 | 1 | Test only |
+| `MCP_LOG_SYNC` | Synchronous log fsync (tests) | 0 | 1 | Test determinism only |
+| `MCP_TIMING_JSON` | Structured timing overrides | Minimal | Rich (tests) | Replaces ad-hoc `MANIFEST_TEST_WAIT_*` vars |
+| `MCP_TEST_MODE` | Test/coverage mode | (unset) | `coverage-fast` | Replaces `FAST_COVERAGE=1` |
+| `COVERAGE_HARD_MIN` | Coverage gate (hard fail) | e.g. 50 | e.g. 50 | Accessed via runtime config |
+| `COVERAGE_TARGET` | Advisory coverage target | e.g. 60 | e.g. 60 | Accessed via runtime config |
+
+Consolidation Note: Introduce no new top-level environment variables without first attempting to express the need via `MCP_TIMING_JSON`, `MCP_TRACE`, or an extension of `runtimeConfig`. File `src/config/runtimeConfig.ts` is the single source of truth for mapping and deprecation warnings.
+
+Example structured timing override (PowerShell):
+
+```powershell
+$env:MCP_TIMING_JSON = '{"manifest.waitDisabled":18000,"manifest.waitRepair":20000,"manifest.postKill":300}'
+```
+
+Then in tests/services:
+
+```ts
+import { getRuntimeConfig } from '../src/config/runtimeConfig';
+const cfg = getRuntimeConfig();
+const waitRepair = cfg.timing('manifest.waitRepair', 20000);
+```
+
+Legacy Timing Flags (still honored with one-time warnings):
+
+- `MANIFEST_TEST_WAIT_DISABLED_MS` → `MCP_TIMING_JSON: manifest.waitDisabled`
+- `MANIFEST_TEST_WAIT_REPAIR_MS` → `MCP_TIMING_JSON: manifest.waitRepair`
+
+Fast coverage path migration:
+
+- Old: `FAST_COVERAGE=1`
+- New: `MCP_TEST_MODE=coverage-fast`
+
+Mutation gating migration:
+
+- Old: `MCP_ENABLE_MUTATION=1`
+- New: `MCP_MUTATION=enabled`
 
 ---
  
@@ -134,6 +171,7 @@ node dist/server/index.js --dashboard-port=8787
 ```
  
 Verify logs (stderr) contain:
+
 - `[startup] Dashboard server started successfully` (if dashboard enabled)
 - `seed_summary` (first start or hash check) – confirm `existing` vs `created`
 - `server_started`
@@ -151,7 +189,9 @@ Verify logs (stderr) contain:
 ---
  
 ## 6. Copying Production Instructions to Dev (Troubleshooting Scenario)
+
 You mentioned copying production instructions into dev to reproduce an issue. Recommended steps:
+
 1. Decide isolation path: create `devinstructions-prod-clone/`.
 2. Copy: `robocopy C:\mcp\mcp-index-server-prod\instructions C:\github\jagilber\mcp-index-server\devinstructions /E`
 3. Point dev config (`.vscode/mcp.json`) `INSTRUCTIONS_DIR` to cloned folder.
@@ -179,7 +219,9 @@ If you *only* copied some files and lost a seed, auto-seed reintroduces it—thi
 ---
  
 ## 8. Observability Signals
+
 Key structured events (JSON logs):
+
 - `logger_init` – file log path, size
 - `seed_summary` – seeding outcome
 - `catalog-summary` – counts (scanned / accepted / skipped) + salvage
@@ -191,6 +233,7 @@ Aggregate or forward these into your logging system for RUM or audit trails. Cor
 ---
  
 ## 9. Hardening Recommendations
+
 | Area | Control |
 |------|---------|
 | Integrity | Periodic integrity job computes canonical seed hash & compares to `seed_summary.hash`. |
@@ -202,8 +245,9 @@ Aggregate or forward these into your logging system for RUM or audit trails. Cor
 ---
  
 ## 10. FAQ
+
 **Q:** How do I fully reset a dev workspace?  
-**A:** Delete the dev instructions directory contents; restart server. Seeds auto-reappear; confirmation gating re-engages (unless non-seed files added). 
+**A:** Delete the dev instructions directory contents; restart server. Seeds auto-reappear; confirmation gating re-engages (unless non-seed files added).
 
 **Q:** How do I simulate production read-only mode?  
 **A:** Set `MCP_REFERENCE_MODE=1`; seeds load but mutation tools return block reason `reference_mode_read_only`.
@@ -214,6 +258,7 @@ Aggregate or forward these into your logging system for RUM or audit trails. Cor
 ---
  
 ## 11. Future Enhancements (Planned / Optional)
+
 - Seed integrity enforcement: warn if on-disk seed differs from canonical JSON (without overwriting).
 - Signed catalog manifests for tamper detection.
 - Distributed lock / notification for multi-node catalog mutation coordination (post baseline).
@@ -241,6 +286,7 @@ $env:MCP_LOG_VERBOSE='1'; $env:MCP_DASHBOARD='1'; node dist/server/index.js --da
 ---
  
 ## 13. Change Log (Document)
+
 - v1.0: Initial creation with auto-seeding & troubleshooting guidance (2025-09-15)
 
 ---

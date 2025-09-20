@@ -273,3 +273,39 @@ node dist/server/index.js
 ```
 
 CLI arguments still work and override environment variables when specified.
+
+---
+
+## Legacy to Consolidated Variable Mapping (Phases 1–4)
+
+| Legacy Variable | New Form | Mapping Behavior | Deprecation Status |
+|-----------------|----------|------------------|--------------------|
+| `FAST_COVERAGE` | `MCP_TEST_MODE=coverage-fast` | Interpreted if value `1`; sets `coverage.fastMode=true` | Deprecated (warn) |
+| `MANIFEST_TEST_WAIT_DISABLED_MS` | `MCP_TIMING_JSON: manifest.waitDisabled` | Numeric value inserted into timing map | Deprecated (warn) |
+| `MANIFEST_TEST_WAIT_REPAIR_MS` | `MCP_TIMING_JSON: manifest.waitRepair` | Numeric value inserted into timing map | Deprecated (warn) |
+| `MCP_ENABLE_MUTATION` | `MCP_MUTATION=enabled\|disabled` | `1`→enabled, `0`→disabled | Deprecated (warn) |
+| `MCP_LOG_VERBOSE` | `MCP_LOG_LEVEL=debug` | If no explicit level already set | Pending deprecation |
+| `MCP_LOG_DIAG` | `MCP_LOG_LEVEL=trace` | If set, upgrades level unless higher already chosen | Pending deprecation |
+| `MCP_DEBUG` / `MCP_VERBOSE_LOGGING` | `MCP_LOG_LEVEL` / `MCP_TRACE` | Collapsed to level/trace tokens | Pending deprecation |
+| `SMOKE_WAIT_ID_TIMEOUT_MS` | `MCP_TIMING_JSON: smoke.waitId` | Injected timing key | Deprecated (warn) |
+| `SYN_ACTIVITY_READY_MS` | `MCP_TIMING_JSON: synthetic.ready` | Injected timing key | Deprecated (warn) |
+| `SYN_ACTIVITY_DEADLINE_MS` | `MCP_TIMING_JSON: synthetic.deadline` | Injected timing key | Deprecated (warn) |
+
+### Deprecation Timeline
+
+| Phase | Action | Criteria |
+|-------|--------|----------|
+| 1–4 (current) | Introduce loader + mappings + docs | Done |
+| 5 | Optional strict mode (`MCP_CONFIG_STRICT=1`) rejects unmapped legacy vars | ≥70% code migration, no critical legacy-only usage in CI |
+| 6 | Default strict mode on (opt-out flag provided) | ≥90% migration, no warnings for 7 days of CI runs |
+| 7 | Remove legacy parsing code paths | Major version bump (breaking) |
+
+Enable early enforcement in local testing by setting (future):
+
+```bash
+MCP_CONFIG_STRICT=1 node dist/server/index.js
+```
+
+If the server aborts listing unknown legacy variables, update environment to use the consolidated forms above.
+
+---

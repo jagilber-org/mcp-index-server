@@ -11,6 +11,16 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 - Tests: Promoted performance card snapshot to mandatory Playwright baseline; removed legacy optional skips via deterministic seeding.
 - Logging: Introduced dual-format (structured JSON vs concise plain) logging for WebSocket connect/disconnect/error and memory deltas using existing `MCP_DEBUG` / `MCP_VERBOSE_LOGGING` flags (no new env vars added). Multi-line memory change logs replaced with single-line structured or concise output to eliminate downstream JSON parse warnings.
 
+### Configuration Consolidation (Phases 1–4)
+
+- Added unified runtime configuration loader `src/config/runtimeConfig.ts` centralizing parsing & normalization of environment variables.
+- Introduced consolidated variables: `MCP_TIMING_JSON`, `MCP_TEST_MODE`, `MCP_LOG_LEVEL`, `MCP_MUTATION`, `MCP_TRACE` (token set), with future placeholders (`MCP_BUFFER_RING`).
+- Backward compatibility: legacy flags (`FAST_COVERAGE`, `MANIFEST_TEST_WAIT_DISABLED_MS`, `MANIFEST_TEST_WAIT_REPAIR_MS`, `MCP_ENABLE_MUTATION`, verbose/diag log flags) auto-mapped with one-time deprecation warnings.
+- Pilot migration: `manifestEdgeCases.spec.ts` refactored to consume timing via `cfg.timing()` accessor; remaining high-churn tests scheduled for follow-up phases.
+- Documentation updates: README consolidation section, deployment matrix extended with migration notes, contributing guidelines prohibit new ad-hoc env vars, configuration guide cross-referenced.
+- Coverage gating integrated with loader (`runtimeConfig.coverage`) maintaining dual-threshold (`COVERAGE_HARD_MIN`, `COVERAGE_TARGET`).
+- Established future Phase 5 plan: optional strict mode (`MCP_CONFIG_STRICT=1`) to reject unmapped legacy flags once adoption threshold met (target ≥70% migrated usages).
+
 
 ### Added (dispatcher capabilities & batch)
 

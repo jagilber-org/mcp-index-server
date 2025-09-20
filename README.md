@@ -48,6 +48,54 @@ This project provides comprehensive enterprise-grade documentation:
 * **PRD 1.4.2** – Added manifest & materialization requirements; deprecated PRD stubs removed.
 * **Spec-Kit Integration** – Added constitution + sequential P1 specs (bootstrapper, lifecycle) with authoring template.
 
+### Runtime Configuration Consolidation (Phases 1–4 Completed)
+
+The environment flag surface has been consolidated under a single typed loader (`runtimeConfig.ts`) to reduce proliferation and ease test/runtime tuning.
+
+Key consolidated variables (see `docs/CONFIGURATION.md` for full table):
+
+| Domain | New Primary Variable | Example | Notes |
+|--------|----------------------|---------|-------|
+| Timing | `MCP_TIMING_JSON` | `{ "manifest.waitDisabled":18000, "manifest.waitRepair":20000 }` | Replaces scattered `MANIFEST_TEST_WAIT_*` vars; additive keys allowed |
+| Coverage | `MCP_TEST_MODE` | `coverage-fast` | Supersedes ad-hoc `FAST_COVERAGE=1` usage (legacy still honored) |
+| Logging | `MCP_LOG_LEVEL` | `debug` | Normalized levels: `silent,error,warn,info,debug,trace` |
+| Mutation | `MCP_MUTATION` | `enabled` / `disabled` | Wraps legacy `MCP_ENABLE_MUTATION` (still accepted) |
+| Trace Tokens | `MCP_TRACE` | `manifest,bootstrap` | Composable, replaces multiple boolean verbose flags over time |
+| Buffer Ring | `MCP_BUFFER_RING` (planned) | `append:4096` | Placeholder – existing flags still active until Phase 5 |
+| Coverage Thresholds | `COVERAGE_HARD_MIN` / `COVERAGE_TARGET` | `50 / 60` | Still exported; accessed via runtimeConfig.coverage.* |
+
+Migration guidance:
+
+* Continue using legacy flags temporarily; deprecation warnings emit once per process when translation occurs.
+* Prefer adding new timing overrides via `MCP_TIMING_JSON` rather than introducing new top-level env vars.
+* Tests should obtain values via `getRuntimeConfig().timing(key, fallback)` instead of `process.env.*`.
+* Future Phase 5 will introduce an optional strict mode (`MCP_CONFIG_STRICT=1`) that fails startup on unrecognized legacy flags once migration coverage ≥70%.
+
+Example timing override (PowerShell):
+
+```powershell
+$env:MCP_TIMING_JSON = '{"manifest.waitDisabled":15000,"manifest.postKill":400}'
+```
+
+Access in code:
+
+```ts
+import { getRuntimeConfig } from './config/runtimeConfig';
+const cfg = getRuntimeConfig();
+const waitDisabled = cfg.timing('manifest.waitDisabled', 18000);
+```
+
+Backward compatibility: The following legacy variables are auto-mapped with one-time warnings:
+
+| Legacy | Replacement | Status |
+|--------|-------------|--------|
+| `MANIFEST_TEST_WAIT_DISABLED_MS` | `MCP_TIMING_JSON: manifest.waitDisabled` | Deprecated – still works |
+| `MANIFEST_TEST_WAIT_REPAIR_MS` | `MCP_TIMING_JSON: manifest.waitRepair` | Deprecated – still works |
+| `FAST_COVERAGE` | `MCP_TEST_MODE=coverage-fast` | Deprecated – still works |
+| `MCP_ENABLE_MUTATION` | `MCP_MUTATION=enabled` | Deprecated – still works |
+
+Report any missing mapping candidates so they can be folded into the loader instead of adding new ad-hoc flags.
+
 ### 🔐 Baseline Restoration & Guardrails
 
 This repository operates under an authoritative baseline recovery plan defined in `INTERNAL-BASELINE.md`.

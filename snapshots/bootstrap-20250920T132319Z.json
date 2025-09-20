@@ -1,7 +1,72 @@
 {
-  "generatedAt": "2025-09-20T13:23:46.181Z",
-  "count": 177,
+  "generatedAt": "2025-09-20T13:23:19.330Z",
+  "count": 179,
   "items": [
+    {
+      "id": "000-bootstrapper",
+      "title": "Bootstrap: Initial Workspace Activation",
+      "body": "Purpose: Provide a clean agent the first actionable steps to safely enable catalog mutation.\n\nSteps (agent-facing):\n1. Call tool 'bootstrap/request' to obtain a one-time confirmation token (raw token returned once; only hash persisted). Optionally pass rationale.\n2. Present the rationale + token verbatim to the human operator for explicit approval.\n3. When approved, call tool 'bootstrap/confirmFinalize' with the token.\n4. After confirmation succeeds (or if workspace already contained non-bootstrap instructions), proceed to add domain instructions using dispatcher action add (tools/call name='instructions/dispatch', arguments.action='add').\n5. Use help/overview for lifecycle & promotion guidance; keep governance markdown outside the runtime catalog.\n6. Periodically call 'bootstrap/status' and 'instructions/health' to verify confirmation + recursionRisk remains 'none'.\n\nWorkspace State Matrix:\n- Reference Mode (MCP_REFERENCE_MODE=1): Read-only forever; all mutations blocked even after finalize attempts.\n- Fresh (only bootstrap seeds present, no confirmation file): mutation_blocked with reason=bootstrap_confirmation_required.\n- Pending (token issued, not finalized): Still blocked until confirmFinalize succeeds.\n- Confirmed (confirmation file written): Mutations allowed (subject to MCP_ENABLE_MUTATION rules).\n- Existing Workspace (any non-bootstrap instruction present): Treated as implicitly activated; confirmation optional.\n\nSafety & Errors:\n- Block response shape: { error:'mutation_blocked', reason:'bootstrap_confirmation_required' }.\n- Expired token: { error:'token_expired' }.\n- Invalid token: { error:'invalid_token' }.\n- No pending token: { error:'no_pending_token' }.\n- Reference mode block: reason='reference_mode_read_only'.\n\nRenewal: If token expires before use, request a new one via 'bootstrap/request'.\n\nDo NOT brute force tokens; rate/bulk attempts may be treated as abuse defense signals.",
+      "audience": "agents",
+      "requirement": "required",
+      "priorityTier": "p0",
+      "categories": [
+        "bootstrap",
+        "lifecycle"
+      ],
+      "owner": "system",
+      "version": "1.0.0",
+      "sourceHash": "61f5dc37d8a3714c612e4ff7426facb365ad10e83ceaa7a2232d7b6c4796842a",
+      "semanticSummary": "Bootstrap activation steps with confirmation token gating mutations",
+      "createdAt": "2025-09-15T14:43:33.761Z",
+      "updatedAt": "2025-09-15T14:43:33.761Z",
+      "schemaVersion": "3",
+      "riskScore": null,
+      "status": "approved",
+      "classification": "internal",
+      "lastReviewedAt": "2025-09-20T12:18:55.418Z",
+      "nextReviewDue": "2026-01-18T12:18:55.418Z",
+      "reviewIntervalDays": 120,
+      "changeLog": [
+        {
+          "version": "1.0.0",
+          "changedAt": "2025-09-15T14:43:33.761Z",
+          "summary": "initial import"
+        }
+      ]
+    },
+    {
+      "id": "001-lifecycle-bootstrap",
+      "title": "Lifecycle Bootstrap: Local-First Instruction Strategy",
+      "body": "Purpose: Provide early lifecycle guidance after bootstrap confirmation (or implicit activation in existing workspace).\n\nAgent Action Model (post-confirm or existing workspace):\n1. Add only minimal, local, high-signal instructions (P0/P1).\n2. Before adding, query via instructions/dispatch (actions: list/search/query) to avoid duplication.\n3. Monitor 'instructions/health' (recursionRisk should remain 'none') and 'bootstrap/status' (confirmed stays true).\n4. Promote instructions (priorityTier bump or export) only after usage stability (low churn, multi-session usage, cross-category relevance).\n5. Use feedback/submit for anomalies, improvements, or drift signals.\n6. Avoid embedding tool catalogs—use dynamic discovery (tools/list, help/overview).\n7. Reference mode (MCP_REFERENCE_MODE=1): treat catalog as immutable; do not attempt mutations.\n8. If confirmation ever needed in a derivative workspace: bootstrap/request → bootstrap/confirmFinalize.\n\nPromotion Signals (all strongly suggested):\n- Repeated multi-session invocation.\n- Cross-team or cross-scope applicability.\n- Stabilized wording (few edits across time).\n\nNever embed secrets, credentials, or volatile configuration. Governance markdown remains outside runtime catalog.",
+      "audience": "agents",
+      "requirement": "recommended",
+      "priority": 10,
+      "priorityTier": "P1",
+      "categories": [
+        "bootstrap",
+        "lifecycle"
+      ],
+      "owner": "system",
+      "version": "1.0.0",
+      "sourceHash": "c5955e2b335a3ac08b60e63dcaf82c9fbf3ad1fcb753abf8d94c8bba786d3012",
+      "semanticSummary": "Lifecycle and promotion guardrails after bootstrap confirmation",
+      "reviewIntervalDays": 120,
+      "schemaVersion": "3",
+      "status": "approved",
+      "classification": "internal",
+      "createdAt": "2025-09-15T13:30:00.000Z",
+      "updatedAt": "2025-09-15T13:30:00.000Z",
+      "lastReviewedAt": "2025-09-15T13:30:00.000Z",
+      "nextReviewDue": "2026-01-13T13:30:00.000Z",
+      "changeLog": [
+        {
+          "version": "1.0.0",
+          "changedAt": "2025-09-15T13:30:00.000Z",
+          "summary": "initial import"
+        }
+      ],
+      "riskScore": 110
+    },
     {
       "id": "activate-azure-devops-discovery",
       "title": "Azure DevOps MCP Server Discovery Session",

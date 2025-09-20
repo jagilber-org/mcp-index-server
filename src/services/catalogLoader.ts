@@ -165,7 +165,7 @@ export class CatalogLoader {
       //  - any file whose first line (if readable) contains marker '__GOVERNANCE_SEED__'
       const lowerBase = f.toLowerCase();
       let denied = false;
-      if(/^(000-bootstrapper|001-knowledge-index-lifecycle)/.test(lowerBase)) denied = true;
+      if(/^(000-bootstrapper|001-lifecycle-bootstrap)/.test(lowerBase)) denied = true;
       else if(lowerBase.includes('.governance.')) denied = true;
       else if(lowerBase === 'constitution.json') denied = true;
       if(!denied){

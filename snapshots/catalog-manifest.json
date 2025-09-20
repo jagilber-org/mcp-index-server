@@ -1,18 +1,13 @@
 {
   "$schema": "../schemas/manifest.schema.json",
   "version": 1,
-  "generatedAt": "2025-09-20T12:14:48.342Z",
-  "count": 2,
+  "generatedAt": "2025-09-20T12:23:47.085Z",
+  "count": 1,
   "entries": [
     {
-      "id": "gov-hash-a-1758370488279",
-      "sourceHash": "680183ead4a95a01a4d4fe0f13fd4aad3105fb8cca072054313977d23f6b3c2a",
-      "bodyHash": "680183ead4a95a01a4d4fe0f13fd4aad3105fb8cca072054313977d23f6b3c2a"
-    },
-    {
-      "id": "gov-hash-b-1758370488280",
-      "sourceHash": "e89a08135561937e1761a53bbb6771aebc205b78fb0a3d27cf5c84d2b1c7eb4b",
-      "bodyHash": "e89a08135561937e1761a53bbb6771aebc205b78fb0a3d27cf5c84d2b1c7eb4b"
+      "id": "skip-test-1758371027055",
+      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
+      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
     }
   ]
 }

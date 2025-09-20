@@ -26,6 +26,9 @@ for(const f of files){
   if(f === 'gates.json') continue;
   // Skip metadata files that are not instructions
   if(f.startsWith('_') || f.startsWith('bootstrap.')) continue;
+  // Skip governance denylist files (same as catalog loader)
+  const lowerBase = f.toLowerCase();
+  if(/^(000-bootstrapper|001-lifecycle-bootstrap)/.test(lowerBase)) continue;
   const full = path.join(instructionsDir,f);
   try {
     const raw = JSON.parse(fs.readFileSync(full,'utf8'));

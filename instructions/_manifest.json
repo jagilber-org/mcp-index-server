@@ -1,41 +1,31 @@
 {
   "version": 1,
-  "generatedAt": "2025-09-20T12:15:44.530Z",
-  "count": 150,
-  "hash": "4b54bf073a4efe6221f3697a6037a48173f86af4a811c390043851851654cff6",
+  "generatedAt": "2025-09-20T13:25:20.977Z",
+  "count": 154,
+  "hash": "8e0e89061681d1424303e961833352458af5430b253b0e3e1f909cd60dc45471",
   "summary": {
-    "scanned": 174,
-    "accepted": 150,
-    "skipped": 24,
+    "scanned": 182,
+    "accepted": 154,
+    "skipped": 28,
     "reasons": {
-      "ignored:governance-denylist": 1,
+      "ignored:governance-denylist": 2,
       "ignored:non-instruction-config": 3,
-      "schema": 20
+      "schema": 23
     },
     "salvage": {
-      "audience": 45,
-      "requirement": 56,
+      "audience": 44,
+      "requirement": 59,
       "bodyTruncated": 3,
       "requirementFreeform": 26,
       "audienceInvalid": 15,
       "requirementInvalid": 4,
-      "priorityInvalid": 20
+      "priorityInvalid": 23
     },
     "softWarnings": {
       "body:truncated": 3
     }
   },
   "entries": [
-    {
-      "id": "001-lifecycle-bootstrap",
-      "title": "Lifecycle Bootstrap: Local-First Instruction Strategy",
-      "priority": 10,
-      "priorityTier": "P1",
-      "audience": "group",
-      "requirement": "recommended",
-      "sourceHash": "c5955e2b335a3ac08b60e63dcaf82c9fbf3ad1fcb753abf8d94c8bba786d3012",
-      "bodyHash": "c5955e2b335a3ac08b60e63dcaf82c9fbf3ad1fcb753abf8d94c8bba786d3012"
-    },
     {
       "id": "activate-azure-devops-discovery",
       "title": "Azure DevOps MCP Server Discovery Session",
@@ -677,6 +667,16 @@
       "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
     },
     {
+      "id": "mw-disabled-1758370917800",
+      "title": "mw disabled",
+      "priority": 1,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "optional",
+      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
+      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
+    },
+    {
       "id": "mw-repair-1758298858769",
       "title": "mw repair",
       "priority": 2,
@@ -748,6 +748,16 @@
     },
     {
       "id": "mw-repair-1758370349582",
+      "title": "mw repair",
+      "priority": 2,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "optional",
+      "sourceHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
+      "bodyHash": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5"
+    },
+    {
+      "id": "mw-repair-1758370924902",
       "title": "mw repair",
       "priority": 2,
       "priorityTier": "P1",
@@ -1267,6 +1277,26 @@
       "bodyHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277"
     },
     {
+      "id": "smoke-1758370886870",
+      "title": "Smoke",
+      "priority": 10,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "recommended",
+      "sourceHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277",
+      "bodyHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277"
+    },
+    {
+      "id": "smoke-1758371027598",
+      "title": "Smoke",
+      "priority": 10,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "recommended",
+      "sourceHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277",
+      "bodyHash": "b3272f0b59c87d499c947c38540ac3495ab4548bd233c01502fc40b3b052c277"
+    },
+    {
       "id": "spec-driven-new-project-setup-guide",
       "title": "Spec-Driven New Project Setup Guide - GitHub Spec-Kit Integration",
       "priority": 90,
@@ -1468,6 +1498,16 @@
     },
     {
       "id": "vis-1758370410013",
+      "title": "Visibility Invariant",
+      "priority": 5,
+      "priorityTier": "P1",
+      "audience": "all",
+      "requirement": "optional",
+      "sourceHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7",
+      "bodyHash": "f73e22166b223ffa8d6a84949b9bb9399f371145e969f11616cdcc5cd78a03a7"
+    },
+    {
+      "id": "vis-1758370949769",
       "title": "Visibility Invariant",
       "priority": 5,
       "priorityTier": "P1",

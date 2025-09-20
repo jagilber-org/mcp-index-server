@@ -132,7 +132,7 @@ function escapeRegex(string: string): string {
  * Load and search instructions from the catalog
  */
 function performSearch(params: SearchParams): SearchResponse {
-  const startTime = Date.now();
+  const startTime = performance.now();
   
   // Load instruction catalog state
   const state = ensureLoaded();
@@ -177,7 +177,7 @@ function performSearch(params: SearchParams): SearchResponse {
   results.sort((a, b) => b.relevanceScore - a.relevanceScore);
   const limitedResults = results.slice(0, Math.min(limit, 100));
   
-  const executionTime = Date.now() - startTime;
+  const executionTime = performance.now() - startTime;
   
   logInfo(`Search completed: ${sanitizedKeywords.length} keywords, ${limitedResults.length}/${results.length} results, ${executionTime}ms`);
   

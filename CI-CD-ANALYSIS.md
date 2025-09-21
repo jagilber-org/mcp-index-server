@@ -116,6 +116,75 @@ Track these key indicators:
 3. **Extend Diagnostics**: Leverage diagnostics pack artifacts for any failing workflow
 4. **Automate Flake Trend Reporting** (planned Phase 4)
 5. **Iterate & Ratchet Coverage**: Allow baseline file to evolve with improvements
+6. **Adopt Flake Baseline & Gate**: Phase in enforcement using newly added flake baseline + gate
+
+## Flake Telemetry, Baseline & Gating
+
+### Components
+
+| Component | File / Step | Purpose |
+|-----------|-------------|---------|
+| Flake Sentinel | `scripts/flake-sentinel.mjs` (CI) | Reruns failing test files to classify transient vs hard failures |
+| Flake Trend | `scripts/flake-trend.mjs` (CI) | Maintains rolling JSONL & summary metrics (distinct flaky files, occurrence counts) |
+| Flake Baseline | `flake-baseline.json` | Declares acknowledged flaky test files permitted temporarily |
+| Flake Gate | `scripts/flake-gate.mjs` | Converts telemetry + baseline into an enforcing quality gate |
+
+### Baseline File (`flake-baseline.json`)
+
+Structure:
+
+```json
+{
+  "version": 1,
+  "generatedAt": "2025-09-21T00:00:00.000Z",
+  "files": [
+    { "file": "src/tests/exampleFlake.spec.ts", "since": "2025-09-18T12:34:56.000Z", "notes": "Intermittent timing drift" }
+  ]
+}
+```
+
+Start empty (preferred). Only add entries after confirming genuine non-deterministic behavior that cannot be immediately fixed.
+
+### Gate Environment Variables
+
+| Var | Default | Meaning |
+|-----|---------|---------|
+| `FLAKE_GATE_ENABLED` | `0` | Turn gating on (`1`) or leave observational (`0`). |
+| `FLAKE_GATE_MAX_FILES` | `0` | Max distinct flaky files in trend window. |
+| `FLAKE_GATE_MAX_OCCURRENCES` | `0` | Max total flaky occurrences in trend window. |
+| `FLAKE_GATE_ALLOW_NEW` | unset | If `1`, allows newly flaky files (still enforces occurrence cap). |
+| `FLAKE_GATE_BASELINE_FILE` | auto | Optional explicit baseline path; otherwise auto-loads `flake-baseline.json`. |
+
+Exit Codes: 20 (files threshold), 21 (occurrence threshold), 22 (unauthorized new flaky file), 23 (telemetry missing).
+
+### Rolling Adoption Strategy
+
+1. Week 0: Leave disabled; observe `flake-trend-summary.json` artifacts.
+2. Week 1: Enable with lenient thresholds (e.g. files=2, occurrences=4) + baseline empty.
+3. Week 2+: Tighten to files=1, then files=0 once stability proven.
+4. Remove any baseline entries after fixing underlying causes; treat baseline as strictly temporary.
+
+### Regenerating / Auditing Baseline
+
+Add (optional future) helper script `scripts/flake-baseline-generate.mjs`:
+
+1. Read `test-results/flake-history.jsonl`.
+2. Aggregate by test file; include any file exceeding N transient detections in last M runs.
+3. Output candidate baseline to review (not auto-committed).
+
+### Best Practices
+
+- Keep baseline minimal & aggressively shrink.
+- Always open an issue for each baseline entry linking to remediation plan.
+- Treat gate failures as P1 unless due to clear infrastructure incident.
+- Pair flake fixes with adding regression assertions (prevent silent reintroduction).
+
+### Future Enhancements
+
+- PR comment summarizing flake window deltas.
+- Metrics export to performance trend JSON for unified quality dashboard.
+- Automatic issue creation when a previously clean window regresses.
+
 
 ## Files Created
 

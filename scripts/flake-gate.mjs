@@ -57,6 +57,16 @@ if(process.env.FLAKE_GATE_BASELINE){
 if(process.env.FLAKE_GATE_BASELINE_FILE && fs.existsSync(process.env.FLAKE_GATE_BASELINE_FILE)){
   try { const parsed = JSON.parse(fs.readFileSync(process.env.FLAKE_GATE_BASELINE_FILE,'utf8')); if(Array.isArray(parsed)) baseline = parsed; } catch {/* ignore */}
 }
+// Auto-discover flake-baseline.json if still empty and file exists (structure: { files:[{file:string}] })
+if(baseline.length === 0 && fs.existsSync('flake-baseline.json')){
+  try {
+    const auto = JSON.parse(fs.readFileSync('flake-baseline.json','utf8'));
+    if(auto && Array.isArray(auto.files)){
+      baseline = auto.files.map(f=> typeof f === 'string' ? f : f.file).filter(Boolean);
+      console.log('[flake-gate] Loaded baseline from flake-baseline.json:', baseline);
+    }
+  } catch {/* ignore */}
+}
 
 const distinctFlaky = summary.distinctFlakyFiles ?? 0;
 const totalOccurrences = summary.totalFlakyOccurrences ?? 0;

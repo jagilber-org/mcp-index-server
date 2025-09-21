@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2025-09-21T13:55:06.001Z",
-  "count": 75,
+  "generatedAt": "2025-09-21T14:08:10.402Z",
+  "count": 78,
   "items": [
     {
       "file": "unit_p0_materialize_1757951263272.json",
@@ -300,6 +300,18 @@
     },
     {
       "file": "unit_p0_materialize_1758462716741.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758462906002.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758463132834.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758463374547.json",
       "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
     }
   ]

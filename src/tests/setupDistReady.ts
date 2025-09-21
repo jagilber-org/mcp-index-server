@@ -79,12 +79,15 @@ if(!g.__SETUP_DIST_READY_INIT){
           if(res.error){
             // eslint-disable-next-line no-console
             console.error('[setupDistReady] production deploy failed (spawn error):', res.error.message);
+            try { fs.writeFileSync(path.join(process.cwd(),'tmp','deploy-failed.marker'),'spawn error','utf8'); } catch {/* ignore */}
           } else if(res.status !== 0){
             // eslint-disable-next-line no-console
             console.error('[setupDistReady] production deploy failed (exit code)', res.status, '\nSTDOUT:', res.stdout?.slice(0,2000), '\nSTDERR:', res.stderr?.slice(0,2000));
+            try { fs.mkdirSync(path.join(process.cwd(),'tmp'),{recursive:true}); fs.writeFileSync(path.join(process.cwd(),'tmp','deploy-failed.marker'), String(res.status),'utf8'); } catch {/* ignore */}
           } else {
             // eslint-disable-next-line no-console
             console.log('[setupDistReady] production deploy complete');
+            try { const mk = path.join(process.cwd(),'tmp','deploy-failed.marker'); if(fs.existsSync(mk)) fs.unlinkSync(mk); } catch {/* ignore */}
           }
         }
       }

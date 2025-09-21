@@ -5,6 +5,39 @@ import { StdioFramingParser, buildContentLengthFrame } from './stdioFraming.js';
 export interface HandshakeResult { server: ChildProcessWithoutNullStreams; parser: StdioFramingParser; initFrameId: number; }
 
 /**
+ * Gracefully shut down a spawned server process created by performHandshake.
+ * Attempts:
+ *  1. Send SIGTERM-equivalent (child.kill()) and wait up to graceMs.
+ *  2. If still alive, send SIGKILL (on platforms that support it) and wait forceMs.
+ *  3. If still not exited, resolves anyway (to avoid test hang) but logs diagnostic.
+ */
+export async function shutdownHandshakeServer(server: ChildProcessWithoutNullStreams, opts?: { graceMs?: number; forceMs?: number; label?: string }): Promise<{ exited: boolean; code: number | null; signal: NodeJS.Signals | null; forced: boolean }>{
+  const graceMs = opts?.graceMs ?? 1500;
+  const forceMs = opts?.forceMs ?? 1000;
+  const label = opts?.label || 'handshakeServer';
+  if(server.killed){
+    return { exited: true, code: server.exitCode === null ? null : server.exitCode, signal: null, forced: false };
+  }
+  const waitForExit = (timeout: number) => new Promise<boolean>(resolve => {
+    let done = false;
+    const timer = setTimeout(() => { if(!done) resolve(false); }, timeout);
+    server.once('exit', () => { if(!done){ done = true; clearTimeout(timer); resolve(true); } });
+  });
+  try { server.kill(); } catch {/* ignore */}
+  let exited = await waitForExit(graceMs);
+  let forced = false;
+  if(!exited){
+    forced = true;
+    try { server.kill('SIGKILL'); } catch {/* ignore */}
+    exited = await waitForExit(forceMs);
+  }
+  if(!exited){
+    process.stderr.write(`[${label}] shutdown warning: process did not exit after ${(graceMs+forceMs)}ms (pid=${server.pid})\n`);
+  }
+  return { exited, code: server.exitCode === null ? null : server.exitCode, signal: null, forced };
+}
+
+/**
  * Minimal shared handshake routine:
  *  - Spawns server (node dist/server/index.js)
  *  - Waits for either stderr sentinel or first frame window before sending initialize (up to 1500ms)
@@ -12,7 +45,7 @@ export interface HandshakeResult { server: ChildProcessWithoutNullStreams; parse
  *  - If no frame within 4000ms after send, re-sends initialize once (id=1 idempotent per MCP spec)
  *  - Returns process + parser once initialize response observed.
  */
-export async function performHandshake(opts?: { cwd?: string; protocolVersion?: string; extraEnv?: Record<string,string>; logDiagEveryMs?: number }): Promise<HandshakeResult> {
+export async function performHandshake(opts?: { cwd?: string; protocolVersion?: string; extraEnv?: Record<string,string>; logDiagEveryMs?: number; onProgress?: (info:{ elapsed:number; sawSentinel:boolean; resendIn:number })=>void }): Promise<HandshakeResult> {
   let cwd = opts?.cwd || process.cwd();
   let dist = path.join(cwd, 'dist', 'server', 'index.js');
   // CI fallback: if provided cwd doesn't exist on this platform (e.g. Windows path on Linux runner),
@@ -38,7 +71,10 @@ export async function performHandshake(opts?: { cwd?: string; protocolVersion?: 
   // Allow environment overrides for diagnostics & timing (used in CI hardening / deploy races)
   // Allow longer startup for production deployment directory (packaged runtime, larger instruction set)
   const isProdPath = cwd.replace(/\\/g,'/').includes('/mcp-index-server-prod');
-  const maxTotalMs = Number(process.env.MCP_TEST_HANDSHAKE_MAX_MS || (isProdPath? 30000 : 20000)); // was 12000 originally
+  const baseMaxTotalMs = Number(process.env.MCP_TEST_HANDSHAKE_MAX_MS || (isProdPath? 30000 : 20000)); // was 12000 originally
+  // Allow adaptive extension (bounded) if we see clear progress (stderr sentinel) but initialization frame hasn't arrived yet.
+  const adaptiveExtendMs = Number(process.env.MCP_TEST_HANDSHAKE_ADAPT_EXT_MS || (isProdPath? 15000 : 8000));
+  const maxCapMs = baseMaxTotalMs + adaptiveExtendMs; // hard upper cap regardless of progress
   const preSentinelWaitMs = Number(process.env.MCP_TEST_HANDSHAKE_PRESENTINEL_MS || 1500);
   const resendGapMs = Number(process.env.MCP_TEST_HANDSHAKE_RESEND_AFTER_MS || 4000);
   const pollSleepMs = Number(process.env.MCP_TEST_HANDSHAKE_POLL_MS || 50);
@@ -46,6 +82,7 @@ export async function performHandshake(opts?: { cwd?: string; protocolVersion?: 
 
   // Wait briefly (up to 1500ms) for sentinel to reduce chance of early frame loss.
   const start = Date.now();
+  let dynamicDeadline = start + baseMaxTotalMs;
   while(!sawSentinel && Date.now() - start < preSentinelWaitMs){ await new Promise(r=>setTimeout(r,40)); }
   sendInit();
   // Fallback re-send once if no frames arrive within resendGapMs (initialize may have been dropped pre-listener).
@@ -58,14 +95,25 @@ export async function performHandshake(opts?: { cwd?: string; protocolVersion?: 
     if(Date.now()>resendDeadline){
       sendInit();
     }
-    const elapsed = Date.now()-start;
-    if(elapsed>maxTotalMs){ // safety overall bound
-  throw new Error(`initialize timeout (helper) after ${elapsed}ms (max=${maxTotalMs}) cwd=${cwd}`);
+    const now = Date.now();
+    const elapsed = now-start;
+    // If we have seen the sentinel and still within adaptive range, extend once up to cap.
+    if(sawSentinel && dynamicDeadline < start + maxCapMs && (dynamicDeadline - now) < 250){
+      dynamicDeadline = Math.min(start + maxCapMs, dynamicDeadline + 1000); // extend in 1s increments while progress
+    }
+    if(elapsed > dynamicDeadline){ // safety overall bound (possibly extended)
+      throw new Error(`initialize timeout (helper) after ${elapsed}ms (baseMax=${baseMaxTotalMs} extendedCap=${maxCapMs}) cwd=${cwd} sawSentinel=${sawSentinel}`);
     }
     if(elapsed - lastDiag >= diagEveryMs){
       // Emit lightweight stderr diagnostics; avoids polluting stdout (reserved for protocol frames)
       // Include whether sentinel was seen to help differentiate pre-start vs post-start stalls.
-      process.stderr.write(`[handshakeHelper] waiting init id=1 elapsed=${elapsed}ms sawSentinel=${sawSentinel} resendIn=${Math.max(0, resendDeadline-Date.now())}ms\n`);
+      const resendIn = Math.max(0, resendDeadline-now);
+      const remaining = dynamicDeadline - now;
+      const msg = `[handshakeHelper] waiting init id=1 elapsed=${elapsed}ms remaining=${remaining}ms baseMax=${baseMaxTotalMs} cap=${maxCapMs} sawSentinel=${sawSentinel} resendIn=${resendIn}ms cwd=${cwd}`;
+      process.stderr.write(msg + '\n');
+      if(opts?.onProgress){
+        try { opts.onProgress({ elapsed, sawSentinel, resendIn }); } catch {/* ignore progress errors */}
+      }
       lastDiag = Date.now();
     }
     await new Promise(r=>setTimeout(r,pollSleepMs));

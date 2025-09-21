@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2025-09-21T12:41:41.431Z",
-  "count": 66,
+  "generatedAt": "2025-09-21T13:01:34.715Z",
+  "count": 67,
   "items": [
     {
       "file": "unit_p0_materialize_1757951263272.json",
@@ -264,6 +264,10 @@
     },
     {
       "file": "unit_p0_materialize_1758405968384.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758459063231.json",
       "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
     }
   ]

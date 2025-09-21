@@ -27,6 +27,11 @@ jobs:
         run: npm run test:stress:focus || echo 'Focus suite had failures (expected possible)'
       - name: Run full stress suite
         run: npm run test:stress || echo 'Full stress suite had failures (expected possible)'
+      - name: Collect diagnostics pack
+        if: always()
+        run: |
+          echo 'Collecting diagnostics pack (stress context)'
+          node scripts/diagnostics-pack.mjs || echo 'diagnostics pack script failed'
       - name: Archive stress artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -36,6 +41,7 @@ jobs:
             stderr.log
             stdout.log
             diag-*.log
+            diagnostics/
           retention-days: 5
       - name: Open issue on new failure cluster
         if: failure()

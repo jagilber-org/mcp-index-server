@@ -66,6 +66,21 @@ jobs:
           echo "Testing instruction integrity..."
           timeout 30 npm test src/tests/integrity.spec.ts || echo "⚠️ Integrity test timeout or failure"
 
+      - name: Collect diagnostics pack (always)
+        if: always()
+        run: |
+          echo 'Collecting diagnostics pack...'
+          node scripts/diagnostics-pack.mjs || echo 'diagnostics pack script failed (continuing)'
+
+      - name: Upload diagnostics artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-diagnostics
+          path: diagnostics
+          if-no-files-found: warn
+          retention-days: 10
+
   error-notification:
     name: Error Notification
     runs-on: ubuntu-latest

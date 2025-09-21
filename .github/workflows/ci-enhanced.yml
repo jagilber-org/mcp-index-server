@@ -14,6 +14,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: lint-${{ runner.os }}-node20-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            lint-${{ runner.os }}-node20-
       - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
@@ -36,6 +45,15 @@ jobs:
         node-version: [20]  # Can expand to test multiple versions
     steps:
       - uses: actions/checkout@v4
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: build-${{ runner.os }}-node${{ matrix.node-version }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('vitest.config.ts') }}
+          restore-keys: |
+            build-${{ runner.os }}-node${{ matrix.node-version }}-
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
@@ -68,6 +86,19 @@ jobs:
       - name: Run contract tests
         run: npm run test:contracts
 
+      - name: Flake Sentinel (rerun failing files)
+        if: always()
+        run: node scripts/flake-sentinel.mjs
+        env:
+          FLAKE_RERUNS: '2'
+          ALLOW_FLAKY: '0'
+
+      - name: Flake Trend Aggregation
+        if: always()
+        run: node scripts/flake-trend.mjs
+        env:
+          FLAKE_TREND_MAX: '75'
+
       - name: Generate coverage
         env:
           MCP_CATALOG_EVENT_SILENT: '1'
@@ -86,6 +117,18 @@ jobs:
           # The coverage:ci script ensures coverage/coverage.xml exists (alias script copies if necessary).
           path: coverage/coverage.xml
           retention-days: 7
+
+      - name: Upload flakiness artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flake-analysis
+          path: |
+            test-results/flaky-tests.json
+            test-results/flake-history.jsonl
+            test-results/flake-trend-summary.json
+            test-results/reruns/
+          retention-days: 10
 
   dist-freshness:
     name: Dist Freshness Check  

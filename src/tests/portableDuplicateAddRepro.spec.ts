@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 
 describe('Portable Duplicate Add Repro (mcp-server-testing-patterns-2025)', () => {
   it('duplicate add must not produce immediate notFound on get', async () => {
-    process.env.MCP_ENABLE_MUTATION = '1';
+  process.env.MCP_MUTATION = '1';
     const targetId = 'mcp-server-testing-patterns-2025';
     // Isolation strategy: unless explicitly opting into repo-scale run (PORTABLE_HARNESS_USE_REPO_DIR=1),
     // create a temp instructions directory to eliminate large catalog scan cost.

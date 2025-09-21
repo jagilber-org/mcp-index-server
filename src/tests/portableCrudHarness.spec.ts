@@ -34,7 +34,7 @@ describe('Portable CRUD Harness (client-lib)', () => {
 		if (!instructionsDir) throw new Error('Failed to resolve INSTRUCTIONS_DIR');
 		// Propagate so spawned server child picks it up.
 		process.env.INSTRUCTIONS_DIR = instructionsDir;
-		process.env.MCP_ENABLE_MUTATION = '1';
+		process.env.MCP_MUTATION = '1';
 
 		const id = process.env.PORTABLE_HARNESS_ID || `portable-harness-${Date.now()}`;
 		const initialBody = 'Harness initial body';

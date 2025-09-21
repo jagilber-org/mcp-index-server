@@ -7,7 +7,7 @@ import { computeGovernanceHash, ensureLoaded } from '../services/catalogContext'
 const DIR = path.join(process.cwd(),'tmp','gov-hash-stability');
 
 beforeAll(async () => {
-  process.env.MCP_ENABLE_MUTATION = '1';
+  process.env.MCP_MUTATION = '1';
   process.env.MCP_MANIFEST_WRITE = '1';
   process.env.INSTRUCTIONS_DIR = DIR;
   fs.rmSync(DIR,{recursive:true,force:true});

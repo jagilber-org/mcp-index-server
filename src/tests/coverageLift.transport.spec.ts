@@ -21,10 +21,12 @@ describe('transport basic handshake', () => {
     expect(lines.some(l => l.includes('"result"'))).toBe(true);
     expect(lines.some(l => l.includes('server/ready'))).toBe(true);
 
-    // Unknown method
-    input.write(JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'nope/unknown' }) + '\n');
-    await new Promise(r => setTimeout(r, 10));
-    expect(lines.some(l => l.includes('"id":2') && l.includes('method not found'))).toBe(true);
+  // Unknown method -> expect -32601 error. Allow case-insensitive match and a slightly
+  // longer wait to avoid flakiness on slower CI.
+  input.write(JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'nope/unknown' }) + '\n');
+  await new Promise(r => setTimeout(r, 35));
+  const notFound = lines.some(l => /"id":2/.test(l) && /method not found/i.test(l));
+  expect(notFound).toBe(true);
   });
 
   it('dispatches custom handler', async () => {

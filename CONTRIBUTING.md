@@ -40,6 +40,15 @@ If an absolutely new capability requires configuration:
 
 PRs adding raw `process.env.X` reads outside the config module will be requested to refactor before merge.
 
+### Automated Enforcement
+
+An automated guard (`npm run guard:env`) executes during `build:verify` and CI to block newly introduced direct `process.env.*` reads. If your change legitimately needs a bootstrap-time read (rare), either:
+
+1. Route through `runtimeConfig.ts` (preferred), or
+2. Add a narrowly scoped allowlist pattern with justification in `scripts/enforce-config-usage.ts` (include a comment referencing the follow-up issue to migrate/remove it).
+
+Do not silence the guard by broadening allowlists—refactor instead. Enforcement failures list file:line with a remediation suggestion.
+
 ## Security
 
 Do not include secrets in commits. Report vulnerabilities per `SECURITY.md`.

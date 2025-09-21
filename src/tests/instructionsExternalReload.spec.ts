@@ -53,7 +53,7 @@ describe('instructions: external file visibility + reload', () => {
       const mod = await import('../../portable-mcp-client/client-lib.mjs');
       connect = mod.connect;
     }
-    const conn = await connect({ command:'node', args:['dist/server/index.js'], envOverrides:{ INSTRUCTIONS_DIR: tmpDir, MCP_ENABLE_MUTATION:'1' } });
+  const conn = await connect({ command:'node', args:['dist/server/index.js'], envOverrides:{ INSTRUCTIONS_DIR: tmpDir, MCP_MUTATION:'1' } });
     client = conn.client; transport = conn.transport;
   }, 30000);
 

@@ -149,7 +149,7 @@ describe('graph/export', () => {
     // Add new instruction which shares a category with existing to create at least one new edge
     const entry = { id:'z-new', title:'z-new', body:'z', priority:10, audience:'all', requirement:'optional', categories:['shared'], schemaVersion:'v3' };
   // Enable direct mutation for this test (avoids using dispatch abstraction)
-  process.env.MCP_ENABLE_MUTATION = '1';
+  process.env.MCP_MUTATION = '1';
   await callTool<any>('instructions/add', { entry, overwrite:true, lax:true });
     const after = await callTool<any>('graph/export', {});
     // Node count increases

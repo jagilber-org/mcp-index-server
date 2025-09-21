@@ -1,18 +1,18 @@
 {
   "version": 1,
-  "generatedAt": "2025-09-20T12:23:53.929Z",
-  "count": 99,
-  "hash": "c980ea67ccd04fac675dfd2743bddabcd450bb6bbbfbb99057cea8ebb45d2979",
+  "generatedAt": "2025-09-21T12:41:21.726Z",
+  "count": 98,
+  "hash": "bf50cbaf90afa2be635bbbd3e28c9b73022df57202a8c1621886ed8175b01fce",
   "summary": {
     "scanned": 103,
-    "accepted": 99,
-    "skipped": 4,
+    "accepted": 98,
+    "skipped": 5,
     "reasons": {
-      "ignored:governance-denylist": 1,
+      "ignored:governance-denylist": 2,
       "ignored:non-instruction-config": 3
     },
     "salvage": {
-      "audience": 44,
+      "audience": 43,
       "requirement": 27,
       "requirementFreeform": 26,
       "audienceInvalid": 15,
@@ -23,16 +23,6 @@
     }
   },
   "entries": [
-    {
-      "id": "001-lifecycle-bootstrap",
-      "title": "Lifecycle Bootstrap: Local-First Instruction Strategy",
-      "priority": 10,
-      "priorityTier": "P1",
-      "audience": "group",
-      "requirement": "recommended",
-      "sourceHash": "9bd6f557bdd35d631ff6fc03054ccc7cbd0104dc815998ab026da1b2503e91a4",
-      "bodyHash": "9bd6f557bdd35d631ff6fc03054ccc7cbd0104dc815998ab026da1b2503e91a4"
-    },
     {
       "id": "activate-azure-devops-discovery",
       "title": "Azure DevOps MCP Server Discovery Session",

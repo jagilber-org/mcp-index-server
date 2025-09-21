@@ -25,7 +25,8 @@ export async function performHandshake(opts?: { cwd?: string; protocolVersion?: 
       cwd = process.cwd();
     }
   }
-  const enableMutationEnv = { MCP_ENABLE_MUTATION: '1' };
+  // Consolidated mutation flag (legacy MCP_ENABLE_MUTATION retained elsewhere for backward compat warnings)
+  const enableMutationEnv = { MCP_MUTATION: '1' };
   const server = spawn(process.execPath, [dist], { stdio: ['pipe','pipe','pipe'], env: { ...process.env, ...enableMutationEnv, ...(opts?.extraEnv||{}) } });
   const parser = new StdioFramingParser();
   let sawSentinel = false;

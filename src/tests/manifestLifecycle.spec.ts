@@ -8,7 +8,7 @@ const MANIFEST_TEST_DIR = path.join(process.cwd(), 'tmp', 'manifest-lifecycle');
 
 beforeAll(async () => {
   // Ensure mutation + manifest writing enabled for all tests in this file
-  process.env.MCP_ENABLE_MUTATION = '1';
+  process.env.MCP_MUTATION = '1';
   process.env.MCP_MANIFEST_WRITE = '1';
   process.env.INSTRUCTIONS_DIR = MANIFEST_TEST_DIR; // must be set before handler imports
   fs.rmSync(MANIFEST_TEST_DIR, { recursive: true, force: true });

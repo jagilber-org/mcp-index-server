@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { getRuntimeConfig } from '../config/runtimeConfig.js';
 import { buildContentLengthFrame } from './util/stdioFraming.js';
 import { performHandshake } from './util/handshakeHelper.js';
 import fs from 'fs';
@@ -8,9 +9,8 @@ import path from 'path';
 // Fails fast on protocol contamination (non-JSON stdout lines containing braces/quotes)
 
 describe('createReadSmoke', () => {
-  const FAST_COVERAGE = process.env.FAST_COVERAGE === '1';
-  // Skip this production-deployment smoke test during fast/coverage runs to avoid external dependency timing.
-  const maybeIt = FAST_COVERAGE ? it.skip : it;
+  const cfg = getRuntimeConfig();
+  const maybeIt = cfg.coverage.fastMode ? it.skip : it;
   maybeIt('initialize → tools/list → add → get works', async () => {
     const PRODUCTION_DIR = 'C:/mcp/mcp-index-server-prod';
     const distPath = path.join(PRODUCTION_DIR, 'dist', 'server', 'index.js');
@@ -23,7 +23,7 @@ describe('createReadSmoke', () => {
     const TEST_ID = 'smoke-' + Date.now();
 
     // Provide a longer per-id wait for production path (larger instruction set) or env override.
-    const WAIT_ID_TIMEOUT_MS = Number(process.env.SMOKE_WAIT_ID_TIMEOUT_MS || 20000);
+  const WAIT_ID_TIMEOUT_MS = cfg.timing('smoke.waitId', 20000)!;
 
     // Use helper (node server) instead of PowerShell start script for deterministic handshake speed.
     const { server, parser } = await performHandshake({ cwd: PRODUCTION_DIR, protocolVersion:'2025-06-18' });

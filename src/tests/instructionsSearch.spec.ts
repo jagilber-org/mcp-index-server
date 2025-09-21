@@ -51,7 +51,7 @@ describe('instructions search endpoint', () => {
       // Try to start a dashboard-enabled server programmatically.
       try {
         process.env.MCP_DASHBOARD = '1';
-        process.env.MCP_ENABLE_MUTATION = '1';
+  process.env.MCP_MUTATION = '1';
         // Ensure a deterministic port for tests to probe quickly
         process.env.MCP_DASHBOARD_PORT = process.env.MCP_DASHBOARD_PORT || '8787';
         // eslint-disable-next-line @typescript-eslint/no-var-requires

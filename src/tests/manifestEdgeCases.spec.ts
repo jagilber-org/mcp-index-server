@@ -43,7 +43,7 @@ describe('manifest edge cases', () => {
   maybeIt('respects MCP_MANIFEST_WRITE=0 (no file produced)', async () => {
     const start = readManifest(); // may exist from previous runs
     // spawn with write disabled
-    const { server, parser } = await performHandshake({ extraEnv:{ MCP_ENABLE_MUTATION:'1', MCP_MANIFEST_WRITE:'0' }});
+  const { server, parser } = await performHandshake({ extraEnv:{ MCP_MUTATION:'1', MCP_MANIFEST_WRITE:'0' }});
     const send = (m:unknown)=> server.stdin.write(buildContentLengthFrame(m));
     // perform a simple add mutation which would normally trigger manifest update
     const id = 'mw-disabled-' + Date.now();
@@ -66,7 +66,7 @@ describe('manifest edge cases', () => {
     writeCorruptedManifest();
     const beforeTxt = fs.readFileSync(path.join(process.cwd(),'snapshots','catalog-manifest.json'),'utf8');
     expect(beforeTxt.startsWith('{"version":1,"entries":[{"id":"broken')).toBe(true);
-    const { server, parser } = await performHandshake({ extraEnv:{ MCP_ENABLE_MUTATION:'1', MCP_MANIFEST_WRITE:'1' }});
+  const { server, parser } = await performHandshake({ extraEnv:{ MCP_MUTATION:'1', MCP_MANIFEST_WRITE:'1' }});
     const send = (m:unknown)=> server.stdin.write(buildContentLengthFrame(m));
     const id = 'mw-repair-' + Date.now();
     send({ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id, title:'mw repair', body:'body', priority:2, audience:'all', requirement:'optional', categories:['repair'] }, overwrite:true, lax:true }}});

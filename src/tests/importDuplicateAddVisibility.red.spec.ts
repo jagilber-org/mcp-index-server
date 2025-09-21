@@ -20,7 +20,7 @@ if (!runRed) {
 
 describe('RED: import -> duplicate add -> immediate get visibility (mcp-server-testing-patterns-2025)', () => {
   it('import then duplicate add must retain immediate get visibility', async () => {
-    process.env.MCP_ENABLE_MUTATION = '1';
+  process.env.MCP_MUTATION = '1';
     process.env.PORTABLE_HARNESS_USE_REPO_DIR = '1';
     const id = 'mcp-server-testing-patterns-2025';
     const instructionsDir = process.env.TEST_INSTRUCTIONS_DIR || `${process.cwd()}\\instructions`;

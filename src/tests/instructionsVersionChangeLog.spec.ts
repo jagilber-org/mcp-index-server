@@ -14,7 +14,7 @@ const TMP_DIR = path.join(process.cwd(), 'tmp', 'version-changelog');
 
 describe('instructions governance: version & changeLog CRUD', () => {
   beforeAll(async () => {
-    process.env.MCP_ENABLE_MUTATION = '1';
+  process.env.MCP_MUTATION = '1';
     process.env.INSTRUCTIONS_DIR = TMP_DIR; // isolate
     fs.rmSync(TMP_DIR, { recursive: true, force: true });
     fs.mkdirSync(TMP_DIR, { recursive: true });

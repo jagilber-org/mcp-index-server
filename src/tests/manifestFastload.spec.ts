@@ -16,7 +16,7 @@ function readManifest(){
 
 describe('manifest fastload shortcut', () => {
   beforeAll(async () => {
-    process.env.MCP_ENABLE_MUTATION = '1';
+  process.env.MCP_MUTATION = '1';
     process.env.MCP_MANIFEST_WRITE = '1';
     const TMP = path.join(process.cwd(),'tmp','manifest-fastload');
     fs.rmSync(TMP, { recursive: true, force: true });

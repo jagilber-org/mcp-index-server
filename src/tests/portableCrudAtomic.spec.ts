@@ -30,7 +30,7 @@ describe('Portable CRUD Atomicity (portable client)', () => {
     }
     if(!instructionsDir) throw new Error('Failed to resolve INSTRUCTIONS_DIR');
     process.env.INSTRUCTIONS_DIR = instructionsDir;
-    process.env.MCP_ENABLE_MUTATION = '1';
+  process.env.MCP_MUTATION = '1';
 
     const id = 'portable-atomic-' + Date.now();
     const client = await createInstructionClient({});

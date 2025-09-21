@@ -42,7 +42,7 @@ describe('Portable CRUD Persistence (restart)', () => {
     fs.mkdirSync(instructionsDir, { recursive: true });
 
     process.env.INSTRUCTIONS_DIR = instructionsDir;
-    process.env.MCP_ENABLE_MUTATION = '1';
+  process.env.MCP_MUTATION = '1';
 
     const id = 'persist-restart-' + Date.now();
     const BODY = 'Persistence body test ' + new Date().toISOString();

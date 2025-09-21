@@ -39,7 +39,7 @@ describe('bootstrap gating', () => {
     // short‑circuit gating. This ensures we exercise the true token flow.
     const isolated = fs.mkdtempSync(path.join(os.tmpdir(), 'bootstrap-gating-'));
     // Explicitly disable auto-confirm so we validate genuine gating behavior.
-    proc = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', MCP_BOOTSTRAP_AUTOCONFIRM:'0', INSTRUCTIONS_DIR: isolated } });
+  proc = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_MUTATION:'1', MCP_BOOTSTRAP_AUTOCONFIRM:'0', INSTRUCTIONS_DIR: isolated } });
     // Handshake
     send(proc,{ jsonrpc:'2.0', id:1, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'bootstrap-test', version:'0.0.0' }, capabilities:{ tools:{} } } });
     await waitForId(proc,1);
@@ -71,7 +71,7 @@ describe('bootstrap gating', () => {
     // Force very short TTL. Use isolated instructions directory again to avoid
     // bleed-over from earlier tests.
     const isolated = fs.mkdtempSync(path.join(os.tmpdir(), 'bootstrap-gating-expire-'));
-    proc = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', MCP_BOOTSTRAP_TOKEN_TTL_SEC:'1', MCP_BOOTSTRAP_AUTOCONFIRM:'0', INSTRUCTIONS_DIR: isolated } });
+  proc = spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_MUTATION:'1', MCP_BOOTSTRAP_TOKEN_TTL_SEC:'1', MCP_BOOTSTRAP_AUTOCONFIRM:'0', INSTRUCTIONS_DIR: isolated } });
     send(proc,{ jsonrpc:'2.0', id:11, method:'initialize', params:{ protocolVersion:'2025-06-18', clientInfo:{ name:'bootstrap-expire', version:'0.0.0' }, capabilities:{ tools:{} } } });
     await waitForId(proc,11);
     send(proc,{ jsonrpc:'2.0', id:12, method:'tools/call', params:{ name:'bootstrap/request', arguments:{ rationale:'expire test' } } });

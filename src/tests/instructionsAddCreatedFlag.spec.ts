@@ -7,7 +7,7 @@ import { waitForDist } from './distReady';
 import { waitFor, getResponse, parseToolPayload } from './testUtils';
 
 function start(dir:string){
-  return spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_ENABLE_MUTATION:'1', INSTRUCTIONS_DIR:dir } });
+  return spawn('node',[path.join(__dirname,'../../dist/server/index.js')], { stdio:['pipe','pipe','pipe'], env:{ ...process.env, MCP_MUTATION:'1', INSTRUCTIONS_DIR:dir } });
 }
 function send(proc: ReturnType<typeof start>, msg: Record<string, unknown>){ proc.stdin?.write(JSON.stringify(msg)+'\n'); }
 function find(out:string[], id:number){ return out.find(l=> { try { return JSON.parse(l).id===id; } catch { return false; } }); }

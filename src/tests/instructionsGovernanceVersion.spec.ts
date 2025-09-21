@@ -8,7 +8,7 @@ const TMP_DIR = path.join(process.cwd(), 'tmp', 'governance-version');
 describe('instructions/add governance versioning', () => {
   let add: any; let dispatch: (action:string, params:Record<string,any>)=>Promise<any>;
   beforeAll(async () => {
-    process.env.MCP_ENABLE_MUTATION = '1';
+  process.env.MCP_MUTATION = '1';
     process.env.INSTRUCTIONS_DIR = TMP_DIR;
     fs.rmSync(TMP_DIR, { recursive: true, force: true });
     fs.mkdirSync(TMP_DIR, { recursive: true });

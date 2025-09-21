@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from 'vitest';
+import { getRuntimeConfig } from '../config/runtimeConfig.js';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
@@ -13,7 +14,9 @@ function wait(ms:number){ return new Promise(r=>setTimeout(r,ms)); }
 // the UI "synthetic activity" button.
 
 describe('Dashboard synthetic activity logging', () => {
-  const FAST_COVERAGE = process.env.FAST_COVERAGE === '1';
+  // Centralized runtime configuration (coverage fast mode + synthetic timing overrides)
+  const cfg = getRuntimeConfig();
+  const FAST_COVERAGE = cfg.coverage.fastMode;
   const logsDir = path.join(process.cwd(),'logs');
   const logFile = path.join(logsDir,'mcp-server.log');
   let proc: ReturnType<typeof spawn> | null = null;
@@ -21,10 +24,10 @@ describe('Dashboard synthetic activity logging', () => {
   let baseUrl: string | undefined;
 
   // Env-driven tuning for stability / CI variance
-  const READY_TIMEOUT_MS = Number(process.env.SYN_ACTIVITY_READY_MS || 12000); // was 8000
-  const POLL_DEADLINE_MS = Number(process.env.SYN_ACTIVITY_DEADLINE_MS || 15000); // was 9000
-  const ITERATIONS = Number(process.env.SYN_ACTIVITY_ITERATIONS || 6);
-  const CONCURRENCY = Number(process.env.SYN_ACTIVITY_CONCURRENCY || 3);
+  const READY_TIMEOUT_MS = cfg.timing('synthetic.ready', 12000)!; // consolidated timing key
+  const POLL_DEADLINE_MS = cfg.timing('synthetic.deadline', 15000)!;
+  const ITERATIONS = cfg.timing('synthetic.iterations', 6)!; // reused timing map for numeric counts
+  const CONCURRENCY = cfg.timing('synthetic.concurrency', 3)!;
   const DIST_INDEX = path.join(process.cwd(),'dist','server','index.js');
   const DEPLOY_PRESENT = fs.existsSync(DIST_INDEX);
   if(!DEPLOY_PRESENT){

@@ -36,7 +36,8 @@ describe('manifest edge cases', () => {
   if(!DEPLOY_PRESENT){
     // If build artifacts missing (e.g. running in a minimal environment) skip gracefully.
     // Returning here keeps the suite green while signaling intent.
-    it.skip('skip manifest edge cases (dist build missing)', () => {});
+    // SKIP_OK: conditional infrastructure-dependent test; allowed to skip when dist build absent in minimal contexts.
+    it.skip('skip manifest edge cases (dist build missing)', () => {}); // SKIP_OK
     return;
   }
 

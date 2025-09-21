@@ -31,7 +31,8 @@ describe('Dashboard synthetic activity logging', () => {
   const DIST_INDEX = path.join(process.cwd(),'dist','server','index.js');
   const DEPLOY_PRESENT = fs.existsSync(DIST_INDEX);
   if(!DEPLOY_PRESENT){
-    test.skip('skip synthetic activity logging (dist build missing)', () => {});
+    // SKIP_OK: This integration test requires built dist/server/index.js for dashboard endpoints; allow skip in minimal env.
+    test.skip('skip synthetic activity logging (dist build missing)', () => {}); // SKIP_OK
   }
 
   beforeAll(async () => {

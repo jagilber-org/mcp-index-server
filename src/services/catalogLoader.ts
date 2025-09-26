@@ -12,6 +12,7 @@ import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import schema from '../../schemas/instruction.schema.json';
 // Normal-verbosity tracing (level 1+) for per-file load lifecycle
 import { emitTrace, traceEnabled } from './tracing';
+import { getRuntimeConfig } from '../config/runtimeConfig';
 
 export interface CatalogLoadResult {
   entries: InstructionEntry[];
@@ -35,7 +36,7 @@ export interface CatalogLoadSummary {
 }
 
 export class CatalogLoader {
-  constructor(private readonly baseDir: string, private readonly classifier = new ClassificationService()){}
+  constructor(private readonly baseDir: string = getRuntimeConfig().catalog.baseDir, private readonly classifier = new ClassificationService()){}
 
   /**
    * Robust JSON file reader with retry/backoff for transient Windows / network FS issues (EPERM/EBUSY/EACCES)
@@ -43,8 +44,9 @@ export class CatalogLoader {
    * to momentary locks while another process is atomically renaming/writing.
    */
   private readJsonWithRetry(file: string): unknown {
-    const maxAttempts = Math.max(1, Number(process.env.MCP_READ_RETRIES)||3);
-    const baseBackoff = Math.max(1, Number(process.env.MCP_READ_BACKOFF_MS)||8);
+    const { attempts, backoffMs } = getRuntimeConfig().catalog.readRetries;
+    const maxAttempts = Math.max(1, attempts);
+    const baseBackoff = Math.max(1, backoffMs);
     let lastErr: unknown = null;
     for(let attempt=1; attempt<=maxAttempts; attempt++){
       try {
@@ -67,6 +69,8 @@ export class CatalogLoader {
   }
 
   load(): CatalogLoadResult {
+    const runtimeConfig = getRuntimeConfig();
+    const catalogConfig = runtimeConfig.catalog;
     const dir = path.resolve(this.baseDir);
     const loadStart = Date.now();
     if(traceEnabled(1)){
@@ -78,15 +82,20 @@ export class CatalogLoader {
     // emit them as JSONL at the end of the load cycle. This creates a lightweight, append-
     // only forensic trail for production migrations without impacting the hot path when
     // disabled.
-    const normLogEnv = process.env.MCP_CATALOG_NORMALIZATION_LOG; // '1' => default path, otherwise explicit file path
+    const normalizationSetting = catalogConfig.normalizationLog;
+    const normLogTarget = normalizationSetting === true
+      ? path.join(process.cwd(), 'logs', 'catalog-normalization.log')
+      : typeof normalizationSetting === 'string'
+        ? normalizationSetting
+        : undefined;
     const normLogRecords: Array<Record<string, unknown>> = [];
   // Lightweight in-process memoization to reduce repeated parse/validate cost when ALWAYS_RELOAD is set.
-  // Enabled if MCP_CATALOG_MEMOIZE=1 OR (INSTRUCTIONS_ALWAYS_RELOAD=1 and MCP_CATALOG_MEMOIZE not explicitly disabled with 0).
+  // Enabled when catalog memoization is active, or when reloadAlways is true without an explicit memoize disable flag.
   // Semantics preserved: directory is still scanned each load; changed files (mtime/size) are re-read.
   // Cache key: absolute file path; validation skipped only if size + mtime unchanged.
   // NOTE: This deliberately trusts OS mtime granularity (sufficient for test/runtime reload cadence).
-  const memoryCacheEnabled = (process.env.MCP_CATALOG_MEMOIZE === '1') || (process.env.INSTRUCTIONS_ALWAYS_RELOAD === '1' && process.env.MCP_CATALOG_MEMOIZE !== '0');
-  const hashMemoEnabled = process.env.MCP_CATALOG_MEMOIZE_HASH === '1';
+  const memoryCacheEnabled = catalogConfig.memoize || (catalogConfig.reloadAlways && !catalogConfig.memoizeDisabledExplicitly);
+  const hashMemoEnabled = catalogConfig.memoizeHash;
   type CacheEntry = { mtimeMs: number; size: number; entry: InstructionEntry; contentHash?: string; buildSig: string };
   const buildSig = `schema:${SCHEMA_VERSION}`; // extend with classifier / normalization version if those become versioned
   // Module-level singleton map (attached to globalThis to survive module reloads in test environments without duplicating state)
@@ -121,7 +130,7 @@ export class CatalogLoader {
   // File-level trace (opt-in) surfaces every scanned file decision so higher-level diagnostics
   // can correlate missingOnCatalog IDs with explicit acceptance / rejection reasons. Enable by
   // setting MCP_CATALOG_FILE_TRACE=1 together with MCP_TRACE_ALL for broader context.
-  const fileTraceEnabled = process.env.MCP_CATALOG_FILE_TRACE === '1';
+  const fileTraceEnabled = catalogConfig.fileTrace;
   const trace: { file:string; accepted:boolean; reason?:string }[] | undefined = fileTraceEnabled ? [] : undefined;
   // New lightweight always-available (level>=1) sequential tracing with cumulative counters.
   let scannedSoFar = 0;
@@ -137,7 +146,7 @@ export class CatalogLoader {
   // Emission gating: in high-volume scenarios (CI coverage runs), per-file events can create
   // extremely large logs that exceed fetch limits. Set MCP_CATALOG_EVENT_SILENT=1 to suppress
   // individual file events while preserving trace (when enabled) and the final summary.
-  const suppressCatalogEvents = process.env.MCP_CATALOG_EVENT_SILENT === '1';
+  const suppressCatalogEvents = catalogConfig.eventSilent;
   const emitCatalogEvent = (ev: Record<string, unknown>) => {
     if (suppressCatalogEvents) return; // fast path
     try {
@@ -621,9 +630,9 @@ export class CatalogLoader {
       fs.renameSync(tmpSkipped, skippedPath);
     } catch { /* ignore skipped artifact failure */ }
     // Emit normalization audit log if enabled and we have records
-    if(normLogEnv && normLogRecords.length){
+    if(normLogTarget && normLogRecords.length){
       try {
-  const target = normLogEnv === '1' ? path.join(process.cwd(), 'logs', 'normalization-audit.jsonl') : normLogEnv;
+        const target = normLogTarget;
         const targetDir = path.dirname(target);
         if(!fs.existsSync(targetDir)){
           try { fs.mkdirSync(targetDir, { recursive: true }); } catch { /* ignore */ }

@@ -4,11 +4,19 @@ import path from 'path';
 import os from 'os';
 import fs from 'fs';
 import { waitFor } from './testUtils';
+import { getRuntimeConfig } from '../config/runtimeConfig';
 
 // Red test capturing reported scenario: add (with overwrite:true) returns created:false, overwritten:true, verified:true
 // yet subsequent immediate get reports notFound:true. This indicates catalog visibility mismatch after write.
 
 function startServer(instructionsDir: string, traces: string[]){
+  const tracingDefaults = getRuntimeConfig().tracing;
+  const resolvedTraceLevel = (() => {
+    if(tracingDefaults.level === 'trace' || tracingDefaults.level === 'verbose') return tracingDefaults.level;
+    return 'core';
+  })();
+  const resolvedCategories = Array.from(tracingDefaults.categories).join(' ');
+  const resolvedFsync = tracingDefaults.fsync ? '1' : '0';
   const proc = spawn(
     process.execPath,
     [path.join(__dirname,'../../dist/server/index.js')],
@@ -21,9 +29,9 @@ function startServer(instructionsDir: string, traces: string[]){
         // Visibility / tracing flags for diagnostic capture (forced persistent)
         MCP_VISIBILITY_DIAG:'1',
         MCP_TRACE_PERSIST:'1', // ensure trace JSONL written under logs/trace
-        MCP_TRACE_LEVEL: process.env.MCP_TRACE_LEVEL || 'core',
-        MCP_TRACE_CATEGORIES: process.env.MCP_TRACE_CATEGORIES || '',
-        MCP_TRACE_FSYNC: process.env.MCP_TRACE_FSYNC || '1', // force fsync for durability (diagnostic cost acceptable in red test)
+        MCP_TRACE_LEVEL: resolvedTraceLevel,
+        MCP_TRACE_CATEGORIES: resolvedCategories,
+        MCP_TRACE_FSYNC: resolvedFsync || '1', // prefer runtime config but ensure durability fallback
       }
     }
   );

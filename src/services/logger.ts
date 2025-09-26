@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { getRuntimeConfig } from '../config/runtimeConfig';
 
 export interface LogRecord {
   ts: string; // ISO timestamp
@@ -16,30 +17,16 @@ export interface LogRecord {
 // Simple correlation id helper (call per incoming JSON-RPC if desired)
 export function newCorrelationId(){ return crypto.randomBytes(8).toString('hex'); }
 
-const ENABLE_JSON = process.env.MCP_LOG_JSON === '1';
 let logFileHandle: fs.WriteStream | null = null;
 
-// Resolve and normalize MCP_LOG_FILE value (supports sentinel values like '1', 'true')
-function resolveLogFileEnv(): string | null {
-  const raw = process.env.MCP_LOG_FILE;
-  if (!raw) return null;
-  // If user supplied a sentinel boolean-like value, choose a sensible default inside ./logs
-  if (raw === '1' || /^(true|yes|on)$/i.test(raw)) {
-    const defaultDir = path.join(process.cwd(), 'logs');
-    const resolved = path.join(defaultDir, 'mcp-server.log');
-    try {
-      if (!fs.existsSync(defaultDir)) fs.mkdirSync(defaultDir, { recursive: true });
-      // Mutate env so downstream (ApiRoutes) sees the actual resolved file
-      process.env.MCP_LOG_FILE = resolved;
-    } catch { /* ignore – fallback will be caught later */ }
-    return resolved;
-  }
-  return raw;
+function loggingCfg(){
+  return getRuntimeConfig().logging;
 }
 
 // Initialize file logging if MCP_LOG_FILE is specified
 function initializeFileLogging(): void {
-  const logFile = resolveLogFileEnv();
+  const cfg = loggingCfg();
+  const logFile = cfg.file;
   if (!logFile || logFileHandle) return; // Already initialized or not requested
 
   try {
@@ -81,11 +68,11 @@ function initializeFileLogging(): void {
         created: !!stats,
         size: stats?.size ?? 0,
         pid: process.pid,
-        sentinel: process.env.MCP_LOG_FILE === logFile ? false : /^(1|true|yes|on)$/i.test(process.env.MCP_LOG_FILE || ''),
+        sentinel: cfg.sentinelRequested,
         cwd: process.cwd()
       };
       // Write structured line directly (do not recurse emit to avoid double header or recursion risk)
-      const line = process.env.MCP_LOG_JSON === '1' ? JSON.stringify(diag) : `${diag.ts} INFO logger_init ${diag.file} size=${diag.size} cwd=${diag.cwd}`;
+      const line = cfg.json ? JSON.stringify(diag) : `${diag.ts} INFO logger_init ${diag.file} size=${diag.size} cwd=${diag.cwd}`;
       console.error(line);
       if (logFileHandle && !logFileHandle.destroyed) {
         try { logFileHandle.write(line + '\n'); } catch { /* ignore */ }
@@ -105,20 +92,22 @@ function initializeFileLogging(): void {
 // emit() call and incorrectly report "no log file". Normal explicit paths
 // remain lazy to avoid unnecessary fd usage when logger never used.
 try {
-  if (process.env.MCP_LOG_FILE && (process.env.MCP_LOG_FILE === '1' || /^(true|yes|on)$/i.test(process.env.MCP_LOG_FILE))) {
+  const cfg = loggingCfg();
+  if(cfg.file && cfg.sentinelRequested){
     initializeFileLogging();
   }
 } catch { /* ignore eager init errors */ }
 
 function emit(rec: LogRecord){
   // Initialize file logging on first emit (lazy initialization)
-  if (!logFileHandle && process.env.MCP_LOG_FILE) {
+  const cfg = loggingCfg();
+  if (!logFileHandle && cfg.file) {
     initializeFileLogging();
   }
 
   let logLine: string;
   
-  if(ENABLE_JSON){
+  if(cfg.json){
     // Structured one-line JSON
     logLine = JSON.stringify(rec);
   } else {
@@ -137,7 +126,7 @@ function emit(rec: LogRecord){
     try {
       logFileHandle.write(logLine + '\n');
       // Optional deterministic flushing for tests / critical observability. Enabled with MCP_LOG_SYNC=1
-      if(process.env.MCP_LOG_SYNC === '1') {
+      if(cfg.sync) {
         try { fs.fsyncSync((logFileHandle as unknown as { fd: number }).fd); } catch { /* ignore fsync errors */ }
       }
     } catch { /* ignore file write failures */ }

@@ -16,6 +16,7 @@ import fs from 'fs';
 import path from 'path';
 import { dumpFlags, updateFlags } from '../../services/featureFlags.js';
 import { getFlagRegistrySnapshot } from '../../services/handlers.dashboardConfig.js';
+import { getRuntimeConfig } from '../../config/runtimeConfig';
 
 export interface ApiRoutesOptions {
   enableCors?: boolean;
@@ -85,7 +86,7 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
   // we aggregate all HTTP traffic under a single pseudo tool id: 'http/request'.
   // This can be disabled by setting MCP_HTTP_METRICS=0.
   try {
-    const enableHttpMetrics = process.env.MCP_HTTP_METRICS !== '0';
+    const enableHttpMetrics = getRuntimeConfig().dashboard.http.enableHttpMetrics;
     if (enableHttpMetrics) {
       router.use((req: Request, res: Response, next: () => void) => {
         const startNs = typeof process.hrtime === 'function' ? process.hrtime.bigint() : BigInt(Date.now()) * 1_000_000n;
@@ -305,11 +306,12 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
   router.get('/health', (_req: Request, res: Response) => {
     try {
       const snapshot = metricsCollector.getCurrentSnapshot();
-      const memUsage = snapshot.server.memoryUsage;
-      // Thresholds (configurable via env vars for tuning)
-      const memoryThreshold = parseFloat(process.env.MCP_HEALTH_MEMORY_THRESHOLD || '0.95'); // ratio
-      const errorRateThreshold = parseFloat(process.env.MCP_HEALTH_ERROR_THRESHOLD || '10'); // percent
-      const minUptimeMs = parseInt(process.env.MCP_HEALTH_MIN_UPTIME || '1000', 10);
+  const memUsage = snapshot.server.memoryUsage;
+  // Thresholds (configurable via runtime configuration)
+  const healthConfig = getRuntimeConfig().metrics.health;
+  const memoryThreshold = healthConfig.memoryThreshold;
+  const errorRateThreshold = healthConfig.errorRateThreshold;
+  const minUptimeMs = healthConfig.minUptimeMs;
 
       // Simple health indicators (boolean flags)
       const isHealthy = {
@@ -1171,7 +1173,7 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
             if(directiveLine) parts.push(directiveLine);
             parts.push(...filtered);
             mermaidSource = parts.join('\n');
-            if(process.env.MCP_DEBUG){
+            if (getRuntimeConfig().logging.verbose){
               // eslint-disable-next-line no-console
               console.debug('[graph/mermaid][filter:new]', { selectedIds: idFilter.length, selectedCategories: catFilter.length, kept: keepIds.size, totalLines: lines.length, emittedLines: parts.length });
             }
@@ -1602,14 +1604,20 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
   });
 
   // ===== Instruction Management Routes =====
-  const instructionsDir = process.env.MCP_INSTRUCTIONS_DIR || path.join(process.cwd(), 'instructions');
+  const resolveInstructionsDir = (): string => {
+    const config = getRuntimeConfig();
+    const configured = config.dashboard.admin.instructionsDir || config.catalog.baseDir;
+    return configured && configured.trim().length ? configured : path.join(process.cwd(), 'instructions');
+  };
 
-  function ensureInstructionsDir() {
+  function ensureInstructionsDir(): string {
+    const instructionsDir = resolveInstructionsDir();
     try {
       if (!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir, { recursive: true });
     } catch (e) {
       // ignore
     }
+    return instructionsDir;
   }
 
   /**
@@ -1617,7 +1625,7 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
    */
   router.get('/instructions', (_req: Request, res: Response) => {
     try {
-      ensureInstructionsDir();
+      const instructionsDir = ensureInstructionsDir();
       const classify = (basename: string): { category: string; sizeCategory: string } => {
         const lower = basename.toLowerCase();
         let category = 'general';
@@ -1750,7 +1758,7 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
    */
   router.get('/instructions/search', (req: Request, res: Response) => {
     try {
-      ensureInstructionsDir();
+      const instructionsDir = ensureInstructionsDir();
       const qRaw = String(req.query.q || '').trim();
       const query = qRaw.slice(0, 256); // guard length
       const limitRaw = parseInt(String(req.query.limit||'20'), 10);
@@ -1759,7 +1767,7 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
         return res.json({ success:true, query, count:0, results:[], note:'query_too_short' });
       }
       const qLower = query.toLowerCase();
-      const files = fs.readdirSync(instructionsDir).filter(f=> f.toLowerCase().endsWith('.json'));
+  const files = fs.readdirSync(instructionsDir).filter(f=> f.toLowerCase().endsWith('.json'));
       const results: Array<{ name:string; categories:string[]; size:number; mtime:number; snippet:string }> = [];
       for(const f of files){
         if(results.length >= limit) break;
@@ -1854,7 +1862,7 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
    */
   router.get('/instructions/:name', (req: Request, res: Response) => {
     try {
-      ensureInstructionsDir();
+      const instructionsDir = ensureInstructionsDir();
       const file = path.join(instructionsDir, req.params.name + '.json');
       if (!fs.existsSync(file)) return res.status(404).json({ success:false, error:'Not found' });
       const content = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -1870,7 +1878,7 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
    */
   router.post('/instructions', (req: Request, res: Response) => {
     try {
-      ensureInstructionsDir();
+      const instructionsDir = ensureInstructionsDir();
       const { name, content } = req.body || {};
       if (!name || !content) return res.status(400).json({ success:false, error:'Missing name or content' });
       const safeName = String(name).replace(/[^a-zA-Z0-9-_]/g,'-');
@@ -1888,7 +1896,7 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
    */
   router.put('/instructions/:name', (req: Request, res: Response) => {
     try {
-      ensureInstructionsDir();
+      const instructionsDir = ensureInstructionsDir();
       const { content } = req.body || {};
       const name = req.params.name;
       if (!content) return res.status(400).json({ success:false, error:'Missing content' });
@@ -1906,7 +1914,7 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
    */
   router.delete('/instructions/:name', (req: Request, res: Response) => {
     try {
-      ensureInstructionsDir();
+      const instructionsDir = ensureInstructionsDir();
       const file = path.join(instructionsDir, req.params.name + '.json');
       if (!fs.existsSync(file)) return res.status(404).json({ success:false, error:'Not found' });
       fs.unlinkSync(file);
@@ -1921,7 +1929,8 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
    */
   router.get('/logs', (req: Request, res: Response) => {
     try {
-      const logFile = process.env.MCP_LOG_FILE;
+      const loggingConfig = getRuntimeConfig().logging;
+      const logFile = loggingConfig.file;
       const lines = req.query.lines ? parseInt(req.query.lines as string, 10) : 100;
       const follow = req.query.follow === 'true';
   const raw = req.query.raw === '1' || req.query.raw === 'true';
@@ -1929,7 +1938,7 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
       if (!logFile || !fs.existsSync(logFile)) {
         return res.json({
           logs: [],
-          message: 'No log file configured or file not found. Set MCP_LOG_FILE environment variable.',
+          message: 'No log file configured or file not found. Set MCP_LOG_FILE environment variable or update runtime logging configuration.',
           timestamp: Date.now(),
           totalLines: 0
         });
@@ -1954,7 +1963,7 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
         timestamp: Date.now(),
         totalLines: allLines.length,
         showing: tailLines.length,
-        file: logFile,
+        file: loggingConfig.rawFileValue ?? logFile,
         follow: follow,
         mode: raw ? 'text' : 'json'
       });
@@ -1973,12 +1982,13 @@ export function createApiRoutes(options: ApiRoutesOptions = {}): Router {
    * GET /api/logs/stream - Server-Sent Events stream for real-time log tailing
    */
   router.get('/logs/stream', (req: Request, res: Response) => {
-    const logFile = process.env.MCP_LOG_FILE;
+    const loggingConfig = getRuntimeConfig().logging;
+    const logFile = loggingConfig.file;
     
     if (!logFile || !fs.existsSync(logFile)) {
       return res.status(404).json({
         error: 'Log file not available',
-        message: 'No log file configured or file not found. Set MCP_LOG_FILE environment variable.'
+        message: 'No log file configured or file not found. Set MCP_LOG_FILE environment variable or update runtime logging configuration.'
       });
     }
 

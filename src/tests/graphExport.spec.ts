@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 
-import { callTool } from './testUtils';
 import fs from 'fs';
 import path from 'path';
+import { reloadRuntimeConfig } from '../config/runtimeConfig';
+import { callTool } from './testUtils';
 
 function writeInstruction(id:string, body:string, categories:string[], primary?:string){
   const dir = process.env.INSTRUCTIONS_DIR || path.join(process.cwd(),'instructions');
@@ -47,6 +48,7 @@ describe('graph/export', () => {
     // isolate instructions root for this suite BEFORE registering handlers to avoid loading large repo catalog
     dir = path.join(process.cwd(),'tmp', `graph-test-${Date.now()}`);
     process.env.INSTRUCTIONS_DIR = dir;
+    reloadRuntimeConfig();
     // Dynamically import handlers AFTER env configured so initial ensureLoaded (if any) targets isolated dir
   await import('../services/handlers.graph.js');
   await import('../services/handlers.instructions.js');
@@ -64,6 +66,8 @@ describe('graph/export', () => {
     }
     delete process.env.GRAPH_INCLUDE_PRIMARY_EDGES;
     delete process.env.GRAPH_LARGE_CATEGORY_CAP;
+    delete process.env.MCP_MUTATION;
+    reloadRuntimeConfig();
     // seed default minimal catalog (a,b,c) unless a test wants a custom layout
     writeInstruction('a','body a',['alpha','shared'],'alpha');
     writeInstruction('b','body b',['beta','shared'],'beta');
@@ -109,6 +113,7 @@ describe('graph/export', () => {
 
   it('can exclude primary edges via env var', async () => {
     process.env.GRAPH_INCLUDE_PRIMARY_EDGES = '0';
+    reloadRuntimeConfig();
     const res = await callTool<any>('graph/export', {});
     // Expect only category edges
     expect(res.edges.length).toBeGreaterThan(0);
@@ -118,8 +123,9 @@ describe('graph/export', () => {
   it('adds skip note when category exceeds cap', async () => {
     // Build a large category exceeding cap=2
     process.env.GRAPH_LARGE_CATEGORY_CAP = '2';
-  // Disable primary edges so edge count expectation reflects category-only skip
-  process.env.GRAPH_INCLUDE_PRIMARY_EDGES = '0';
+    // Disable primary edges so edge count expectation reflects category-only skip
+    process.env.GRAPH_INCLUDE_PRIMARY_EDGES = '0';
+    reloadRuntimeConfig();
     // overwrite default seed: create three instructions sharing bigcat
     // (beforeEach seeded a,b,c; clear & add three in one large category)
     const d = process.env.INSTRUCTIONS_DIR!;
@@ -131,7 +137,7 @@ describe('graph/export', () => {
     invalidateFn?.();
     const res = await callTool<any>('graph/export', {});
     // No edges because pairwise skipped; note present
-  expect(res.edges.length).toBe(0);
+    expect(res.edges.length).toBe(0);
     expect(res.meta.notes?.some((n:string)=> n.includes("skipped pairwise for category 'bigcat'"))).toBe(true);
   });
 
@@ -148,9 +154,10 @@ describe('graph/export', () => {
     const before = await callTool<any>('graph/export', {});
     // Add new instruction which shares a category with existing to create at least one new edge
     const entry = { id:'z-new', title:'z-new', body:'z', priority:10, audience:'all', requirement:'optional', categories:['shared'], schemaVersion:'v3' };
-  // Enable direct mutation for this test (avoids using dispatch abstraction)
-  process.env.MCP_MUTATION = '1';
-  await callTool<any>('instructions/add', { entry, overwrite:true, lax:true });
+    // Enable direct mutation for this test (avoids using dispatch abstraction)
+    process.env.MCP_MUTATION = '1';
+    reloadRuntimeConfig();
+    await callTool<any>('instructions/add', { entry, overwrite:true, lax:true });
     const after = await callTool<any>('graph/export', {});
     // Node count increases
     expect(after.meta.nodeCount).toBe(before.meta.nodeCount + 1);
@@ -158,7 +165,7 @@ describe('graph/export', () => {
 
   it('edge type filter applies before truncation enforcement deterministically', async () => {
     // Add more nodes to grow potential edges then request only category edges + low maxEdges
-  writeInstruction('d1','b',['shared']);
+    writeInstruction('d1','b',['shared']);
     writeInstruction('d2','b',['shared']);
     writeInstruction('d3','b',['shared']);
     const filtered = await callTool<any>('graph/export', { includeEdgeTypes:['category'], maxEdges:2 });

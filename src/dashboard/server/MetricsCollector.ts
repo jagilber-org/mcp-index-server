@@ -9,7 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import { getFileMetricsStorage, FileMetricsStorage } from './FileMetricsStorage.js';
 import { BufferRing, OverflowStrategy, BufferRingStats } from '../../utils/BufferRing.js';
-import { getBooleanEnv } from '../../utils/envUtils.js';
+import { getRuntimeConfig } from '../../config/runtimeConfig';
 
 export interface ToolMetrics {
   callCount: number;
@@ -284,8 +284,10 @@ export class MetricsCollector {
       maxSnapshots: options.maxSnapshots ?? 720, // 12 hours at 1-minute intervals
       collectInterval: options.collectInterval ?? 60000, // 1 minute
     };
+    const metricsConfig = getRuntimeConfig().metrics;
+
     // Initialize resource sampling buffer (default capacity ~1h at 5s interval = 720)
-    const resourceCapacity = parseInt(process.env.MCP_RESOURCE_CAPACITY || '720');
+    const resourceCapacity = Math.max(1, metricsConfig.resourceCapacity || 720);
     this.resourceSamples = new BufferRing<{ timestamp: number; cpuPercent: number; heapUsed: number; rss: number }>({
       capacity: resourceCapacity,
       overflowStrategy: OverflowStrategy.DROP_OLDEST,
@@ -293,12 +295,12 @@ export class MetricsCollector {
       enableIntegrityCheck: false
     });
     try {
-      const intervalMs = parseInt(process.env.MCP_RESOURCE_SAMPLE_INTERVAL_MS || '5000');
+      const intervalMs = Math.max(100, metricsConfig.sampleIntervalMs || 5000);
       setInterval(() => this.sampleResources(), intervalMs).unref();
     } catch { /* ignore */ }
 
     // Configure BufferRing settings
-    const metricsDir = process.env.MCP_METRICS_DIR || path.join(process.cwd(), 'metrics');
+    const metricsDir = metricsConfig.dir || path.join(process.cwd(), 'metrics');
     this.bufferConfig = {
       historicalSnapshots: {
         capacity: this.options.maxSnapshots,
@@ -317,7 +319,7 @@ export class MetricsCollector {
     };
 
     // Check if file storage should be enabled (accept "true", "1", "yes", "on")
-    this.useFileStorage = getBooleanEnv('MCP_METRICS_FILE_STORAGE');
+  this.useFileStorage = metricsConfig.fileStorage;
     
     // Initialize BufferRing storage
     this.historicalSnapshots = new BufferRing<MetricsTimeSeriesEntry>({
@@ -344,12 +346,12 @@ export class MetricsCollector {
 
     // Configure optional append-only logging for tool call events (reduces large snapshot writes)
     if (this.useFileStorage) {
-      this.appendMode = getBooleanEnv('MCP_TOOLCALL_APPEND_LOG');
+      this.appendMode = metricsConfig.toolcall.appendLogEnabled;
       if (this.appendMode) {
         this.appendLogPath = path.join(path.dirname(this.bufferConfig.toolCallEvents.persistenceFile!), 'tool-call-events.ndjson');
-        this.appendChunkSize = parseInt(process.env.MCP_TOOLCALL_CHUNK_SIZE || `${this.appendChunkSize}`) || this.appendChunkSize;
-        this.appendFlushMs = parseInt(process.env.MCP_TOOLCALL_FLUSH_MS || `${this.appendFlushMs}`) || this.appendFlushMs;
-        this.appendCompactMs = parseInt(process.env.MCP_TOOLCALL_COMPACT_MS || `${this.appendCompactMs}`) || this.appendCompactMs;
+        this.appendChunkSize = Math.max(1, metricsConfig.toolcall.chunkSize || this.appendChunkSize);
+        this.appendFlushMs = Math.max(1, metricsConfig.toolcall.flushMs || this.appendFlushMs);
+        this.appendCompactMs = Math.max(1, metricsConfig.toolcall.compactMs || this.appendCompactMs);
         try {
           // Load any un-compacted append log tail (best-effort)
             if (this.appendLogPath && fs.existsSync(this.appendLogPath)) {

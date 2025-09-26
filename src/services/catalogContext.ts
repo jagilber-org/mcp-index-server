@@ -8,6 +8,7 @@ import { atomicWriteJson } from './atomicFs';
 import { ClassificationService } from './classificationService';
 import { resolveOwner } from './ownershipService';
 import { getBooleanEnv } from '../utils/envUtils';
+import { getRuntimeConfig } from '../config/runtimeConfig';
 
 // Extended CatalogState to retain loader diagnostics so we can expose precise rejection reasons
 // via a forthcoming instructions/diagnostics tool. Keeping optional properties so older code paths
@@ -162,7 +163,12 @@ function loadUsageSnapshot(){
   return lastGoodUsageSnapshot;
 }
 // Shorter debounce (was 500ms) to reduce race windows in tight tests that assert on snapshot
-function scheduleUsageFlush(){ usageDirty = true; if(usageWriteTimer) return; const delay = process.env.MCP_USAGE_FLUSH_MS ? Number(process.env.MCP_USAGE_FLUSH_MS) : 75; usageWriteTimer = setTimeout(flushUsageSnapshot,delay); }
+function scheduleUsageFlush(){
+  usageDirty = true;
+  if(usageWriteTimer) return;
+  const delay = getRuntimeConfig().catalog.usageFlushMs;
+  usageWriteTimer = setTimeout(flushUsageSnapshot, delay);
+}
 function flushUsageSnapshot(){
   if(!usageDirty) return;
   if(usageWriteTimer) clearTimeout(usageWriteTimer);
@@ -313,8 +319,9 @@ export interface CatalogPollerOptions { intervalMs?: number; proactive?: boolean
 
 export function startCatalogVersionPoller(opts: CatalogPollerOptions = {}){
   if(versionPoller) return; // already running
-  const intervalMs = Math.max(500, opts.intervalMs || parseInt(process.env.MCP_CATALOG_POLL_MS || '10000',10) || 10000);
-  const proactive = opts.proactive || process.env.MCP_CATALOG_POLL_PROACTIVE === '1';
+  const pollerConfig = getRuntimeConfig().server.catalogPolling;
+  const intervalMs = Math.max(500, opts.intervalMs ?? pollerConfig.intervalMs);
+  const proactive = opts.proactive ?? pollerConfig.proactive;
   // Prime snapshot
   try {
     const dir = getInstructionsDir();
@@ -450,7 +457,7 @@ export function computeGovernanceHash(entries: InstructionEntry[]): string {
   const h = crypto.createHash('sha256');
   // Optional deterministic stabilization: if env set, ensure stable newline termination and explicit sorting already applied
   const lines = entries.slice().sort((a,b)=> a.id.localeCompare(b.id)).map(e=> JSON.stringify(projectGovernance(e)));
-  if(process.env.GOV_HASH_TRAILING_NEWLINE === '1'){ lines.push(''); }
+  if(getRuntimeConfig().catalog.govHash.trailingNewline){ lines.push(''); }
   h.update(lines.join('\n'),'utf8');
   return h.digest('hex');
 }
@@ -623,7 +630,7 @@ export function incrementUsage(id:string){
   if(prev === undefined && e.usageCount > 1){
     // Allow tests (or advanced operators) to disable the protective clamp logic for deterministic expectations.
     // Setting MCP_DISABLE_USAGE_CLAMP=1 will let the anomalous >1 initial count pass through for diagnostic visibility.
-    if(process.env.MCP_DISABLE_USAGE_CLAMP !== '1'){
+    if(!getRuntimeConfig().catalog.disableUsageClamp){
       // eslint-disable-next-line no-console
       console.error('[incrementUsage] anomalous initial usageCount', e.usageCount, 'id', id);
       // Clamp to 1 to enforce deterministic semantics for first observed increment. We intentionally

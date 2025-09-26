@@ -9,9 +9,22 @@ if ($env:ALLOW_FAILING_SLOW -eq '1') {
 
 Write-Host '[pre-push] Running slow test suite (test:slow)...'
 $env:SKIP_PRETEST_BUILD='1'
-$process = Start-Process -FilePath 'npm' -ArgumentList 'run','test:slow' -NoNewWindow -PassThru -Wait
-if ($process.ExitCode -ne 0) {
-  Write-Host '[pre-push] Slow tests failed. Aborting push.' -ForegroundColor Red
+$npmCommand = Get-Command npm -ErrorAction SilentlyContinue
+if (-not $npmCommand) {
+  Write-Host '[pre-push] Unable to locate npm on PATH.' -ForegroundColor Red
   exit 1
+}
+$npmPath = $npmCommand.Path
+$LASTEXITCODE = 0
+try {
+  & $npmPath run test:slow
+} catch {
+  Write-Host "[pre-push] Failed to launch npm (path: $npmPath)." -ForegroundColor Red
+  Write-Host $_.Exception.Message -ForegroundColor DarkRed
+  exit 1
+}
+if ($LASTEXITCODE -ne 0) {
+  Write-Host '[pre-push] Slow tests failed. Aborting push.' -ForegroundColor Red
+  exit $LASTEXITCODE
 }
 Write-Host '[pre-push] Slow suite passed.' -ForegroundColor Green

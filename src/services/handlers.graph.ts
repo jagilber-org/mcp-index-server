@@ -15,6 +15,9 @@
 import { registerHandler } from '../server/registry';
 import { ensureLoaded, computeGovernanceHash } from './catalogContext';
 import type { InstructionEntry } from '../models/instruction';
+import { getRuntimeConfig } from '../config/runtimeConfig';
+
+type GraphConfigSnapshot = ReturnType<typeof getRuntimeConfig>['graph'];
 
 export interface GraphExportParams {
   includeEdgeTypes?: Array<'primary'|'category'|'belongs'>;
@@ -62,14 +65,8 @@ const GRAPH_SCHEMA_VERSION_V2 = 2 as const;
 // Each entry invalidated when governance hash changes. Explicit env overrides still bypass caching (determinism focus).
 const cachedDefaults: Map<string, { hash: string; result: GraphResult }> = new Map(); // v1 only cache
 
-function getEnvBoolean(name: string, defaultTrue = true){
-  const v = process.env[name];
-  if(v == null) return defaultTrue;
-  return ['1','true','yes','on'].includes(v.toLowerCase());
-}
-
 // Exported for dashboard API usage
-export function buildGraph(params: GraphExportParams): GraphResult {
+export function buildGraph(params: GraphExportParams, graphCfg: GraphConfigSnapshot = getRuntimeConfig().graph): GraphResult {
   const { includeEdgeTypes, maxEdges, format, enrich, includeCategoryNodes, includeUsage } = params;
   const st = ensureLoaded();
   const instructions = [...st.list].sort((a,b)=> a.id.localeCompare(b.id));
@@ -100,9 +97,8 @@ export function buildGraph(params: GraphExportParams): GraphResult {
     return n;
   });
 
-  const includePrimary = getEnvBoolean('GRAPH_INCLUDE_PRIMARY_EDGES', true);
-  const largeCapRaw = process.env.GRAPH_LARGE_CATEGORY_CAP;
-  const largeCap = largeCapRaw ? parseInt(largeCapRaw,10) : Infinity;
+  const includePrimary = graphCfg.includePrimaryEdges;
+  const largeCap = graphCfg.largeCategoryCap;
 
   const edges: GraphEdge[] = [];
   const notes: string[] = [];
@@ -137,7 +133,7 @@ export function buildGraph(params: GraphExportParams): GraphResult {
   for(const cat of sortedCategories){
     const ids = catMap.get(cat)!; ids.sort((a,b)=> a.localeCompare(b));
     if(ids.length > largeCap){
-      if(largeCap !== Infinity){
+      if(Number.isFinite(largeCap)){
         notes.push(`skipped pairwise for category '${cat}' size=${ids.length} cap=${largeCap}`);
       }
       continue;
@@ -242,17 +238,18 @@ registerHandler<GraphExportParams>('graph/export', (params) => {
   const cacheEligible = !p.enrich && !p.format && !p.includeEdgeTypes && (p.maxEdges === undefined);
   // If either env knob is explicitly set we skip caching to avoid cross-test flakiness where
   // suites toggle values. Determinism > micro perf for explicit env usage.
-  const envExplicit = (process.env.GRAPH_INCLUDE_PRIMARY_EDGES !== undefined) || (process.env.GRAPH_LARGE_CATEGORY_CAP !== undefined);
+  const graphCfg = getRuntimeConfig().graph;
+  const envExplicit = graphCfg.explicitIncludePrimaryEnv || graphCfg.explicitLargeCategoryEnv;
   const st = ensureLoaded();
   const hash = st.hash || computeGovernanceHash(st.list);
-  const envSig = `${getEnvBoolean('GRAPH_INCLUDE_PRIMARY_EDGES', true)?'P1':'P0'}:${process.env.GRAPH_LARGE_CATEGORY_CAP||'INF'}`;
+  const envSig = graphCfg.signature;
   if(cacheEligible && !envExplicit){
     const entry = cachedDefaults.get(envSig);
     if(entry && entry.hash === hash){
       return entry.result;
     }
   }
-  const graph = buildGraph(p);
+  const graph = buildGraph(p, graphCfg);
   // Defensive: unexpected undefined safeguard (should never happen). Emit diagnostic once.
   if(!graph){
     // eslint-disable-next-line no-console

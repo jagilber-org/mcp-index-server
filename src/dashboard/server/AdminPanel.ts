@@ -11,6 +11,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { getRuntimeConfig, reloadRuntimeConfig } from '../../config/runtimeConfig';
 import { getMetricsCollector, ToolMetrics } from './MetricsCollector';
 import { getCatalogState } from '../../services/catalogContext';
 import { SessionPersistenceManager } from './SessionPersistenceManager';
@@ -120,7 +121,16 @@ export class AdminPanel {
   private lastUptimeSeconds = 0;
   // Historical session log (most recent first)
   private sessionHistory: AdminSessionHistoryEntry[] = [];
-  private readonly maxSessionHistory = parseInt(process.env.MCP_ADMIN_MAX_SESSION_HISTORY || '200');
+  private get maxSessionHistory(): number {
+    const value = getRuntimeConfig().dashboard.admin.maxSessionHistory;
+    return Number.isFinite(value) ? value : 200;
+  }
+  private get backupRoot(): string {
+    return getRuntimeConfig().dashboard.admin.backupsDir || path.join(process.cwd(), 'backups');
+  }
+  private get instructionsRoot(): string {
+    return getRuntimeConfig().catalog.baseDir || path.join(process.cwd(), 'instructions');
+  }
   // Quick index for history lookup
   private sessionHistoryIndex: Map<string, AdminSessionHistoryEntry> = new Map();
   // Session persistence manager
@@ -258,12 +268,14 @@ export class AdminPanel {
   }
 
   private loadDefaultConfig(): AdminConfig {
+    const runtimeConfig = getRuntimeConfig();
+    const serverHttp = runtimeConfig.dashboard.http;
     return {
       serverSettings: {
-        maxConnections: parseInt(process.env.MCP_MAX_CONNECTIONS || '100'),
-        requestTimeout: parseInt(process.env.MCP_REQUEST_TIMEOUT || '30000'),
-        enableVerboseLogging: process.env.MCP_VERBOSE_LOGGING === '1',
-  enableMutation: (process.env.MCP_MUTATION === '1') || (process.env.MCP_ENABLE_MUTATION === '1'),
+        maxConnections: serverHttp?.maxConnections ?? 100,
+        requestTimeout: serverHttp?.requestTimeoutMs ?? 30000,
+        enableVerboseLogging: !!serverHttp?.verboseLogging,
+        enableMutation: runtimeConfig.mutation.enabled,
         rateLimit: {
           windowMs: 60000, // 1 minute
           maxRequests: 100
@@ -312,12 +324,18 @@ export class AdminPanel {
   private applyConfigChanges(updates: Partial<AdminConfig>): void {
     // Apply server settings
     if (updates.serverSettings) {
+      let runtimeReloadNeeded = false;
       if (updates.serverSettings.enableVerboseLogging !== undefined) {
         process.env.MCP_VERBOSE_LOGGING = updates.serverSettings.enableVerboseLogging ? '1' : '0';
+        runtimeReloadNeeded = true;
       }
       if (updates.serverSettings.enableMutation !== undefined) {
-  process.env.MCP_MUTATION = updates.serverSettings.enableMutation ? '1' : '0';
-  process.env.MCP_ENABLE_MUTATION = updates.serverSettings.enableMutation ? '1' : '0';
+        process.env.MCP_MUTATION = updates.serverSettings.enableMutation ? '1' : '0';
+        process.env.MCP_ENABLE_MUTATION = updates.serverSettings.enableMutation ? '1' : '0';
+        runtimeReloadNeeded = true;
+      }
+      if (runtimeReloadNeeded) {
+        reloadRuntimeConfig();
       }
     }
   }
@@ -459,18 +477,18 @@ export class AdminPanel {
    */
   async performBackup(): Promise<{ success: boolean; message: string; backupId?: string; files?: number }> {
     try {
-      const backupRoot = process.env.MCP_BACKUPS_DIR || path.join(process.cwd(), 'backups');
+      const backupRoot = this.backupRoot;
       if (!fs.existsSync(backupRoot)) fs.mkdirSync(backupRoot, { recursive: true });
-  // Include milliseconds to allow multiple backups within the same second
-  const now = new Date();
-  const iso = now.toISOString();
-  const baseTs = iso.replace(/[-:]/g,'').replace(/\..+/, '');
-  const ms = String(now.getMilliseconds()).padStart(3,'0');
-  const backupId = `backup_${baseTs}_${ms}`; // e.g. backup_20250905T123456_123
+      // Include milliseconds to allow multiple backups within the same second
+      const now = new Date();
+      const iso = now.toISOString();
+      const baseTs = iso.replace(/[-:]/g, '').replace(/\..+/, '');
+      const ms = String(now.getMilliseconds()).padStart(3, '0');
+      const backupId = `backup_${baseTs}_${ms}`; // e.g. backup_20250905T123456_123
       const backupDir = path.join(backupRoot, backupId);
       fs.mkdirSync(backupDir);
 
-      const instructionsDir = process.env.MCP_INSTRUCTIONS_DIR || path.join(process.cwd(), 'instructions');
+      const instructionsDir = this.instructionsRoot;
       let copied = 0;
       if (fs.existsSync(instructionsDir)) {
         for (const file of fs.readdirSync(instructionsDir)) {
@@ -503,7 +521,7 @@ export class AdminPanel {
   }
 
   listBackups(): { id: string; createdAt: string; instructionCount: number; schemaVersion?: string; sizeBytes: number }[] {
-    const backupRoot = process.env.MCP_BACKUPS_DIR || path.join(process.cwd(), 'backups');
+    const backupRoot = this.backupRoot;
     if (!fs.existsSync(backupRoot)) return [];
     const results: { id: string; createdAt: string; instructionCount: number; schemaVersion?: string; sizeBytes: number }[] = [];
     for (const dir of fs.readdirSync(backupRoot)) {
@@ -539,10 +557,10 @@ export class AdminPanel {
   restoreBackup(backupId: string): { success: boolean; message: string; restored?: number } {
     try {
       if (!backupId) return { success: false, message: 'backupId required' };
-      const backupRoot = process.env.MCP_BACKUPS_DIR || path.join(process.cwd(), 'backups');
+      const backupRoot = this.backupRoot;
       const backupDir = path.join(backupRoot, backupId);
       if (!fs.existsSync(backupDir)) return { success: false, message: `Backup not found: ${backupId}` };
-      const instructionsDir = process.env.MCP_INSTRUCTIONS_DIR || path.join(process.cwd(), 'instructions');
+      const instructionsDir = this.instructionsRoot;
       if (!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir, { recursive: true });
       // Pre-restore safety backup (lightweight) if there are existing files
       const existing = fs.readdirSync(instructionsDir).filter(f => f.toLowerCase().endsWith('.json'));
@@ -577,7 +595,7 @@ export class AdminPanel {
   deleteBackup(backupId: string): { success: boolean; message: string; removed?: boolean } {
     try {
       if (!backupId) return { success: false, message: 'backupId required' };
-      const backupRoot = process.env.MCP_BACKUPS_DIR || path.join(process.cwd(), 'backups');
+      const backupRoot = this.backupRoot;
       const backupDir = path.join(backupRoot, backupId);
       if (!fs.existsSync(backupDir)) return { success: false, message: `Backup not found: ${backupId}` };
       // Basic guard: only allow deletion of directories that start with expected prefixes
@@ -596,7 +614,7 @@ export class AdminPanel {
   pruneBackups(retain: number): { success: boolean; message: string; pruned?: number } {
     try {
       if (retain < 0) return { success: false, message: 'retain must be >= 0' };
-      const backupRoot = process.env.MCP_BACKUPS_DIR || path.join(process.cwd(), 'backups');
+      const backupRoot = this.backupRoot;
       if (!fs.existsSync(backupRoot)) return { success: true, message: 'No backups to prune', pruned: 0 };
       const dirs = fs.readdirSync(backupRoot)
         .map(name => ({ name, full: path.join(backupRoot, name) }))
@@ -770,7 +788,7 @@ export class AdminPanel {
     }
 
     // Count physical *.json files (raw) deterministically from FS (may equal scanned; retained for transparency)
-    const catalogDir = process.env.MCP_INSTRUCTIONS_DIR || path.join(process.cwd(), 'instructions');
+    const catalogDir = this.instructionsRoot;
     let rawFileCount = scanned; // default to scanned
     try {
       if (fs.existsSync(catalogDir)) {
@@ -1004,7 +1022,7 @@ export class AdminPanel {
   }
 
   private getCatalogInstructionCount(): number {
-    const catalogDir = process.env.MCP_INSTRUCTIONS_DIR || path.join(process.cwd(), 'instructions');
+    const catalogDir = this.instructionsRoot;
     try {
       if (fs.existsSync(catalogDir)) {
         return fs.readdirSync(catalogDir).filter(f => f.toLowerCase().endsWith('.json')).length;

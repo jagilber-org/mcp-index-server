@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { getRuntimeConfig } from '../config/runtimeConfig';
 
 export interface PreflightCheckResult { name: string; ok: boolean; path?: string; error?: string }
 export interface PreflightSummary { ok: boolean; checks: PreflightCheckResult[] }
@@ -29,8 +30,8 @@ function checkMimeDbData(): PreflightCheckResult {
 }
 
 export function runPreflight(): PreflightSummary {
-  const modulesRaw = process.env.MCP_PREFLIGHT_MODULES; // comma separated override
-  const modules = modulesRaw ? modulesRaw.split(',').map(s => s.trim()).filter(Boolean) : DEFAULT_MODULES;
+  const cfg = getRuntimeConfig().preflight;
+  const modules = cfg.modules.length ? cfg.modules : DEFAULT_MODULES;
   const checks: PreflightCheckResult[] = [];
 
   for (const m of modules) checks.push(resolveModule(m));
@@ -48,7 +49,8 @@ export function emitPreflightAndMaybeExit(): void {
     // stderr to avoid contaminating stdout protocol
     try { process.stderr.write(line + '\n'); } catch { /* ignore */ }
     if (!summary.ok) {
-      if (process.env.MCP_PREFLIGHT_STRICT === '1') {
+      const cfg = getRuntimeConfig().preflight;
+      if (cfg.strict) {
         try { process.stderr.write('[startup] Preflight failed (strict mode) – exiting early.\n'); } catch { /* ignore */ }
         process.exit(1);
       } else {

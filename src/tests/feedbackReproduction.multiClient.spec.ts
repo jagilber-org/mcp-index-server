@@ -13,6 +13,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import os from 'node:os';
+import { getRuntimeConfig } from '../config/runtimeConfig';
 // Dynamic import of portable client to avoid CommonJS -> ESM static import warning (TS1479)
 let createInstructionClient: any; // assigned lazily
 
@@ -197,8 +198,9 @@ describe('Feedback Reproduction: Multi-Client Instruction Coordination (Portable
       // Optimize via batched concurrent reads while avoiding unbounded parallelism.
       const ids = instructions.map((i: any)=> String(i.id));
       // Exhaustive mode when explicitly enabled (CI stress / deep diagnostic passes)
-      const stressMode = process.env.FULL_LIST_GET === '1' || process.env.MCP_STRESS_MODE === '1';
-      const allowSampling = !stressMode;
+  const listValidation = getRuntimeConfig().instructions.listValidation;
+  const stressMode = listValidation.forceFullScan;
+  const allowSampling = listValidation.allowSampling;
 
       // Adaptive sampling logic (aggressive runtime reduction while still giving broad coverage over time):
       // Historical progression: 50 -> 30 -> 12. Now dynamic: ~0.8% of catalog, bounded [5,8] by default.
@@ -208,8 +210,7 @@ describe('Feedback Reproduction: Multi-Client Instruction Coordination (Portable
       //  * Honor explicit env overrides for deep diagnostic runs.
       // Backwards compat envs (prefer LIST_GET_SAMPLE_SIZE going forward):
       const sampleSize = (() => {
-        if (process.env.LIST_GET_MAX_VALIDATE) return parseInt(process.env.LIST_GET_MAX_VALIDATE, 10);
-        if (process.env.LIST_GET_SAMPLE_SIZE) return parseInt(process.env.LIST_GET_SAMPLE_SIZE, 10);
+        if (listValidation.effectiveSampleSize !== undefined) return listValidation.effectiveSampleSize;
         // Adaptive default: scale with catalog size but clamp for latency control.
         const adaptive = Math.ceil(ids.length * 0.008); // ~0.8%
         return Math.min(8, Math.max(5, adaptive));
@@ -223,7 +224,7 @@ describe('Feedback Reproduction: Multi-Client Instruction Coordination (Portable
           h = Math.imul(h, 0x01000193);
         }
         // allow optional seed to rotate order across runs
-        const seed = process.env.LIST_GET_SAMPLE_SEED ? parseInt(process.env.LIST_GET_SAMPLE_SEED, 10) : 0;
+        const seed = listValidation.sampleSeed ?? 0;
         h ^= seed;
         return (h >>> 0); // unsigned
       }
@@ -241,12 +242,12 @@ describe('Feedback Reproduction: Multi-Client Instruction Coordination (Portable
 
       if (allowSampling && ids.length > targetIds.length) {
         // eslint-disable-next-line no-console
-        console.warn(`[LIST_GET_CROSS_VALIDATION] sampling ${targetIds.length}/${ids.length} entries (FULL_LIST_GET=1; LIST_GET_SAMPLE_SIZE=.. override; LIST_GET_SAMPLE_SEED=.. rotate; LIST_GET_MAX_VALIDATE=.. legacy)`);
+        console.warn(`[LIST_GET_CROSS_VALIDATION] sampling ${targetIds.length}/${ids.length} entries (forceFullScan=${listValidation.forceFullScan}; effectiveSampleSize=${listValidation.effectiveSampleSize ?? 'adaptive'}; sampleSeed=${listValidation.sampleSeed ?? 0})`);
       }
       // Concurrency tuned downward (15 -> 8 default) to reduce RPC bursts that previously caused sporadic timeouts.
-      const CONCURRENCY = parseInt(process.env.LIST_GET_CONCURRENCY || '8', 10);
+      const CONCURRENCY = listValidation.concurrency;
       // Hard wall clock guard (default 7000ms) to prevent suite inflation; overridable for deep diagnostics.
-      const MAX_DURATION_MS = parseInt(process.env.LIST_GET_MAX_DURATION_MS || '7000', 10);
+      const MAX_DURATION_MS = listValidation.maxDurationMs;
       let index = 0;
       let validatedCount = 0;
       let truncated = false;

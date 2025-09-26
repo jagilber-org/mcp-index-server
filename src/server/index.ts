@@ -24,11 +24,12 @@
 import '../services/logPrefix';
 // Ensure logger initializes early (file logging environment may auto-resolve)
 import '../services/logger';
+import { getRuntimeConfig, reloadRuntimeConfig } from '../config/runtimeConfig';
 const __earlyInitChunks: Buffer[] = [];
 let __earlyInitFirstLogged = false;
 let __sdkReady = false;
 // Allow opt-out (e.g., diagnostic comparison) via MCP_DISABLE_EARLY_STDIN_BUFFER=1
-const __bufferEnabled = process.env.MCP_DISABLE_EARLY_STDIN_BUFFER !== '1';
+const __bufferEnabled = !getRuntimeConfig().server.disableEarlyStdinBuffer;
 // We attach the temporary listener immediately so even synchronous module load
 // time is covered.
 function __earlyCapture(chunk: Buffer){
@@ -69,7 +70,6 @@ import { createDashboardServer } from '../dashboard/server/DashboardServer.js';
 import { getMetricsCollector } from '../dashboard/server/MetricsCollector.js';
 import { getMemoryMonitor } from '../utils/memoryMonitor';
 import { getBooleanEnv } from '../utils/envUtils';
-import { getRuntimeConfig, reloadRuntimeConfig } from '../config/runtimeConfig';
 import fs from 'fs';
 import path from 'path';
 import { logInfo } from '../services/logger';
@@ -91,8 +91,8 @@ if(!process.listeners('uncaughtException').some(l => (l as unknown as { name?:st
   const stamp = () => new Date().toISOString();
   const tag = (t: string) => `[diag] [${stamp()}] [${t}]`;
 
-  const fatalExitDelayMs = parseInt(process.env.MCP_FATAL_EXIT_DELAY_MS || '15',10);
-  const graceful = () => setTimeout(() => process.exit(1), fatalExitDelayMs);
+  const getFatalExitDelayMs = () => Math.max(0, getRuntimeConfig().server.fatalExitDelayMs);
+  const graceful = () => setTimeout(() => process.exit(1), getFatalExitDelayMs());
 
   const uncaughtHandler = function mcpGlobalGuard(err: unknown){
     write(`${tag('uncaught_exception')} ${formatErr(err)}`);
@@ -135,15 +135,16 @@ interface CliConfig {
 }
 
 function parseArgs(argv: string[]): CliConfig {
-  const config: CliConfig = { dashboard: false, dashboardPort: 8787, dashboardHost: '127.0.0.1', maxPortTries: 10, legacy: false };
-  
-  // Apply environment variable defaults first (command line args override env vars)
-  if(getBooleanEnv('MCP_DASHBOARD')) config.dashboard = true;
-  if(process.env.MCP_DASHBOARD === '0') config.dashboard = false;
-  if(process.env.MCP_DASHBOARD_PORT) config.dashboardPort = parseInt(process.env.MCP_DASHBOARD_PORT, 10) || config.dashboardPort;
-  if(process.env.MCP_DASHBOARD_HOST) config.dashboardHost = process.env.MCP_DASHBOARD_HOST;
-  if(process.env.MCP_DASHBOARD_TRIES) config.maxPortTries = Math.max(1, parseInt(process.env.MCP_DASHBOARD_TRIES, 10) || config.maxPortTries);
-  
+  const runtimeCfg = reloadRuntimeConfig();
+  const http = runtimeCfg.dashboard.http;
+  const config: CliConfig = {
+    dashboard: http.enable,
+    dashboardPort: http.port,
+    dashboardHost: http.host,
+    maxPortTries: http.maxPortTries,
+    legacy: false,
+  };
+
   const args = argv.slice(2);
   for(let i=0;i<args.length;i++){
     const raw = args[i];
@@ -280,36 +281,37 @@ export async function main(){
   // handshake occurs promptly.
   let __stdinActivity = false;
   try { if(process.stdin && !process.stdin.destroyed){ process.stdin.on('data', () => { __stdinActivity = true; }); } } catch { /* ignore */ }
+
   function startIdleKeepalive(){
-    const maxMs = Math.max(1000, parseInt(process.env.MCP_IDLE_KEEPALIVE_MS || '30000', 10));
+    const serverConfig = getRuntimeConfig().server;
+    const maxMs = Math.max(1000, serverConfig.idleKeepaliveMs);
     const started = Date.now();
     // Only create ONE interval.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if((global as any).__mcpIdleKeepalive) return;
-  // Emit a synthetic readiness marker for test environments that spawn the
-  // server with stdin=ignore and rely on a '[ready]' sentinel before
-  // proceeding (portableCrudMultiClientSharedServer.spec). This does NOT
-  // emit a formal JSON-RPC server/ready (which would follow initialize in
-  // normal operation); it's a plain log line to stdout and is gated to the
-  // idle keepalive path only so production interactive flows are unaffected.
-  // Synthetic readiness sentinel (only when explicitly enabled) so tests that rely on a
-  // shared server with stdin ignored can proceed. Stricter gating to avoid contaminating
-  // other protocol tests: requires MCP_SHARED_SERVER_SENTINEL=1 AND delays emission slightly
-  // to allow an initialize frame to arrive first if stdin is active. Legacy env
-  // MCP_IDLE_READY_SENTINEL is ignored unless accompanied by MCP_SHARED_SERVER_SENTINEL.
-  try {
-    if(process.env.MCP_SHARED_SERVER_SENTINEL==='multi-client-shared' && !__stdinActivity){
-      setTimeout(()=>{ if(!__stdinActivity){ try { process.stdout.write('[ready] idle-keepalive (no stdin activity)\n'); } catch { /* ignore */ } } }, 60);
-    }
-  } catch { /* ignore */ }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if((global as any).__mcpIdleKeepalive) return;
+    // Emit a synthetic readiness marker for test environments that spawn the
+    // server with stdin=ignore and rely on a '[ready]' sentinel before
+    // proceeding (portableCrudMultiClientSharedServer.spec). This does NOT
+    // emit a formal JSON-RPC server/ready (which would follow initialize in
+    // normal operation); it's a plain log line to stdout and is gated to the
+    // idle keepalive path only so production interactive flows are unaffected.
+    // Synthetic readiness sentinel (only when explicitly enabled) so tests that rely on a
+    // shared server with stdin ignored can proceed. Stricter gating to avoid contaminating
+    // other protocol tests: requires MCP_SHARED_SERVER_SENTINEL=1 AND delays emission slightly
+    // to allow an initialize frame to arrive first if stdin is active. Legacy env
+    // MCP_IDLE_READY_SENTINEL is ignored unless accompanied by MCP_SHARED_SERVER_SENTINEL.
+    try {
+      if(serverConfig.sharedSentinel === 'multi-client-shared' && !__stdinActivity){
+        setTimeout(()=>{ if(!__stdinActivity){ try { process.stdout.write('[ready] idle-keepalive (no stdin activity)\n'); } catch { /* ignore */ } } }, 60);
+      }
+    } catch { /* ignore */ }
     const iv = setInterval(() => {
       // Clear early if stdin becomes active (late attach) so we don't keep zombie processes.
       if(__stdinActivity || Date.now() - started > maxMs){
-  clearInterval(iv);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (global as any).__mcpIdleKeepalive = undefined;
-      }
-      else if(process.env.MULTICLIENT_TRACE==='1'){
+        clearInterval(iv);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (global as any).__mcpIdleKeepalive = undefined;
+      } else if(getRuntimeConfig().server.multicoreTrace){
         try {
           // Reflective access to private diagnostic API (Node internal) guarded defensively
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -319,8 +321,8 @@ export async function main(){
         } catch { /* ignore */ }
       }
     }, 500);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (global as any).__mcpIdleKeepalive = iv;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (global as any).__mcpIdleKeepalive = iv;
   }
   // Always start keepalive immediately (unconditional) so a lack of stdin activity
   // cannot allow the event loop to drain and exit before the shared-server test
@@ -331,6 +333,7 @@ export async function main(){
   // Short-circuit handshake mode removed (MCP_SHORTCIRCUIT) now that full
   // protocol framing is stable and locked by tests. (2025-08-31)
   const cfg = parseArgs(process.argv);
+  const runtime = getRuntimeConfig();
   const dash = await startDashboard(cfg);
   if(dash){
     process.stderr.write(`[startup] Dashboard server started successfully\n`);
@@ -358,15 +361,14 @@ export async function main(){
   }
 
   // Extended startup diagnostics (does not emit on stdout)
-  if(getBooleanEnv('MCP_LOG_VERBOSE') || getBooleanEnv('MCP_LOG_DIAG')){
+  if(runtime.logging.verbose || runtime.logging.diagnostics){
     try {
-  const methods = listRegisteredMethods();
+      const methods = listRegisteredMethods();
       // Force catalog load to report initial count/hash
       const catalog = getCatalogState();
-  if(process.env.MCP_ENABLE_MUTATION && !process.env.MCP_MUTATION){ reloadRuntimeConfig(); }
-  const mutation = getRuntimeConfig().mutationEnabled;
-  const dirDiag = diagnoseInstructionsDir();
-  process.stderr.write(`[startup] toolsRegistered=${methods.length} mutationEnabled=${mutation} catalogCount=${catalog.list.length} catalogHash=${catalog.hash} instructionsDir="${dirDiag.dir}" exists=${dirDiag.exists} writable=${dirDiag.writable}${dirDiag.error?` dirError=${dirDiag.error.replace(/\s+/g,' ')}`:''}\n`);
+      const mutation = runtime.mutationEnabled;
+      const dirDiag = diagnoseInstructionsDir();
+      process.stderr.write(`[startup] toolsRegistered=${methods.length} mutationEnabled=${mutation} catalogCount=${catalog.list.length} catalogHash=${catalog.hash} instructionsDir="${dirDiag.dir}" exists=${dirDiag.exists} writable=${dirDiag.writable}${dirDiag.error?` dirError=${dirDiag.error.replace(/\s+/g,' ')}`:''}\n`);
       try {
         const { summarizeTraceEnv } = await import('../services/tracing.js');
         const sum = summarizeTraceEnv();
@@ -376,27 +378,29 @@ export async function main(){
       process.stderr.write(`[startup] diagnostics_error ${(e instanceof Error)? e.message: String(e)}\n`);
     }
   }
-  if(__bufferEnabled && getBooleanEnv('MCP_LOG_DIAG')){
+  if(__bufferEnabled && runtime.logging.diagnostics){
     try { process.stderr.write(`[handshake-buffer] pre-start buffered=${__earlyInitChunks.length}\n`); } catch { /* ignore */ }
   }
   await startSdkServer();
   // Auto-confirm bootstrap (test harness opt-in). Executed after SDK start so catalog state
   // exists; harmless if already confirmed or non-bootstrap instructions present.
   try {
-    if(process.env.MCP_BOOTSTRAP_AUTOCONFIRM === '1'){
+    if(runtime.server.bootstrap.autoconfirm){
       const ok = forceBootstrapConfirmForTests('auto-confirm env');
-      if(ok && getBooleanEnv('MCP_LOG_DIAG')){ try { process.stderr.write('[bootstrap] auto-confirm applied (test env)\n'); } catch { /* ignore */ } }
+      if(ok && runtime.logging.diagnostics){ try { process.stderr.write('[bootstrap] auto-confirm applied (test env)\n'); } catch { /* ignore */ } }
     }
   } catch { /* ignore */ }
   // Start cross-instance catalog version poller unless disabled.
   try {
     // Poller now opt-in to avoid introducing timing variance into deterministic
     // visibility & manifest repair tests. Enable with MCP_ENABLE_CATALOG_POLLER=1.
-    if(process.env.MCP_ENABLE_CATALOG_POLLER === '1'){
-      const proactive = process.env.MCP_CATALOG_POLL_PROACTIVE === '1';
-      startCatalogVersionPoller({ proactive });
-      if(getBooleanEnv('MCP_LOG_DIAG')){ try { process.stderr.write(`[startup] catalog version poller started proactive=${proactive}\n`); } catch { /* ignore */ } }
-    } else if(getBooleanEnv('MCP_LOG_DIAG')) {
+    if(runtime.server.catalogPolling.enabled){
+      startCatalogVersionPoller({
+        proactive: runtime.server.catalogPolling.proactive,
+        intervalMs: runtime.server.catalogPolling.intervalMs,
+      });
+      if(runtime.logging.diagnostics){ try { process.stderr.write(`[startup] catalog version poller started proactive=${runtime.server.catalogPolling.proactive}\n`); } catch { /* ignore */ } }
+    } else if(runtime.logging.diagnostics) {
       try { process.stderr.write('[startup] catalog version poller not enabled (set MCP_ENABLE_CATALOG_POLLER=1)\n'); } catch { /* ignore */ }
     }
   } catch { /* ignore */ }
@@ -404,17 +408,17 @@ export async function main(){
   __sdkReady = true;
   if(__bufferEnabled){
     try { process.stdin.off('data', __earlyCapture); } catch { /* ignore */ }
-  if(__earlyInitChunks.length){
+    if(__earlyInitChunks.length){
       try {
         for(const c of __earlyInitChunks){ process.stdin.emit('data', c); }
       } catch { /* ignore */ }
       // eslint-disable-next-line no-console
-      if(getBooleanEnv('MCP_LOG_DIAG')) console.error(`[handshake-buffer] replayed ${__earlyInitChunks.length} early chunk(s)`);
+      if(runtime.logging.diagnostics) console.error(`[handshake-buffer] replayed ${__earlyInitChunks.length} early chunk(s)`);
       __earlyInitChunks.length = 0;
     }
   }
   process.stderr.write('[startup] SDK server started (stdio only)\n');
-  try { logInfo('server_started', { pid: process.pid, logFile: process.env.MCP_LOG_FILE }); } catch { /* ignore */ }
+  try { logInfo('server_started', { pid: process.pid, logFile: runtime.logging.file }); } catch { /* ignore */ }
 }
 
 if(require.main === module){

@@ -38,9 +38,30 @@ const allowPatterns = [
 // Regex to find process.env usages
 const envRegex = /process\.env\.([A-Z0-9_]+)/g;
 
-// Allowed variable name prefixes (some Node built-ins or test harness) kept minimal.
-const varAllow = new Set<string>([
-  'NODE_', // node built-ins like NODE_ENV
+// Allowed variable name prefixes (temporary grace for legacy tests/utilities).
+// TODO(guard-allowlist): reduce this list as files migrate to runtimeConfig.
+const varAllowPrefixes: string[] = [
+  'NODE_',           // Node built-ins like NODE_ENV
+  'MCP_TEST_',       // Test-only handshake timing overrides
+  'PORTABLE_',       // Portable harness knobs (diagnostic suites)
+  'TEST_',           // Legacy test dirs / wait helpers
+  'MCP_DASHBOARD_',  // Dashboard integration tests
+  'MCP_RUN_',        // Feature-gated red suites
+  'SKIP_',           // CI skip toggles
+  'DIST_',           // Dist readiness tuning
+  'FEEDBACK_',       // Feedback subsystem harness
+];
+
+// Explicitly allowed variable names that do not fit the prefix matrix.
+const varAllowExact = new Set<string>([
+  'CI',
+  'INSTRUCTIONS_DIR',
+  'TEST_INSTRUCTIONS_DIR',
+  'HANDSHAKE_HARD_FAIL_MS',
+  'MCP_ENABLE_MUTATION',
+  'MCP_FORCE_REBUILD',
+  'MCP_DASHBOARD',
+  'VITEST_MAX_WORKERS',
 ]);
 
 function isAllowFile(file: string): boolean { return allowPatterns.some(r => r.test(file)); }
@@ -72,7 +93,8 @@ function analyzeFile(file: string): Violation[] {
     envRegex.lastIndex = 0;
     while((m = envRegex.exec(line))){
       const varName = m[1];
-      if(varAllow.has(varName) || varName.startsWith('NODE_')) continue;
+  if(varAllowExact.has(varName)) continue;
+  if(varAllowPrefixes.some(prefix => varName.startsWith(prefix))) continue;
       // Suggest consolidated alternative naming if not obviously consolidated.
       const suggestion = `Route '${varName}' through runtimeConfig (MCP_* consolidated vars) or add allowlist justification.`;
       violations.push({ file, line: idx+1, code: line.trim(), reason: suggestion });

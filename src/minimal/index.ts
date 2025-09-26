@@ -4,6 +4,7 @@
 import { createInterface } from 'readline';
 import fs from 'fs';
 import path from 'path';
+import { getRuntimeConfig } from '../config/runtimeConfig';
 
 // High resolution timestamp helper for ordering diagnostics
 function ts(){
@@ -17,7 +18,7 @@ interface JsonRpcReq { jsonrpc:'2.0'; id?: number|string|null; method:string; pa
 const VERSION = (()=>{ try { const p = path.join(process.cwd(),'package.json'); return JSON.parse(fs.readFileSync(p,'utf8')).version || '0.0.0'; } catch { return '0.0.0'; } })();
 
 const rl = createInterface({ input: process.stdin });
-const DEBUG_ORDER = !!process.env.MCP_MINIMAL_DEBUG;
+const DEBUG_ORDER = getRuntimeConfig().minimal.debugOrdering;
 
 function write(obj: unknown){ try { process.stdout.write(JSON.stringify(obj)+'\n'); } catch { /* ignore */ } }
 function debug(msg:string){ if(DEBUG_ORDER){ try { process.stderr.write('[minimal-debug] '+msg+'\n'); } catch { /* ignore */ } } }

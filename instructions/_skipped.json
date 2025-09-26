@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2025-09-21T19:10:08.242Z",
-  "count": 84,
+  "generatedAt": "2025-09-26T15:36:41.885Z",
+  "count": 90,
   "items": [
     {
       "file": "unit_p0_materialize_1757951263272.json",
@@ -336,6 +336,30 @@
     },
     {
       "file": "unit_p0_materialize_1758481699651.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758481808243.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758736948853.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758737637604.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758900058033.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758900323419.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1758900722617.json",
       "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
     }
   ]

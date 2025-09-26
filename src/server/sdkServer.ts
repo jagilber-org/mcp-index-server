@@ -10,6 +10,7 @@ import '../services/toolHandlers';
 import { getHandler } from './registry';
 // (Ajv based direct-method validation removed in 1.0.0 along with legacy per-tool direct handlers)
 import { z } from 'zod';
+import { getRuntimeConfig } from '../config/runtimeConfig';
 
 // ESM dynamic import used below for SDK modules.
 // Use export map subpaths (do NOT prefix with dist/ or it will duplicate to dist/dist/...)
@@ -363,7 +364,8 @@ export async function startSdkServer() {
     // Pre-connect stdin sniffer: if we observe an initialize request but downstream logic fails to emit server/ready,
     // schedule a guarded fallback emission (acts at framing layer, independent of SDK internals).
     try {
-      if(server && !process.env.MCP_DISABLE_INIT_SNIFF){
+  const disableInitSniff = getRuntimeConfig().initFeatures.has('disableSniff');
+  if(server && !disableInitSniff){
       const INIT_FALLBACK_ENABLED = process.env.MCP_INIT_FALLBACK_ALLOW === '1'; // debug-only gating (default off)
         let __sniffBuf = '';
         // Optional fallback diagnostics: if dispatcher override fails (no rq_*), we sniff stdin to build

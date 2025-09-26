@@ -83,10 +83,10 @@ export interface TransportOptions {
 }
 
 export function startTransport(opts: TransportOptions = {}){
-  const env = opts.env || process.env;
-  const verbose = env.MCP_LOG_VERBOSE === '1';
-  const protocolLog = env.MCP_LOG_PROTOCOL === '1'; // raw frames (parsed) logging
-  const diag = env.MCP_LOG_DIAG === '1' || verbose; // banner + environment snapshot
+  const runtimeConfig = getRuntimeConfig();
+  const verbose = runtimeConfig.logging.verbose;
+  const protocolLog = runtimeConfig.logging.protocol; // raw frames (parsed) logging
+  const diag = runtimeConfig.logging.diagnostics || verbose; // banner + environment snapshot
 
   const log = (level: 'info'|'error'|'debug', msg: string, extra?: unknown) => {
     if(level === 'debug' && !verbose) return;
@@ -103,10 +103,10 @@ export function startTransport(opts: TransportOptions = {}){
       pid: process.pid,
       node: process.version,
       cwd: process.cwd(),
-  mutationEnabled: getRuntimeConfig().mutationEnabled,
+  mutationEnabled: runtimeConfig.mutationEnabled,
       verbose,
       protocolLog,
-      diagEnv: !!process.env.MCP_LOG_DIAG
+      diagnosticsEnabled: runtimeConfig.logging.diagnostics
     });
   }
 

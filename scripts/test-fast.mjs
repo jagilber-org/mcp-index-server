@@ -38,5 +38,6 @@ if (leaked.length) {
   process.exit(1);
 }
 
-const child = spawn('npx', ['vitest', 'run', ...fastSpecs], { stdio: 'inherit', shell: process.platform === 'win32' });
+const childEnv = { ...process.env, MCP_MUTATION: '1', MCP_ENABLE_MUTATION: '1' };
+const child = spawn('npx', ['vitest', 'run', ...fastSpecs], { stdio: 'inherit', shell: process.platform === 'win32', env: childEnv });
 child.on('exit', code => process.exit(code));

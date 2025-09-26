@@ -2,6 +2,7 @@
 // Precedence: explicit env var (MCP_FLAG_<UPPER>) > JSON file > default (false)
 import fs from 'fs';
 import path from 'path';
+import { getRuntimeConfig, type RuntimeConfig } from '../config/runtimeConfig';
 
 export type FeatureFlag = 'response_envelope_v1';
 
@@ -9,9 +10,21 @@ interface FlagConfig { [k: string]: boolean }
 
 let cache: FlagConfig | null = null;
 let lastFilePath: string | null = null;
+let lastConfigIdentity: RuntimeConfig | null = null;
+
+function ensureConfigSync(): RuntimeConfig {
+  const cfg = getRuntimeConfig();
+  if(lastConfigIdentity !== cfg){
+    cache = null;
+    lastFilePath = null;
+    lastConfigIdentity = cfg;
+  }
+  return cfg;
+}
 
 function loadFile(): FlagConfig {
-  const file = process.env.MCP_FLAGS_FILE || path.join(process.cwd(), 'flags.json');
+  const cfg = ensureConfigSync();
+  const file = cfg.featureFlags.file || path.join(process.cwd(), 'flags.json');
   lastFilePath = file;
   if(!fs.existsSync(file)) return {};
   try {
@@ -28,16 +41,14 @@ function loadFile(): FlagConfig {
 }
 
 function load(): FlagConfig {
+  const cfg = ensureConfigSync();
   if(cache) return cache;
   const base = loadFile();
-  // Overlay env vars: MCP_FLAG_<NAME>=1/true/yes/on enables
-  for(const [envKey, value] of Object.entries(process.env)){
-    if(envKey.startsWith('MCP_FLAG_')){
-      const flagName = envKey.substring('MCP_FLAG_'.length).toLowerCase();
-      const v = String(value).toLowerCase();
-      if(['1','true','yes','on','enabled'].includes(v)) base[flagName] = true;
-      else if(['0','false','no','off','disabled'].includes(v)) base[flagName] = false;
-    }
+  // Overlay env-derived namespace captured in runtime config
+  for(const [flagName, rawValue] of Object.entries(cfg.featureFlags.envNamespace)){
+    const v = String(rawValue).toLowerCase();
+    if(['1','true','yes','on','enabled'].includes(v)) base[flagName] = true;
+    else if(['0','false','no','off','disabled'].includes(v)) base[flagName] = false;
   }
   cache = base;
   return cache;
@@ -53,7 +64,8 @@ export function dumpFlags(){ return { ...load() }; }
 export function updateFlags(newFlags: FlagConfig){
   cache = { ...newFlags };
   try {
-    const file = lastFilePath || process.env.MCP_FLAGS_FILE || path.join(process.cwd(), 'flags.json');
+    const cfg = ensureConfigSync();
+    const file = lastFilePath || cfg.featureFlags.file || path.join(process.cwd(), 'flags.json');
     fs.writeFileSync(file, JSON.stringify(cache, null, 2));
   } catch { /* ignore write errors */ }
   return dumpFlags();

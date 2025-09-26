@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+import { reloadRuntimeConfig } from '../config/runtimeConfig';
 import { callTool } from './testUtils';
 
 function writeInstruction(id:string, body:string, categories:string[], primary?:string, priority=50){
@@ -22,6 +23,7 @@ describe('graph/export enriched mode', () => {
   beforeAll(async () => {
     dir = path.join(process.cwd(),'tmp', `graph-enriched-${Date.now()}`);
     process.env.INSTRUCTIONS_DIR = dir;
+    reloadRuntimeConfig();
     await import('../services/handlers.graph.js');
     await import('../services/handlers.instructions.js');
     const cat = await import('../services/catalogContext.js');
@@ -33,6 +35,7 @@ describe('graph/export enriched mode', () => {
     } else { fs.mkdirSync(dir,{recursive:true}); }
     delete process.env.GRAPH_INCLUDE_PRIMARY_EDGES;
     delete process.env.GRAPH_LARGE_CATEGORY_CAP;
+  reloadRuntimeConfig();
     writeInstruction('a','body a',['alpha','shared'],'alpha',40);
     writeInstruction('b','body b',['beta','shared'],'beta',60);
     writeInstruction('c','body c',['beta'], 'beta',30);

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { getRuntimeConfig } from '../config/runtimeConfig';
 
 /**
  * Atomically write JSON to disk with robust retry semantics for shared index scenarios.
@@ -16,16 +17,17 @@ import crypto from 'crypto';
  *         specifically due to transient lock codes.
  *  - No file descriptors are intentionally left open; synchronous methods close before returning.
  *
- * Environment Overrides:
- *  - MCP_ATOMIC_WRITE_RETRIES (default 5) : total attempts (initial + retries)
- *  - MCP_ATOMIC_WRITE_BACKOFF_MS (default 10): initial backoff in ms (exponential with jitter)
+ * Configuration (via runtime config / env consolidation):
+ *  - atomicFs.retries (MCP_ATOMIC_WRITE_RETRIES, default 5) : total attempts (initial + retries)
+ *  - atomicFs.backoffMs (MCP_ATOMIC_WRITE_BACKOFF_MS, default 10): initial backoff in ms (exponential with jitter)
  */
 export function atomicWriteJson(filePath: string, obj: unknown){
   const dir = path.dirname(filePath);
   if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true});
   const data = JSON.stringify(obj,null,2);
-  const maxAttempts = Math.max(1, Number(process.env.MCP_ATOMIC_WRITE_RETRIES)||5);
-  const baseBackoff = Math.max(1, Number(process.env.MCP_ATOMIC_WRITE_BACKOFF_MS)||10);
+  const atomicConfig = getRuntimeConfig().atomicFs;
+  const maxAttempts = Math.max(1, atomicConfig.retries);
+  const baseBackoff = Math.max(1, atomicConfig.backoffMs);
   let lastErr: unknown = null;
   for(let attempt=1; attempt<=maxAttempts; attempt++){
     const tmp = path.join(dir, `.${path.basename(filePath)}.${crypto.randomBytes(6).toString('hex')}.tmp`);

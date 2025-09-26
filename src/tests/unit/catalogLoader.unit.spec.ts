@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { CatalogLoader } from '../../services/catalogLoader';
 import { ClassificationService } from '../../services/classificationService';
+import { reloadRuntimeConfig } from '../../config/runtimeConfig';
 
 function writeJson(p: string, obj: any){ fs.writeFileSync(p, JSON.stringify(obj, null, 2), 'utf8'); }
 
@@ -18,6 +19,8 @@ describe('CatalogLoader (unit)', () => {
     fs.rmSync(BASE, { recursive: true, force: true });
     fs.mkdirSync(DIR, { recursive: true });
     delete (globalThis as any).__MCP_CATALOG_MEMO; // reset memo cache between tests
+    delete process.env.MCP_CATALOG_MEMOIZE;
+    reloadRuntimeConfig();
   });
 
   it('loads single valid instruction and computes stable hash', () => {
@@ -49,6 +52,7 @@ describe('CatalogLoader (unit)', () => {
 
   it('memoizes unchanged file when MCP_CATALOG_MEMOIZE=1', () => {
     process.env.MCP_CATALOG_MEMOIZE = '1';
+    reloadRuntimeConfig();
     writeJson(path.join(DIR, 'a.json'), minimal('a'));
     const loader1 = new CatalogLoader(DIR, new ClassificationService());
     const res1 = loader1.load();
@@ -58,5 +62,6 @@ describe('CatalogLoader (unit)', () => {
     expect(res1.entries[0].id).toBe('a');
     expect(res2.entries[0].id).toBe('a');
     delete process.env.MCP_CATALOG_MEMOIZE;
+    reloadRuntimeConfig();
   });
 });

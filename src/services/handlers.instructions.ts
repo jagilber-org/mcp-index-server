@@ -22,16 +22,17 @@ import { hashBody as canonicalHashBody } from './canonical';
 // still honored by parseMutation() with a one-time warning. We preserve dynamic semantics
 // (tests may flip env at runtime) by reloading runtime config when only the legacy flag is set.
 function isMutationEnabled(){
-  const legacyActive = process.env.MCP_ENABLE_MUTATION && !process.env.MCP_MUTATION;
-  if(legacyActive){
-    reloadRuntimeConfig();
+  const cfg = getRuntimeConfig();
+  if(cfg.mutation.legacyEnable && !cfg.mutation.enabled){
+    return reloadRuntimeConfig().mutation.enabled;
   }
-  return getRuntimeConfig().mutationEnabled;
+  return cfg.mutation.enabled;
 }
 
 // CI Environment Detection and Response Size Limiting
 function isCI(): boolean {
-  return !!(process.env.CI || process.env.GITHUB_ACTIONS || process.env.TF_BUILD);
+  const ctx = getRuntimeConfig().instructions.ciContext;
+  return ctx.inCI || ctx.githubActions || ctx.tfBuild;
 }
 
 function limitResponseSize<T extends Record<string, unknown>>(response: T): T {
@@ -116,21 +117,21 @@ function traceInstructionVisibility(id:string, phase:string, extra?: Record<stri
 function traceEnvSnapshot(phase:string, extra?:Record<string, unknown>){
   if(!traceVisibility()) return;
   try {
-    const pick = (k:string)=> process.env[k];
+    const cfg = getRuntimeConfig();
+    const instructionsCfg = cfg.instructions;
+    const catalogCfg = cfg.catalog;
     emitTrace('[trace:env]', {
       phase,
       pid: process.pid,
       flags: {
-        MCP_ENABLE_MUTATION: pick('MCP_ENABLE_MUTATION'),
-        MCP_INSTRUCTIONS_STRICT_CREATE: pick('MCP_INSTRUCTIONS_STRICT_CREATE'),
-        MCP_CANONICAL_DISABLE: pick('MCP_CANONICAL_DISABLE'),
-        MCP_READ_RETRIES: pick('MCP_READ_RETRIES'),
-        MCP_READ_BACKOFF_MS: pick('MCP_READ_BACKOFF_MS'),
-        FULL_LIST_GET: pick('FULL_LIST_GET'),
-        LIST_GET_SAMPLE_SIZE: pick('LIST_GET_SAMPLE_SIZE'),
-        LIST_GET_SAMPLE_SEED: pick('LIST_GET_SAMPLE_SEED'),
-        LIST_GET_CONCURRENCY: pick('LIST_GET_CONCURRENCY'),
-        INSTRUCTIONS_DIR: pick('INSTRUCTIONS_DIR')
+        mutationEnabled: cfg.mutation.enabled,
+        mutationLegacy: cfg.mutation.legacyEnable,
+        strictCreate: instructionsCfg.strictCreate,
+        canonicalDisable: instructionsCfg.canonicalDisable,
+        readRetries: catalogCfg.readRetries.attempts,
+        readBackoffMs: catalogCfg.readRetries.backoffMs,
+        requireCategory: instructionsCfg.requireCategory,
+        instructionsDir: catalogCfg.baseDir
       },
       ...extra
     });
@@ -180,13 +181,13 @@ export const instructionActions = {
     const resp = limitResponseSize({ hash: st.hash, count: items.length, items });
     return resp; },
   listScoped: (p:{ userId?:string; workspaceId?:string; teamIds?: string[] })=>{ const st=ensureLoaded(); const userId=p.userId?.toLowerCase(); const workspaceId=p.workspaceId?.toLowerCase(); const teamIds=(p.teamIds||[]).map(t=>t.toLowerCase()); const all=st.list; const matchUser = userId? all.filter(e=> (e.userId||'').toLowerCase()===userId):[]; if(matchUser.length) return { hash: st.hash, count: matchUser.length, scope:'user', items:matchUser }; const matchWorkspace = workspaceId? all.filter(e=> (e.workspaceId||'').toLowerCase()===workspaceId):[]; if(matchWorkspace.length) return { hash: st.hash, count: matchWorkspace.length, scope:'workspace', items:matchWorkspace }; const teamSet = new Set(teamIds); const matchTeams = teamIds.length? all.filter(e=> Array.isArray(e.teamIds) && e.teamIds.some(t=> teamSet.has(t.toLowerCase()))):[]; if(matchTeams.length) return { hash: st.hash, count: matchTeams.length, scope:'team', items:matchTeams }; const audienceAll = all.filter(e=> e.audience==='all'); return { hash: st.hash, count: audienceAll.length, scope:'all', items: audienceAll }; },
-  get: (p:{id:string})=>{ const st=ensureLoaded(); const item = st.byId.get(p.id); if(!item && process.env.MCP_TEST_STRICT_VISIBILITY==='1'){
+  get: (p:{id:string})=>{ const st=ensureLoaded(); const item = st.byId.get(p.id); if(!item && getRuntimeConfig().instructions.strictVisibility){
       // In strict test mode, attempt enhanced late materialization path immediately
       // without requiring callers to know about getEnhanced.
       const enhanced = (instructionActions as unknown as { getEnhanced:(p:{id:string})=>unknown }).getEnhanced({ id:p.id }) as { hash?:string; item?:InstructionEntry; notFound?:boolean };
       if(enhanced.item) return { hash: enhanced.hash || st.hash, item: enhanced.item }; // lateMaterialized flag removed Phase E
     }
-    if(traceVisibility()){ const dir=getInstructionsDir(); emitTrace('[trace:get]', { dir, id:p.id, found: !!item, total: st.list.length, strict: process.env.MCP_TEST_STRICT_VISIBILITY==='1' }); traceInstructionVisibility(p.id, item? 'get-found':'get-not-found'); if(!item) traceEnvSnapshot('get-not-found'); }
+  if(traceVisibility()){ const dir=getInstructionsDir(); emitTrace('[trace:get]', { dir, id:p.id, found: !!item, total: st.list.length, strict: getRuntimeConfig().instructions.strictVisibility }); traceInstructionVisibility(p.id, item? 'get-found':'get-not-found'); if(!item) traceEnvSnapshot('get-not-found'); }
     return item? { hash: st.hash, item }: { notFound:true };
   },
   // Reliability enhancement: if an entry is reported notFound but a file with that id exists on disk,
@@ -232,7 +233,8 @@ export const instructionActions = {
     const text = (p.text||'').toLowerCase().trim();
     let items = st.list;
     // BEGIN TEMP QUERY TRACE (diagnostic instrumentation – safe to remove once visibility issue resolved)
-    const diagActive = process.env.MCP_TRACE_QUERY_DIAG === '1' && (catsAll.length || catsAny.length || catsEx.length || text.length);
+  const instructionsCfg = getRuntimeConfig().instructions;
+  const diagActive = instructionsCfg.traceQueryDiag && (catsAll.length || catsAny.length || catsEx.length || text.length);
     type Stage = { stage:string; count:number; note?:string };
     const stages: Stage[] = [];
     const pushStage = (stage:string, note?:string)=>{ if(diagActive) stages.push({ stage, count: items.length, note }); };
@@ -346,6 +348,7 @@ registerHandler('instructions/import', guard('instructions/import', (p:{entries:
   const entries=p.entries||[]; const mode=p.mode||'skip';
   if(!Array.isArray(entries)||!entries.length) return { error:'no entries' };
   const dir=getInstructionsDir(); if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true});
+  const instructionsCfg = getRuntimeConfig().instructions;
   let imported=0, skipped=0, overwritten=0; const errors: { id:string; error:string }[]=[]; const classifier=new ClassificationService();
   for(const e of entries){
     if(!e || !e.id || !e.title || !e.body){ const id=(e as Partial<ImportEntry>)?.id||'unknown'; errors.push({ id, error:'missing required fields'}); continue; }
@@ -359,7 +362,7 @@ registerHandler('instructions/import', guard('instructions/import', (p:{entries:
   // category unless strict governance explicitly required via env flag. Tests relying on lax add/import should continue
   // to pass while new governance still enforces P1 + owner rules below.
   if(!categories.length){
-    if(process.env.MCP_REQUIRE_CATEGORY === '1') { errors.push({ id:e.id, error:'category_required'}); continue; }
+    if(instructionsCfg.requireCategory) { errors.push({ id:e.id, error:'category_required'}); continue; }
     categories = ['uncategorized'];
     incrementCounter('instructions:autoCategory');
   }
@@ -372,7 +375,7 @@ registerHandler('instructions/import', guard('instructions/import', (p:{entries:
     // Skip/overwrite semantics now that governance validation passed
     if(fileExists && mode==='skip'){ skipped++; continue; }
     if(fileExists && mode==='overwrite') overwritten++; else if(!fileExists) imported++;
-  const base: InstructionEntry = existing ? { ...existing, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, primaryCategory: effectivePrimary, updatedAt: now } as InstructionEntry : { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, primaryCategory: effectivePrimary, sourceHash:newBodyHash, schemaVersion:SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt:now, updatedAt:now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
+  const base: InstructionEntry = existing ? { ...existing, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, primaryCategory: effectivePrimary, updatedAt: now } as InstructionEntry : { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, primaryCategory: effectivePrimary, sourceHash:newBodyHash, schemaVersion:SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt:now, updatedAt:now, riskScore:e.riskScore, createdByAgent: instructionsCfg.agentId, sourceWorkspace: instructionsCfg.workspaceId } as InstructionEntry;
     const govKeys: (keyof ImportEntry)[] = ['version','owner','status','priorityTier','classification','lastReviewedAt','nextReviewDue','changeLog','semanticSummary'];
     for(const k of govKeys){ const v = e[k]; if(v!==undefined){ (base as unknown as Record<string, unknown>)[k]=v as unknown; } }
     base.sourceHash = newBodyHash;
@@ -390,6 +393,7 @@ registerHandler('instructions/import', guard('instructions/import', (p:{entries:
 interface AddParams { entry: ImportEntry & { lax?: boolean }; overwrite?: boolean; lax?: boolean }
 registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   const e = p.entry as ImportEntry | undefined;
+  const instructionsCfg = getRuntimeConfig().instructions;
   // Shared semantic version validation regex (MAJOR.MINOR.PATCH with optional prerelease/build)
   const SEMVER_REGEX = /^([0-9]+)\.([0-9]+)\.([0-9]+)(?:[-+].*)?$/;
   // Unified failure helper adds feedback reporting guidance + sanitized repro details
@@ -509,7 +513,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   // Apply canonicalization so sourceHash stable across superficial whitespace edits.
   let categories = Array.from(new Set((Array.isArray(e.categories)? e.categories: []).filter((c):c is string=> typeof c==='string' && c.trim().length>0).map(c=> c.toLowerCase()))).sort();
   if(!categories.length){
-    const allowAuto = lax || process.env.MCP_REQUIRE_CATEGORY !== '1';
+    const allowAuto = lax || !instructionsCfg.requireCategory;
     if(allowAuto){
       categories = ['uncategorized'];
       if(traceVisibility()) emitTrace('[trace:add:auto-category]', { id:e.id });
@@ -520,7 +524,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   }
   const suppliedPrimary = (e as unknown as Record<string, unknown>).primaryCategory as string | undefined;
   const primaryCategory = (suppliedPrimary && categories.includes(suppliedPrimary.toLowerCase())) ? suppliedPrimary.toLowerCase() : categories[0];
-  const sourceHash = process.env.MCP_CANONICAL_DISABLE === '1'
+  const sourceHash = instructionsCfg.canonicalDisable
     ? crypto.createHash('sha256').update(bodyTrimmed,'utf8').digest('hex')
     : hashBody(rawBody);
   // Governance prerequisites
@@ -568,7 +572,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
         // in-memory catalog already contains the entry and visibility contract holds.
         const stNoop = ensureLoaded();
         const respNoop: { id:string; created:boolean; overwritten:boolean; skipped:boolean; hash:string; verified:true; strictVerified?: true } = { id:e.id, created:false, overwritten:false, skipped:true, hash: stNoop.hash, verified:true };
-        if(process.env.MCP_INSTRUCTIONS_STRICT_CREATE === '1') respNoop.strictVerified = true;
+  if(instructionsCfg.strictCreate) respNoop.strictVerified = true;
         logAudit('add', e.id, { created:false, overwritten:false, skipped:true, verified:true, noop:true });
         if(traceVisibility()) emitTrace('[trace:add:noop-overwrite]', { id:e.id, hash: stNoop.hash, reason:'no body/governance delta' });
         return respNoop;
@@ -634,13 +638,13 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
       base.changeLog = repairChangeLog(base.changeLog);
     } catch {
       // Fallback if existing unreadable -> treat as new
-  base = { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, primaryCategory, sourceHash, schemaVersion: SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
+  base = { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, primaryCategory, sourceHash, schemaVersion: SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore:e.riskScore, createdByAgent: instructionsCfg.agentId, sourceWorkspace: instructionsCfg.workspaceId } as InstructionEntry;
       // Initialize governance defaults for new fallback record
       base.version = '1.0.0';
       base.changeLog = [ { version: '1.0.0', changedAt: now, summary: 'initial import' } ];
     }
   } else {
-  base = { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, primaryCategory, sourceHash, schemaVersion: SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore:e.riskScore, createdByAgent: process.env.MCP_AGENT_ID || undefined, sourceWorkspace: process.env.WORKSPACE_ID || process.env.INSTRUCTIONS_WORKSPACE || undefined } as InstructionEntry;
+  base = { id:e.id, title:e.title, body:bodyTrimmed, rationale:e.rationale, priority:e.priority, audience:e.audience, requirement:e.requirement, categories, primaryCategory, sourceHash, schemaVersion: SCHEMA_VERSION, deprecatedBy:e.deprecatedBy, createdAt: now, updatedAt: now, riskScore:e.riskScore, createdByAgent: instructionsCfg.agentId, sourceWorkspace: instructionsCfg.workspaceId } as InstructionEntry;
   // New entry governance defaults (strict): if caller supplies version it MUST be valid semver.
   if(e.version !== undefined){
     if(!SEMVER_REGEX.test(e.version)) return fail('invalid_semver', { id:e.id });
@@ -680,7 +684,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
     base.sourceHash = sourceHash;
   } else {
     // existing body may not equal trimmed new body if not supplied; recompute using canonical guard
-    base.sourceHash = process.env.MCP_CANONICAL_DISABLE === '1'
+    base.sourceHash = instructionsCfg.canonicalDisable
       ? crypto.createHash('sha256').update(base.body,'utf8').digest('hex')
       : hashBody(base.body);
   }
@@ -690,7 +694,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   try { atomicWriteJson(file, record); } catch(err){ return fail((err as Error).message||'write-failed', { id:e.id }); }
   try { touchCatalogVersion(); } catch { /* ignore */ }
   let stReloaded;
-  const strictMode = process.env.MCP_TEST_STRICT_VISIBILITY==='1';
+  const strictMode = instructionsCfg.strictVisibility;
   if(strictMode){
     // Strict test visibility mode: avoid full catalog reload (costly with large catalogs) and
     // inject directly into existing state if present. This keeps latency < test timeout even
@@ -755,7 +759,7 @@ registerHandler('instructions/add', guard('instructions/add', (p:AddParams)=>{
   } catch(err){ verifyIssues.push('verify-exception:' + (err as Error).message); }
   // Synchronous manifest update (low mutation frequency) unless explicitly deferred by env
   try {
-    if(process.env.MCP_MANIFEST_WRITE === '1') writeManifestFromCatalog(); else setImmediate(()=>{ try { attemptManifestUpdate(); } catch { /* ignore */ } });
+    if(instructionsCfg.manifest.writeEnabled) writeManifestFromCatalog(); else setImmediate(()=>{ try { attemptManifestUpdate(); } catch { /* ignore */ } });
   } catch { /* ignore manifest */ }
   logAudit('add', e.id, { created: createdNow, overwritten: overwrittenNow, verified:true, forcedReload:true });
   if(traceVisibility()) emitTrace('[trace:add:forced-reload]', { id:e.id, created: createdNow, overwritten: overwrittenNow, hash: stReloaded.hash, strictVerified, issues: verifyIssues.slice(0,5), strictMode });
@@ -770,6 +774,7 @@ registerHandler('instructions/remove', guard('instructions/remove', (p:{ ids:str
   if(!ids.length) return { removed:0, removedIds:[], missing:[], errorCount:0, errors:['no ids supplied'] };
   const base=getInstructionsDir();
   const missing:string[]=[]; const removed:string[]=[]; const errors:{ id:string; error:string }[]=[];
+  const instructionsCfg = getRuntimeConfig().instructions;
   for(const id of ids){
     const file=path.join(base, `${id}.json`);
     try {
@@ -781,7 +786,7 @@ registerHandler('instructions/remove', guard('instructions/remove', (p:{ ids:str
   if(removed.length){ touchCatalogVersion(); invalidate(); }
   let st = ensureLoaded();
   // Optional strict verification: ensure removed IDs are not present in catalog after reload.
-  const strictRemove = process.env.MCP_INSTRUCTIONS_STRICT_REMOVE === '1';
+  const strictRemove = instructionsCfg.strictRemove;
   let strictFailed: string[] = [];
   if(strictRemove){
     // If any removed IDs still visible, attempt one more reload then final check.
@@ -1042,6 +1047,7 @@ registerHandler('instructions/groom', guard('instructions/groom', (p:{ mode?: { 
 registerHandler('instructions/normalize', guard('instructions/normalize', (p:{ dryRun?:boolean; forceCanonical?:boolean })=>{
   const dryRun = !!p?.dryRun;
   const forceCanonical = !!p?.forceCanonical;
+  const instructionsCfg = getRuntimeConfig().instructions;
   const base = getInstructionsDir();
   const dirs = [base, path.join(process.cwd(),'devinstructions')].filter(d=> fs.existsSync(d));
   let scanned=0, changed=0, fixedHash=0, fixedVersion=0, fixedTier=0, addedTimestamps=0; const updated:string[]=[];
@@ -1059,7 +1065,8 @@ registerHandler('instructions/normalize', guard('instructions/normalize', (p:{ d
       const rec = data as Record<string, unknown>;
       const body = typeof rec.body==='string'? rec.body: '';
       if(body){
-        const actual = (forceCanonical || process.env.MCP_CANONICAL_DISABLE!=='1') ? canonicalHashBody(body) : crypto.createHash('sha256').update(body,'utf8').digest('hex');
+        const useCanonical = forceCanonical || !instructionsCfg.canonicalDisable;
+        const actual = useCanonical ? canonicalHashBody(body) : crypto.createHash('sha256').update(body,'utf8').digest('hex');
         if(rec.sourceHash !== actual){ rec.sourceHash = actual; modified = true; fixedHash++; }
       }
       if(!rec.version || typeof rec.version!=='string' || !SEMVER.test(rec.version)){ rec.version = '1.0.0'; modified = true; fixedVersion++; }

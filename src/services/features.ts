@@ -1,8 +1,10 @@
 // Feature flag & metrics infrastructure (Phase 0)
 // INDEX_FEATURES=usage,window,hotness,drift,risk
 
-const RAW = (process.env.INDEX_FEATURES||'').split(',').map(s=>s.trim()).filter(Boolean);
-const SET = new Set(RAW);
+import { getRuntimeConfig } from '../config/runtimeConfig';
+
+const BASE_FEATURES = Array.from(getRuntimeConfig().featureFlags.indexFeatures);
+const SET = new Set(BASE_FEATURES);
 
 export function hasFeature(name: string){ return SET.has(name); }
 
@@ -18,7 +20,7 @@ export function featureStatus(){
   return {
     features: Array.from(SET.values()).sort(),
     counters: getCounters(),
-    env: RAW.length? RAW: [],
+    env: BASE_FEATURES.length ? [...BASE_FEATURES] : [],
   };
 }
 

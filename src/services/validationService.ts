@@ -1,6 +1,7 @@
 import Ajv, { ErrorObject } from 'ajv';
 import addFormats from 'ajv-formats';
 import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
+import { getRuntimeConfig } from '../config/runtimeConfig';
 import { getZodEnhancedRegistry } from './toolRegistry.zod';
 import { ZodError, ZodTypeAny } from 'zod';
 
@@ -14,16 +15,22 @@ try {
 }
 const cache = new Map<string, ValidatorEntry | null>();
 
-// Validation mode feature flag:
-// MCP_VALIDATION_MODE=ajv  -> force Ajv only (ignore Zod)
-// MCP_VALIDATION_MODE=zod  -> prefer Zod; if missing fall back to Ajv (default)
-// MCP_VALIDATION_MODE=auto (or unset) -> same as 'zod' today (reserved for future heuristics)
-const VALIDATION_MODE = (process.env.MCP_VALIDATION_MODE || 'zod').toLowerCase();
-const FORCE_AJV = VALIDATION_MODE === 'ajv';
+// Validation mode feature flag is centrally defined via runtime config.
+// Modes: 'ajv' => force Ajv only, 'zod' (default) => prefer Zod with Ajv fallback, 'auto' reserved for future heuristics.
+function resolveValidationMode(): string {
+  const mode = getRuntimeConfig().validation.mode;
+  return mode && mode.trim().length ? mode : 'zod';
+}
 
 // Simple counters for metrics/snapshot (zod vs ajv path usage)
 interface ValidationCounters { zodSuccess: number; zodFailure: number; ajvSuccess: number; ajvFailure: number; mode: string }
-const validationCounters: ValidationCounters = { zodSuccess: 0, zodFailure: 0, ajvSuccess: 0, ajvFailure: 0, mode: VALIDATION_MODE };
+const validationCounters: ValidationCounters = { zodSuccess: 0, zodFailure: 0, ajvSuccess: 0, ajvFailure: 0, mode: resolveValidationMode() };
+
+function resolveValidationSettings(){
+  const mode = resolveValidationMode();
+  validationCounters.mode = mode;
+  return { mode, forceAjv: mode === 'ajv' };
+}
 declare global { // augment global type for side-channel metrics exposure
   // eslint-disable-next-line no-var
   var __MCP_VALIDATION_METRICS__ : ValidationCounters | undefined;
@@ -42,7 +49,8 @@ function buildValidator(method: string): ValidatorEntry | null {
     const reg = getZodEnhancedRegistry().find(t => t.name === method);
     if(!reg) return null;
     const compiled = ajv.compile(reg.inputSchema as object) as AjvLikeValidateFn;
-    if(reg.zodSchema && !FORCE_AJV){
+    const { forceAjv } = resolveValidationSettings();
+    if(reg.zodSchema && !forceAjv){
       const z = reg.zodSchema as ZodTypeAny;
       const v: CompositeValidator = {
         validate: (d: unknown) => {
@@ -77,8 +85,9 @@ export function validateParams(method: string, params: unknown): { ok: true } | 
   let entry = cache.get(method);
   if(entry === undefined){ entry = buildValidator(method); cache.set(method, entry); }
   if(!entry) return { ok: true }; // no schema => accept
+  const { forceAjv } = resolveValidationSettings();
   const ok = entry.validate(params === undefined ? {} : params);
-  const hasZod = (entry as CompositeValidator).zod !== undefined && !FORCE_AJV;
+  const hasZod = (entry as CompositeValidator).zod !== undefined && !forceAjv;
   if(ok){
     if(hasZod){ validationCounters.zodSuccess++; } else { validationCounters.ajvSuccess++; }
     return { ok: true };

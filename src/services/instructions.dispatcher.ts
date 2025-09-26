@@ -4,6 +4,7 @@ import { semanticError } from './errors';
 import { traceEnabled, emitTrace } from './tracing';
 import { getInstructionsDir, ensureLoaded } from './catalogContext';
 import { mutationGatedReason } from './bootstrapGating';
+import { getRuntimeConfig } from '../config/runtimeConfig';
 
 // Dispatcher input type (loosely typed for now; validation handled by upstream schema layer soon)
 interface DispatchBase { action: string }
@@ -26,7 +27,7 @@ registerHandler('instructions/dispatch', async (params: DispatchParams) => {
       const dir = getInstructionsDir();
       // Avoid heavy work unless hash diag explicitly requested
       let hash: string | undefined;
-      if(process.env.MCP_TRACE_DISPATCH_DIAG==='1'){
+      if(getRuntimeConfig().trace.has('dispatchDiag')){
         try { const st = ensureLoaded(); hash = st.hash; } catch { /* ignore */ }
       }
       emitTrace('[trace:dispatch:start]', { action, keys: Object.keys(params||{}).filter(k=>k!=='action'), pid: process.pid, dir, hash });

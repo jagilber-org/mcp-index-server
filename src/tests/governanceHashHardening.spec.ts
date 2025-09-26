@@ -8,10 +8,12 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { createInstructionClient } from '../portableClientShim';
+import { getRuntimeConfig } from '../config/runtimeConfig';
 import { extractCatalogHash, waitForCatalogHashChange, readCatalogHash } from './hashHelpers';
 import { assertHashStable, assertHashChanged } from './testUtils.js';
 
 const BODY_BASE = 'governance-hardening-body';
+const govHashConfig = getRuntimeConfig().catalog.govHash;
 
 // Reuse a single portable client with an isolated instructions directory to avoid
 // per-test process startup (previously ~15–22s each) causing timeouts. Isolation
@@ -30,8 +32,8 @@ beforeAll(async () => {
 afterAll(async () => { try { await sharedClient?.close(); } catch { /* ignore */ } });
 
 // Tunables to reduce runtime / flakiness while keeping coverage. Defaults are conservative.
-const MAX_CANON_VARIANTS = Math.max(1, parseInt(process.env.MCP_GOV_HASH_CANON_VARIANTS || '1', 10));
-const IMPORT_SET_SIZE = Math.max(2, Math.min(5, parseInt(process.env.MCP_GOV_HASH_IMPORT_SET_SIZE || '2', 10))); // cap at 5 for safety
+const MAX_CANON_VARIANTS = govHashConfig.hashCanonVariants;
+const IMPORT_SET_SIZE = govHashConfig.hashImportSetSize; // config already clamps to safe bounds
 
 // Simple body canonicalization helper examples (simulate user edits that should not change sourceHash)
 function canonicalizationVariants(base: string): string[] {
@@ -41,7 +43,7 @@ function canonicalizationVariants(base: string): string[] {
   return variants.slice(0, MAX_CANON_VARIANTS);
 }
 
-const HARDENING_ENABLED = process.env.MCP_GOV_HASH_HARDENING !== '0';
+const HARDENING_ENABLED = govHashConfig.hashHardeningEnabled;
 
 (HARDENING_ENABLED ? describe : describe.skip)('Governance Hash Hardening', () => {
   it('no-op overwrite (identical body) keeps catalog hash stable', async () => {

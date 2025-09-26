@@ -16,6 +16,7 @@
 * **[🔍 Portable Test Client (PORTABLE-MCP-TEST-CLIENT.md)](./docs/PORTABLE-MCP-TEST-CLIENT.md)** - Critical testing tool for MCP troubleshooting
 * **[🏗️ Architecture (ARCHITECTURE.md)](./docs/ARCHITECTURE.md)** - System design and component overview
 * **[🔒 Security (SECURITY.md)](./SECURITY.md)** - Security policies and compliance
+* **[🚦 CI Investigation (CI-INVESTIGATION-2025-09-24.md)](./docs/CI-INVESTIGATION-2025-09-24.md)** - Latest analysis of skip guard and build verification failures
 
 Enterprise-grade local Model Context Protocol server providing a governed, classified, auditable instruction catalog with analytics and optional admin dashboard.
 

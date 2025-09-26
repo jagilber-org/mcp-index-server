@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { getInstructionsDir, ensureLoaded } from './catalogContext';
+import { getRuntimeConfig } from '../config/runtimeConfig';
 
 /**
  * Bootstrap / confirmation gating logic.
@@ -23,6 +24,10 @@ let inMemoryPending: PendingRecord | null = null;
 let confirmed = false;
 let loaded = false;
 
+function bootstrapConfig(){
+  return getRuntimeConfig().server.bootstrap;
+}
+
 function instructionsDirSafe(){
   try { return getInstructionsDir(); } catch { return process.cwd(); }
 }
@@ -40,7 +45,7 @@ function loadState(){
   } catch { /* ignore */ }
 }
 
-export function isReferenceMode(){ return process.env.MCP_REFERENCE_MODE === '1'; }
+export function isReferenceMode(){ return bootstrapConfig().referenceMode; }
 
 export function isBootstrapConfirmed(){ loadState(); return confirmed; }
 
@@ -75,7 +80,7 @@ export function requestBootstrapToken(rationale?: string){
   }
   const raw = crypto.randomBytes(6).toString('hex');
   const hash = crypto.createHash('sha256').update(raw,'utf8').digest('hex');
-  const expiresSec = parseInt(process.env.MCP_BOOTSTRAP_TOKEN_TTL_SEC || '900',10); // 15m default
+  const expiresSec = Math.max(1, bootstrapConfig().tokenTtlSec);
   const rec: PendingRecord = { hash, expiresAt: now + (expiresSec*1000), issuedAt: now, hint: rationale || 'Human operator: review context, then provide token to bootstrap/confirmFinalize.' };
   inMemoryPending = rec;
   // Persist (best-effort): do not write the raw token, only its hash

@@ -66,6 +66,9 @@ jobs:
       - name: Build
         run: npm run build
       
+      - name: Validate no test artifacts in instructions
+        run: node scripts/validate-no-test-artifacts.mjs
+      
       - name: Verify build artifacts
         run: |
           echo "Verifying dist/server/index.js exists..."

@@ -1,28 +1,13 @@
 {
   "$schema": "../schemas/manifest.schema.json",
   "version": 1,
-  "generatedAt": "2025-09-26T15:36:47.478Z",
-  "count": 4,
+  "generatedAt": "2025-09-28T21:14:23.823Z",
+  "count": 1,
   "entries": [
     {
-      "id": "a",
-      "sourceHash": "0000000000000000000000000000000000000000000000000000000000000000",
-      "bodyHash": "68d3a6450cfc846671f6160560ff0a8c3859105d6a967092334710a933c0cf89"
-    },
-    {
-      "id": "b",
-      "sourceHash": "0000000000000000000000000000000000000000000000000000000000000000",
-      "bodyHash": "c1c02f812f48581548fa4c3b8ee025f3ec15a8c92778ded260372bd87b7385ac"
-    },
-    {
-      "id": "c",
-      "sourceHash": "0000000000000000000000000000000000000000000000000000000000000000",
-      "bodyHash": "e15041ea78cf7294a8345797a40e89d1fc009503e2603f1563fb3b9c6a6c81f1"
-    },
-    {
-      "id": "z-new",
-      "sourceHash": "594e519ae499312b29433b7dd8a97ff068defcba9755b6d5d00e84c524d67b06",
-      "bodyHash": "594e519ae499312b29433b7dd8a97ff068defcba9755b6d5d00e84c524d67b06"
+      "id": "service-fabric-diagnostic-methodology",
+      "sourceHash": "1bbff5d15275c9fe154afeb0c231e2fd8efbfd81efd02d79f399c88e7c6a8e1a",
+      "bodyHash": "1bbff5d15275c9fe154afeb0c231e2fd8efbfd81efd02d79f399c88e7c6a8e1a"
     }
   ]
 }

@@ -141,11 +141,33 @@ health_response.json
 # Metrics timestamp files (keep only aggregated metrics)
 metrics/metrics-*.json
 
-# Test-generated instruction files with specific patterns
+# ===================================================================
+# TEST-GENERATED INSTRUCTION ARTIFACTS - DO NOT COMMIT
+# ===================================================================
+# These patterns match files created by test suites that write to
+# instructions/ directory during test execution. Tests MUST clean up
+# these files in afterAll/afterEach hooks. This .gitignore is a safety
+# net to prevent accidental commits if cleanup fails.
+#
+# Patterns and their source tests:
+# - smoke-*.json: createReadSmoke.spec.ts
+# - mw-disabled-*.json: manifestEdgeCases.spec.ts (write disabled test)
+# - mw-repair-*.json: manifestEdgeCases.spec.ts (repair test)
+# - vis-*.json: addVisibilityInvariant.spec.ts
+# - synthetic-*.json: Dashboard synthetic load tests (ApiRoutes.ts)
+# - unit_p0_materialize_*.json: catalogContext.usage.unit.spec.ts
+# - unit_usageMonotonic_*.json: catalogContext.usage.unit.spec.ts
+#
+# CI enforcement: validate-no-test-artifacts.mjs checks for these
+# patterns and fails the build if any exist, ensuring cleanup works.
+# ===================================================================
+instructions/smoke-*.json
 instructions/mw-disabled-*.json
 instructions/mw-repair-*.json
 instructions/vis-*.json
 instructions/synthetic-*.json
+instructions/unit_p0_materialize_*.json
+instructions/unit_usageMonotonic_*.json
 
 # Backup and archive files
 *.bak

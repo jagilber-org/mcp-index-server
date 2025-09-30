@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import { getRuntimeConfig } from '../config/runtimeConfig.js';
 import { buildContentLengthFrame } from './util/stdioFraming.js';
 import { performHandshake, shutdownHandshakeServer } from './util/handshakeHelper.js';
@@ -10,6 +10,24 @@ import path from 'path';
 
 describe('createReadSmoke', () => {
   const cfg = getRuntimeConfig();
+  const createdTestIds: string[] = [];
+  const INSTRUCTIONS_DIR = path.join(process.cwd(), 'instructions');
+
+  // Cleanup: Remove all test artifacts created by this suite
+  afterAll(() => {
+    for (const testId of createdTestIds) {
+      const filePath = path.join(INSTRUCTIONS_DIR, `${testId}.json`);
+      try {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (err) {
+        // Log but don't fail cleanup
+        process.stderr.write(`[createReadSmoke:cleanup] failed to remove ${testId}: ${err}\n`);
+      }
+    }
+  });
+
   const maybeIt = cfg.coverage.fastMode ? it.skip : it;
   maybeIt('initialize → tools/list → add → get works', async () => {
     const PRODUCTION_DIR = 'C:/mcp/mcp-index-server-prod';
@@ -28,6 +46,7 @@ describe('createReadSmoke', () => {
       return;
     }
     const TEST_ID = 'smoke-' + Date.now();
+    createdTestIds.push(TEST_ID); // Register for cleanup
 
     // Provide a longer per-id wait for production path (larger instruction set) or env override.
   let WAIT_ID_TIMEOUT_MS = cfg.timing('smoke.waitId', 20000)!;

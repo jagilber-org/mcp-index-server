@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { performHandshake } from './util/handshakeHelper.js';
@@ -24,6 +24,24 @@ function writeCorruptedManifest(){
 }
 
 describe('manifest edge cases', () => {
+  const createdTestIds: string[] = [];
+  const INSTRUCTIONS_DIR = path.join(process.cwd(), 'instructions');
+
+  // Cleanup: Remove all test artifacts created by this suite
+  afterAll(() => {
+    for (const testId of createdTestIds) {
+      const filePath = path.join(INSTRUCTIONS_DIR, `${testId}.json`);
+      try {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (err) {
+        // Log but don't fail cleanup
+        process.stderr.write(`[manifestEdgeCases:cleanup] failed to remove ${testId}: ${err}\n`);
+      }
+    }
+  });
+
   const FAST_COVERAGE = process.env.FAST_COVERAGE === '1';
   const maybeIt = FAST_COVERAGE ? it.skip : it;
   // Centralized timing via runtimeConfig (with legacy env fallback captured in loader)
@@ -48,6 +66,7 @@ describe('manifest edge cases', () => {
     const send = (m:unknown)=> server.stdin.write(buildContentLengthFrame(m));
     // perform a simple add mutation which would normally trigger manifest update
     const id = 'mw-disabled-' + Date.now();
+    createdTestIds.push(id); // Register for cleanup
     send({ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id, title:'mw disabled', body:'body', priority:1, audience:'all', requirement:'optional', categories:['test'] }, overwrite:true, lax:true }}});
   await parser.waitForId(2, WAIT_DISABLED_MS, 50);
   server.kill();
@@ -91,6 +110,7 @@ describe('manifest edge cases', () => {
   const { server, parser } = await performHandshake({ extraEnv:{ MCP_MUTATION:'1', MCP_MANIFEST_WRITE:'1' }});
     const send = (m:unknown)=> server.stdin.write(buildContentLengthFrame(m));
     const id = 'mw-repair-' + Date.now();
+    createdTestIds.push(id); // Register for cleanup
     send({ jsonrpc:'2.0', id:2, method:'tools/call', params:{ name:'instructions/dispatch', arguments:{ action:'add', entry:{ id, title:'mw repair', body:'body', priority:2, audience:'all', requirement:'optional', categories:['repair'] }, overwrite:true, lax:true }}});
   await parser.waitForId(2, WAIT_REPAIR_MS, 50);
   server.kill();

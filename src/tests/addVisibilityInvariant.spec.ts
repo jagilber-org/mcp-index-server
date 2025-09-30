@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import { buildContentLengthFrame } from './util/stdioFraming.js';
 import { performHandshake } from './util/handshakeHelper.js';
+import fs from 'fs';
+import path from 'path';
 
 /*
   Visibility Invariant Tests
@@ -10,11 +12,30 @@ import { performHandshake } from './util/handshakeHelper.js';
 */
 
 describe('instructions/add visibility invariant', () => {
+  const createdTestIds: string[] = [];
+  const INSTRUCTIONS_DIR = path.join(process.cwd(), 'instructions');
+
+  // Cleanup: Remove all test artifacts created by this suite
+  afterAll(() => {
+    for (const testId of createdTestIds) {
+      const filePath = path.join(INSTRUCTIONS_DIR, `${testId}.json`);
+      try {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (err) {
+        // Log but don't fail cleanup
+        process.stderr.write(`[visibilityInvariant:cleanup] failed to remove ${testId}: ${err}\n`);
+      }
+    }
+  });
+
   it('created:true implies immediate get success + category discoverability', async () => {
   // Use local workspace server (dist/server/index.js) to validate invariant deterministically.
   // Production deployment path introduced variable cold-start latency causing false negatives.
   const LOCAL_DIR = process.cwd();
     const TEST_ID = 'vis-' + Date.now();
+    createdTestIds.push(TEST_ID); // Register for cleanup
     const CATEGORY = 'invariant';
 
     const { server, parser } = await performHandshake({

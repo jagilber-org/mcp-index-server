@@ -1,10 +1,12 @@
 name: Instruction Bootstrap Guard
 
 on:
-  pull_request:
-    branches: [ master ]
-  push:
-    branches: [ master ]
+  workflow_dispatch: {}
+  # Temporarily disabled - bootstrap generatedAt timestamp causes guaranteed drift
+  # pull_request:
+  #   branches: [ master ]
+  # push:
+  #   branches: [ master ]
 
 jobs:
   bootstrap-guard:

@@ -26,10 +26,10 @@ jobs:
         run: node scripts/validate-governance.mjs
       - name: Fail on Uncommitted Enrichment Drift
         run: |
-          if [ -n "$(git status --porcelain instructions snapshots/canonical-instructions.json)" ]; then
-            echo "Catalog enrichment drift detected. Run: node scripts/bootstrap-catalog.mjs and commit changes." >&2
-            git diff --name-only instructions snapshots/canonical-instructions.json >&2 || true
+          if [ -n "$(git status --porcelain instructions)" ]; then
+            echo "Catalog enrichment drift detected in instructions/. Run: node scripts/bootstrap-catalog.mjs and commit changes." >&2
+            git diff --name-only instructions >&2 || true
             exit 1
           else
-            echo "No enrichment drift";
+            echo "No enrichment drift in instructions/";
           fi

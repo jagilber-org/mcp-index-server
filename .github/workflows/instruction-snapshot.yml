@@ -1,8 +1,9 @@
 name: Instruction Snapshot
 
 on:
-  schedule:
-    - cron: '0 2 * * *'
+  # DISABLED: Scheduled snapshots not needed for private repo
+  # schedule:
+  #   - cron: '0 2 * * *'
   workflow_dispatch: {}
 
 jobs:

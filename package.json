@@ -99,6 +99,6 @@
   },
   "homepage": "https://github.com/jagilber/mcp-index-server#readme",
   "engines": {
-    "node": ">=20 <21"
+    "node": ">=20 <23"
   }
 }

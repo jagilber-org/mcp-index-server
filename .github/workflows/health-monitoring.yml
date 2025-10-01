@@ -5,13 +5,15 @@ permissions:
   issues: write
 
 on:
-  schedule:
-    # Run health checks every 6 hours
-    - cron: '0 */6 * * *'
+  # DISABLED: Health checks were hanging indefinitely causing workflow queue buildup
+  # schedule:
+  #   # Run health checks every 6 hours
+  #   - cron: '0 */6 * * *'
   workflow_dispatch: {}
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
+  # DISABLED: workflow_run trigger was causing cascading failures
+  # workflow_run:
+  #   workflows: ["CI"]
+  #   types: [completed]
 
 jobs:
   health-check:

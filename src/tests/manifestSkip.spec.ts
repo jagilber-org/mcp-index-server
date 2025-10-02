@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import path from 'path';
 import fs from 'fs';
 import { callTool } from './testUtils';
+import { reloadRuntimeConfig } from '../config/runtimeConfig';
 
 const DIR = path.join(process.cwd(),'tmp','manifest-skip');
 const SNAP = path.join(process.cwd(),'snapshots','catalog-manifest.json');
@@ -10,6 +11,7 @@ beforeAll(async () => {
   process.env.MCP_MUTATION = '1';
   process.env.MCP_MANIFEST_WRITE = '1';
   process.env.INSTRUCTIONS_DIR = DIR;
+  reloadRuntimeConfig(); // Reload config after setting env vars
   fs.rmSync(DIR,{recursive:true,force:true});
   fs.mkdirSync(DIR,{recursive:true});
   // side-effect imports

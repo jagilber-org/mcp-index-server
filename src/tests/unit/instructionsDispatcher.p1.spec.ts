@@ -4,6 +4,7 @@ import path from 'path';
 
 // Import side-effect registrations
 import { getHandler } from '../../server/registry';
+import { reloadRuntimeConfig } from '../../config/runtimeConfig';
 
 // Focused P1 dispatcher/handler coverage exercising add -> list(expectId repair) -> duplicate skip
 // -> search -> diff -> export(metaOnly) -> query(filters) -> categories -> dir -> remove -> reload.
@@ -14,6 +15,7 @@ describe('instructions dispatcher (P1)', () => {
   beforeAll(async () => {
     process.env.MCP_ENABLE_MUTATION = '1';
     process.env.INSTRUCTIONS_DIR = TMP_DIR; // isolate BEFORE handler registration
+    reloadRuntimeConfig(); // Reload config after setting env vars
     fs.rmSync(TMP_DIR, { recursive: true, force: true });
     fs.mkdirSync(TMP_DIR, { recursive: true });
   // Dynamically import after env setup so handlers bind to isolated directory

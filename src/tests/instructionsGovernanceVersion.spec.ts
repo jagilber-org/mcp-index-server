@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { getHandler } from '../server/registry';
+import { reloadRuntimeConfig } from '../config/runtimeConfig';
 
 const TMP_DIR = path.join(process.cwd(), 'tmp', 'governance-version');
 
@@ -10,6 +11,7 @@ describe('instructions/add governance versioning', () => {
   beforeAll(async () => {
   process.env.MCP_MUTATION = '1';
     process.env.INSTRUCTIONS_DIR = TMP_DIR;
+    reloadRuntimeConfig(); // Reload config after setting env vars
     fs.rmSync(TMP_DIR, { recursive: true, force: true });
     fs.mkdirSync(TMP_DIR, { recursive: true });
     // dynamic imports after env

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { getHandler } from '../server/registry';
+import { reloadRuntimeConfig } from '../config/runtimeConfig';
 
 // This test validates end-to-end governance metadata lifecycle for instructions:
 // - create (lax) fills default version + changeLog
@@ -16,6 +17,7 @@ describe('instructions governance: version & changeLog CRUD', () => {
   beforeAll(async () => {
   process.env.MCP_MUTATION = '1';
     process.env.INSTRUCTIONS_DIR = TMP_DIR; // isolate
+    reloadRuntimeConfig(); // Reload config after setting env vars
     fs.rmSync(TMP_DIR, { recursive: true, force: true });
     fs.mkdirSync(TMP_DIR, { recursive: true });
     // dynamic imports AFTER env vars

@@ -125,6 +125,20 @@ export class CatalogLoader {
   // Exclude internal manifest file if present
   const MANIFEST_NAME = '_manifest.json';
   files = files.filter(f => f !== MANIFEST_NAME);
+  
+  // Optional catalog size limit for performance (MCP_CATALOG_MAX_FILES)
+  const maxFiles = catalogConfig.maxFiles;
+  if(maxFiles && maxFiles > 0 && files.length > maxFiles){
+    const line = JSON.stringify({ 
+      level: 'warn', 
+      event: 'catalog-size-limit-exceeded', 
+      found: files.length, 
+      limit: maxFiles, 
+      message: `Catalog contains ${files.length} files but limit is ${maxFiles}. Taking first ${maxFiles} files. Set MCP_CATALOG_MAX_FILES higher or remove limit.`
+    });
+    (process.stderr.write as (chunk: string) => boolean)(line + '\n');
+    files = files.slice(0, maxFiles);
+  }
   const entries: InstructionEntry[] = [];
   const errors: { file: string; error: string }[] = [];
   // File-level trace (opt-in) surfaces every scanned file decision so higher-level diagnostics
@@ -648,9 +662,26 @@ export class CatalogLoader {
     if(memoryCacheEnabled && (cacheHits || hashHits) && traceEnabled(1)){
       try { emitTrace('[trace:catalog:cache-summary]', { hits: cacheHits, hashHits, scanned: files.length, percent: Number(((cacheHits+hashHits) / files.length * 100).toFixed(2)) }); } catch { /* ignore */ }
     }
+    const loadDurationMs = Date.now() - loadStart;
     if(traceEnabled(1)){
-      try { emitTrace('[trace:catalog:load-end]', { dir, durationMs: Date.now()-loadStart, accepted: entries.length, skipped: files.length-entries.length }); } catch { /* ignore */ }
+      try { emitTrace('[trace:catalog:load-end]', { dir, durationMs: loadDurationMs, accepted: entries.length, skipped: files.length-entries.length }); } catch { /* ignore */ }
     }
+    
+    // Warn if catalog load time exceeds threshold (MCP_CATALOG_LOAD_WARN_MS)
+    const loadWarningThreshold = catalogConfig.loadWarningThreshold;
+    if(loadWarningThreshold && loadWarningThreshold > 0 && loadDurationMs > loadWarningThreshold){
+      const line = JSON.stringify({
+        level: 'warn',
+        event: 'catalog-load-slow',
+        durationMs: loadDurationMs,
+        threshold: loadWarningThreshold,
+        filesScanned: files.length,
+        filesAccepted: entries.length,
+        message: `Catalog load took ${loadDurationMs}ms (threshold: ${loadWarningThreshold}ms). Consider enabling memoization (MCP_CATALOG_MEMOIZE=1) or reducing catalog size.`
+      });
+      (process.stderr.write as (chunk: string) => boolean)(line + '\n');
+    }
+    
     return { entries, errors, hash, debug: { scanned: files.length, accepted: entries.length, skipped: files.length - entries.length, trace }, summary };
   }
 

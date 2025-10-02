@@ -19,8 +19,8 @@ import { writeFileSync } from 'node:fs';
 
 const INIT_ID = 'init_1';
 const HEALTH_ID = 'hc_1';
-const TIMEOUT_MS = 60_000; // overall upper bound (increased for large catalog)
-const INIT_TIMEOUT_MS = 40_000; // init phase bound (increased for large catalog)
+const TIMEOUT_MS = 120_000; // overall upper bound (2min for large catalog with devinstructions)
+const INIT_TIMEOUT_MS = 90_000; // init phase bound (1.5min for large catalog loading)
 
 /** Very small line-oriented JSON parser (server emits one JSON per line). */
 function tryParse(line) {

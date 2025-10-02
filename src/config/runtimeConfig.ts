@@ -150,6 +150,8 @@ interface CatalogConfig {
   usageFlushMs: number;
   disableUsageClamp: boolean;
   govHash: CatalogGovernanceConfig;
+  maxFiles?: number; // Optional limit on catalog size for performance
+  loadWarningThreshold?: number; // Warn if load time exceeds this (ms)
 }
 
 interface InstructionsManifestConfig {
@@ -548,6 +550,8 @@ function parseCatalogConfig(): CatalogConfig {
   const importSetSizeRaw = optionalIntFromEnv('MCP_GOV_HASH_IMPORT_SET_SIZE');
   const hashCanonVariants = clamp(canonVariantsRaw ?? 1, 1, 8);
   const hashImportSetSize = clamp(importSetSizeRaw ?? 2, 2, 5);
+  const maxFiles = optionalIntFromEnv('MCP_CATALOG_MAX_FILES'); // undefined = no limit
+  const loadWarningThreshold = optionalIntFromEnv('MCP_CATALOG_LOAD_WARN_MS'); // undefined = no warning
   return {
     mode: deriveCatalogMode(),
     baseDir,
@@ -567,6 +571,8 @@ function parseCatalogConfig(): CatalogConfig {
       hashCanonVariants,
       hashImportSetSize,
     },
+    maxFiles,
+    loadWarningThreshold,
   };
 }
 

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { getHandler } from '../server/registry';
+import { reloadRuntimeConfig } from '../config/runtimeConfig';
 
 // We test computeManifestDrift behavior difference when MCP_MANIFEST_FASTLOAD=1
 // by seeding a small catalog and observing drift computation time / details.
@@ -19,6 +20,7 @@ describe('manifest fastload shortcut', () => {
   process.env.MCP_MUTATION = '1';
     process.env.MCP_MANIFEST_WRITE = '1';
     const TMP = path.join(process.cwd(),'tmp','manifest-fastload');
+    reloadRuntimeConfig(); // Reload config after setting env vars
     fs.rmSync(TMP, { recursive: true, force: true });
     fs.mkdirSync(TMP, { recursive: true });
     process.env.INSTRUCTIONS_DIR = TMP;

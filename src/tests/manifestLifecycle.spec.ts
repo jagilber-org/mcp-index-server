@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import path from 'path';
 import fs from 'fs';
 import { callTool } from './testUtils';
+import { reloadRuntimeConfig } from '../config/runtimeConfig';
 
 // Isolated instructions directory for this suite (avoid cross-test interference)
 const MANIFEST_TEST_DIR = path.join(process.cwd(), 'tmp', 'manifest-lifecycle');
@@ -11,6 +12,7 @@ beforeAll(async () => {
   process.env.MCP_MUTATION = '1';
   process.env.MCP_MANIFEST_WRITE = '1';
   process.env.INSTRUCTIONS_DIR = MANIFEST_TEST_DIR; // must be set before handler imports
+  reloadRuntimeConfig(); // Reload config after setting env vars
   fs.rmSync(MANIFEST_TEST_DIR, { recursive: true, force: true });
   fs.mkdirSync(MANIFEST_TEST_DIR, { recursive: true });
   // Dynamically import side-effect registration modules AFTER env is set

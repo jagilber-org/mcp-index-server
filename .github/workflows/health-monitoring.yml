@@ -24,7 +24,7 @@ jobs:
       - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: 'npm'
       
       - name: Install dependencies
@@ -34,7 +34,7 @@ jobs:
         run: npm run build
         
       - name: Run server health check (JSON-RPC)
-        timeout-minutes: 5
+        timeout-minutes: 3
         run: |
           echo 'Running JSON-RPC health check (initialize -> health/check)...'
           node scripts/health-check.mjs || (echo 'Health check failed'; cat health_response.json || true; exit 1)

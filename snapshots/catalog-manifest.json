@@ -1,13 +1,18 @@
 {
   "$schema": "../schemas/manifest.schema.json",
   "version": 1,
-  "generatedAt": "2025-09-28T21:14:23.823Z",
-  "count": 1,
+  "generatedAt": "2025-10-02T11:05:15.459Z",
+  "count": 2,
   "entries": [
     {
-      "id": "service-fabric-diagnostic-methodology",
-      "sourceHash": "1bbff5d15275c9fe154afeb0c231e2fd8efbfd81efd02d79f399c88e7c6a8e1a",
-      "bodyHash": "1bbff5d15275c9fe154afeb0c231e2fd8efbfd81efd02d79f399c88e7c6a8e1a"
+      "id": "gov-hash-a-1759403115397",
+      "sourceHash": "680183ead4a95a01a4d4fe0f13fd4aad3105fb8cca072054313977d23f6b3c2a",
+      "bodyHash": "680183ead4a95a01a4d4fe0f13fd4aad3105fb8cca072054313977d23f6b3c2a"
+    },
+    {
+      "id": "gov-hash-b-1759403115398",
+      "sourceHash": "e89a08135561937e1761a53bbb6771aebc205b78fb0a3d27cf5c84d2b1c7eb4b",
+      "bodyHash": "e89a08135561937e1761a53bbb6771aebc205b78fb0a3d27cf5c84d2b1c7eb4b"
     }
   ]
 }

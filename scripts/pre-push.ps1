@@ -14,12 +14,11 @@ if (-not $npmCommand) {
   Write-Host '[pre-push] Unable to locate npm on PATH.' -ForegroundColor Red
   exit 1
 }
-$npmPath = $npmCommand.Path
 $LASTEXITCODE = 0
 try {
-  & $npmPath run test:slow
+  npm run test:slow
 } catch {
-  Write-Host "[pre-push] Failed to launch npm (path: $npmPath)." -ForegroundColor Red
+  Write-Host "[pre-push] Failed to launch npm." -ForegroundColor Red
   Write-Host $_.Exception.Message -ForegroundColor DarkRed
   exit 1
 }

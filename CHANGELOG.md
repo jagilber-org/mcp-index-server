@@ -6,6 +6,34 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 ## [Unreleased]
 
+### Fixed (MCP Protocol Compliance)
+
+- **CRITICAL:** Eliminated stdout contamination violating MCP stdio transport specification. Server was writing diagnostic messages to stdout, contaminating the JSON-RPC message stream and causing PowerShell MCP client connection failures.
+  - Changed `MetricsCollector.ts`: 4 instances of `console.log()` → `console.error()` (storage mode, clear messages)
+  - Changed `memoryMonitor.ts`: 9 instances of `console.log()` → `console.error()` (monitoring lifecycle, snapshots, utilities)
+  - Fixed `sdkServer.ts`: Corrected literal `\n` escape sequences that broke TypeScript compilation
+  - Impact: stdout now contains ONLY JSON-RPC messages (MCP spec compliant), stderr contains all diagnostic/debug logging
+  - Fixes: PowerShell MCP client timeout issue caused by non-JSON lines in stdout stream
+  - Reference: https://modelcontextprotocol.io/docs/concepts/transports
+
+### Enhanced (Handshake Diagnostics)
+
+- Added comprehensive handshake diagnostic logging when `MCP_LOG_DIAG=1`:
+  - Early stdin buffer: Shows captured chunk preview, Content-Length detection, hasInitialize detection
+  - Replay diagnostics: Detailed chunk replay with preview of first chunk content
+  - Transport initialization: stdin listener count tracking, readable state monitoring
+  - Enhanced visibility for debugging client connection issues
+- Improved error handling for handshake buffer replay with structured error messages
+
+### Added (Testing Infrastructure)
+
+- Created `test-stdin-race.js`: Node.js test client simulating PowerShell behavior (immediate initialize)
+- Created `test-powershell-client.ps1`: PowerShell test harness for real client connection testing
+- Created `STDOUT-CONTAMINATION-FIX.md`: Comprehensive documentation of stdout contamination issue and fix
+- Created `POWERSHELL-CLIENT-ANALYSIS.txt`: Detailed analysis of PowerShell client timeout issue (13968 lines)
+
+### Changed (Previous)
+
 - Dashboard: Added performance (CPU + Memory) card visual baseline snapshot (`performance-card-*`).
 - UI: Refactored drilldown controls into horizontal grouped layout with standardized checkbox styling.
 - Tests: Promoted performance card snapshot to mandatory Playwright baseline; removed legacy optional skips via deterministic seeding.

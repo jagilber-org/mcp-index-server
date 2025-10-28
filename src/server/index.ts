@@ -39,7 +39,9 @@ function __earlyCapture(chunk: Buffer){
     if(getBooleanEnv('MCP_LOG_DIAG')){
       if(!__earlyInitFirstLogged){
         __earlyInitFirstLogged = true;
-        try { process.stderr.write(`[handshake-buffer] first early chunk captured size=${chunk.length}\n`); } catch { /* ignore */ }
+        const preview = chunk.toString('utf8').replace(/\r/g,'\\r').replace(/\n/g,'\\n').slice(0,120);
+        const hasContentLength = chunk.toString('utf8').includes('Content-Length');
+        try { process.stderr.write(`[handshake-buffer] first early chunk captured size=${chunk.length} hasContentLength=${hasContentLength} preview="${preview}"\n`); } catch { /* ignore */ }
       } else if(__earlyInitChunks.length % 10 === 0){
         try { process.stderr.write(`[handshake-buffer] bufferedChunks=${__earlyInitChunks.length}\n`); } catch { /* ignore */ }
       }
@@ -379,7 +381,11 @@ export async function main(){
     }
   }
   if(__bufferEnabled && runtime.logging.diagnostics){
-    try { process.stderr.write(`[handshake-buffer] pre-start buffered=${__earlyInitChunks.length}\n`); } catch { /* ignore */ }
+    try {
+      const totalBytes = __earlyInitChunks.reduce((sum, c) => sum + c.length, 0);
+      const hasContentLength = __earlyInitChunks.some(c => c.toString('utf8').includes('Content-Length'));
+      process.stderr.write(`[handshake-buffer] pre-start buffered=${__earlyInitChunks.length} totalBytes=${totalBytes} hasContentLength=${hasContentLength}\n`);
+    } catch { /* ignore */ }
   }
   await startSdkServer();
   // Auto-confirm bootstrap (test harness opt-in). Executed after SDK start so catalog state
@@ -409,12 +415,33 @@ export async function main(){
   if(__bufferEnabled){
     try { process.stdin.off('data', __earlyCapture); } catch { /* ignore */ }
     if(__earlyInitChunks.length){
+      const totalBytes = __earlyInitChunks.reduce((sum, c) => sum + c.length, 0);
+      const hasContentLength = __earlyInitChunks.some(c => c.toString('utf8').includes('Content-Length'));
+      const hasInitialize = __earlyInitChunks.some(c => c.toString('utf8').includes('"method"') && c.toString('utf8').includes('initialize'));
+      if(runtime.logging.diagnostics){
+        try {
+          process.stderr.write(`[handshake-buffer] replay starting chunks=${__earlyInitChunks.length} totalBytes=${totalBytes} hasContentLength=${hasContentLength} hasInitialize=${hasInitialize}\n`);
+        } catch { /* ignore */ }
+      }
       try {
-        for(const c of __earlyInitChunks){ process.stdin.emit('data', c); }
-      } catch { /* ignore */ }
+        for(let i = 0; i < __earlyInitChunks.length; i++){
+          const c = __earlyInitChunks[i];
+          process.stdin.emit('data', c);
+          if(runtime.logging.diagnostics && i === 0){
+            const preview = c.toString('utf8').replace(/\r/g,'\\r').replace(/\n/g,'\\n').slice(0,200);
+            try { process.stderr.write(`[handshake-buffer] replayed chunk[0] size=${c.length} preview="${preview}"\n`); } catch { /* ignore */ }
+          }
+        }
+      } catch(e) {
+        if(runtime.logging.diagnostics){
+          try { process.stderr.write(`[handshake-buffer] replay error: ${(e instanceof Error) ? e.message : String(e)}\n`); } catch { /* ignore */ }
+        }
+      }
       // eslint-disable-next-line no-console
       if(runtime.logging.diagnostics) console.error(`[handshake-buffer] replayed ${__earlyInitChunks.length} early chunk(s)`);
       __earlyInitChunks.length = 0;
+    } else if(runtime.logging.diagnostics){
+      try { process.stderr.write(`[handshake-buffer] replay skipped (no buffered chunks)\n`); } catch { /* ignore */ }
     }
   }
   process.stderr.write('[startup] SDK server started (stdio only)\n');

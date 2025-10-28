@@ -1,9 +1,21 @@
 {
-  "generatedAt": "2025-10-01T18:59:42.729Z",
-  "count": 1,
+  "generatedAt": "2025-10-27T23:51:08.999Z",
+  "count": 4,
   "items": [
     {
       "file": "unit_p0_materialize_1759345169513.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1761599486875.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1761599723062.json",
+      "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
+    },
+    {
+      "file": "unit_p0_materialize_1761599893896.json",
       "reason": "schema: (root): must have required property 'audience'; (root): must have required property 'requirement'; /riskScore: must be number"
     }
   ]

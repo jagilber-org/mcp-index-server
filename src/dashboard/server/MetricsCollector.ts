@@ -382,9 +382,9 @@ export class MetricsCollector {
         maxFiles: this.options.maxSnapshots,
         retentionMinutes: this.options.retentionMinutes,
       });
-      console.log('📊 MetricsCollector: BufferRing + File storage enabled');
+      console.error('📊 MetricsCollector: BufferRing + File storage enabled');
     } else {
-      console.log('📊 MetricsCollector: BufferRing memory-only mode (set MCP_METRICS_FILE_STORAGE=1|true|yes|on for persistence)');
+      console.error('📊 MetricsCollector: BufferRing memory-only mode (set MCP_METRICS_FILE_STORAGE=1|true|yes|on for persistence)');
     }
 
     // Start periodic collection
@@ -1573,7 +1573,7 @@ export class MetricsCollector {
     this.historicalSnapshots.clear();
     this.toolCallEvents.clear();
     this.performanceMetrics.clear();
-    console.log('📊 MetricsCollector: Cleared all BufferRing data');
+    console.error('📊 MetricsCollector: Cleared all BufferRing data');
   }
 }
 

@@ -787,14 +787,31 @@ export async function startSdkServer() {
       }
     } catch { /* ignore */ }
   // Derive version again for notification (mirrors createSdkServer logic but without -sdk suffix)
+  if(process.env.MCP_LOG_DIAG === '1'){
+    try { process.stderr.write(`[transport-init] creating StdioServerTransport\n`); } catch { /* ignore */ }
+  }
   const transport = new StdioServerTransport();
+  if(process.env.MCP_LOG_DIAG === '1'){
+    try { process.stderr.write(`[transport-init] connecting transport to server\n`); } catch { /* ignore */ }
+  }
   await server.connect(transport);
+  if(process.env.MCP_LOG_DIAG === '1'){
+    try {
+      const stdinReadable = process.stdin.readable;
+      const stdinListenerCount = process.stdin.listenerCount('data');
+      process.stderr.write(`[transport-init] transport connected stdin.readable=${stdinReadable} stdin.dataListeners=${stdinListenerCount}\n`);
+    } catch { /* ignore */ }
+  }
   // Do NOT send server/ready here; oninitialized hook (after initialize) will emit it once.
     // Explicit keepalive to avoid premature process exit before first client request
     try {
       if(process.stdin.readable) process.stdin.resume();
       process.stdin.on('data', ()=>{}); // no-op to anchor listener
       const ka = setInterval(()=>{/* keepalive */}, 10_000); ka.unref?.();
+      if(process.env.MCP_LOG_DIAG === '1'){
+        const stdinListenerCount = process.stdin.listenerCount('data');
+        try { process.stderr.write(`[transport-init] keepalive setup complete stdin.dataListeners=${stdinListenerCount}\n`); } catch { /* ignore */ }
+      }
     } catch { /* ignore */ }
     // Safety fallback: if server/ready not emitted within 100ms of start (e.g., patch failed), emit once.
   if(HANDSHAKE_FALLBACKS_ENABLED){
@@ -908,13 +925,30 @@ export async function startSdkServer() {
   }
   const modServer: any = await dynamicImport('@modelcontextprotocol/sdk/server/index.js');
   const server = createSdkServer(modServer.Server);
+  if(process.env.MCP_LOG_DIAG === '1'){
+    try { process.stderr.write(`[transport-init] (secondary) creating StdioServerTransport\n`); } catch { /* ignore */ }
+  }
   const transport = new StdioServerTransport();
+  if(process.env.MCP_LOG_DIAG === '1'){
+    try { process.stderr.write(`[transport-init] (secondary) connecting transport to server\n`); } catch { /* ignore */ }
+  }
   await server.connect(transport);
+  if(process.env.MCP_LOG_DIAG === '1'){
+    try {
+      const stdinReadable = process.stdin.readable;
+      const stdinListenerCount = process.stdin.listenerCount('data');
+      process.stderr.write(`[transport-init] (secondary) transport connected stdin.readable=${stdinReadable} stdin.dataListeners=${stdinListenerCount}\n`);
+    } catch { /* ignore */ }
+  }
   // Single server/ready will be emitted after initialize via oninitialized
   try {
     if(process.stdin.readable) process.stdin.resume();
     process.stdin.on('data', ()=>{});
     const ka = setInterval(()=>{/* keepalive */}, 10_000); ka.unref?.();
+    if(process.env.MCP_LOG_DIAG === '1'){
+      const stdinListenerCount = process.stdin.listenerCount('data');
+      try { process.stderr.write(`[transport-init] (secondary) keepalive setup complete stdin.dataListeners=${stdinListenerCount}\n`); } catch { /* ignore */ }
+    }
   } catch { /* ignore */ }
   // Safety fallback timer (mirrors dynamic path) for missed ready emission
   if(HANDSHAKE_FALLBACKS_ENABLED){

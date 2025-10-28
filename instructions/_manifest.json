@@ -1,25 +1,25 @@
 {
   "version": 1,
-  "generatedAt": "2025-10-01T18:59:42.726Z",
-  "count": 97,
-  "hash": "ff3d5b357452fd331c0e510be9df85a0fbb2f8f2f3dab3177f09680dd7c8b797",
+  "generatedAt": "2025-10-27T23:51:08.996Z",
+  "count": 99,
+  "hash": "a20236ab47cce89441d5c6344801018650abcbb0c56e5b9cb88698ddaa0b8b61",
   "summary": {
-    "scanned": 103,
-    "accepted": 97,
-    "skipped": 6,
+    "scanned": 108,
+    "accepted": 99,
+    "skipped": 9,
     "reasons": {
       "ignored:governance-denylist": 2,
       "ignored:non-instruction-config": 3,
-      "schema": 1
+      "schema": 4
     },
     "salvage": {
       "audience": 44,
-      "requirement": 26,
+      "requirement": 28,
       "bodyTruncated": 3,
       "requirementFreeform": 26,
       "audienceInvalid": 15,
       "requirementInvalid": 4,
-      "priorityInvalid": 1
+      "priorityInvalid": 4
     },
     "softWarnings": {
       "body:truncated": 3
@@ -898,6 +898,26 @@
     },
     {
       "id": "synthetic-mg8co7ei_tmskoq",
+      "title": "Synthetic Instruction",
+      "priority": 50,
+      "priorityTier": "P3",
+      "audience": "all",
+      "requirement": "optional",
+      "sourceHash": "a7eb25377592667b0e37c5fedfdb733edd9b8f1728838ae86ee657f8eedda0cc",
+      "bodyHash": "a7eb25377592667b0e37c5fedfdb733edd9b8f1728838ae86ee657f8eedda0cc"
+    },
+    {
+      "id": "synthetic-mh9mtwrv_dh4de5",
+      "title": "Synthetic Instruction",
+      "priority": 50,
+      "priorityTier": "P3",
+      "audience": "all",
+      "requirement": "optional",
+      "sourceHash": "a7eb25377592667b0e37c5fedfdb733edd9b8f1728838ae86ee657f8eedda0cc",
+      "bodyHash": "a7eb25377592667b0e37c5fedfdb733edd9b8f1728838ae86ee657f8eedda0cc"
+    },
+    {
+      "id": "synthetic-mh9sjyxq_jon2yw",
       "title": "Synthetic Instruction",
       "priority": 50,
       "priorityTier": "P3",

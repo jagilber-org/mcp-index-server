@@ -141,7 +141,11 @@ function performSearch(params: SearchParams): SearchResponse {
     throw new Error('Instruction catalog not available');
   }
   
-  const { keywords, limit = 50, includeCategories = false, caseSensitive = false } = params;
+  // Ensure defaults are explicitly applied
+  const keywords = params.keywords;
+  const limit = params.limit ?? 50;
+  const includeCategories = params.includeCategories ?? false;
+  const caseSensitive = params.caseSensitive ?? false;
   
   // Validate and sanitize keywords
   const sanitizedKeywords = keywords
@@ -244,7 +248,15 @@ export async function handleInstructionsSearch(params: SearchParams): Promise<Se
       throw new Error('caseSensitive must be a boolean');
     }
     
-    return performSearch(params);
+    // Ensure case-insensitive search by default
+    const searchParams: SearchParams = {
+      keywords: params.keywords,
+      limit: params.limit,
+      includeCategories: params.includeCategories,
+      caseSensitive: params.caseSensitive ?? false // Explicit default to false for case-insensitive search
+    };
+    
+    return performSearch(searchParams);
     
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown search error';

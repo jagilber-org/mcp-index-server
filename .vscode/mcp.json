@@ -1,35 +1,44 @@
 {
 	"servers": {
-		"mcp-index-server": {
-			"type": "stdio",
-			// "cwd": "C:/mcp/mcp-index-server-prod",
-			"cwd": "C:/github/jagilber/mcp-index-server",
-			"command": "node",
-			"args": [
-				"--inspect=9229",
-				"dist/server/index.js"
-			],
-			"env": {
-				// ===================== DIRECTORY SELECTION =====================
-				// To run against production catalog set MCP_USE_PROD=1 in your launch shell
-				// and optionally uncomment the prod INSTRUCTIONS_DIR / cwd above.
-				// "INSTRUCTIONS_DIR": "C:/mcp/mcp-index-server-prod/instructions",
-				"INSTRUCTIONS_DIR": "C:/github/jagilber/mcp-index-server/devinstructions",
-				"FEEDBACK_DIR": "C:/github/jagilber/mcp-index-server/feedback",
-				"MCP_CATALOG_FILE_TRACE": "1",
-				"MCP_ENABLE_MUTATION": "1",
-				"MCP_LOG_FILE": "1",
-				"MCP_MEMORY_MONITOR": "1",
-				"MCP_METRICS_FILE_STORAGE": "1",
-				"MCP_METRICS_MAX_FILES": "720",
-				"MCP_TRACE_FILE": "1",
-				"MCP_DEBUG": "1",
-				"MCP_VISIBILITY_DIAG": "1",
-				"MCP_DASHBOARD": "1",
-				"MCP_LOG_VERBOSE": "1",
-				"MCP_DASHBOARD_PORT": "8787"
-			}
-		},
+		// "kusto-dashboard-manager": {
+		// 	"command": "python",
+		// 	"args": [
+		// 		"-m",
+		// 		"src.mcp_server"
+		// 	],
+		// 	"cwd": "c:/github/jagilber/kusto-dashboard-manager",
+		// 	"type": "stdio"
+		// },
+		// "mcp-index-server": {
+		// 	"type": "stdio",
+		// 	// "cwd": "C:/mcp/mcp-index-server-prod",
+		// 	"cwd": "C:/github/jagilber/mcp-index-server",
+		// 	"command": "node",
+		// 	"args": [
+		// 		"--inspect=9229",
+		// 		"dist/server/index.js"
+		// 	],
+		// 	"env": {
+		// 		// ===================== DIRECTORY SELECTION =====================
+		// 		// To run against production catalog set MCP_USE_PROD=1 in your launch shell
+		// 		// and optionally uncomment the prod INSTRUCTIONS_DIR / cwd above.
+		// 		// "INSTRUCTIONS_DIR": "C:/mcp/mcp-index-server-prod/instructions",
+		// 		"INSTRUCTIONS_DIR": "C:/github/jagilber/mcp-index-server/devinstructions",
+		// 		"FEEDBACK_DIR": "C:/github/jagilber/mcp-index-server/feedback",
+		// 		"MCP_CATALOG_FILE_TRACE": "1",
+		// 		"MCP_ENABLE_MUTATION": "1",
+		// 		"MCP_LOG_FILE": "1",
+		// 		"MCP_MEMORY_MONITOR": "1",
+		// 		"MCP_METRICS_FILE_STORAGE": "1",
+		// 		"MCP_METRICS_MAX_FILES": "720",
+		// 		"MCP_TRACE_FILE": "1",
+		// 		"MCP_DEBUG": "1",
+		// 		"MCP_VISIBILITY_DIAG": "1",
+		// 		"MCP_DASHBOARD": "1",
+		// 		"MCP_LOG_VERBOSE": "1",
+		// 		"MCP_DASHBOARD_PORT": "8787"
+		// 	}
+		// },
 		// "powershell-mcp-server": {
 		// 	"command": "node",
 		// 	"args": [

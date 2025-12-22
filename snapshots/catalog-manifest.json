@@ -1,13 +1,33 @@
 {
   "$schema": "../schemas/manifest.schema.json",
   "version": 1,
-  "generatedAt": "2025-10-27T23:51:07.943Z",
-  "count": 1,
+  "generatedAt": "2025-12-22T22:24:23.583Z",
+  "count": 5,
   "entries": [
     {
-      "id": "portable-param-0-1761609067214",
-      "sourceHash": "b7db99dc47f4dc0802e5507084df2cdb69395514a0dd01f4efb1c198ff8969a0",
-      "bodyHash": "b7db99dc47f4dc0802e5507084df2cdb69395514a0dd01f4efb1c198ff8969a0"
+      "id": "github-mermaid-dark-theme-quick-guide-2025",
+      "sourceHash": "bbb2b09d1860b0bd9f8abaeb6f70255766581beb41cb1fbf75538d7db33d0ac7",
+      "bodyHash": "bbb2b09d1860b0bd9f8abaeb6f70255766581beb41cb1fbf75538d7db33d0ac7"
+    },
+    {
+      "id": "github-mermaid-dark-theme-quick-guide-2025-2",
+      "sourceHash": "bbb2b09d1860b0bd9f8abaeb6f70255766581beb41cb1fbf75538d7db33d0ac7",
+      "bodyHash": "bbb2b09d1860b0bd9f8abaeb6f70255766581beb41cb1fbf75538d7db33d0ac7"
+    },
+    {
+      "id": "github-mermaid-dark-theme-quick-guide-2025-3",
+      "sourceHash": "bbb2b09d1860b0bd9f8abaeb6f70255766581beb41cb1fbf75538d7db33d0ac7",
+      "bodyHash": "bbb2b09d1860b0bd9f8abaeb6f70255766581beb41cb1fbf75538d7db33d0ac7"
+    },
+    {
+      "id": "github-mermaid-dark-theme-quick-guide-2025-4",
+      "sourceHash": "bbb2b09d1860b0bd9f8abaeb6f70255766581beb41cb1fbf75538d7db33d0ac7",
+      "bodyHash": "bbb2b09d1860b0bd9f8abaeb6f70255766581beb41cb1fbf75538d7db33d0ac7"
+    },
+    {
+      "id": "github-mermaid-dark-theme-quick-guide-2025-5",
+      "sourceHash": "bbb2b09d1860b0bd9f8abaeb6f70255766581beb41cb1fbf75538d7db33d0ac7",
+      "bodyHash": "bbb2b09d1860b0bd9f8abaeb6f70255766581beb41cb1fbf75538d7db33d0ac7"
     }
   ]
 }

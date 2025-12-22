@@ -1,25 +1,25 @@
 {
   "version": 1,
-  "generatedAt": "2025-10-27T23:51:08.996Z",
-  "count": 99,
-  "hash": "a20236ab47cce89441d5c6344801018650abcbb0c56e5b9cb88698ddaa0b8b61",
+  "generatedAt": "2025-12-22T22:24:25.514Z",
+  "count": 103,
+  "hash": "ccdcf69c31107e5c438c89bf251119bb69347af02fa7226098f9c556120d7550",
   "summary": {
-    "scanned": 108,
-    "accepted": 99,
-    "skipped": 9,
+    "scanned": 126,
+    "accepted": 103,
+    "skipped": 23,
     "reasons": {
       "ignored:governance-denylist": 2,
       "ignored:non-instruction-config": 3,
-      "schema": 4
+      "schema": 18
     },
     "salvage": {
       "audience": 44,
-      "requirement": 28,
+      "requirement": 32,
       "bodyTruncated": 3,
       "requirementFreeform": 26,
       "audienceInvalid": 15,
       "requirementInvalid": 4,
-      "priorityInvalid": 4
+      "priorityInvalid": 18
     },
     "softWarnings": {
       "body:truncated": 3
@@ -925,6 +925,46 @@
       "requirement": "optional",
       "sourceHash": "a7eb25377592667b0e37c5fedfdb733edd9b8f1728838ae86ee657f8eedda0cc",
       "bodyHash": "a7eb25377592667b0e37c5fedfdb733edd9b8f1728838ae86ee657f8eedda0cc"
+    },
+    {
+      "id": "synthetic-mhamxsf4_66jh1j",
+      "title": "Synthetic Instruction Updated",
+      "priority": 50,
+      "priorityTier": "P3",
+      "audience": "all",
+      "requirement": "optional",
+      "sourceHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c",
+      "bodyHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c"
+    },
+    {
+      "id": "synthetic-mignmx13_zmvsbl",
+      "title": "Synthetic Instruction",
+      "priority": 50,
+      "priorityTier": "P3",
+      "audience": "all",
+      "requirement": "optional",
+      "sourceHash": "a7eb25377592667b0e37c5fedfdb733edd9b8f1728838ae86ee657f8eedda0cc",
+      "bodyHash": "a7eb25377592667b0e37c5fedfdb733edd9b8f1728838ae86ee657f8eedda0cc"
+    },
+    {
+      "id": "synthetic-mjge86yl_zgtpjo",
+      "title": "Synthetic Instruction Updated",
+      "priority": 50,
+      "priorityTier": "P3",
+      "audience": "all",
+      "requirement": "optional",
+      "sourceHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c",
+      "bodyHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c"
+    },
+    {
+      "id": "synthetic-mjhnwdbb_i87tlc",
+      "title": "Synthetic Instruction Updated",
+      "priority": 50,
+      "priorityTier": "P3",
+      "audience": "all",
+      "requirement": "optional",
+      "sourceHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c",
+      "bodyHash": "6be504ae222a09df530484cf5ca049b8b0937dc78bcc33f38d887529b02b296c"
     },
     {
       "id": "toolsets-debug-analysis-v1",

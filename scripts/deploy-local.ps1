@@ -350,8 +350,21 @@ Write-Host '[deploy] Done.' -ForegroundColor Green
 if($BundleDeps){
   Write-Host '[deploy] Installing production dependencies into destination (BundleDeps)...' -ForegroundColor Cyan
   Push-Location $Destination
-  try { npm install --production } catch { Write-Host "[deploy] npm install failed: $($_.Exception.Message)" -ForegroundColor Red; exit 1 } finally { Pop-Location }
-  Write-Host '[deploy] Production dependencies installed.' -ForegroundColor Green
+  try { 
+    npm install --production 
+    if($LASTEXITCODE -ne 0){ throw "npm install --production failed with exit code $LASTEXITCODE" }
+    # Verify critical dependencies were installed (ajv required by catalogLoader.js)
+    if(-not (Test-Path (Join-Path $Destination 'node_modules/ajv/package.json'))){
+      throw "Critical dependency 'ajv' missing after npm install --production (catalogLoader requires it for schema validation)"
+    }
+    Write-Host '[deploy] Production dependencies installed and validated.' -ForegroundColor Green
+  } catch { 
+    Write-Host "[deploy] npm install failed: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host '[deploy] Server will fail to start without dependencies. Re-run with -BundleDeps after resolving npm issues.' -ForegroundColor Yellow
+    exit 1 
+  } finally { Pop-Location }
+} else {
+  Write-Host '[deploy] Skipping dependency installation (use -BundleDeps to bundle node_modules). start.ps1 will auto-install on first launch.' -ForegroundColor Yellow
 }
 Write-Host "Next: (cd $Destination ; pwsh .\\start.ps1 -VerboseLogging -EnableMutation)" -ForegroundColor Cyan
 

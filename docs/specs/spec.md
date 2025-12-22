@@ -131,7 +131,7 @@ The mcp-index-server uses PII detection from the [obfuscate-mcp-server](https://
 - **[powershell-mcp-server](https://github.com/jagilber/powershell-mcp-server)**: PowerShell execution with enterprise security (290+ hours, HIGHEST investment)
 - **[obfuscate-mcp-server](https://github.com/jagilber/obfuscate-mcp-server)**: PII detection and obfuscation (45+ hours, dogfooding story)
 - **[kusto-dashboard-manager](https://github.com/jagilber/kusto-dashboard-manager)**: Azure Data Explorer dashboard management
-- **[chrome-screenshot-sanitizer-pr](https://github.com/jagilber/chrome-screenshot-sanitizer-pr)**: Automated screenshot capture with PII sanitization
+- **[chrome-screenshot-sanitizer](https://github.com/jagilber/chrome-screenshot-sanitizer)**: Automated screenshot capture with PII sanitization
 
 ## Cross-References
 - [Technical Plan (plan.md)](./plan.md) - Architecture and implementation

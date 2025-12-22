@@ -1,5 +1,7 @@
 # MCP Index Server
 
+> **Portfolio Project** | [View Full Portfolio](https://github.com/jagilber-org) | [Specifications](docs/specs/)
+
 ![UI Drift Detection](https://github.com/jagilber/mcp-index-server/actions/workflows/ui-drift.yml/badge.svg)
 
 **[📋 Product Requirements (PROJECT_PRD.md)](./docs/PROJECT_PRD.md)** – Authoritative binding requirements and governance
@@ -404,6 +406,16 @@ Typical workflow:
 
 Rationale: Keeps authoring friction low while making CRUD semantics deterministic—no hidden or retroactive mutation of provided governance values. Hash stability and CI gating operate on exactly what you wrote plus only defaulted fields.
 
+## 📚 Documentation
+
+### Specifications
+
+- **[Product Specification](docs/specs/spec.md)** - User scenarios, functional requirements, success criteria, integration points
+- **[Technical Plan](docs/specs/plan.md)** - Architecture, implementation phases, performance benchmarks
+
+### Project Documentation
+
+- [Full Documentation Index](docs/) - Comprehensive guides and references
 ## Usage
 
 ### MCP Client Usage (VS Code, Claude, etc.)

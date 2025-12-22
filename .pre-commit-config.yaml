@@ -1,0 +1,37 @@
+# Pre-commit hooks for obfuscate-mcp-server
+# Portfolio showcase: Professional development workflow with security best practices
+
+repos:
+  # Standard code quality and security checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '\.(md|txt)$'
+      - id: end-of-file-fixer
+      - id: check-yaml
+        exclude: '^(.vscode/|config/)'
+      - id: check-json
+        exclude: '^\.vscode/'
+      - id: check-merge-conflict
+      - id: detect-private-key
+        exclude: '^(test/|examples/|__tests__/)'
+      - id: no-commit-to-branch
+        args: ['--branch', 'master']
+
+  # Credential scanning - Critical for security-focused portfolio project
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        exclude: '^(__tests__/|test/|stress/|perf-|kusto-|debug-|.*\.mjs$|package-lock\.json|\.secrets\.baseline)'
+
+# Configuration
+default_install_hook_types: [pre-commit]
+fail_fast: false
+minimum_pre_commit_version: '3.0.0'
+
+# NOTE: This project's PII detection can be integrated as a custom local hook
+# in future iterations - demonstrating "dogfooding" of our own tool.
+# For portfolio purposes, we use industry-standard tools (detect-secrets) to
+# show professional development practices.

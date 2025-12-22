@@ -94,9 +94,44 @@ The MCP Index Server is an enterprise-grade instruction indexing platform for AI
 **FR-009**: Atomic persistence with rotation  
 
 ### Performance
-**PR-001**: <5s catalog load for 10k instructions  
-**PR-002**: <120ms P95 search latency  
-**PR-003**: <10s integrity verification  
+**PR-001**: <5s catalog load for 10k instructions
+**PR-002**: <120ms P95 search latency
+**PR-003**: <10s integrity verification
+
+## Integration Points
+
+### PowerShell MCP Server Patterns
+
+The mcp-index-server's instruction catalog governance patterns were informed by the [powershell-mcp-server](https://github.com/jagilber/powershell-mcp-server)'s tool execution and security classification systems. Both projects demonstrate enterprise-grade MCP protocol implementation with comprehensive observability.
+
+**Cross-Project Value**:
+- Shared MCP protocol best practices (443+ hours combined across 3 flagships)
+- Consistent audit logging and metrics patterns
+- Enterprise governance standards across portfolio
+
+**Technical Patterns Shared**:
+- Tool lifecycle management (registration, discovery, execution)
+- Structured observability (health checks, metrics snapshots, audit logs)
+- Deterministic error handling with retry policies
+- Security classification and governance enforcement
+
+### Obfuscate MCP Server Integration
+
+The mcp-index-server uses PII detection from the [obfuscate-mcp-server](https://github.com/jagilber/obfuscate-mcp-server) in its pre-commit hooks to prevent sensitive data leaks in instruction catalogs. This integration demonstrates the index server's commitment to secure governance practices.
+
+**Cross-Project Value**:
+- Secure instruction catalogs with automated PII protection
+- Zero PII exposure in version control
+- Compliance alignment (GDPR, CCPA, HIPAA, SOX)
+
+**Governance Integration**: PII detection runs automatically during instruction catalog updates, ensuring no sensitive information enters the knowledge plane.
+
+### Related Portfolio Projects
+
+- **[powershell-mcp-server](https://github.com/jagilber/powershell-mcp-server)**: PowerShell execution with enterprise security (290+ hours, HIGHEST investment)
+- **[obfuscate-mcp-server](https://github.com/jagilber/obfuscate-mcp-server)**: PII detection and obfuscation (45+ hours, dogfooding story)
+- **[kusto-dashboard-manager](https://github.com/jagilber/kusto-dashboard-manager)**: Azure Data Explorer dashboard management
+- **[chrome-screenshot-sanitizer-pr](https://github.com/jagilber/chrome-screenshot-sanitizer-pr)**: Automated screenshot capture with PII sanitization
 
 ## Cross-References
 - [Technical Plan (plan.md)](./plan.md) - Architecture and implementation

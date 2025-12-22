@@ -129,6 +129,25 @@ Agent Execution Quick Reference:
 
 Any AI-initiated request for a raw terminal prompt is treated as policy violation.
 
+## Portfolio Context
+
+This project is part of the [jagilber-org portfolio](https://github.com/jagilber-org), demonstrating advanced MCP server patterns and agent development practices.
+
+**Cross-Project Integration**:
+- Instruction catalog system used by all portfolio MCP servers
+- Governance and validation patterns for **obfuscate-mcp-server** and **powershell-mcp-server**
+- Reference implementation for MCP server indexing and discovery
+- Agent development best practices shared across portfolio
+
+**Portfolio Highlights**:
+- Production-ready instruction catalog with 100+ enterprise patterns
+- Graph-based instruction relationships and dependencies
+- Comprehensive governance system (ownership, review, deprecation)
+- Bootstrap security and confirmation workflows
+- Real-world MCP server architecture patterns
+
+[View Full Portfolio](https://github.com/jagilber-org) | [Integration Examples](https://github.com/jagilber-org#cross-project-integration)
+
 ## 🚀 Quick Start
 
 ### 1. Installation & Build

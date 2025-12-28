@@ -4,6 +4,21 @@
 
 ![UI Drift Detection](https://github.com/jagilber/mcp-index-server/actions/workflows/ui-drift.yml/badge.svg)
 
+## 🔐 Security Notice
+
+This repository follows [GitHub Spec-Kit](https://github.com/ambie-inc) security standards:
+
+- **Pre-commit hooks**: Prevents accidental commit of credentials and PII
+- **Environment variables**: Use `.env.example` as template, never commit actual `.env`
+- **Config files**: `*.example.json` files are templates; actual config files are gitignored
+- **Placeholder data**: All examples use generic values (John Doe, user@example.com, example-instruction-id)
+- **Instruction IDs**: Examples use generic IDs like `example-rule-123`, never production IDs
+- **Search keywords**: Documentation uses placeholder keywords, not sensitive query terms
+
+**For contributors**: Review security guidelines in the Contributing section before making changes.
+
+---
+
 **[📋 Product Requirements (PROJECT_PRD.md)](./docs/PROJECT_PRD.md)** – Authoritative binding requirements and governance
 
 * **[🔧 API Reference (TOOLS.md)](./docs/TOOLS.md)** - Complete MCP protocol-compliant tool documentation  
@@ -149,6 +164,30 @@ This project is part of the [jagilber-org portfolio](https://github.com/jagilber
 [View Full Portfolio](https://github.com/jagilber-org) | [Integration Examples](https://github.com/jagilber-org#cross-project-integration)
 
 ## 🚀 Quick Start
+
+### First-Time Setup
+
+**Prerequisites:**
+- Node.js 18+ and npm
+- Git for version control
+- VS Code (recommended) or another MCP-compatible client
+
+**Initial Setup:**
+
+```bash
+# Clone the repository
+git clone https://github.com/jagilber-org/mcp-index-server.git
+cd mcp-index-server
+
+# Install dependencies
+npm install
+
+# Build the server
+npm run build
+
+# Verify build output
+ls dist/server/index.js  # Should exist after build
+```
 
 ### 1. Installation & Build
 
@@ -442,6 +481,7 @@ Rationale: Keeps authoring friction low while making CRUD semantics deterministi
 ### Project Documentation
 
 - [Full Documentation Index](docs/) - Comprehensive guides and references
+
 ## Usage
 
 ### MCP Client Usage (VS Code, Claude, etc.)
@@ -554,3 +594,75 @@ Hooks: Pre-commit runs typecheck, lint, tests, and security scan. Manual scan: `
 ## Roadmap
 
 See `docs/DASHBOARD-DEVELOPMENT-PLAN.md` and `docs/ARCHITECTURE.md` for detailed planning.
+
+## 🤝 Contributing
+
+### Code Standards
+
+This project follows strict TypeScript and MCP protocol standards:
+
+- **TypeScript**: Strict mode enabled, comprehensive type coverage
+- **Testing**: All features require test coverage before merge
+- **MCP Compliance**: Follow Model Context Protocol specifications
+- **Code Review**: All changes undergo peer review
+- **Documentation**: Update relevant docs with code changes
+
+**Testing Requirements:**
+- Run `npm test` before committing
+- Maintain green test suite (no skipped tests)
+- Add tests for new features and bug fixes
+- Contract tests for protocol compliance
+
+**Build Process:**
+```bash
+npm install      # Install dependencies
+npm run build    # TypeScript compilation
+npm test         # Run test suite
+npm run lint     # Code style validation
+```
+
+### Repository Ownership Policy
+
+This repository follows strict contribution guidelines per [GitHub Spec-Kit](https://github.com/ambie-inc) standards:
+
+- **No automatic PRs**: Contributors must have explicit permission before creating pull requests
+- **Manual review required**: All contributions undergo code review and security checks
+- **Testing mandatory**: All changes must pass test suite and add appropriate test coverage
+- **Documentation required**: Update TOOLS.md, CONFIGURATION.md, and other relevant documentation with changes
+
+**Before contributing:**
+1. Open an issue to discuss proposed changes
+2. Wait for maintainer approval
+3. Follow code standards and testing requirements
+4. Ensure all CI checks pass
+
+### Documentation Standards
+
+**IMPORTANT**: Follow these documentation practices:
+
+- ✅ **Use placeholder values** in all examples:
+  - Email addresses: `user@example.com`, `admin@contoso.com`
+  - Names: John Doe, Jane Smith, Example Corp
+  - Instruction IDs: `example-rule-123`, `sample-instruction-id`
+  - Search keywords: generic terms like "javascript", "arrays" (not sensitive queries)
+  - Directory paths: `C:/path/to/mcp-index-server` (generic structure)
+
+- ❌ **Never include**:
+  - Real credentials, API keys, or secrets
+  - Actual email addresses or identifiers
+  - Personal information or company-specific data
+  - Production instruction IDs or catalog content
+  - Sensitive search queries or internal terminology
+
+- ✅ **Do document**:
+  - Parameter types and JSON schema structures
+  - Usage examples with placeholder values
+  - Error handling patterns and error codes
+  - Configuration options and environment variables
+  - Tool descriptions and MCP protocol patterns
+
+**Security in Documentation:**
+- Review [SECURITY.md](SECURITY.md) before documenting features
+- Never document internal governance mechanisms in public docs
+- Use generic examples for mutation/bootstrap workflows
+- Redact any logs or traces containing real data
